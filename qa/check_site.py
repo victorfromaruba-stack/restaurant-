@@ -109,6 +109,14 @@ async def main():
                 check(re.search(r"^Pay: " + re.escape(meta["pay"]) + "$", msg, re.M) is not None, f"[{title}] ticket says how the customer pays")
             check("DW-" not in msg and "TB-" not in msg and "OS-" not in msg, f"[{title}] no internal codes")
         await pg.evaluate("OrderAruba.clear()")
+        # the chef app reads each ticket back: same lines, prices, totals and payment for the customer receipt
+        await pg.goto(BASE + "ops/kitchen/index.html", wait_until="networkidle")
+        for smp, (title, lines, meta) in zip(out, SAMPLES):
+            r = await pg.evaluate("t => window.__kitchen.receipt(window.__kitchen.parse(t))", smp["message"])
+            ok = bool(r) and r["sub"] == smp["subtotal_cents"] and r["fee"] == smp["fee_cents"] and r["total"] == smp["total_cents"] \
+                and sum(l["p"] for l in r["lines"]) == smp["subtotal_cents"] and r["pay"] == meta.get("pay", "")
+            check(ok, f"[{title}] chef app receipt matches the order (lines, totals, payment)")
+        await pg.goto(BASE + "index.html", wait_until="networkidle")
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]
         for code in ("pap", "nl", "es"):

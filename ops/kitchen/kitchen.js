@@ -27,6 +27,8 @@
     del: function (k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
   };
   var KEY_ORDERS = 'kitchen.orders.v1';
+  // Victor's bookkeeping app. Shop receipts are photographed there (the chef needs a Book Keeper login).
+  var BOOKKEEPER = 'https://bookingkeepingaruba.vercel.app';
   var KEY_TIMERS = 'kitchen.timers.v1';
   function ticksKey(list, date) { return 'kitchen.' + list + '.' + date; }
 
@@ -147,18 +149,27 @@
     out.push(cur);
     return out.map(function (x) { return x.trim(); }).filter(Boolean);
   }
+  /* "ƒ25.90" at the end of a line -> 2590 (cents). Also reads "25,90" and "1,234.50". */
+  function priceOf(text) {
+    var m = /(?:ƒ|afl\.?|awg|fl\.?|f(?=\s?\d))\s*(\d[\d.,]*)\s*\**\s*$/i.exec(String(text || '').trim());
+    if (!m) return null;
+    var v = m[1].replace(/,(\d{2})$/, '.$1').replace(/,/g, '');
+    var c = Math.round(parseFloat(v) * 100);
+    return isFinite(c) ? c : null;
+  }
   function parseItemLine(text, brandId) {
+    var price = priceOf(text);
     var s = text
       .replace(/\s*[—–-]*\s*(?:ƒ|afl\.?|awg|fl\.?|f(?=\s?\d))\s*\d[\d.,]*\s*$/i, '')
       .replace(/\s+[—–-]+\s*\d+[.,]\d{2}\s*$/, '')
       .replace(/\s+[—–-]+\s*$/, '')
       .trim();
     var m = /^(\d{1,3})\s*[x×X✕✖*]\s*(.+)$/.exec(s);
-    if (m) return { qty: +m[1], name: m[2].trim() };
+    if (m) return { qty: +m[1], name: m[2].trim(), price: price };
     m = /^(.+?)\s*[x×X]\s*(\d{1,3})$/.exec(s);
-    if (m && matchDish(m[1], brandId)) return { qty: +m[2], name: m[1].trim() };
+    if (m && matchDish(m[1], brandId)) return { qty: +m[2], name: m[1].trim(), price: price };
     m = /^(\d{1,3})\s+(.+)$/.exec(s);
-    if (m && matchDish(m[2], brandId)) return { qty: +m[1], name: m[2].trim() };
+    if (m && matchDish(m[2], brandId)) return { qty: +m[1], name: m[2].trim(), price: price };
     return null;
   }
   function parseOrder(text) {
@@ -197,20 +208,21 @@
       var br = matchBrand(bare);
       if (br) { cur = br.id; last = null; if (!o.title) o.title = br.name; return; }
       if (/^drinks?$/i.test(bare)) { last = null; return; }   // website groups cans under *Drinks*
-      if (/^total\b/i.test(bare)) { var tm = /ƒ\s*([\d.,]+)/.exec(bare); if (tm) o.total = tm[1]; }
+      if (/^total\b/i.test(bare)) { var tm = /ƒ\s*([\d.,]+)/.exec(bare); if (tm) o.total = tm[1]; o.totalC = priceOf(bare); }
+      if (/^sub\s*-?\s*total\b/i.test(bare)) o.subtotalC = priceOf(bare);
       if (/^(sub\s*-?\s*total|total|delivery fee|service|tip|discount|fee)\b/i.test(bare)) {
         if (/^delivery fee/i.test(bare)) sawFee = true;
         last = null; return;
       }
       if ((m = /^(delivery|deliver|pick\s*-?\s*up|collection)\b\s*[·•:|,—–-]*\s*(.*)$/i.exec(bare))) {
-        if (/ƒ|\bafl\b|awg|\d+[.,]\d{2}/i.test(m[2])) { if (/^d/i.test(m[1])) sawFee = true; last = null; return; }
+        if (/ƒ|\bafl\b|awg|\d+[.,]\d{2}/i.test(m[2])) { if (/^d/i.test(m[1])) sawFee = true; o.feeC = priceOf(bare); last = null; return; }
         o.mode = /^d/i.test(m[1]) ? 'Delivery' : 'Pickup';
         o.area = m[2].replace(/^[·•:|,—–-\s]+/, '').trim();
         last = null; return;
       }
       var it = parseItemLine(bare, cur);
       if (it) {
-        last = { qty: it.qty, raw: it.name, brandId: cur, key: matchDish(it.name, cur), mods: [], includes: null };
+        last = { qty: it.qty, raw: it.name, brandId: cur, key: matchDish(it.name, cur), mods: [], includes: null, price: it.price };
         o.lines.push(last);
         return;
       }
@@ -622,6 +634,8 @@
       (open.length ? '<span class="count">' + open.length + ' open order' + (open.length > 1 ? 's' : '') + '</span>' : '') + '</a>' +
       '<a class="big-mode close" href="#/close"><b>Close up</b><span>Cool down, label, throw away, clean</span>' +
       '<span class="count">' + cc.done + ' of ' + cc.total + ' done today</span></a>' +
+      '<a class="big-mode books" href="' + esc(BOOKKEEPER + '/dashboard/receipts') + '" target="_blank" rel="noopener"><b>Receipts</b>' +
+      '<span>Bought something? Take a photo of the shop receipt. It goes into Book Keeper.</span></a>' +
       '</div>' +
       '<div class="home-foot" id="oldScreens" hidden><h2>Old screens</h2><div class="old-links">' +
       '<a href="../chef.html">Chef hub</a><a href="../checklist.html">Shopping checklist</a>' +
@@ -749,6 +763,7 @@
       unknown.forEach(function (idx) { h += itemRow(o, idx); });
     }
     if (o.other && o.other.length) h += '<div class="other-lines"><b>Other lines in the message:</b>\n' + esc(o.other.join('\n')) + '</div>';
+    if (receiptModel(o)) h += '<div class="row-btns" style="margin-top:22px"><button class="btn go wide" data-act="receipt" data-id="' + o.id + '">Receipt for the customer</button></div>';
     h += replyBlock(o);
     h += '<div class="row-btns" style="margin-top:26px"><button class="btn warn" data-act="delorder" data-id="' + o.id + '">Delete this order</button></div>';
     h += '</div></div>';
@@ -882,10 +897,114 @@
       o.items.map(function (i) {
         var nm = i.drink ? DISH[i.key].grab : (i.key ? DISH[i.key].name : i.name);
         return '<li>' + i.qty + ' × ' + esc(nm) + (i.bundle ? ' (' + esc(i.bundle.name) + ')' : '') + (i.mods && i.mods.length ? ' · ' + esc(i.mods.join(' · ')) : '') + '</li>';
-      }).join('') + '</ul>';
+      }).join('') + '</ul>' +
+      (receiptModel(o) ? '<div class="row-btns" style="margin-top:18px"><button class="btn go wide" data-act="receipt" data-id="' + o.id + '">Receipt for the customer</button></div>' : '');
     main.innerHTML = h;
     foot.innerHTML = '<button class="navbtn" data-act="nav" data-href="#/order/' + oid + '">‹ Order</button>' +
       '<button class="navbtn done" data-act="closeorder" data-id="' + oid + '">Close order ✓</button>';
+  }
+
+  // ------------------------------------------------------------------ customer receipt
+  /* Built from the WhatsApp order's own lines and prices, so it says exactly what the customer ordered and paid.
+     Business details come from shared/site.json (name, WhatsApp, and an optional "receipt" block with
+     legalName / kvk / address, shown only when filled in). */
+  var SITE = {};
+  function money(c) { return '\u0192' + (c / 100).toFixed(2); }
+  function phoneText(n) { n = String(n || ''); return /^297\d{7}$/.test(n) ? '+297 ' + n.slice(3, 6) + ' ' + n.slice(6) : '+' + n; }
+  function receiptModel(o) {
+    var lines = o.lines || [];
+    // every line needs its price, or a dish would silently be missing from the receipt
+    if (!lines.length || lines.some(function (l) { return l.price == null; })) return null;
+    var brands = [];
+    lines.forEach(function (l) { var b = l.brandId && BRAND[l.brandId]; if (b && !/drink/i.test(l.raw) && brands.indexOf(b.name) < 0) brands.push(b.name); });
+    var sub = o.subtotalC != null ? o.subtotalC : lines.reduce(function (t, l) { return t + l.price; }, 0);
+    var fee = o.feeC != null ? o.feeC : 0;
+    return { no: o.no || '', when: o.created, brands: brands, mode: o.mode ? o.mode + (o.mode === 'Delivery' && o.area ? ' \u00b7 ' + o.area.replace(/\s*\(please confirm\)/i, '') : '') : '',
+      name: o.name || '', lines: lines.map(function (l) { return { q: l.qty, n: l.raw, p: l.price, d: (l.includes || []).concat(l.mods || []) }; }),
+      sub: sub, fee: fee, feeLabel: o.mode === 'Pickup' ? 'Pickup' : 'Delivery', total: o.totalC != null ? o.totalC : sub + fee,
+      pay: o.pay && o.pay !== '-' ? o.pay : '' };
+  }
+  function receiptDate(ts) {
+    var d = new Date(ts);
+    try { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ' \u00b7 ' + clock(ts); } catch (e) { return today() + ' ' + clock(ts); }
+  }
+  function receiptText(r) {
+    var biz = SITE.name || 'Order Aruba', out = ['*' + biz + ' \u00b7 Receipt*'];
+    if (r.brands.length) out.push(r.brands.join(' \u00b7 '));
+    out.push((r.no ? 'Order #' + r.no + ' \u00b7 ' : '') + receiptDate(r.when));
+    if (r.mode) out.push(r.mode);
+    out.push('');
+    r.lines.forEach(function (l) { out.push(l.q + ' \u00d7 ' + l.n + '  ' + money(l.p)); if (l.d.length) out.push('   ' + l.d.join(' \u00b7 ')); });
+    out.push('', 'Subtotal ' + money(r.sub), r.feeLabel + ' ' + money(r.fee), '*Total ' + money(r.total) + '*');
+    if (r.pay) out.push('Payment: ' + r.pay);
+    out.push('', 'Danki! ' + biz + (SITE.whatsapp ? ' \u00b7 WhatsApp ' + phoneText(SITE.whatsapp) : ''));
+    return out.join('\n');
+  }
+  /* Draws the receipt on a canvas: a paper slip, 600px wide at 2x. Long dish names wrap. */
+  function receiptCanvas(r) {
+    var W = 600, P = 34, S = 2, cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    var F = '"Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+    var INK = '#14171C', GREY = '#6B6558', PAPER = '#FFFDF5', biz = SITE.name || 'Order Aruba', R = SITE.receipt || {};
+    function font(w, px) { ctx.font = w + ' ' + px + 'px ' + F; }
+    function wrap(text, w, px, max) {
+      font(w, px); var words = String(text).split(' '), rows = [], cur = '';
+      words.forEach(function (x) { var t = cur ? cur + ' ' + x : x; if (ctx.measureText(t).width > max && cur) { rows.push(cur); cur = x; } else cur = t; });
+      if (cur) rows.push(cur); return rows;
+    }
+    var ops = [], y = P;
+    function text(t, w, px, color, align, gap) { ops.push({ k: 't', t: t, w: w, px: px, c: color || INK, a: align || 'left', y: y + px }); y += px + (gap == null ? 8 : gap); }
+    function rule() { y += 6; ops.push({ k: 'r', y: y }); y += 16; }
+    function pair(l, r, w, px, color) { ops.push({ k: 'p', l: l, r: r, w: w, px: px, c: color || INK, y: y + px }); y += px + 8; }
+    text(biz.toUpperCase(), '900', 34, INK, 'left', 6);
+    if (r.brands.length) wrap(r.brands.join(' \u00b7 '), '600', 17, W - 2 * P).forEach(function (row) { text(row, '600', 17, GREY, 'left', 4); });
+    [R.legalName, R.address, R.kvk ? 'KvK ' + R.kvk : ''].filter(Boolean).forEach(function (t) { text(t, '500', 15, GREY, 'left', 3); });
+    y += 10;
+    text('RECEIPT' + (r.no ? '  #' + r.no : ''), '800', 22, INK, 'left', 4);
+    text(receiptDate(r.when) + (r.mode ? '  \u00b7  ' + r.mode : ''), '500', 17, GREY);
+    rule();
+    r.lines.forEach(function (l) {
+      var rows = wrap(l.q + ' \u00d7 ' + l.n, '700', 20, W - 2 * P - 120);
+      rows.forEach(function (row, i) { if (i === 0) pair(row, money(l.p), '700', 20); else text(row, '700', 20); });
+      if (l.d.length) wrap(l.d.join(' \u00b7 '), '500', 16, W - 2 * P - 140).forEach(function (row) { text('   ' + row, '500', 16, GREY, 'left', 4); });
+      y += 4;
+    });
+    rule();
+    pair('Subtotal', money(r.sub), '500', 18, GREY);
+    pair(r.feeLabel, money(r.fee), '500', 18, GREY);
+    y += 4; pair('TOTAL', money(r.total), '900', 30);
+    if (r.pay) text('Payment: ' + r.pay, '700', 18);
+    rule();
+    text('Danki!  Bon apetit.', '800', 20, INK, 'center', 6);
+    if (SITE.whatsapp) text('WhatsApp ' + phoneText(SITE.whatsapp), '500', 16, GREY, 'center');
+    y += P - 8;
+    cv.width = W * S; cv.height = Math.ceil(y) * S;
+    ctx.scale(S, S); ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, y);
+    ctx.textBaseline = 'alphabetic';
+    ops.forEach(function (op) {
+      if (op.k === 'r') { ctx.strokeStyle = '#C9C2B2'; ctx.lineWidth = 2; ctx.setLineDash([7, 6]); ctx.beginPath(); ctx.moveTo(P, op.y); ctx.lineTo(W - P, op.y); ctx.stroke(); ctx.setLineDash([]); return; }
+      font(op.w, op.px); ctx.fillStyle = op.c;
+      if (op.k === 'p') { ctx.textAlign = 'left'; ctx.fillText(op.l, P, op.y); ctx.textAlign = 'right'; ctx.fillText(op.r, W - P, op.y); return; }
+      ctx.textAlign = op.a; ctx.fillText(op.t, op.a === 'center' ? W / 2 : P, op.y);
+    });
+    return cv;
+  }
+  var receiptFile = null;
+  function openReceipt(o) {
+    var r = receiptModel(o);
+    if (!r) { toast('Some dishes have no price in this order, so no receipt. Paste the full WhatsApp order from the website.', 4500); return; }
+    var txt = receiptText(r);
+    var ready = document.fonts && document.fonts.load ? document.fonts.load('900 34px "Archivo"').catch(function () {}) : Promise.resolve();
+    ready.then(function () {
+      var cv = receiptCanvas(r), url = cv.toDataURL('image/png');
+      receiptFile = null;
+      cv.toBlob(function (b) { if (b && window.File) receiptFile = new File([b], 'receipt-' + (r.no || clock(r.when).replace(':', '')) + '.png', { type: 'image/png' }); }, 'image/png');
+      openSheet('<h2>Receipt for the customer</h2>' +
+        '<img class="rcpt" src="' + url + '" alt="Receipt">' +
+        '<div class="row-btns"><button class="btn go wide" data-act="rshare">Send picture on WhatsApp</button></div>' +
+        '<div class="row-btns"><a class="btn" href="https://wa.me/?text=' + encodeURIComponent(txt) + '" target="_blank" rel="noopener">Send as text</a>' +
+        '<a class="btn" href="' + url + '" download="receipt-' + esc(r.no || 'order') + '.png">Save picture</a></div>' +
+        '<p class="hint">Tap Send, pick WhatsApp, then pick the customer\u2019s chat.</p>');
+    });
   }
 
   // ------------------------------------------------------------------ sheet
@@ -922,6 +1041,13 @@
 
   // ------------------------------------------------------------------ actions
   var ACT = {
+    receipt: function (el) { var o = getOrder(el.getAttribute('data-id')); if (o) openReceipt(o); },
+    rshare: function () {
+      var f = receiptFile;
+      if (f && navigator.canShare && navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f] }).catch(function () { /* closed the share menu */ });
+      } else toast('This phone can\u2019t share a picture from here. Use \u201cSend as text\u201d or \u201cSave picture\u201d.', 4000);
+    },
     tick: function (el) {
       var list = el.getAttribute('data-list'), id = el.getAttribute('data-id');
       var on = !getTicks(list)[id];
@@ -1094,6 +1220,7 @@
     Object.keys(DISH).forEach(function (k) { if (DISH[k].img) urls.push(new URL(DISH[k].img, location.href).href); });
     navigator.serviceWorker.controller.postMessage({ type: 'warm', urls: urls });
   }
+  fetch('../../shared/site.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (s) { SITE = s || {}; }, function () {});
   fetch('kitchen-data.json', { cache: 'no-cache' })
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(boot)
@@ -1112,6 +1239,8 @@
   // test hook (read-only helpers)
   window.__kitchen = {
     parse: function (t) { return parseOrder(t); },
+    receipt: function (o) { return receiptModel(o); },
+    receiptText: function (o) { var r = receiptModel(o); return r ? receiptText(r) : null; },
     timers: function () { return TIMERS; },
     expire: function () { TIMERS.forEach(function (t) { t.ends = Date.now() - 1; }); saveTimers(); tick(); }
   };

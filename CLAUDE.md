@@ -40,6 +40,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - Four languages for screen text; works offline for pages already opened.
 - Checkout: "When": as soon as possible (while open) or a 15-minute slot tonight; "How will you pay?": Cash or Bank transfer. WhatsApp ticket carries `Time: …` and `Pay: …`; the chef app shows both on the ticket.
 - Chef app: paste the WhatsApp order, cook step by step, ready-made customer replies (confirm, on the way / ready for pickup, sold out).
+- Chef app also: a customer receipt from any pasted order (picture or text, sent on WhatsApp; business lines from site.json and an optional `receipt` block with legalName / kvk / address), and a Receipts tile that opens Book Keeper's receipt scanner (https://bookingkeepingaruba.vercel.app, the chef needs a Book Keeper login).
 
 ## Settings Victor confirmed (8 Oct 2026)
 - WhatsApp `2977477794` is correct.
