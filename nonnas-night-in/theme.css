@@ -1,7 +1,9 @@
 /* Nonna's Night In — colours and type. Shared layout lives in ../shared/order.css */
 @font-face{font-family:"Playfair Display";src:url(assets/playfair.woff2) format("woff2");font-weight:600 700;font-display:swap}
+@font-face{font-family:"Playfair Display";src:url(assets/playfair-italic.woff2) format("woff2");font-weight:400 900;font-style:italic;font-display:swap}
 @font-face{font-family:"Lora";src:url(assets/lora.woff2) format("woff2");font-weight:400 700;font-display:swap}
 :root{
+  --band-bg:#1F3D2B;--band-fg:#F4E9D8;
   --bg:#F4E9D8;--ink:#1F3D2B;--muted:#5C6B5F;--card:#FFFBF4;--line:#E2D3BB;
   --brand:#B23A2E;--brand-ink:#7A241C;--brand-tint:#F0D8D0;--on-brand:#F4E9D8;
   --sig-bg:#1F3D2B;--sig-fg:#F4E9D8;--sig-accent:#C9A227;--sig-accent-fg:#1F3D2B;

@@ -19,7 +19,7 @@
   var DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   var ALLERGEN_NAMES = { gluten: "gluten", egg: "egg", soy: "soy", dairy: "milk", shellfish: "shellfish", sesame: "sesame",
     peanut: "peanuts", mustard: "mustard", fish: "fish", nuts: "tree nuts", celery: "celery" };
-  var FLAG_NAMES = { shrimp: "Shrimp", pork: "Pork", peanut: "Peanuts", spicy: "Spicy", vegetarian: "Vegetarian" };
+  var FLAG_NAMES = { shrimp: "Contains shrimp", pork: "Contains pork", peanut: "Contains peanuts", spicy: "Spicy", vegetarian: "Vegetarian" };
 
   /* ---------------------------------------------------------------- helpers */
   function $(s, r) { return (r || document).querySelector(s); }
@@ -494,6 +494,7 @@
       var field = e.target.closest(".oa-field");
       if (field && field.classList.contains("is-bad") && e.target.value.trim()) field.classList.remove("is-bad");
       updateSend(node);
+      var pre = $(".oa-ticket pre", node); if (pre) pre.textContent = buildMessage();
       paintBar();
     });
     node.addEventListener("change", function (e) {
@@ -589,6 +590,7 @@
     html += '<dl class="oa-sum"><div><dt>Food</dt><dd>' + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + (s.mode === "delivery" ? "Delivery" + (brands.length > 1 ? " (once, all restaurants)" : "") : "Pickup") + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : "Free") + "</dd></div>" +
       '<div class="oa-sum__total"><dt>Total</dt><dd>' + money(total()) + "</dd></div></dl>";
+    html += '<details class="oa-ticket"><summary>See the message we\u2019ll get</summary><pre>' + esc(buildMessage()) + "</pre></details>";
     html += '<p class="oa-order__hint">WhatsApp opens with your order typed out. Tap <b>Send</b> there and we reply to confirm it and the time.</p>' +
       '<button type="button" class="oa-link" data-copy>Copy the order text instead</button>' +
       '<div class="oa-order__send"><a class="oa-btn oa-btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
@@ -718,8 +720,8 @@
     var n = itemCount(b, item.id);
     var orderable = brandStatus(b) === "open" && !item.soldOut;
     var style = item.style || (item.kind === "drink" ? "drink" : "row");
-    var tag = style === "signature" ? '<p class="oa-card__tag">' + ICON.flame + "Signature</p>"
-      : style === "bundle" ? '<p class="oa-card__tag oa-card__tag--deal">Family deal</p>' : "";
+    var tag = style === "signature" ? '<p class="oa-card__tag">' + ICON.flame + "Signature dish</p>"
+      : "";
     var save = "";
     if (item.includes) {
       var sum = item.includes.reduce(function (s, id) { return s + (menu.byId[id] ? menu.byId[id].price : 0); }, 0);
@@ -739,7 +741,7 @@
         (n ? '<span class="oa-card__in">' + n + " in your order</span>" : "") + "</div>" +
         (item.soldOut ? '<span class="oa-card__out">Sold out today</span>'
           : '<button type="button" class="oa-add" data-quick="' + esc(item.id) + '"' + (orderable ? "" : " disabled") + ' aria-label="Add ' + esc(item.name) + '">' +
-            (big ? "<span>Add</span>" : "") + ICON.plus + "</button>") +
+            ICON.plus + "<span>Add</span></button>") +
       "</div></article>";
   }
   function renderBrand() {
@@ -747,23 +749,16 @@
     document.title = menu.name + " · Order on WhatsApp · Aruba";
     var main = $("#oa-main");
     var st = kitchenStatus();
-    var pics = menu.items.filter(function (i) { return i.kind !== "drink" && i.style !== "signature" && i.style !== "bundle"; }).slice(0, 3);
+    var now = st.open
+      ? '<p class="oa-intro__now is-open"><i aria-hidden="true"></i>' + esc(st.label) + ". <span>Delivery " + shortMoney(SITE.deliveryFee) + " for your whole order, usually " + esc(SITE.eta || "") + ". Pickup is free.</span></p>"
+      : '<p class="oa-intro__now"><i aria-hidden="true"></i>Closed right now. ' + esc(st.label) + ". <span>You can order ahead and we confirm when we open. Delivery " + shortMoney(SITE.deliveryFee) + " for your whole order, pickup is free.</span></p>";
     var html = '<a class="oa-back" href="' + path("index.html") + '">' + ICON.back + "All restaurants</a>" +
       '<section class="oa-intro">' +
-        '<div class="oa-intro__media oa-mosaic">' + pics.map(function (p, i) {
-          return '<img src="' + esc(path(p.img)) + '" alt="' + esc(p.name) + '" width="780" height="446" decoding="async"' + (i === 0 ? ' fetchpriority="high"' : "") + ">";
-        }).join("") + statusPill() + "</div>" +
-        '<p class="oa-intro__kicker">' + esc(menu.kicker) + " in Aruba</p>" +
         '<h1 class="oa-intro__h">' + esc(menu.headline) + "</h1>" +
-        '<p class="oa-intro__p">' + esc(menu.intro) + "</p>" +
-        '<ul class="oa-facts">' +
-          "<li><b>" + shortMoney(SITE.deliveryFee) + " delivery</b><span>Flat fee, any area</span></li>" +
-          "<li><b>Free pickup</b><span>From our kitchen</span></li>" +
-          "<li><b>" + esc(SITE.eta || "") + "</b><span>Usual delivery time</span></li>" +
-        "</ul>" +
-        (status === "soon" ? '<p class="oa-note oa-note--warn">' + esc(menu.name) + " opens soon. Have a look around — ordering starts shortly.</p>" : "") +
-        (status === "hidden" ? '<p class="oa-note oa-note--warn">' + esc(menu.name) + " isn’t taking orders right now.</p>" : "") +
-      "</section>";
+        '<p class="oa-intro__p">' + esc(menu.intro) + "</p>" + now +
+      "</section>" +
+      (status === "soon" ? '<p class="oa-note oa-note--warn">' + esc(menu.name) + " opens soon. Have a look around; ordering starts shortly.</p>" : "") +
+      (status === "hidden" ? '<p class="oa-note oa-note--warn">' + esc(menu.name) + " isn\u2019t taking orders right now.</p>" : "");
     menu.sections.forEach(function (sec) {
       var items = menu.items.filter(function (i) { return i.section === sec.id; });
       if (!items.length) return;
@@ -793,7 +788,10 @@
         }, { rootMargin: "-130px 0px -60% 0px" });
         $$(".oa-sec", main).forEach(function (s) { io.observe(s); });
         window.addEventListener("scroll", function () {
-          if (window.scrollY < 160) $$("a", nav).forEach(function (a, i) { a.classList.toggle("on", i === 0); });
+          if (window.scrollY < 160) {
+            $$("a", nav).forEach(function (a, i) { a.classList.toggle("on", i === 0); });
+            if (nav.parentNode.scrollLeft) nav.parentNode.scrollTo({ left: 0 });
+          }
         }, { passive: true });
       }
     }
@@ -825,58 +823,40 @@
   }
 
   /* ---------------------------------------------------------------- home page */
+  function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1]; }
+  function paintSign(first) {
+    var sign = $("[data-oa-sign]");
+    if (!sign) return;
+    var st = kitchenStatus();
+    var h = SITE.hours[DAYS[arubaNow().getDay()]] || SITE.hours.mon;
+    if (st.open) sign.innerHTML = "<b>Open</b><span>" + esc(st.label.replace(/^Open /, "")) + "</span>";
+    else sign.innerHTML = "<b>Closed</b><span>" + esc(st.label) + "</span>";
+    sign.classList.toggle("is-on", st.open);
+    if (first && st.open) sign.classList.add("flick");
+  }
   function renderHub() {
     var ids = brandList(false);
-    $$("[data-oa-count-brands]").forEach(function (n) { n.textContent = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"][ids.length] || ids.length; });
     $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I\u2019m in "); });
-    var areas = $("#oa-areas");
-    if (areas) areas.innerHTML = (SITE.areas || []).map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("");
+    $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
+    paintSign(true);
+    setInterval(function () { paintSign(false); }, 60000);
     Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
-      var rail = $("#oa-rail"), list = $("#oa-list");
-      var picks = [];
-      ids.forEach(function (b) {
+      var street = $("#street");
+      if (!street) return;
+      street.innerHTML = ids.map(function (b, idx) {
         var m = MENU[b];
-        if (!m || brandStatus(b) !== "open") return;
-        m.items.filter(function (i) { return (i.style === "signature" || i.style === "bundle") && !i.soldOut; }).forEach(function (i) { picks.push([b, i]); });
-      });
-      if (rail) {
-        rail.innerHTML = picks.map(function (p) {
-          var b = p[0], i = p[1], m = MENU[b];
-          return '<article class="hub-dish" style="--rest:' + esc(m.color || "#888") + '">' +
-            '<button type="button" class="hub-dish__open" data-open="' + esc(b + "|" + i.id) + '" aria-label="' + esc(i.name + " from " + m.name + ", " + money(i.price)) + '"></button>' +
-            '<img src="' + esc(path(i.img)) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' +
-            '<div class="hub-dish__body"><p class="hub-dish__brand">' + esc(m.name) + "</p><h3>" + esc(i.name) + "</h3>" +
-            '<p class="hub-dish__price">' + money(i.price) + "</p></div>" +
-            '<button type="button" class="oa-add hub-dish__add" data-quick="' + esc(b + "|" + i.id) + '" aria-label="Add ' + esc(i.name) + '">' + ICON.plus + "</button></article>";
-        }).join("");
-      }
-      if (list) {
-        list.innerHTML = ids.map(function (b, idx) {
-          var m = MENU[b];
-          if (!m) return "";
-          var status = brandStatus(b);
-          var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
-          var from = mains.length ? Math.min.apply(null, mains.map(function (i) { return i.price; })) : 0;
-          var sig = m.items.filter(function (i) { return i.style === "signature"; })[0] || m.items[0];
-          return '<a class="hub-rest hub-rest--' + esc(b) + (status !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '">' +
-            '<div class="hub-rest__media"><img src="' + esc(path(m.hero || sig.img)) + '" alt="' + esc(sig.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
-            '<span class="hub-rest__mark"><img src="' + esc(path(m.mark)) + '" alt="" width="64" height="64"></span>' +
-            (status !== "open" ? '<span class="hub-rest__soon">Opening soon</span>' : "") + "</div>" +
-            '<div class="hub-rest__body"><h3>' + esc(m.name) + '</h3><p class="hub-rest__tag">' + esc(m.tagline) + "</p>" +
-            '<p class="hub-rest__meta"><span>' + esc(m.cuisine) + "</span>" + (from && status === "open" ? "<span>Mains from " + money(from) + "</span>" : "") + "</p></div>" +
-            '<span class="hub-rest__go" aria-hidden="true">Menu</span></a>';
-        }).join("");
-      }
-    });
-    BODY.addEventListener("click", function (e) {
-      var q = e.target.closest("[data-quick]");
-      if (q) {
-        var p = q.getAttribute("data-quick").split("|"), line = addItem(p[0], p[1], {}, 1);
-        if (line) toast(line.n + " added");
-        return;
-      }
-      var o = e.target.closest("[data-open]");
-      if (o) { var pp = o.getAttribute("data-open").split("|"); openDish(pp[0], pp[1]); }
+        if (!m) return "";
+        var status = brandStatus(b);
+        var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
+        var from = mains.length ? Math.min.apply(null, mains.map(function (i) { return i.price; })) : 0;
+        var sig = m.items.filter(function (i) { return i.style === "signature"; })[0] || m.items[0];
+        return '<a class="shop shop--' + esc(b) + (status !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '">' +
+          '<div class="shop__text"><h2 class="shop__name">' + esc(m.name) + "</h2>" +
+          '<p class="shop__what">' + esc(m.tagline) + "</p>" +
+          '<p class="shop__from">' + (status === "open" ? (from ? "Mains from " + money(from) : "See the menu") : "See the menu") + "</p></div>" +
+          '<img class="shop__img" src="' + esc(path(m.hero || sig.img)) + '" alt="' + esc(sig.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
+          (status !== "open" ? '<span class="shop__soon">Opening soon</span>' : "") + "</a>";
+      }).join("");
     });
   }
 

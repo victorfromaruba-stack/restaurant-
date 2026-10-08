@@ -3,6 +3,7 @@
 @font-face{font-family:"Fraunces Soft";src:url(assets/fraunces-florin.woff2) format("woff2");font-weight:100 900;font-display:swap;unicode-range:U+0192}
 @font-face{font-family:"Work Sans";src:url(assets/work-sans.woff2) format("woff2");font-weight:400 800;font-display:swap}
 :root{
+  --band-bg:#1B2A4A;--band-fg:#FFF6EE;--band-name:#F28A3C;
   --bg:#FFF6EE;--ink:#1A1520;--muted:#5A4A3A;--card:#FFFBF7;--line:#EED7C3;
   --brand:#E86A17;--brand-ink:#A84A0E;--brand-tint:#FDE4D0;--on-brand:#1B2A4A;
   --sig-bg:#1B2A4A;--sig-fg:#FFF6EE;--sig-accent:#E86A17;--sig-accent-fg:#1B2A4A;

@@ -2,6 +2,7 @@
 @font-face{font-family:"Fredoka";src:url(assets/fredoka.woff2) format("woff2");font-weight:500 700;font-display:swap}
 @font-face{font-family:"Nunito";src:url(assets/nunito.woff2) format("woff2");font-weight:400 800;font-display:swap}
 :root{
+  --band-bg:#0F7B6C;--band-fg:#FFF8EC;
   --bg:#FFF8EC;--ink:#1B1B1B;--muted:#5E5A52;--card:#FFFFFF;--line:#EADFCB;
   --brand:#0F7B6C;--brand-ink:#0B5C51;--brand-tint:#E4F1EC;--on-brand:#FFF8EC;
   --sig-bg:#0F7B6C;--sig-fg:#FFF8EC;--sig-accent:#FF5A4E;--sig-accent-fg:#fff;

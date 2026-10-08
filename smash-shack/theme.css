@@ -2,6 +2,7 @@
 @font-face{font-family:"Anton";src:url(assets/anton.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Inter";src:url(assets/inter.woff2) format("woff2");font-weight:400 800;font-display:swap}
 :root{
+  --band-bg:#FFC72C;--band-fg:#111111;
   color-scheme:dark;
   --bg:#161616;--ink:#F5F0E6;--muted:#B8B0A4;--card:#212121;--line:#333333;
   --brand:#FFC72C;--brand-ink:#FFC72C;--brand-tint:#2A2A2A;--on-brand:#111111;
@@ -15,8 +16,7 @@
   --font-display:"Anton","Inter",system-ui,sans-serif;--display-weight:400;--display-case:uppercase;--display-spacing:.02em;
   --logo-h:34px;
 }
-.oa-card--signature .oa-card__tag{background:#111;color:#FFC72C}
-.oa-card--signature .oa-card__tag svg{color:#D62828}
-.oa-intro__h{font-size:clamp(32px,9vw,44px);line-height:1.02}
+.oa-card__tag svg{color:#D62828}
+.oa-intro__h{font-size:clamp(40px,12vw,60px);line-height:.98}
 .oa-sec__t{font-size:28px}
 .oa-x--float{background:rgba(30,30,30,.9);color:#fff}
