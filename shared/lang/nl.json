@@ -202,5 +202,18 @@
  "Mix dishes from all five restaurants.": "Combineer gerechten van alle vijf restaurants.",
  "You pay {fee} delivery once.": "Je betaalt maar één keer {fee} bezorging.",
  "Start with these": "Begin hiermee",
- "Start here": "Begin hier"
+ "Start here": "Begin hier",
+ "How ordering works": "Zo bestel je",
+ "Pick your dishes": "Kies je gerechten",
+ "From any of the five restaurants, in one order.": "Uit alle vijf restaurants, in één bestelling.",
+ "Send it on WhatsApp": "Stuur het via WhatsApp",
+ "WhatsApp opens with your order already written out. Just press send.": "WhatsApp opent met je bestelling al uitgeschreven. Druk alleen op versturen.",
+ "We reply to confirm": "Wij bevestigen het",
+ "Delivery takes about {eta}.": "Bezorgen duurt ongeveer {eta}.",
+ "Open every night from {open} to {close}.": "Elke avond open van {open} tot {close}.",
+ "Open today {hours}.": "Vandaag open {hours}.",
+ "Closed today.": "Vandaag gesloten.",
+ "{fee} delivery per order, however many restaurants you pick from.": "Bezorging kost {fee} per bestelling, uit hoeveel restaurants je ook kiest.",
+ "Pickup is free.": "Afhalen is gratis.",
+ "Last orders at {time}.": "Laatste bestelling om {time}."
 }

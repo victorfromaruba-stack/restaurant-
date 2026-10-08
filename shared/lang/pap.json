@@ -202,5 +202,18 @@
  "Mix dishes from all five restaurants.": "Combina cuminda di tur cinco restaurant.",
  "You pay {fee} delivery once.": "Bo ta paga entrega di {fee} un biaha so.",
  "Start with these": "Cuminsa cu esakinan",
- "Start here": "Cuminsa aki"
+ "Start here": "Cuminsa aki",
+ "How ordering works": "Con pa ordena",
+ "Pick your dishes": "Scoge bo cuminda",
+ "From any of the five restaurants, in one order.": "Di cualkier di e cinco restaurantnan, den un orden.",
+ "Send it on WhatsApp": "Mand'e via WhatsApp",
+ "WhatsApp opens with your order already written out. Just press send.": "WhatsApp ta habri cu bo orden caba skirbi. Djis primi manda.",
+ "We reply to confirm": "Nos ta contesta pa confirma",
+ "Delivery takes about {eta}.": "Entrega ta tuma mas o menos {eta}.",
+ "Open every night from {open} to {close}.": "Habri tur anochi di {open} pa {close}.",
+ "Open today {hours}.": "Awe habri {hours}.",
+ "Closed today.": "Awe ta cera.",
+ "{fee} delivery per order, however many restaurants you pick from.": "Entrega ta {fee} pa orden, no ta importa di cuanto restaurant bo scoge.",
+ "Pickup is free.": "Bin busca ta gratis.",
+ "Last orders at {time}.": "Ultimo orden na {time}."
 }

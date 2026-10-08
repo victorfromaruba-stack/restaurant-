@@ -202,5 +202,18 @@
  "Mix dishes from all five restaurants.": "Combina platos de los cinco restaurantes.",
  "You pay {fee} delivery once.": "Pagas la entrega de {fee} una sola vez.",
  "Start with these": "Empieza con estos",
- "Start here": "Empieza aquí"
+ "Start here": "Empieza aquí",
+ "How ordering works": "Cómo pedir",
+ "Pick your dishes": "Elige tus platos",
+ "From any of the five restaurants, in one order.": "De cualquiera de los cinco restaurantes, en un solo pedido.",
+ "Send it on WhatsApp": "Envíalo por WhatsApp",
+ "WhatsApp opens with your order already written out. Just press send.": "WhatsApp se abre con tu pedido ya escrito. Solo pulsa enviar.",
+ "We reply to confirm": "Te respondemos para confirmar",
+ "Delivery takes about {eta}.": "La entrega tarda unos {eta}.",
+ "Open every night from {open} to {close}.": "Abierto todas las noches de {open} a {close}.",
+ "Open today {hours}.": "Hoy abierto {hours}.",
+ "Closed today.": "Hoy cerrado.",
+ "{fee} delivery per order, however many restaurants you pick from.": "La entrega cuesta {fee} por pedido, sin importar de cuántos restaurantes pidas.",
+ "Pickup is free.": "Recoger es gratis.",
+ "Last orders at {time}.": "Últimos pedidos a las {time}."
 }

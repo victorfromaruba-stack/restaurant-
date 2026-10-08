@@ -37,7 +37,7 @@ MEASURE = """() => {
   const vh = innerHeight, imgs = [...document.images].filter(i => i.offsetParent !== null);
   const broken = imgs.filter(i => i.complete && i.naturalWidth === 0).map(i => i.getAttribute('src'));
   const first = imgs.filter(i => { const r = i.getBoundingClientRect(); return r.top < vh && r.bottom > 0 && r.width > 60; })
-                    .map(i => (i.currentSrc || i.src).split('/').pop());
+                    .map(i => new URL(i.currentSrc || i.src).pathname.replace('/thumbs/', '/'));   // a dish's thumbnail and full picture are one picture; two dishes may share a file name
   const dup = first.filter((s, n) => first.indexOf(s) !== n);
   return { broken, dup: [...new Set(dup)], sideways: document.documentElement.scrollWidth > innerWidth + 1 };
 }"""

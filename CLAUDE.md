@@ -47,7 +47,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - `manifest.webmanifest` + `shared/icons/`: "Add to home screen" app icon for Order Aruba: "OA" in a neon frame like the OPEN sign (`build/icons/make_icon.py`). The header logo is the wordmark only. No sparkle star anywhere: it reads as an AI-product icon.
 
 ## Features (Oct 2026)
-- Home: OPEN sign (lights up during hours), search across all menus, delivery/pickup + area picker in the top bar, "Order again" (last sent order, one tap), "Start with these" dish rail (each restaurant's signature), restaurant cards (menu.json `hero`: a different dish from the rail, so no photo shows twice).
+- Home: OPEN sign (lights up during hours), search across all menus, delivery/pickup + area picker in the top bar, "Order again" (last sent order, one tap), "Start with these" dish rail (each restaurant's signature), restaurants as rows like a printed menu index (small picture from menu.json `hero`, a different dish from the rail so no photo shows twice; the dish names; from-price), then "How ordering works" (three steps, then fee, pickup, hours and areas, all from site.json).
 - Home also: a row of the five restaurants under the search, desktop arrows on the dish rail.
 - Restaurant page: cover photo (or a silent video loop if menu.json has `video`), logo, open status (one plain line, not pills), "Start here" rail (dishes with `style` signature or bundle; the cover must be a different dish), menu rows with + on each photo, "Goes well with" add-ons in the dish sheet, "Also tonight from our kitchen" at the end.
 - Four languages for screen text; works offline for pages already opened.

@@ -1062,7 +1062,26 @@
     $$("[data-oa-eta]").forEach(function (n) { n.textContent = SITE.eta || ""; });
     $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
     $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I’m in "); });
+    setHTML("[data-oa-how]", howSteps());
+    setHTML("[data-oa-how-note]", esc(howNote()));
     paintSign(false);
+  }
+  function howSteps() {
+    var steps = [
+      [tr("Pick your dishes"), tr("From any of the five restaurants, in one order.")],
+      [tr("Send it on WhatsApp"), tr("WhatsApp opens with your order already written out. Just press send.")],
+      [tr("We reply to confirm"), clean((SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
+    ];
+    return steps.map(function (s) { return "<li><b>" + esc(s[0]) + "</b><span>" + esc(s[1]) + "</span></li>"; }).join("");
+  }
+  function howNote() {
+    var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
+    var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().getDay()]];
+    var hours = same ? tr("Open every night from {open} to {close}.", { open: clock(mins(h[0])), close: clock(mins(h[1])) })
+      : today ? tr("Open today {hours}.", { hours: clock(mins(today[0])) + "–" + clock(mins(today[1])) }) : tr("Closed today.");
+    return [tr("{fee} delivery per order, however many restaurants you pick from.", { fee: shortMoney(SITE.deliveryFee) }),
+      tr("Pickup is free."), tr("We send the pickup address and time on WhatsApp."), hours,
+      SITE.lastOrder ? tr("Last orders at {time}.", { time: clock(mins(SITE.lastOrder)) }) : ""].join(" ").trim();
   }
   function setupIAB() {
     var ua = navigator.userAgent || "";
@@ -1241,17 +1260,20 @@
     var alt = others.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || others[0] || pool[0];
     return alt ? alt.img : m.items[0].img;
   }
+  /* one row per restaurant, like the index of a printed menu: a small picture, the name, what's on it, the price */
   function shopHTML(b, idx) {
     var m = MENU[b];
     if (!m) return "";
     var status = brandStatus(b), from = fromPrice(m);
     var img = heroImg(m), shown = m.items.filter(function (i) { return i.img === img; })[0] || m.items[0];
+    var dishes = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle" && !i.soldOut; })
+      .map(function (i) { return i.name; });
     return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
-      '<div class="shop__media"><img src="' + esc(path(img)) + '" alt="' + esc(shown.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
-        (status !== "open" ? '<span class="shop__soon">' + esc(tr("Opening soon")) + "</span>" : "") + "</div>" +
-      '<div class="shop__body"><img class="shop__mark" src="' + esc(path(m.mark)) + '" alt="" width="48" height="48" loading="lazy">' +
-        '<div><h3 class="shop__name">' + esc(m.name) + "</h3>" +
-        '<p class="shop__meta"><span>' + esc(tr(m.cuisine)) + "</span>" + (from && status === "open" ? "<span>" + esc(tr("From {price}", { price: money(from) })) + "</span>" : "") + "</p></div></div></a>";
+      '<span class="shop__media"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="' + esc(shown.name) + '" width="360" height="360" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
+      '<span class="shop__txt"><span class="shop__top"><h3 class="shop__name">' + esc(m.name) + '</h3><span class="shop__c">' + esc(tr(m.cuisine)) + "</span></span>" +
+        '<span class="shop__dishes">' + esc(dishes.join(", ")) + "</span>" +
+        '<span class="shop__meta">' + (status !== "open" ? '<span class="shop__soon">' + esc(tr("Opening soon")) + "</span>"
+          : from ? esc(tr("From {price}", { price: money(from) })) : "") + "</span></span></a>";
   }
   /* words people type for the same food: English, Papiamento, Dutch, Spanish */
   var SYNONYMS = {
