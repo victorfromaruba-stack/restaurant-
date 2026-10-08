@@ -1,5 +1,10 @@
 ## 8 Oct 2026 update
-- Made with Google Gemini (gemini-3-pro-image), checked against each menu `desc`, saved at the same paths as before: Smash cheeseburger (`smash-shack/assets/dishes/sc-hero.webp`, `sc.webp`), Smash burger combo (`co.webp`), Ground beef street tacos (`taco-brava/assets/art/gt.webp`, a photo-style picture despite the folder name), Crispy shrimp tacos (`taco-brava/assets/dishes/st.webp`), Bitterballen (`oranje-snack/assets/art/bb.webp`). Illustrations, not kitchen photos: every menu says "Pictures are illustrations."
+- Made with Google Gemini (gemini-3-pro-image), each checked against its menu `desc` (counts, fillings, sauces, nothing extra), saved at the same paths as before:
+  - Smash Shack: cheeseburger (`sc-hero.webp`, `sc.webp`), burger combo (`co.webp`)
+  - Taco Brava: ground beef street tacos (`assets/art/gt.webp`), crispy shrimp tacos (`st.webp`)
+  - Oranje Snack: all six (`assets/art/*.webp`; photo-style now, despite the folder name)
+  - Dushi Wok: fried rice, sweet & sour, lo mein, pork stir-fry, shrimp fried rice, wings, egg rolls (`assets/dishes/*.webp`). The Family Table (`ft.webp`) is still the earlier composite.
+- Prompts and the script: `build/gemini/`. Illustrations, not kitchen photos: every menu says "Pictures are illustrations."
 
 ## 7 Oct 2026 update
 - Oranje Snack dish pictures, Taco Brava `gt` and the three cans (`shared/drinks/`) are original drawings made for this site (sources + scripts in `build/art/`). No brand logos on the cans.

@@ -1,0 +1,10 @@
+ref: taco-brava/assets/dishes/cq.webp
+Professional realistic food photograph for a delivery restaurant menu. Match the lighting, surface and camera style of the reference image (dark speckled stone surface, round light-grey stone plate, warm low-key night light, close camera at about 35 degrees), but show ONLY the dish described below. Do not copy the quesadilla, salsa cup or cream from the reference.
+
+The dish: Ground beef street tacos, exactly THREE tacos, side by side on the light stone plate.
+- Each taco is a SMALL SOFT corn tortilla folded into a U shape (soft and pliable, slightly charred spots), NOT a flat tostada and NOT a hard crunchy shell.
+- Filling: seasoned browned ground beef (minced beef, crumbly).
+- Topping on each taco: diced raw white onion, chopped fresh green cilantro, and a spoon of red tomato salsa.
+- Exactly 3 tacos, count them: one, two, three. Not four.
+
+Nothing else on the plate or in the frame: no lime wedges, no sauce cups, no cream, no cheese, no lettuce, no avocado, no chips, no drinks. No text, letters, logos or labels. No people, no hands. Realistic street-taco size, looks delicious and premium. The plate with the 3 tacos fills most of the frame. 16:9 landscape.

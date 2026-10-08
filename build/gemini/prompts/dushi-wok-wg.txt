@@ -1,0 +1,7 @@
+ref: dushi-wok/assets/dishes/fr.webp
+Professional realistic food photograph for a Chinese takeaway delivery menu. Match the surface, light and colour of the reference image (dark slate stone surface, black ceramic tableware, warm low-key night light, a little steam), but show ONLY the dish described below and use the camera angle and dish given here, not the ones in the reference.
+
+Camera: about 35 degrees, close.
+The dish: Soy-garlic crispy chicken wings on a black ceramic plate: about eight crispy floured chicken wing pieces coated in a sticky, glossy dark soy-garlic glaze, sprinkled with sliced green scallion.
+
+Nothing else in the frame: no sesame seeds, no dipping sauce, no fries, no lemon, no chopsticks, no drinks. No text, letters, logos or labels. No people, no hands. Realistic portion for an affordable delivery meal, looks delicious and premium. 16:9 landscape.

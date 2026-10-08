@@ -22,3 +22,4 @@ build/photo-masters/
 __pycache__/
 *.preview.png
 .DS_Store
+build/gemini/out/
