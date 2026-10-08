@@ -44,6 +44,7 @@
     "dairy",
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "dip",
@@ -80,6 +81,7 @@
     "egg",
     "mustard"
    ],
+   "fried": true,
    "options": [
     {
      "id": "mustard",
@@ -110,6 +112,7 @@
     "gluten",
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "leave",
@@ -130,6 +133,9 @@
       }
      ]
     }
+   ],
+   "flags": [
+    "pork"
    ]
   },
   {
@@ -144,6 +150,10 @@
     "dairy",
     "egg",
     "mustard"
+   ],
+   "fried": true,
+   "flags": [
+    "pork"
    ]
   },
   {
@@ -201,6 +211,7 @@
    "allergens": [
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "sauce",

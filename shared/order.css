@@ -29,6 +29,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 a{color:inherit}
 [hidden]{display:none!important}
 :focus-visible{outline:3px solid var(--sodium);outline-offset:2px}
+[tabindex="-1"]:focus{outline:none}  /* headings that only receive focus so screen readers start there */
 h1,h2,h3{margin:0;font-weight:800;line-height:1.1}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .oa-skip{position:absolute;left:-9999px;top:8px;z-index:100;background:var(--cream);color:var(--night);padding:10px 14px;border-radius:10px}

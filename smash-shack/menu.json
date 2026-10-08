@@ -90,6 +90,7 @@
     "gluten",
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "leave",
@@ -174,6 +175,7 @@
     "egg",
     "dairy"
    ],
+   "fried": true,
    "options": [
     {
      "id": "leave",
@@ -207,6 +209,7 @@
     "gluten",
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "dip",
@@ -240,6 +243,7 @@
    "allergens": [
     "dairy"
    ],
+   "fried": true,
    "options": [
     {
      "id": "leave",
@@ -262,7 +266,8 @@
    "kind": "side",
    "desc": "A side of crispy fries.",
    "img": "smash-shack/assets/dishes/fs.webp",
-   "allergens": []
+   "allergens": [],
+   "fried": true
   },
   {
    "id": "ck",
