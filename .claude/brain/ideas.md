@@ -9,15 +9,15 @@ under 25 lines: drop ideas that stopped making sense.
 ## Open
 - [ ] H · S · On Victor's VPS copy only: add the 8 Oct allergens (tenders milk; fried rice, lo mein, Family Table sesame; lo mein, pork stir-fry, Family Table shellfish; bitterballen mustard; chips gluten) to the private kitchen-data builder in ops/kitchen/_build/, so a rebuild keeps them (needs Victor's server) · done when: a rebuilt kitchen-data.json still passes qa/check_site.py
 - [ ] M · M · Share a dish: a share button on every dish sheet and links like taco-brava/#d=bt that open that dish (customers hear about us on WhatsApp) · done when: a shared link opens the dish ready to add, in all four languages (idea from a skill test run)
-- [ ] H · S · Smash Shack and Taco Brava: the dish under "Start here" is still a glossy generated shot (birria has paint streaks). Needs real photos (needs Victor)
+- [ ] H · S · Smash Shack: the cheeseburger under "Start here" is still a generated shot with a thick patty. Needs a real photo (needs Victor)
 - [ ] M · S · Home "basics" strip (ƒ5 delivery / Free pickup / 10 PM–2 AM) is a three-column feature grid, the template look. Try one plain sentence block · done when: screenshots read as a note from the kitchen, not a feature grid
 - [ ] H · L · Real photos, signatures first (needs Victor) · done when: the five signature dishes are real photos
 - [ ] M · M · Chef app: send cash sales to Book Keeper at Close up (Book Keeper's /api/intake/sales is live; only orders paid cash, same date the order was placed, never bank transfers) · done when: a test order sent twice shows once in Book Keeper
 - [ ] M · S · Unused menu.json fields (`kicker`, `headline`, `intro`) are never shown: use the best line of each somewhere real, or remove them
-- [ ] L · M · Picture cards: a subtle shared grade (slightly less saturation) so the illustrations look like one set, not five prompts · done when: before/after screenshots look calmer and Victor agrees
 - [ ] M · S · 320px check of the chef app's Menu screens (long dish names, the three status buttons)
 
 ## Shipped
+- [x] 2026-10-08 · L · M · One shared grade on every generated picture and cover video (build/grade.py); birria paint dust removed
 - [x] 2026-10-08 · M · M · Chef app Receipts: photo straight into Book Keeper's review list, no login (books.js, 72b0161); Book Keeper intake API live
 - [x] 2026-10-08 · H · S · Home: each restaurant card shows a different dish from the one in the dish rail (no photo twice on the home page) · done when: check.py has no "restaurant card shows the same photo" warning
 - [x] 2026-10-08 · H · S · Replace the sparkle star in the Order Aruba logo (it's the icon of AI products) · done when: no four-point star on any page

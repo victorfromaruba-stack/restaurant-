@@ -39,6 +39,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - `qa/check_site.py`: checks every image, thumbnail, page and language, the Google data, and writes real WhatsApp samples to `qa/wa-samples.json`. Run it after every change; it must say 0 problems.
 - `build/thumbs.py`: 360px square thumbnails for menu rows (`<picture folder>/thumbs/<same file name>`, same format: WebP, or JPEG for iPhone photos from the chef app). Run after adding or replacing any dish picture.
 - `build/gemini/`: `make_picture.py` + one prompt per dish for Gemini pictures (key only from `GEMINI_API_KEY`, never in the repo). Look at every try and check it against the menu text before `use`.
+- `build/grade.py`: one shared colour grade for the generated dish pictures and cover videos (a touch less colour, warm, fine grain), so the five restaurants read as one set. Done once per file, logged in `build/graded.txt`. Never run it on a real photo. `build/art/birria_no_paint.py` took the paint dust off the birria picture.
 - `build/bundle_pictures.py`: the Family Table picture is panels of the dishes it includes; rerun after replacing any of them.
 - `build/og/make_og.py`: rebuilds the link preview cards in `shared/og/` from the menus. `build/seo.py`: Google data (JSON-LD in the pages), `sitemap.xml`, `robots.txt`; run after changing hours, areas or menus.
 - `build/art/`: scripts + SVG sources for the drawn pictures (Oranje Snack dishes, the three cans).
