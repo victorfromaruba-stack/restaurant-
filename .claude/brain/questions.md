@@ -5,7 +5,7 @@ Ask at most one or two per message, in plain words, with the choice spelled out.
 When answered: record the decision in victor.md (dated) and delete it here.
 
 - Papiamento: is `shared/lang/pap.json` right? He said "Oke" on 8 Oct, which may or may not mean yes. Ask once, clearly, with three or four lines to check.
-- Book Keeper key for the kitchen phone: has he made it (Book Keeper → Settings → Connected apps) and pasted it into the chef app's Receipts screen? The Connected apps screen had never been opened in a browser before he uses it.
+- Book Keeper: the first phone is connected (key "Kitchen App", 8 Oct). Does the chef's own phone need a key too? And did the first real receipt arrive and read well?
 - Real photos: one photo of the takeaway box or bag going out, then the signature dishes (Menu tile → dish → Take a new photo). Real photos are the biggest single fix for "looks AI made".
 - Taco Brava's birria picture has pink and green paint streaks behind it, and Smash Shack's burger has a thick patty, not a thin smashed one. Real photos would fix both.
 - One sentence in his own words about why this kitchen exists (for the home page). Only use it if he writes it.

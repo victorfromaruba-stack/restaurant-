@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-08 · claude (cloud) · Victor made the first Book Keeper key (Kitchen App) and connected the chef app; his own Book Keeper business is now a paid account · waiting: first real receipt
 - 2026-10-08 · claude (cloud) · Book Keeper switched on with Victor's OK (migration 026 applied and read back, PR #3 merged, live checks pass); chef app Receipts sends photos straight to Book Keeper, no login (72b0161) · waiting: Victor to make the kitchen phone's key
 - 2026-10-08 · claude (cloud) · Chef app Connect screen: one pre-filled GitHub link (name, 1 year, Contents read and write), so making a key is pick restaurant- → Generate → paste · waiting: Victor to make the keys
 - 2026-10-08 · claude (cloud) · New general skill anti-ai-slop (slop_check.py for any files, URL or text; shoot.py for any folder or URL), tested twice against no-skill runs; packaged for Victor's Claude profile · waiting: Victor to tap Save skill
