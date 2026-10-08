@@ -10,8 +10,8 @@
  "intro": "Cooked to order in our delivery kitchen in Aruba. Hot from the wok, packed to travel.",
  "logo": "shared/logos/dushi-wok.svg",
  "mark": "shared/logos/dushi-wok-mark.webp",
- "hero": "dushi-wok/assets/dishes/fr.webp",
- "imageNote": "Photos show how we plate it.",
+ "hero": "dushi-wok/assets/dishes/lm.webp",
+ "imageNote": "Pictures are illustrations.",
  "sections": [
   {
    "id": "family",
@@ -52,7 +52,8 @@
     "gluten",
     "egg",
     "soy"
-   ]
+   ],
+   "fried": true
   },
   {
    "id": "fr",
@@ -101,6 +102,7 @@
     "egg",
     "soy"
    ],
+   "fried": true,
    "options": [
     {
      "id": "sauce",
@@ -243,6 +245,7 @@
     "gluten",
     "sesame"
    ],
+   "fried": true,
    "options": [
     {
      "id": "glaze",
@@ -286,6 +289,7 @@
     "egg",
     "soy"
    ],
+   "fried": true,
    "flags": [
     "pork"
    ]
@@ -317,5 +321,9 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ]
+ ],
+ "video": {
+  "src": "dushi-wok/video/cover.mp4",
+  "poster": "dushi-wok/video/cover.webp"
+ }
 }

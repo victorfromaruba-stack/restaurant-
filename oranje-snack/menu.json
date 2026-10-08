@@ -11,7 +11,7 @@
  "logo": "shared/logos/oranje-snack.svg",
  "mark": "shared/logos/oranje-snack-mark.webp",
  "hero": "oranje-snack/assets/art/bb.webp",
- "imageNote": "Pictures are drawings until our kitchen photos are ready.",
+ "imageNote": "Pictures are illustrations.",
  "sections": [
   {
    "id": "snacks",
@@ -44,6 +44,7 @@
     "dairy",
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "dip",
@@ -80,6 +81,7 @@
     "egg",
     "mustard"
    ],
+   "fried": true,
    "options": [
     {
      "id": "mustard",
@@ -110,6 +112,7 @@
     "gluten",
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "leave",
@@ -130,6 +133,9 @@
       }
      ]
     }
+   ],
+   "flags": [
+    "pork"
    ]
   },
   {
@@ -144,6 +150,10 @@
     "dairy",
     "egg",
     "mustard"
+   ],
+   "fried": true,
+   "flags": [
+    "pork"
    ]
   },
   {
@@ -201,6 +211,7 @@
    "allergens": [
     "egg"
    ],
+   "fried": true,
    "options": [
     {
      "id": "sauce",
@@ -251,5 +262,9 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ]
+ ],
+ "video": {
+  "src": "oranje-snack/video/cover.mp4",
+  "poster": "oranje-snack/video/cover.webp"
+ }
 }

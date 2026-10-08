@@ -2,11 +2,19 @@
   cd brand-hub && python3 -m http.server 8462 --bind 127.0.0.1 &   then   python3 qa/check_site.py
 Checks every menu image exists, every page loads with no errors, and builds the WhatsApp sample
 messages in qa/wa-samples.json from the real ordering code, testing the owner's rules."""
-import asyncio, json, os, re, sys
+import asyncio, json, os, re, subprocess, sys
 from playwright.async_api import async_playwright
+from PIL import Image, ImageChops, ImageStat
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = os.environ.get("QA_BASE", "http://127.0.0.1:8462/")
 fails = []
+def square_sample(path):
+    im = Image.open(path).convert("L"); s = min(im.size); l, t = (im.width - s) // 2, (im.height - s) // 2
+    return im.crop((l, t, l + s, t + s)).resize((24, 24), Image.LANCZOS)
+def thumb_ok(img):
+    d, f = os.path.split(os.path.join(ROOT, img)); th = os.path.join(d, "thumbs", os.path.splitext(f)[0] + ".webp")
+    if not os.path.exists(th): return False
+    return ImageStat.Stat(ImageChops.difference(square_sample(os.path.join(ROOT, img)), square_sample(th))).mean[0] < 8
 def check(ok, msg):
     print(("PASS " if ok else "FAIL ") + msg)
     if not ok: fails.append(msg)
@@ -17,11 +25,18 @@ menus = {b: json.load(open(os.path.join(ROOT, b, "menu.json"), encoding="utf-8")
 for b, m in menus.items():
     for key in ("logo", "mark", "hero"):
         check(os.path.exists(os.path.join(ROOT, m[key])), f"{b} {key} file exists ({m[key]})")
+    if m.get("video"):
+        for k in ("src", "poster"):
+            check(os.path.exists(os.path.join(ROOT, m["video"][k])), f"{b} cover video {k} exists ({m['video'][k]})")
+        src = os.path.join(ROOT, m["video"]["src"])
+        check(not os.path.exists(src) or os.path.getsize(src) <= 1.5 * 1024 * 1024, f"{b} cover video is under 1.5 MB")
     ids = [i["id"] for i in m["items"]]
     check(len(ids) == len(set(ids)), f"{b} item ids are unique")
     secs = {s["id"] for s in m["sections"]}
     for it in m["items"]:
         check(os.path.exists(os.path.join(ROOT, it["img"])), f"{b}/{it['id']} image exists ({it['img']})")
+        if it.get("kind") != "drink" and os.path.exists(os.path.join(ROOT, it["img"])):
+            check(thumb_ok(it["img"]), f"{b}/{it['id']} row thumbnail is there and up to date (else run: python3 build/thumbs.py)")
         check(it["section"] in secs, f"{b}/{it['id']} is in a real section")
         check(isinstance(it["price"], int) and it["price"] > 0, f"{b}/{it['id']} has a price in cents")
         for inc in it.get("includes", []):
@@ -34,6 +49,10 @@ for b, m in menus.items():
 tb = {i["id"]: i for i in menus["taco-brava"]["items"]}
 check(tb["bt"]["price"] == 2700, "Birria tacos stay at ƒ27.00")
 check(site["deliveryFee"] == 500, "Delivery fee is ƒ5.00")
+lang = subprocess.run([sys.executable, os.path.join(ROOT, "build/lang_keys.py"), "--check"], capture_output=True, text=True)
+seo = subprocess.run([sys.executable, os.path.join(ROOT, "build/seo.py"), "--check"], capture_output=True, text=True)
+check(seo.returncode == 0, "Google listing data matches site.json and the menus (else run: python3 build/seo.py)" + ("" if seo.returncode == 0 else ": " + seo.stdout.strip()))
+check(lang.returncode == 0, "every screen phrase has a Papiamento, Dutch and Spanish translation" + ("" if lang.returncode == 0 else ":\n" + lang.stdout[-1500:]))
 
 SAMPLES = [
   ("single brand, delivery, modifiers", [("dushi-wok", "fr", {"leave": ["onion", "egg"]}, 2), ("dushi-wok", "ss", {"sauce": "on-the-side"}, 1), ("dushi-wok", "ck", {}, 1)],
@@ -88,6 +107,25 @@ async def main():
             check(first.startswith("*Kitchen order*") if nb > 1 else first.endswith(re.sub(r"^.*?(#\d+)$", r"\1", first)) and "order*" in first, f"[{title}] header names the restaurant / kitchen order")
             check("DW-" not in msg and "TB-" not in msg and "OS-" not in msg, f"[{title}] no internal codes")
         await pg.evaluate("OrderAruba.clear()")
+        # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
+        en_msg = out[0]["message"]
+        for code in ("pap", "nl", "es"):
+            await pg.evaluate("c => localStorage.setItem('orderaruba.lang.v1', c)", code)
+            for url in ["index.html", "dushi-wok/index.html", "cart.html"]:
+                errs.clear()
+                await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
+                check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))
+            await pg.evaluate("OrderAruba.clear()")
+            title, lines, meta = SAMPLES[0]
+            for (br, iid, opts, q) in lines:
+                await pg.evaluate("([b,i,o,q]) => OrderAruba.loadMenu(b).then(() => OrderAruba.addItem(b,i,o,q))", [br, iid, opts, q])
+            await pg.evaluate("m => OrderAruba._set(m)", meta)
+            msg = await pg.evaluate("OrderAruba.buildMessage()")
+            time_ok = re.search(r"^Time: (As soon as possible|(Tomorrow )?(Midnight|\d{1,2}(:\d\d)?\s(AM|PM)))$", msg, re.M) is not None
+            norm = lambda t: re.sub(r"^Time: .*$", "Time:", re.sub(r"#\S+", "#", t), flags=re.M)
+            check(time_ok and norm(msg) == norm(en_msg), f"[{code}] WhatsApp ticket is the same English text")
+            await pg.evaluate("OrderAruba.clear()")
+        await pg.evaluate("localStorage.removeItem('orderaruba.lang.v1')")
         json.dump({"_about": "Real WhatsApp messages produced by shared/order-app.js. Regenerate with python3 qa/check_site.py.",
                    "samples": out}, open(os.path.join(ROOT, "qa/wa-samples.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         await b.close()

@@ -195,6 +195,7 @@
       }
       var br = matchBrand(bare);
       if (br) { cur = br.id; last = null; if (!o.title) o.title = br.name; return; }
+      if (/^drinks?$/i.test(bare)) { last = null; return; }   // website groups cans under *Drinks*
       if (/^total\b/i.test(bare)) { var tm = /ƒ\s*([\d.,]+)/.exec(bare); if (tm) o.total = tm[1]; }
       if (/^(sub\s*-?\s*total|total|delivery fee|service|tip|discount|fee)\b/i.test(bare)) {
         if (/^delivery fee/i.test(bare)) sawFee = true;

@@ -1,0 +1,7 @@
+ref: dushi-wok/assets/dishes/fr.webp
+Professional realistic food photograph for a Chinese takeaway delivery menu. Match the surface, light and colour of the reference image (dark slate stone surface, black ceramic tableware, warm low-key night light, a little steam), but show ONLY the dish described below and use the camera angle and dish given here, not the ones in the reference.
+
+Camera: about 50 degrees, pulled back enough to show three containers.
+The dish: a family meal of exactly THREE separate black bowls side by side: (1) chicken fried rice, (2) sweet & sour crunch chicken (crispy chicken with peppers and onion in glossy red-orange sauce) with white rice, (3) chicken lo mein (egg noodles with chicken, cabbage and scallion).
+
+Nothing else in the frame: no fourth dish, no egg rolls, no drinks, no chopsticks, no sauce dishes. No text, letters, logos or labels. No people, no hands. Realistic portion for an affordable delivery meal, looks delicious and premium. 16:9 landscape.

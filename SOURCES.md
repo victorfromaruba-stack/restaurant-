@@ -1,3 +1,11 @@
+## 8 Oct 2026 update
+- Made with Google Gemini (gemini-3-pro-image), each checked against its menu `desc` (counts, fillings, sauces, nothing extra), saved at the same paths as before:
+  - Smash Shack: cheeseburger (`sc-hero.webp`, `sc.webp`), burger combo (`co.webp`)
+  - Taco Brava: ground beef street tacos (`assets/art/gt.webp`), crispy shrimp tacos (`st.webp`)
+  - Oranje Snack: all six (`assets/art/*.webp`; photo-style now, despite the folder name)
+  - Dushi Wok: fried rice, sweet & sour, lo mein, pork stir-fry, shrimp fried rice, wings, egg rolls (`assets/dishes/*.webp`). The Family Table (`ft.webp`) is still the earlier composite.
+- Prompts and the script: `build/gemini/`. Illustrations, not kitchen photos: every menu says "Pictures are illustrations."
+
 ## 7 Oct 2026 update
 - Oranje Snack dish pictures, Taco Brava `gt` and the three cans (`shared/drinks/`) are original drawings made for this site (sources + scripts in `build/art/`). No brand logos on the cans.
 - Dushi Wok Family Table picture (`dushi-wok/assets/dishes/ft.webp`) is a composite of the fried rice, sweet & sour and lo mein photos (master in `build/photo-masters/dushi-wok/`).
