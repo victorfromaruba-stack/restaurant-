@@ -11,3 +11,5 @@ When answered: record the decision in victor.md (dated) and delete it here.
 - One sentence in his own words about why this kitchen exists (for the home page). Only use it if he writes it.
 - Registered business name and KvK number, for customer receipts (`receipt` block in site.json). Only if he wants them on receipts.
 - Each phone that changes the menu needs its own GitHub key (steps on the chef app's Menu screen). Has he and the chef set it up?
+- Google Business Profile: will Victor open one for Order Aruba (delivery area, hours 10 PM–2 AM, real photos, website as order link)? It's free and it's where 'food delivery near me' searches land. Then a review link goes in the after-delivery reply.
+- Tourists and cards: should the site say whether US dollars are accepted (and change given)? Card machine for the driver (CMB wireless Afl. 100/month + fees) or a Sentoo link (Aruba Bank business account) are his call.
