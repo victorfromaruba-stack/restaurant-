@@ -5,7 +5,7 @@ Read `CLAUDE.md` first: it holds the rules, the confirmed settings and the file 
 ## Where things are
 - **Repo:** github.com/victorfromaruba-stack/restaurant- (public).
 - **Live site:** https://victorfromaruba-stack.github.io/restaurant-/ (GitHub Pages serves the `main` branch).
-- **Work in progress:** branch `audit-fixes`. `main` is untouched. Merge only after Victor has checked the branch on his phone.
+- **Status:** `audit-fixes` was merged into `main` on 8 Oct 2026 with Victor's OK and is live. Victor said a pull request isn't needed; he gave permission to put finished, checked work straight on `main`.
 - **Victor:** works from his phone and is not a coder. Send him screenshots and short plain answers, not code.
 
 ## What an outside review found, and what's done
@@ -49,7 +49,6 @@ One commit per step on `audit-fixes`; `qa/check_site.py` reports 0 problems. Vic
 - Answered 8 Oct: payment "cash or bank transfer" and last orders 1:30 AM are set in site.json; frikandel has pork (flag stays); videos approved at top quality (Veo 3.1 standard).
 - Papiamento corrections → `shared/lang/pap.json`.
 - Videos: the Gemini credit ran out and Victor has no budget for it now (8 Oct), so each restaurant got a free cover loop instead: an 8-second slow push-in on its cover photo (`make_video.py still`, then `use`). Real Veo cooking clips can replace them later when there is credit (steps under Videos).
-- Merge `audit-fixes` into `main` only when he says so.
 
 ## Pictures and videos with Google Gemini
 Victor wants Gemini to make the dish pictures and the restaurant videos.
@@ -98,4 +97,4 @@ To redo one: `python3 build/gemini/make_picture.py make <restaurant> <id>`, look
 1. `python3 -m http.server 8462 --bind 127.0.0.1` in the repo, then `QA_BASE=http://127.0.0.1:8462/ python3 qa/check_site.py`. It must report 0 problems.
 2. Take Playwright screenshots at 390×844 and 320×640 with the clock fixed to an open time (Aruba 11:10 PM = `2026-10-09T03:10:00Z`) and a closed time (2 PM = `2026-10-08T18:00:00Z`).
 3. Send a test order through to the WhatsApp preview and paste it into the chef app (`ops/kitchen/`) to confirm it reads every line.
-4. Commit to `audit-fixes`, push, and send Victor screenshots. Merge to `main` only when he says so.
+4. Commit, push, and send Victor phone screenshots. Only put work on `main` once `qa/check_site.py` says 0 problems.
