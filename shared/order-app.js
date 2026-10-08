@@ -1060,14 +1060,17 @@
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     $$("[data-oa-fee-t]").forEach(function (n) { n.textContent = tr(n.getAttribute("data-oa-fee-t"), { fee: shortMoney(SITE.deliveryFee) }); });
     setHTML("[data-oa-hero]", esc(tr("Mix dishes from all five restaurants.")) + " <b>" + esc(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
-    setHTML("[data-oa-deliver-to]", esc(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + esc(tr("Elsewhere?")) +
-      ' <a data-oa-ask href="#" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.");
+    setHTML("[data-oa-deliver-to]", deliverToHTML());
     $$("[data-oa-eta]").forEach(function (n) { n.textContent = SITE.eta || ""; });
     $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
     $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I’m in "); });
     setHTML("[data-oa-how]", howSteps());
     setHTML("[data-oa-how-note]", esc(howNote()));
     paintSign(false);
+  }
+  function deliverToHTML() {
+    return esc(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + esc(tr("Elsewhere?")) +
+      ' <a data-oa-ask href="' + esc(waLink("Hi! Do you deliver to my area? I’m in ")) + '" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.";
   }
   function howSteps() {
     var steps = [
@@ -1186,6 +1189,10 @@
         '<div class="' + (s.id === "drinks" ? "cans" : "rows") + '">' + s.items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
     });
     html += '<section class="sec also" id="oa-also" aria-labelledby="h-also" hidden></section>';
+    // people arriving from a shared dish link land here first, so the page explains ordering too
+    html += '<section class="sec how" aria-labelledby="h-how"><h2 class="sec__t" id="h-how">' + esc(tr("How ordering works")) + "</h2>" +
+      '<ol class="how__steps" data-oa-how>' + howSteps() + '</ol><p class="how__note" data-oa-how-note>' + esc(howNote()) + "</p>" +
+      '<p class="areas" data-oa-deliver-to>' + deliverToHTML() + "</p></section>";
     html += '<footer class="pfoot"><p>' + esc(tr(menu.imageNote) + " " + tr("Prices in Aruban florin (ƒ).")) + "</p>" +
       '<a class="pfoot__all" href="' + path("index.html") + '">' + esc(tr("All restaurants")) + "</a>" + langSwitch() + "</footer>";
     main.innerHTML = html;
@@ -1194,11 +1201,11 @@
       var others = brandList(false).filter(function (x) { return x !== b; });
       Promise.all(others.map(function (x) { return loadMenu(x).catch(function () { return null; }); })).then(function () {
         var box = $("#oa-also");
-        var cards = others.filter(function (x) { return MENU[x]; }).map(function (x) { return miniShop(x); }).join("");
+        var cards = others.filter(function (x) { return MENU[x]; }).map(function (x) { return shopHTML(x, 9); }).join("");
         if (!box || !cards) return;
         box.innerHTML = '<h2 class="sec__t" id="h-also">' + esc(tr("Also tonight from our kitchen")) + "</h2>" +
           '<p class="also__sub">' + esc(tr("Mix dishes from any of them.") + " " + tr("Still one {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</p>" +
-          '<div class="minis">' + cards + "</div>";
+          '<div class="shops">' + cards + "</div>";
         box.hidden = false;
       });
     });
@@ -1261,12 +1268,6 @@
     navigator.serviceWorker.register(path("sw.js")).catch(function () { /* not supported here: the site works without it */ });
   }
   function later(fn) { if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 2500 }); else setTimeout(fn, 600); }
-  function miniShop(b) {
-    var m = MENU[b];
-    return '<a class="mini" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
-      '<img src="' + esc(path(heroImg(m))) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' +
-      '<span class="mini__n">' + esc(m.name) + '</span><span class="mini__c">' + esc(tr(m.cuisine)) + "</span></a>";
-  }
 
   /* ---------------------------------------------------------------- home page */
   /* the restaurant card's picture ("hero" in menu.json), only while a dish on the menu has that picture and
