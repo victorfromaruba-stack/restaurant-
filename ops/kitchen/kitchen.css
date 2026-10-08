@@ -376,3 +376,11 @@ mark.skip { background: var(--hot); color: #fff; text-transform: uppercase; font
 .me-photo img[hidden] { display: none; }
 .me-photo label.btn { cursor: pointer; }
 .me-form { padding-bottom: 20px; }
+
+/* ---------- receipts into Book Keeper (books.js) ---------- */
+.bk-take { min-height: 96px; font-size: 22px; }
+.bk-prev { display: block; width: 100%; max-height: 62vh; object-fit: contain; border-radius: 12px; background: var(--paper); margin: 4px 0 14px; }
+.bk-pdf { padding: 18px; border-radius: 12px; background: var(--night-2); }
+.bk-row .bk-noimg { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 10px; background: var(--night-3); display: grid; place-items: center; font-weight: 800; color: var(--haze); }
+.bk-warn { color: var(--sodium) !important; font-weight: 700; }
+.hint a { color: var(--sodium); }

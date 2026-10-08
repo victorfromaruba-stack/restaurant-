@@ -27,8 +27,6 @@
     del: function (k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
   };
   var KEY_ORDERS = 'kitchen.orders.v1';
-  // Victor's bookkeeping app. Shop receipts are photographed there (the chef needs a Book Keeper login).
-  var BOOKKEEPER = 'https://bookingkeepingaruba.vercel.app';
   var KEY_TIMERS = 'kitchen.timers.v1';
   function ticksKey(list, date) { return 'kitchen.' + list + '.' + date; }
 
@@ -634,7 +632,7 @@
       (open.length ? '<span class="count">' + open.length + ' open order' + (open.length > 1 ? 's' : '') + '</span>' : '') + '</a>' +
       '<a class="big-mode close" href="#/close"><b>Close up</b><span>Cool down, label, throw away, clean</span>' +
       '<span class="count">' + cc.done + ' of ' + cc.total + ' done today</span></a>' +
-      '<a class="big-mode books" href="' + esc(BOOKKEEPER + '/dashboard/receipts') + '" target="_blank" rel="noopener"><b>Receipts</b>' +
+      '<a class="big-mode books" href="#/receipts"><b>Receipts</b>' +
       '<span>Bought something? Take a photo of the shop receipt. It goes into Book Keeper.</span></a>' +
       '<a class="big-mode menu" href="#/menu"><b>Menu</b><span>Sold out, prices, photos, new dishes on the website</span></a>' +
       '</div>' +
@@ -1033,6 +1031,7 @@
     else if (r[0] === 'task') screenTask(r[1], r[2], +r[3] || 0);
     else if (r[0] === 'ready') screenReady(r[1]);
     else if (r[0] === 'menu' && window.KitchenMenu) window.KitchenMenu.show(r.slice(1));
+    else if (r[0] === 'receipts' && window.KitchenBooks) window.KitchenBooks.show(r.slice(1));
     else screenHome();
     if (keepScroll === true && route === lastRoute) main.scrollTop = y;
     else if (!/^(prep|close)/.test(route)) main.scrollTop = 0;
@@ -1238,7 +1237,7 @@
     });
   }
 
-  // for menu-editor.js (loaded after this file)
+  // for menu-editor.js and books.js (loaded after this file)
   window.__kitchenUI = { esc: esc, main: main, foot: foot, store: store, toast: toast, setBar: setBar, go: go,
     openSheet: openSheet, closeSheet: closeSheet, render: render };
 
