@@ -42,11 +42,11 @@ Victor, not less.
    `git pull --rebase origin main` (someone may have pushed while you worked), run QA
    again if anything came in, then `git push -u origin main`. Wait for GitHub Pages
    (about a minute) and check the change is on https://victorfromaruba-stack.github.io/restaurant-/.
-   If the push is refused (403, "not in this session's authorized repository set"), call
-   the tool `mcp__claude-code-remote__add_repo` directly (owner victorfromaruba-stack,
-   repo restaurant-, access push; it's loaded already, ToolSearch won't list it) and push
-   again. Only if that fails too: the work is lost when the session ends, so say so plainly
-   in the three lines.
+   The scheduled run happens in the "Order Aruba daily worker" session, which was started
+   with this repo attached, so the push works. If a push is ever refused (403, "not in this
+   session's authorized repository set"), this session has no repo access: try
+   `mcp__claude-code-remote__add_repo` (owner victorfromaruba-stack, repo restaurant-,
+   access push) if you have it, and otherwise stop and say so plainly in the three lines.
 7. **Remember it.** Tick the idea `[x]` with date and commit, move it under Shipped,
    add the journal line, add any lesson you learned, and add new ideas you spotted.
    Run `brain.py check`. Commit and push the brain update.
@@ -57,7 +57,9 @@ Victor, not less.
    Why: <the one-line reason>.
    You could: <one thing only he can do, from questions.md>, or nothing needed.
    ```
-   Then the live link.
+   Then the live link. In the scheduled run, also send the same text with the
+   PushNotification tool (status proactive): the worker session's reply alone doesn't
+   reach his phone.
 
 If nothing safe is worth doing (everything left needs Victor), don't make busywork.
 Say so in the three lines, ask the most useful question from `questions.md`, and stop.

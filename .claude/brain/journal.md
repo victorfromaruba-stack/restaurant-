@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-08 · claude (cloud) · First scheduled daily run (17:48Z) failed: no repo in the fresh routine session, add_repo not loaded, nothing changed. Fixed: new routine trig_01Pdk9aemxeYjPhZN8zAxnzk fires into the 'Order Aruba daily worker' session (repo attached, access tested ok); old routine switched off · waiting: tomorrow's run 1:48 PM Aruba
 - 2026-10-08 · claude (cloud) · Big pass for Victor ('improve the site by 80%', 'grab things from the big ones'): one picture grade + birria paint off, home rows + how ordering works + facts line, share a dish (#d= links), restaurant pages open on the menu, order list pictures, WhatsApp number shown, fixes from a fresh-eyes review (94f017b and before) · waiting: Gemini credit for the two burger pictures; Victor's OK on plainer dish names
 - 2026-10-08 · claude (cloud) · Victor made the first Book Keeper key (Kitchen App) and connected the chef app; his own Book Keeper business is now a paid account · waiting: first real receipt
 - 2026-10-08 · claude (cloud) · Book Keeper switched on with Victor's OK (migration 026 applied and read back, PR #3 merged, live checks pass); chef app Receipts sends photos straight to Book Keeper, no login (72b0161) · waiting: Victor to make the kitchen phone's key
