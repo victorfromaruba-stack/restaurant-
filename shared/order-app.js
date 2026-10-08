@@ -1061,6 +1061,7 @@
     $$("[data-oa-fee-t]").forEach(function (n) { n.textContent = tr(n.getAttribute("data-oa-fee-t"), { fee: shortMoney(SITE.deliveryFee) }); });
     setHTML("[data-oa-hero]", esc(tr("Mix dishes from all five restaurants.")) + " <b>" + esc(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
     setHTML("[data-oa-deliver-to]", deliverToHTML());
+    setHTML("[data-oa-contact]", contactHTML());
     $$("[data-oa-eta]").forEach(function (n) { n.textContent = SITE.eta || ""; });
     $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
     $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I’m in "); });
@@ -1071,6 +1072,16 @@
   function deliverToHTML() {
     return esc(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + esc(tr("Elsewhere?")) +
       ' <a data-oa-ask href="' + esc(waLink("Hi! Do you deliver to my area? I’m in ")) + '" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.";
+  }
+  /* the kitchen's real WhatsApp number, written out, so people can see who they're ordering from */
+  function waNumber() {
+    var w = String(SITE.whatsapp || "");
+    return w.length === 10 && w.indexOf("297") === 0 ? "+297 " + w.slice(3, 6) + " " + w.slice(6) : "+" + w;
+  }
+  function contactHTML() {
+    if (!SITE.whatsapp) return "";
+    var parts = tr("Questions? WhatsApp us on {number}.", { number: "\u0000" }).split("\u0000");
+    return esc(parts[0]) + '<a href="' + esc(waLink("Hi! ")) + '" target="_blank" rel="noopener">' + esc(waNumber()) + "</a>" + esc(parts[1] || "");
   }
   function howSteps() {
     var steps = [
@@ -1192,7 +1203,7 @@
     // people arriving from a shared dish link land here first, so the page explains ordering too
     html += '<section class="sec how" aria-labelledby="h-how"><h2 class="sec__t" id="h-how">' + esc(tr("How ordering works")) + "</h2>" +
       '<ol class="how__steps" data-oa-how>' + howSteps() + '</ol><p class="how__note" data-oa-how-note>' + esc(howNote()) + "</p>" +
-      '<p class="areas" data-oa-deliver-to>' + deliverToHTML() + "</p></section>";
+      '<p class="areas" data-oa-deliver-to>' + deliverToHTML() + '</p><p class="areas" data-oa-contact>' + contactHTML() + "</p></section>";
     html += '<footer class="pfoot"><p>' + esc(tr(menu.imageNote) + " " + tr("Prices in Aruban florin (ƒ).")) + "</p>" +
       '<a class="pfoot__all" href="' + path("index.html") + '">' + esc(tr("All restaurants")) + "</a>" + langSwitch() + "</footer>";
     main.innerHTML = html;
