@@ -1,0 +1,5 @@
+# Phrases Victor confirmed as true. check.py lets a line through when it contains one of these.
+# One per line, lower case is fine. Add the date and how he confirmed it in a comment above the phrase.
+# Example:
+# 2026-10-12, Victor on WhatsApp: the kitchen opened in 2026
+# since 2026

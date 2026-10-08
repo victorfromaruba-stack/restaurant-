@@ -2,6 +2,17 @@
 
 Victor is the owner. He is not a coder and works from his phone: give him ready-to-use results, not code explanations.
 
+## Memory and skills (read first)
+What earlier sessions learned and what Victor decided, loaded into every session:
+@.claude/brain/victor.md
+@.claude/brain/lessons.md
+@.claude/brain/questions.md
+
+Skills in `.claude/skills/`:
+- `human-touch`: for anything a customer sees. The site must look and read like a real kitchen made it, not a generator (Victor, 8 Oct: "it still feels a bit AI made").
+- `brain`: before your final reply, write down what the next session should know (journal, lessons, decisions, ideas, questions).
+- `daily-improvement`: one finished, proven improvement a day, picked from `.claude/brain/ideas.md`.
+
 ## What it is
 One licensed kitchen in Aruba, five delivery-only restaurants, one order website.
 Customers pick dishes from any restaurant (one shared order), choose delivery or pickup, and send the order on WhatsApp.
@@ -31,12 +42,12 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - `build/og/make_og.py`: rebuilds the link preview cards in `shared/og/` from the menus. `build/seo.py`: Google data (JSON-LD in the pages), `sitemap.xml`, `robots.txt`; run after changing hours, areas or menus.
 - `build/art/`: scripts + SVG sources for the drawn pictures (Oranje Snack dishes, the three cans).
 - `shared/og/*.jpg`: link preview cards (home + one per restaurant) used by `og:image` tags. The tags use the full address `https://victorfromaruba-stack.github.io/restaurant-/`; change them (and rerun `build/seo.py`) if the site moves to its own domain.
-- `manifest.webmanifest` + `shared/icons/`: "Add to home screen" app icon for Order Aruba.
+- `manifest.webmanifest` + `shared/icons/`: "Add to home screen" app icon for Order Aruba: "OA" in a neon frame like the OPEN sign (`build/icons/make_icon.py`). The header logo is the wordmark only. No sparkle star anywhere: it reads as an AI-product icon.
 
 ## Features (Oct 2026)
-- Home: OPEN sign (lights up during hours), search across all menus, delivery/pickup + area picker in the top bar, "Order again" (last sent order, one tap), signature dish rail, restaurant cards.
+- Home: OPEN sign (lights up during hours), search across all menus, delivery/pickup + area picker in the top bar, "Order again" (last sent order, one tap), "Start with these" dish rail (each restaurant's signature), restaurant cards (menu.json `hero`: a different dish from the rail, so no photo shows twice).
 - Home also: a row of the five restaurants under the search, desktop arrows on the dish rail.
-- Restaurant page: cover photo (or a silent video loop if menu.json has `video`), logo, open status, Featured rail, menu rows with + on each photo, "Goes well with" add-ons in the dish sheet, "Also tonight from our kitchen" at the end.
+- Restaurant page: cover photo (or a silent video loop if menu.json has `video`), logo, open status (one plain line, not pills), "Start here" rail (dishes with `style` signature or bundle; the cover must be a different dish), menu rows with + on each photo, "Goes well with" add-ons in the dish sheet, "Also tonight from our kitchen" at the end.
 - Four languages for screen text; works offline for pages already opened.
 - Checkout: "When": as soon as possible (while open) or a 15-minute slot tonight; "How will you pay?": Cash or Bank transfer. WhatsApp ticket carries `Time: …` and `Pay: …`; the chef app shows both on the ticket.
 - Chef app: paste the WhatsApp order, cook step by step, ready-made customer replies (confirm, on the way / ready for pickup, sold out).

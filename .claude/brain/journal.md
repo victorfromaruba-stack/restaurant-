@@ -1,0 +1,11 @@
+# Journal
+
+One line per working session or daily run, newest on top: date · who · what shipped
+(commit) · what's waiting. Read the last ten lines before planning work. When the
+file passes 100 lines, fold the oldest month into one summary line.
+
+- 2026-10-08 · claude (cloud) · Less AI-made pass with the human-touch skill: no sparkle logo or app icon (OA neon sign instead), plain home line, sentence-case headings, facts as one line, own tagline per restaurant, no photo twice on one screen, new Smash/Taco cover loops · waiting: real photos from Victor
+- 2026-10-08 · claude (cloud) · Skills added: human-touch (look less AI-made, check.py + shoot.py), brain (this memory), daily-improvement (one improvement a day) · waiting: Victor's real photos
+- 2026-10-08 · claude (cloud) · Chef app Menu tile: sold out, prices, photos, new dishes saved straight to the site (20ddd5e). Book Keeper intake API on a branch, draft PR #3 · waiting: Victor's OK to switch on Book Keeper
+- 2026-10-08 · claude (cloud) · Customer receipts on WhatsApp, Receipts tile, pay with cash or bank transfer (66c5c14, d4f2d7d)
+- 2026-10-08 · claude (cloud) · audit-fixes merged and live: review fixes, steps 1–9, Gemini pictures, free cover loops (f0420e2)
