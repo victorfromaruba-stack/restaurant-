@@ -1,0 +1,16 @@
+/* Nonna's Night In — colours and type. Shared layout lives in ../shared/order.css */
+@font-face{font-family:"Playfair Display";src:url(assets/playfair.woff2) format("woff2");font-weight:600 700;font-display:swap}
+@font-face{font-family:"Lora";src:url(assets/lora.woff2) format("woff2");font-weight:400 700;font-display:swap}
+:root{
+  --bg:#F4E9D8;--ink:#1F3D2B;--muted:#5C6B5F;--card:#FFFBF4;--line:#E2D3BB;
+  --brand:#B23A2E;--brand-ink:#7A241C;--brand-tint:#F0D8D0;--on-brand:#F4E9D8;
+  --sig-bg:#1F3D2B;--sig-fg:#F4E9D8;--sig-accent:#C9A227;--sig-accent-fg:#1F3D2B;
+  --chip-on-bg:#B23A2E;--chip-on-fg:#F4E9D8;
+  --bar-bg:#B23A2E;--bar-fg:#F4E9D8;--bar-shadow:rgba(178,58,46,.32);
+  --count-bg:#C9A227;--count-fg:#1F3D2B;--focus:rgba(178,58,46,.18);
+  --font-body:"Lora",Georgia,"Times New Roman",serif;
+  --font-display:"Playfair Display",Georgia,serif;--display-weight:600;--display-style:italic;
+  --logo-h:38px;
+}
+body{line-height:1.55}
+.oa-card__desc{line-height:1.5}

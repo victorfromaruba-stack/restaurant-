@@ -1,0 +1,16 @@
+/* Taco Brava — colours and type. Shared layout lives in ../shared/order.css */
+@font-face{font-family:"Bungee";src:url(assets/bungee.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Work Sans";src:url(assets/work-sans.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  --bg:#F6E7C8;--ink:#141414;--muted:#5A4A3A;--card:#FFF9F0;--line:#E8D4B0;
+  --brand:#E6246E;--brand-ink:#9E1048;--brand-tint:#F9D2E2;--on-brand:#FFF9F0;
+  --sig-bg:#141414;--sig-fg:#F6E7C8;--sig-accent:#E6246E;--sig-accent-fg:#FFF9F0;
+  --chip-on-bg:#E6246E;--chip-on-fg:#FFF9F0;
+  --bar-bg:#141414;--bar-fg:#F6E7C8;--bar-shadow:rgba(20,20,20,.35);
+  --count-bg:#B5D334;--count-fg:#141414;--focus:rgba(230,36,110,.18);
+  --font-body:"Work Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-display:"Bungee","Work Sans",system-ui,sans-serif;--display-weight:400;--display-case:uppercase;--display-spacing:.01em;
+  --logo-h:34px;
+}
+.oa-card__tag svg{color:#B5D334}
+.oa-intro__h{font-size:clamp(26px,7.4vw,34px);line-height:1.08}

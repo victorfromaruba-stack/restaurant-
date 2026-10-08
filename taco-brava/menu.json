@@ -1,0 +1,329 @@
+{
+ "id": "taco-brava",
+ "name": "Taco Brava",
+ "cuisine": "Mexican",
+ "code": "TB",
+ "color": "#E6246E",
+ "tagline": "Birria tacos, burritos & nachos",
+ "kicker": "Birria & tacos",
+ "headline": "Birria tacos, burritos & bold Mexican favourites.",
+ "intro": "Slow-braised birria, loaded burritos and crispy nachos, cooked to order in Aruba.",
+ "logo": "shared/logos/taco-brava.svg",
+ "mark": "shared/logos/taco-brava-mark.webp",
+ "hero": "taco-brava/assets/dishes/bt-hero.webp",
+ "imageNote": "Dish photos show how we plate it. Yours is cooked fresh to order.",
+ "sections": [
+  {
+   "id": "signature",
+   "title": "Signature"
+  },
+  {
+   "id": "mains",
+   "title": "Mains"
+  },
+  {
+   "id": "sides",
+   "title": "Sides"
+  },
+  {
+   "id": "drinks",
+   "title": "Drinks"
+  }
+ ],
+ "items": [
+  {
+   "id": "bt",
+   "section": "signature",
+   "name": "Birria tacos (3) with consommé",
+   "price": 2700,
+   "style": "signature",
+   "desc": "Three flour-tortilla tacos filled with slow-braised beef, melted mozzarella, onion and cilantro, served with a cup of consommé and lime.",
+   "img": "taco-brava/assets/dishes/bt-hero.webp",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "cilantro",
+       "label": "No cilantro"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gt",
+   "section": "mains",
+   "name": "Ground beef street tacos (3)",
+   "price": 1450,
+   "desc": "Three soft tacos with seasoned ground beef, onion, cilantro and salsa.",
+   "img": "taco-brava/assets/art/gt.webp",
+   "allergens": [
+    "gluten"
+   ],
+   "options": [
+    {
+     "id": "salsa",
+     "label": "Salsa",
+     "type": "one",
+     "default": "on-top",
+     "choices": [
+      {
+       "id": "on-top",
+       "label": "On top"
+      },
+      {
+       "id": "on-the-side",
+       "label": "On the side"
+      }
+     ]
+    },
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "cilantro",
+       "label": "No cilantro"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lb",
+   "section": "mains",
+   "name": "Loaded chicken burrito",
+   "price": 2050,
+   "desc": "Flour tortilla stuffed with chicken, rice, black beans, cheddar, salsa, cream and lettuce.",
+   "img": "taco-brava/assets/dishes/lb.webp",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "cream",
+       "label": "No cream"
+      },
+      {
+       "id": "lettuce",
+       "label": "No lettuce"
+      },
+      {
+       "id": "black-beans",
+       "label": "No black beans"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cq",
+   "section": "mains",
+   "name": "Chicken quesadilla",
+   "price": 1600,
+   "desc": "Flour tortilla with chicken, cheddar, mozzarella, peppers and onion, served with salsa and cream.",
+   "img": "taco-brava/assets/dishes/cq.webp",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "peppers",
+       "label": "No peppers"
+      },
+      {
+       "id": "onion",
+       "label": "No onion"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "bn",
+   "section": "mains",
+   "name": "Beef nachos (fried tortilla chips)",
+   "price": 2000,
+   "desc": "Crispy fried tortilla chips topped with spiced ground beef, cheddar, black beans, peppers, salsa and cream.",
+   "img": "taco-brava/assets/dishes/bn.webp",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "options": [
+    {
+     "id": "extra",
+     "label": "Add",
+     "type": "many",
+     "choices": [
+      {
+       "id": "jalapeños",
+       "label": "Jalapeños"
+      }
+     ]
+    },
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "black-beans",
+       "label": "No black beans"
+      },
+      {
+       "id": "cream",
+       "label": "No cream"
+      },
+      {
+       "id": "peppers",
+       "label": "No peppers"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "bb",
+   "section": "mains",
+   "name": "Chicken burrito bowl",
+   "price": 2150,
+   "desc": "Rice bowl with chicken, black beans, lettuce, tomato, salsa, cheddar, lime and cilantro.",
+   "img": "taco-brava/assets/dishes/bb.webp",
+   "allergens": [
+    "dairy"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "cilantro",
+       "label": "No cilantro"
+      },
+      {
+       "id": "cheddar",
+       "label": "No cheddar"
+      },
+      {
+       "id": "tomato",
+       "label": "No tomato"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "st",
+   "section": "mains",
+   "name": "Crispy shrimp tacos (3)",
+   "price": 2250,
+   "desc": "Three flour-tortilla tacos with crispy shrimp, cabbage, lime cream, cilantro and garlic.",
+   "img": "taco-brava/assets/dishes/st.webp",
+   "allergens": [
+    "shellfish",
+    "gluten",
+    "dairy"
+   ],
+   "flags": [
+    "shrimp"
+   ],
+   "options": [
+    {
+     "id": "cream",
+     "label": "Lime cream",
+     "type": "one",
+     "default": "on-top",
+     "choices": [
+      {
+       "id": "on-top",
+       "label": "On top"
+      },
+      {
+       "id": "on-the-side",
+       "label": "On the side"
+      }
+     ]
+    },
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "cilantro",
+       "label": "No cilantro"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cs",
+   "section": "sides",
+   "name": "Chips & salsa",
+   "price": 550,
+   "kind": "side",
+   "desc": "Crispy fried tortilla chips with house salsa.",
+   "img": "taco-brava/assets/dishes/cs.webp",
+   "allergens": []
+  },
+  {
+   "id": "ck",
+   "section": "drinks",
+   "name": "Coca-Cola (can)",
+   "price": 300,
+   "desc": "Ice-cold can.",
+   "img": "shared/drinks/ck.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "cz",
+   "section": "drinks",
+   "name": "Coca-Cola Zero (can)",
+   "price": 300,
+   "desc": "Ice-cold can, no sugar.",
+   "img": "shared/drinks/cz.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "sp",
+   "section": "drinks",
+   "name": "Sprite (can)",
+   "price": 300,
+   "desc": "Ice-cold lemon-lime can.",
+   "img": "shared/drinks/sp.webp",
+   "kind": "drink"
+  }
+ ]
+}

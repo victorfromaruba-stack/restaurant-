@@ -1,0 +1,24 @@
+# Private kitchen files: costs, buyer prices, full recipe cards and the kitchen data builder.
+# They stay on Victor's own computer/VPS and are never pushed to this public repo.
+ops/buyer.html
+ops/checklist.html
+ops/chef.html
+ops/recipes.html
+ops/recipes-data.json
+ops/recipes/
+ops/one_shot_prep.md
+ops/ticket_codes_wave3.json
+ops/uploads/
+ops/kitchen/_build/
+ops/kitchen/img/
+ops/kitchen/qa/
+CLAUDE_CODE_HANDOFF.md
+CLAUDE_CODE_PASTE.md
+atlas/
+archive/
+build/legacy/
+build/images/
+build/photo-masters/
+__pycache__/
+*.preview.png
+.DS_Store

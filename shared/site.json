@@ -1,0 +1,71 @@
+{
+ "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95).",
+ "name": "Order Aruba",
+ "whatsapp": "2977477794",
+ "whatsappConfirmed": true,
+ "deliveryFee": 500,
+ "eta": "35–50 min",
+ "utcOffset": -4,
+ "hours": {
+  "mon": [
+   "22:00",
+   "02:00"
+  ],
+  "tue": [
+   "22:00",
+   "02:00"
+  ],
+  "wed": [
+   "22:00",
+   "02:00"
+  ],
+  "thu": [
+   "22:00",
+   "02:00"
+  ],
+  "fri": [
+   "22:00",
+   "02:00"
+  ],
+  "sat": [
+   "22:00",
+   "02:00"
+  ],
+  "sun": [
+   "22:00",
+   "02:00"
+  ]
+ },
+ "areas": [
+  "Noord",
+  "Palm Beach",
+  "Eagle Beach",
+  "Oranjestad",
+  "Paradera",
+  "Santa Cruz"
+ ],
+ "brands": [
+  {
+   "id": "dushi-wok",
+   "status": "open"
+  },
+  {
+   "id": "taco-brava",
+   "status": "open"
+  },
+  {
+   "id": "smash-shack",
+   "status": "open"
+  },
+  {
+   "id": "nonnas-night-in",
+   "status": "open"
+  },
+  {
+   "id": "oranje-snack",
+   "status": "open"
+  }
+ ],
+ "_status_help": "status can be open, soon (shows 'Opening soon', can't order) or hidden (not shown on the home page).",
+ "_hours_help": "Each day is [opens, closes] in Aruba time. A closing time earlier than the opening time means after midnight (22:00 to 02:00 = 10 PM until 2 AM the next morning)."
+}

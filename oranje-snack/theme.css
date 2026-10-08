@@ -1,0 +1,17 @@
+/* Oranje Snack — colours and type. Shared layout lives in ../shared/order.css */
+@font-face{font-family:"Fraunces Soft";src:url(assets/fraunces.woff2) format("woff2");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Fraunces Soft";src:url(assets/fraunces-florin.woff2) format("woff2");font-weight:100 900;font-display:swap;unicode-range:U+0192}
+@font-face{font-family:"Work Sans";src:url(assets/work-sans.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  --bg:#FFF6EE;--ink:#1A1520;--muted:#5A4A3A;--card:#FFFBF7;--line:#EED7C3;
+  --brand:#E86A17;--brand-ink:#A84A0E;--brand-tint:#FDE4D0;--on-brand:#1B2A4A;
+  --sig-bg:#1B2A4A;--sig-fg:#FFF6EE;--sig-accent:#E86A17;--sig-accent-fg:#1B2A4A;
+  --chip-on-bg:#1B2A4A;--chip-on-fg:#FFF6EE;
+  --bar-bg:#1B2A4A;--bar-fg:#FFF6EE;--bar-shadow:rgba(27,42,74,.35);
+  --count-bg:#E86A17;--count-fg:#1B2A4A;--focus:rgba(232,106,23,.18);
+  --font-body:"Work Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-display:"Fraunces Soft",Georgia,serif;--display-weight:900;
+  --logo-h:32px;
+}
+h1,h2,h3{font-variation-settings:"SOFT" 100;letter-spacing:-.005em}
+.oa-card__tag svg{color:#E86A17}

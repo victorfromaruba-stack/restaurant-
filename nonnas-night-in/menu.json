@@ -1,0 +1,197 @@
+{
+ "id": "nonnas-night-in",
+ "name": "Nonna’s Night In",
+ "cuisine": "Italian",
+ "code": "NN",
+ "color": "#B23A2E",
+ "tagline": "Baked pasta, chicken parm & garlic bread",
+ "kicker": "Baked pasta",
+ "headline": "Baked pasta for a quiet night in.",
+ "intro": "Bubbling baked penne, chicken parm and garlic bread, cooked to order in Aruba.",
+ "logo": "shared/logos/nonnas-night-in.svg",
+ "mark": "shared/logos/nonnas-night-in-mark.webp",
+ "hero": "nonnas-night-in/assets/dishes/bp-hero.webp",
+ "imageNote": "Dish photos show how we plate it. Yours is cooked fresh to order.",
+ "sections": [
+  {
+   "id": "signature",
+   "title": "Signature"
+  },
+  {
+   "id": "mains",
+   "title": "Mains"
+  },
+  {
+   "id": "sides",
+   "title": "Sides"
+  },
+  {
+   "id": "drinks",
+   "title": "Drinks"
+  }
+ ],
+ "items": [
+  {
+   "id": "bp",
+   "section": "signature",
+   "name": "Baked penne bolognese",
+   "price": 2650,
+   "style": "signature",
+   "desc": "Penne baked with a beef and tomato bolognese, mozzarella and Italian herbs.",
+   "img": "nonnas-night-in/assets/dishes/bp-hero.webp",
+   "allergens": [
+    "gluten",
+    "dairy"
+   ]
+  },
+  {
+   "id": "cp",
+   "section": "mains",
+   "name": "Chicken parmigiana with spaghetti",
+   "price": 2400,
+   "desc": "Breaded chicken topped with marinara, mozzarella and Parmesan, served with spaghetti.",
+   "img": "nonnas-night-in/assets/dishes/cp.webp",
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "parmesan",
+       "label": "No Parmesan"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sm",
+   "section": "mains",
+   "name": "Spaghetti & meatballs",
+   "price": 2550,
+   "desc": "Spaghetti with beef meatballs in marinara, finished with Parmesan and Italian herbs.",
+   "img": "nonnas-night-in/assets/dishes/sm.webp",
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "parmesan",
+       "label": "No Parmesan"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ca",
+   "section": "mains",
+   "name": "Chicken Alfredo penne",
+   "price": 2050,
+   "desc": "Penne with chicken in a garlic cream sauce and Parmesan.",
+   "img": "nonnas-night-in/assets/dishes/ca.webp",
+   "allergens": [
+    "dairy",
+    "gluten"
+   ]
+  },
+  {
+   "id": "pa",
+   "section": "mains",
+   "name": "Penne arrabbiata (vegetarian)",
+   "price": 1695,
+   "desc": "Penne in a spicy tomato marinara with peppers, garlic, onion and Parmesan.",
+   "img": "nonnas-night-in/assets/dishes/pa.webp",
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "flags": [
+    "vegetarian",
+    "spicy"
+   ],
+   "options": [
+    {
+     "id": "heat",
+     "label": "Heat",
+     "type": "one",
+     "default": "regular",
+     "choices": [
+      {
+       "id": "regular",
+       "label": "Regular"
+      },
+      {
+       "id": "extra-spicy",
+       "label": "Extra spicy"
+      }
+     ]
+    },
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "parmesan",
+       "label": "No Parmesan"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gb",
+   "section": "sides",
+   "name": "Cheesy garlic bread",
+   "price": 450,
+   "kind": "side",
+   "desc": "Toasted garlic bread topped with mozzarella and Italian herbs.",
+   "img": "nonnas-night-in/assets/dishes/gb.webp",
+   "allergens": [
+    "gluten",
+    "dairy"
+   ]
+  },
+  {
+   "id": "ck",
+   "section": "drinks",
+   "name": "Coca-Cola (can)",
+   "price": 300,
+   "desc": "Ice-cold can.",
+   "img": "shared/drinks/ck.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "cz",
+   "section": "drinks",
+   "name": "Coca-Cola Zero (can)",
+   "price": 300,
+   "desc": "Ice-cold can, no sugar.",
+   "img": "shared/drinks/cz.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "sp",
+   "section": "drinks",
+   "name": "Sprite (can)",
+   "price": 300,
+   "desc": "Ice-cold lemon-lime can.",
+   "img": "shared/drinks/sp.webp",
+   "kind": "drink"
+  }
+ ]
+}

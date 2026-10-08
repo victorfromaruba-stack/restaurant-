@@ -1,0 +1,22 @@
+/* Smash Shack — colours and type. Shared layout lives in ../shared/order.css */
+@font-face{font-family:"Anton";src:url(assets/anton.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Inter";src:url(assets/inter.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  color-scheme:dark;
+  --bg:#161616;--ink:#F5F0E6;--muted:#B8B0A4;--card:#212121;--line:#333333;
+  --brand:#FFC72C;--brand-ink:#FFC72C;--brand-tint:#2A2A2A;--on-brand:#111111;
+  --sig-bg:#FFC72C;--sig-fg:#111111;--sig-accent:#D62828;--sig-accent-fg:#fff;
+  --chip-on-bg:#FFC72C;--chip-on-fg:#111111;
+  --bar-bg:#FFC72C;--bar-fg:#111111;--bar-shadow:rgba(0,0,0,.5);
+  --count-bg:#D62828;--count-fg:#fff;--focus:rgba(255,199,44,.25);
+  --top-bg:rgba(17,17,17,.94);--x-bg:#333;--sheet-bg:#1C1C1C;
+  --warn-bg:#3A2E12;--warn-ink:#FFE3A3;
+  --font-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-display:"Anton","Inter",system-ui,sans-serif;--display-weight:400;--display-case:uppercase;--display-spacing:.02em;
+  --logo-h:34px;
+}
+.oa-card--signature .oa-card__tag{background:#111;color:#FFC72C}
+.oa-card--signature .oa-card__tag svg{color:#D62828}
+.oa-intro__h{font-size:clamp(32px,9vw,44px);line-height:1.02}
+.oa-sec__t{font-size:28px}
+.oa-x--float{background:rgba(30,30,30,.9);color:#fff}

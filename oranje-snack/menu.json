@@ -1,0 +1,255 @@
+{
+ "id": "oranje-snack",
+ "name": "Oranje Snack",
+ "cuisine": "Dutch",
+ "code": "OS",
+ "color": "#E86A17",
+ "tagline": "Bitterballen, kroket & Dutch snackbar",
+ "kicker": "Dutch snackbar",
+ "headline": "Bitterballen, kroket & snackbar favourites.",
+ "intro": "The Dutch snackbar, done properly: crunchy, hot and straight from the fryer.",
+ "logo": "shared/logos/oranje-snack.svg",
+ "mark": "shared/logos/oranje-snack-mark.webp",
+ "hero": "oranje-snack/assets/art/bb.webp",
+ "imageNote": "Dish pictures are drawings until our kitchen photos are ready.",
+ "sections": [
+  {
+   "id": "snacks",
+   "title": "Snacks"
+  },
+  {
+   "id": "mains",
+   "title": "Mains"
+  },
+  {
+   "id": "sides",
+   "title": "Sides"
+  },
+  {
+   "id": "drinks",
+   "title": "Drinks"
+  }
+ ],
+ "items": [
+  {
+   "id": "bb",
+   "section": "snacks",
+   "name": "Bitterballen (8)",
+   "price": 1295,
+   "style": "signature",
+   "desc": "Eight crispy beef ragout balls with dots of curry mayo and parsley.",
+   "img": "oranje-snack/assets/art/bb.webp",
+   "allergens": [
+    "gluten",
+    "dairy",
+    "egg"
+   ],
+   "options": [
+    {
+     "id": "dip",
+     "label": "Dip",
+     "type": "one",
+     "default": "curry-mayo",
+     "choices": [
+      {
+       "id": "curry-mayo",
+       "label": "Curry mayo"
+      },
+      {
+       "id": "mustard",
+       "label": "Mustard"
+      },
+      {
+       "id": "both",
+       "label": "Both"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "kr",
+   "section": "snacks",
+   "name": "Beef kroket (2)",
+   "price": 1150,
+   "desc": "Two crisp beef croquettes, cut on a bias, with a smear of mustard.",
+   "img": "oranje-snack/assets/art/kr.webp",
+   "allergens": [
+    "gluten",
+    "dairy",
+    "egg",
+    "mustard"
+   ],
+   "options": [
+    {
+     "id": "mustard",
+     "label": "Mustard",
+     "type": "one",
+     "default": "on-the-plate",
+     "choices": [
+      {
+       "id": "on-the-plate",
+       "label": "On the plate"
+      },
+      {
+       "id": "on-the-side",
+       "label": "On the side"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fk",
+   "section": "snacks",
+   "name": "Frikandel special",
+   "price": 995,
+   "desc": "A split frikandel topped with mayo, curry ketchup and chopped onion.",
+   "img": "oranje-snack/assets/art/fk.webp",
+   "allergens": [
+    "gluten",
+    "egg"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "mayo",
+       "label": "No mayo"
+      },
+      {
+       "id": "curry-ketchup",
+       "label": "No curry ketchup"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mx",
+   "section": "snacks",
+   "name": "Mixed snack box",
+   "price": 1895,
+   "desc": "Four bitterballen, a kroket, half a frikandel and fries, with mayo and mustard.",
+   "img": "oranje-snack/assets/art/mx.webp",
+   "allergens": [
+    "gluten",
+    "dairy",
+    "egg",
+    "mustard"
+   ]
+  },
+  {
+   "id": "st",
+   "section": "mains",
+   "name": "Chicken saté (3) with peanut sauce",
+   "price": 1650,
+   "desc": "Three charred chicken skewers with warm peanut sauce, cucumber and shallot.",
+   "img": "oranje-snack/assets/art/st.webp",
+   "allergens": [
+    "peanut",
+    "soy"
+   ],
+   "flags": [
+    "peanut"
+   ],
+   "options": [
+    {
+     "id": "sauce",
+     "label": "Peanut sauce",
+     "type": "one",
+     "default": "on-top",
+     "choices": [
+      {
+       "id": "on-top",
+       "label": "On top"
+      },
+      {
+       "id": "on-the-side",
+       "label": "On the side"
+      }
+     ]
+    },
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "shallot",
+       "label": "No shallot"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fs",
+   "section": "sides",
+   "name": "Fries with mayo",
+   "price": 450,
+   "kind": "side",
+   "desc": "Hot fries with a swirl of mayo and cracked pepper.",
+   "img": "oranje-snack/assets/art/fs.webp",
+   "allergens": [
+    "egg"
+   ],
+   "options": [
+    {
+     "id": "sauce",
+     "label": "Sauce",
+     "type": "one",
+     "default": "mayo",
+     "choices": [
+      {
+       "id": "mayo",
+       "label": "Mayo"
+      },
+      {
+       "id": "curry-ketchup",
+       "label": "Curry ketchup"
+      },
+      {
+       "id": "mayo-and-curry-ketchup",
+       "label": "Mayo + curry ketchup"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ck",
+   "section": "drinks",
+   "name": "Coca-Cola (can)",
+   "price": 300,
+   "desc": "Ice-cold can.",
+   "img": "shared/drinks/ck.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "cz",
+   "section": "drinks",
+   "name": "Coca-Cola Zero (can)",
+   "price": 300,
+   "desc": "Ice-cold can, no sugar.",
+   "img": "shared/drinks/cz.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "sp",
+   "section": "drinks",
+   "name": "Sprite (can)",
+   "price": 300,
+   "desc": "Ice-cold lemon-lime can.",
+   "img": "shared/drinks/sp.webp",
+   "kind": "drink"
+  }
+ ]
+}

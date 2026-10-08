@@ -1,0 +1,321 @@
+{
+ "id": "dushi-wok",
+ "name": "Dushi Wok",
+ "cuisine": "Chinese",
+ "code": "DW",
+ "color": "#0F7B6C",
+ "tagline": "Fried rice, lo mein & wok dishes",
+ "kicker": "Chinese wok kitchen",
+ "headline": "Fried rice, lo mein & wok favourites.",
+ "intro": "Cooked to order in our delivery kitchen in Aruba. Hot from the wok, packed to travel.",
+ "logo": "shared/logos/dushi-wok.svg",
+ "mark": "shared/logos/dushi-wok-mark.webp",
+ "hero": "dushi-wok/assets/dishes/fr.webp",
+ "imageNote": "Dish photos show how we plate it. Yours is cooked fresh to order.",
+ "sections": [
+  {
+   "id": "family",
+   "title": "Family deal"
+  },
+  {
+   "id": "signature",
+   "title": "Signature"
+  },
+  {
+   "id": "wok",
+   "title": "Wok mains"
+  },
+  {
+   "id": "sides",
+   "title": "Sides"
+  },
+  {
+   "id": "drinks",
+   "title": "Drinks"
+  }
+ ],
+ "items": [
+  {
+   "id": "ft",
+   "section": "family",
+   "name": "Family Table",
+   "price": 4250,
+   "style": "bundle",
+   "desc": "Three wok mains in one order — enough for the table.",
+   "includes": [
+    "fr",
+    "ss",
+    "lm"
+   ],
+   "img": "dushi-wok/assets/dishes/ft.webp",
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ]
+  },
+  {
+   "id": "fr",
+   "section": "signature",
+   "name": "Chicken fried rice",
+   "price": 1295,
+   "style": "signature",
+   "desc": "Chicken, rice, egg, onion, scallion and garlic, tossed with soy sauce.",
+   "img": "dushi-wok/assets/dishes/fr.webp",
+   "allergens": [
+    "egg",
+    "soy",
+    "gluten"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "scallion",
+       "label": "No scallion"
+      },
+      {
+       "id": "egg",
+       "label": "No egg"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ss",
+   "section": "wok",
+   "name": "Sweet & sour crunch chicken with rice",
+   "price": 1600,
+   "desc": "Chicken in a flour-and-egg coating with peppers and onion in a ketchup-based sweet & sour sauce, served with rice.",
+   "img": "dushi-wok/assets/dishes/ss.webp",
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ],
+   "options": [
+    {
+     "id": "sauce",
+     "label": "Sauce",
+     "type": "one",
+     "default": "tossed",
+     "choices": [
+      {
+       "id": "tossed",
+       "label": "Tossed"
+      },
+      {
+       "id": "on-the-side",
+       "label": "On the side"
+      }
+     ]
+    },
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "peppers",
+       "label": "No peppers"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lm",
+   "section": "wok",
+   "name": "Chicken lo mein",
+   "price": 1650,
+   "desc": "Egg noodles with chicken, cabbage, onion, scallion and garlic in soy and oyster sauce.",
+   "img": "dushi-wok/assets/dishes/lm.webp",
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "scallion",
+       "label": "No scallion"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pk",
+   "section": "wok",
+   "name": "Pork & pepper stir-fry with rice",
+   "price": 1450,
+   "desc": "Pork with peppers, onion, garlic and ginger in soy and oyster sauce, served with rice.",
+   "img": "dushi-wok/assets/dishes/pk.webp",
+   "allergens": [
+    "soy",
+    "gluten"
+   ],
+   "flags": [
+    "pork"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "peppers",
+       "label": "No peppers"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sh",
+   "section": "wok",
+   "name": "Garlic shrimp fried rice",
+   "price": 1900,
+   "desc": "Shrimp, rice, egg, garlic and scallion, tossed with soy sauce.",
+   "img": "dushi-wok/assets/dishes/sh.webp",
+   "allergens": [
+    "shellfish",
+    "egg",
+    "soy",
+    "gluten"
+   ],
+   "flags": [
+    "shrimp"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "egg",
+       "label": "No egg"
+      },
+      {
+       "id": "scallion",
+       "label": "No scallion"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "wg",
+   "section": "wok",
+   "name": "Soy-garlic crispy chicken wings",
+   "price": 1900,
+   "desc": "Crispy floured chicken wings with a soy-garlic glaze and scallion.",
+   "img": "dushi-wok/assets/dishes/wg.webp",
+   "allergens": [
+    "soy",
+    "gluten",
+    "sesame"
+   ],
+   "options": [
+    {
+     "id": "glaze",
+     "label": "Glaze",
+     "type": "one",
+     "default": "tossed",
+     "choices": [
+      {
+       "id": "tossed",
+       "label": "Tossed"
+      },
+      {
+       "id": "on-the-side",
+       "label": "On the side"
+      }
+     ]
+    },
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "scallion",
+       "label": "No scallion"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "er",
+   "section": "sides",
+   "name": "Egg rolls (2)",
+   "price": 450,
+   "kind": "side",
+   "desc": "Two crispy rolls filled with cabbage and pork.",
+   "img": "dushi-wok/assets/dishes/er.webp",
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ],
+   "flags": [
+    "pork"
+   ]
+  },
+  {
+   "id": "ck",
+   "section": "drinks",
+   "name": "Coca-Cola (can)",
+   "price": 300,
+   "desc": "Ice-cold can.",
+   "img": "shared/drinks/ck.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "cz",
+   "section": "drinks",
+   "name": "Coca-Cola Zero (can)",
+   "price": 300,
+   "desc": "Ice-cold can, no sugar.",
+   "img": "shared/drinks/cz.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "sp",
+   "section": "drinks",
+   "name": "Sprite (can)",
+   "price": 300,
+   "desc": "Ice-cold lemon-lime can.",
+   "img": "shared/drinks/sp.webp",
+   "kind": "drink"
+  }
+ ]
+}

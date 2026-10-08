@@ -1,0 +1,295 @@
+{
+ "id": "smash-shack",
+ "name": "Smash Shack",
+ "cuisine": "Burgers",
+ "code": "SS",
+ "color": "#FFC72C",
+ "tagline": "Smash burgers, tenders & loaded fries",
+ "kicker": "Smash burgers & fries",
+ "headline": "Loud smash burgers, loaded fries & more.",
+ "intro": "Thin patties smashed hard on the flat-top for crispy edges. Cooked to order in Aruba.",
+ "logo": "shared/logos/smash-shack.svg",
+ "mark": "shared/logos/smash-shack-mark.webp",
+ "hero": "smash-shack/assets/dishes/sc-hero.webp",
+ "imageNote": "Dish photos show how we plate it. Yours is cooked fresh to order.",
+ "sections": [
+  {
+   "id": "signature",
+   "title": "Signature"
+  },
+  {
+   "id": "mains",
+   "title": "Mains"
+  },
+  {
+   "id": "sides",
+   "title": "Sides"
+  },
+  {
+   "id": "drinks",
+   "title": "Drinks"
+  }
+ ],
+ "items": [
+  {
+   "id": "sc",
+   "section": "signature",
+   "name": "Smash cheeseburger",
+   "price": 1695,
+   "style": "signature",
+   "desc": "Smashed beef patty with cheddar, lettuce, tomato, onion, pickles, ketchup and mayo on a burger bun.",
+   "img": "smash-shack/assets/dishes/sc-hero.webp",
+   "allergens": [
+    "dairy",
+    "gluten",
+    "egg"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "pickles",
+       "label": "No pickles"
+      },
+      {
+       "id": "tomato",
+       "label": "No tomato"
+      },
+      {
+       "id": "lettuce",
+       "label": "No lettuce"
+      },
+      {
+       "id": "ketchup",
+       "label": "No ketchup"
+      },
+      {
+       "id": "mayo",
+       "label": "No mayo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "co",
+   "section": "mains",
+   "name": "Smash burger combo (burger + fries)",
+   "price": 2150,
+   "desc": "Smash cheeseburger with a side of fries.",
+   "img": "smash-shack/assets/dishes/co.webp",
+   "allergens": [
+    "dairy",
+    "gluten",
+    "egg"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "pickles",
+       "label": "No pickles"
+      },
+      {
+       "id": "tomato",
+       "label": "No tomato"
+      },
+      {
+       "id": "lettuce",
+       "label": "No lettuce"
+      },
+      {
+       "id": "ketchup",
+       "label": "No ketchup"
+      },
+      {
+       "id": "mayo",
+       "label": "No mayo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ds",
+   "section": "mains",
+   "name": "Double smash cheeseburger",
+   "price": 2600,
+   "desc": "Two smashed beef patties with cheddar, onion, pickles, ketchup and mayo on a burger bun.",
+   "img": "smash-shack/assets/dishes/ds.webp",
+   "allergens": [
+    "dairy",
+    "gluten",
+    "egg"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "onion",
+       "label": "No onion"
+      },
+      {
+       "id": "pickles",
+       "label": "No pickles"
+      },
+      {
+       "id": "ketchup",
+       "label": "No ketchup"
+      },
+      {
+       "id": "mayo",
+       "label": "No mayo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cc",
+   "section": "mains",
+   "name": "Crispy chicken sandwich",
+   "price": 1750,
+   "desc": "Crispy floured chicken on a burger bun with lettuce, mayo and pickles.",
+   "img": "smash-shack/assets/dishes/cc.webp",
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "pickles",
+       "label": "No pickles"
+      },
+      {
+       "id": "mayo",
+       "label": "No mayo"
+      },
+      {
+       "id": "lettuce",
+       "label": "No lettuce"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ct",
+   "section": "mains",
+   "name": "Chicken tenders & fries",
+   "price": 1550,
+   "desc": "Crispy chicken tenders with fries and ketchup.",
+   "img": "smash-shack/assets/dishes/ct.webp",
+   "allergens": [
+    "gluten",
+    "egg"
+   ],
+   "options": [
+    {
+     "id": "dip",
+     "label": "Dip",
+     "type": "one",
+     "default": "ketchup",
+     "choices": [
+      {
+       "id": "ketchup",
+       "label": "Ketchup"
+      },
+      {
+       "id": "mayo",
+       "label": "Mayo"
+      },
+      {
+       "id": "ketchup-and-mayo",
+       "label": "Ketchup + mayo"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lf",
+   "section": "mains",
+   "name": "Loaded fries (cheddar sauce, beef, scallion)",
+   "price": 1195,
+   "desc": "Fries topped with cheddar sauce, ground beef and scallion.",
+   "img": "smash-shack/assets/dishes/lf.webp",
+   "allergens": [
+    "dairy"
+   ],
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "scallion",
+       "label": "No scallion"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fs",
+   "section": "sides",
+   "name": "Fries (side)",
+   "price": 250,
+   "kind": "side",
+   "desc": "A side of crispy fries.",
+   "img": "smash-shack/assets/dishes/fs.webp",
+   "allergens": []
+  },
+  {
+   "id": "ck",
+   "section": "drinks",
+   "name": "Coca-Cola (can)",
+   "price": 300,
+   "desc": "Ice-cold can.",
+   "img": "shared/drinks/ck.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "cz",
+   "section": "drinks",
+   "name": "Coca-Cola Zero (can)",
+   "price": 300,
+   "desc": "Ice-cold can, no sugar.",
+   "img": "shared/drinks/cz.webp",
+   "kind": "drink"
+  },
+  {
+   "id": "sp",
+   "section": "drinks",
+   "name": "Sprite (can)",
+   "price": 300,
+   "desc": "Ice-cold lemon-lime can.",
+   "img": "shared/drinks/sp.webp",
+   "kind": "drink"
+  }
+ ]
+}

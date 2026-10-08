@@ -1,0 +1,14 @@
+/* Dushi Wok — colours and type. Shared layout lives in ../shared/order.css */
+@font-face{font-family:"Fredoka";src:url(assets/fredoka.woff2) format("woff2");font-weight:500 700;font-display:swap}
+@font-face{font-family:"Nunito";src:url(assets/nunito.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  --bg:#FFF8EC;--ink:#1B1B1B;--muted:#5E5A52;--card:#FFFFFF;--line:#EADFCB;
+  --brand:#0F7B6C;--brand-ink:#0B5C51;--brand-tint:#E4F1EC;--on-brand:#FFF8EC;
+  --sig-bg:#0F7B6C;--sig-fg:#FFF8EC;--sig-accent:#FF5A4E;--sig-accent-fg:#fff;
+  --chip-on-bg:#0F7B6C;--chip-on-fg:#FFF8EC;
+  --bar-bg:#0F7B6C;--bar-fg:#FFF8EC;--bar-shadow:rgba(15,123,108,.32);
+  --count-bg:#FF5A4E;--count-fg:#fff;--focus:rgba(15,123,108,.16);
+  --font-body:"Nunito",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-display:"Fredoka","Nunito",system-ui,sans-serif;--display-weight:600;
+  --logo-h:28px;
+}

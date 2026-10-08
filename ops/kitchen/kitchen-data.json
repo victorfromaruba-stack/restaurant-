@@ -1,0 +1,5778 @@
+{
+ "version": 1,
+ "built": "2026-10-07 23:23",
+ "brands": [
+  {
+   "id": "dushi-wok",
+   "name": "Dushi Wok",
+   "accent": "#0F7B6C",
+   "ink": "#FFFFFF",
+   "tape": "red",
+   "dishes": [
+    "dushi-wok/ft",
+    "dushi-wok/fr",
+    "dushi-wok/ss",
+    "dushi-wok/lm",
+    "dushi-wok/pk",
+    "dushi-wok/sh",
+    "dushi-wok/wg",
+    "dushi-wok/er"
+   ]
+  },
+  {
+   "id": "taco-brava",
+   "name": "Taco Brava",
+   "accent": "#E6246E",
+   "ink": "#000000",
+   "tape": "orange",
+   "dishes": [
+    "taco-brava/bt",
+    "taco-brava/gt",
+    "taco-brava/lb",
+    "taco-brava/cq",
+    "taco-brava/bn",
+    "taco-brava/bb",
+    "taco-brava/st",
+    "taco-brava/cs"
+   ]
+  },
+  {
+   "id": "smash-shack",
+   "name": "Smash Shack",
+   "accent": "#FFC72C",
+   "ink": "#000000",
+   "tape": "yellow",
+   "dishes": [
+    "smash-shack/sc",
+    "smash-shack/co",
+    "smash-shack/ds",
+    "smash-shack/cc",
+    "smash-shack/ct",
+    "smash-shack/lf",
+    "smash-shack/fs"
+   ]
+  },
+  {
+   "id": "nonnas-night-in",
+   "name": "Nonna’s Night In",
+   "accent": "#B23A2E",
+   "ink": "#FFFFFF",
+   "tape": "green",
+   "dishes": [
+    "nonnas-night-in/bp",
+    "nonnas-night-in/cp",
+    "nonnas-night-in/sm",
+    "nonnas-night-in/ca",
+    "nonnas-night-in/pa",
+    "nonnas-night-in/gb"
+   ]
+  },
+  {
+   "id": "oranje-snack",
+   "name": "Oranje Snack",
+   "accent": "#E86A17",
+   "ink": "#000000",
+   "tape": "blue",
+   "dishes": [
+    "oranje-snack/bb",
+    "oranje-snack/kr",
+    "oranje-snack/fk",
+    "oranje-snack/mx",
+    "oranje-snack/st",
+    "oranje-snack/fs"
+   ]
+  }
+ ],
+ "dishes": {
+  "dushi-wok/ft": {
+   "key": "dushi-wok/ft",
+   "brand": "dushi-wok",
+   "id": "ft",
+   "name": "Family Table",
+   "img": "../../dushi-wok/assets/dishes/ft.webp",
+   "kind": "bundle",
+   "price": 4250,
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ],
+   "flags": [],
+   "options": [],
+   "aliases": [
+    "Family Table"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Cook the three dishes to their safe temperatures",
+      "Compartment tray",
+      "Sauces do not mix",
+      "Garnish each well"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Family tray: fried rice + sweet & sour + lo mein in compartments / foil; sesame + scallion on Asian sides; parsley optional",
+     "Keep each dish distinct — no mixing sauces",
+     "Height in each well"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup",
+     "Family / multi-well or foil group"
+    ],
+    "hold": [
+     "Same as each dish; open the lid a little if the sweet & sour goes soft"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "One component misses its safe temperature",
+     "then": "Do not send the Family Table — remake or sell singles"
+    }
+   ],
+   "ingredients": [
+    "One portion each Chicken fried rice, Sweet & sour crunch chicken with rice, Chicken lo mein — no fourth dish."
+   ],
+   "label": {
+    "name": "Family Table",
+    "next": "Fried rice, sweet & sour and lo mein in their own wells; garnish each"
+   },
+   "includes": [
+    "dushi-wok/fr",
+    "dushi-wok/ss",
+    "dushi-wok/lm"
+   ]
+  },
+  "dushi-wok/fr": {
+   "key": "dushi-wok/fr",
+   "brand": "dushi-wok",
+   "id": "fr",
+   "name": "Chicken fried rice",
+   "img": "../../dushi-wok/assets/dishes/fr.webp",
+   "kind": "main",
+   "price": 1295,
+   "allergens": [
+    "egg",
+    "soy",
+    "gluten"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No scallion",
+      "No egg"
+     ]
+    }
+   ],
+   "aliases": [
+    "Chicken fried rice"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Cook the rice",
+     "Spread it on a tray",
+     "Chill to 4°C or colder",
+     "Label it “Rice for fried rice”"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not there in the morning",
+      "then": "STOP — do not cook this dish today. Take it off the menu"
+     }
+    ]
+   },
+   "before": {
+    "title": "Before you start",
+    "lines": [
+     "Optional, 30 min: chicken + 30 ml soy + 10 g garlic"
+    ],
+    "timers": [
+     {
+      "sec": 1800,
+      "label": "Marinate"
+     }
+    ],
+    "checks": []
+   },
+   "steps": [
+    {
+     "lines": [
+      "Heat the wok until it just smokes",
+      "Big batch (10 portions)? Cook it in 2–3 rounds",
+      "20 ml oil → scramble the eggs soft → take them out"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Stir-fry chicken to 74°C in the middle if raw",
+      "Or sear cooked chicken 60 s"
+     ],
+     "timers": [
+      {
+       "sec": 60,
+       "label": "Sear cooked chicken"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Add onion + garlic 45–60 s"
+     ],
+     "timers": [
+      {
+       "sec": 60,
+       "label": "Add onion"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Add cold rice",
+      "Break clumps",
+      "Fry 2–3 min"
+     ],
+     "timers": [
+      {
+       "sec": 180,
+       "label": "Fry"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Add soy (about 15 ml per portion), salt, white pepper",
+      "Eggs back in",
+      "Finish with scallion",
+      "Box immediately or keep hot 60°C or hotter max 2 h"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Loose mound, egg ribbons on top, scallion coins + toasted sesame",
+     "Wipe tray rim",
+     "Fluff rice so it looks abundant; keep chicken pieces visible on the peak (not buried)"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup"
+    ],
+    "hold": [
+     "Keep hot 60°C or hotter",
+     "Delivery: mound high; do not press flat",
+     "Re-wok 60–90 s if held cold"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Rice mushy",
+     "then": "Hotter wok / less soy; colder day-old rice"
+    },
+    {
+     "if": "Chicken under 74°C",
+     "then": "Return to wok; re-probe"
+    },
+    {
+     "if": "Too salty",
+     "then": "Add 50 g plain rice per box; do not add soy"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Chicken (shared chicken batch), diced: 1500 g",
+    "Rice, dry (cook night before, chill): 1000 g",
+    "Onion, small dice: 400 g",
+    "Garlic, minced: 50 g",
+    "Eggs: 10 each",
+    "Soy sauce: 150 ml",
+    "Neutral oil: 200 ml",
+    "Scallion, sliced: 80 g",
+    "Sesame seeds: 20 g",
+    "White pepper: 5 g",
+    "Salt: 10 g"
+   ],
+   "label": {
+    "name": "Chicken fried rice",
+    "next": "Wok-fry with egg + soy; mound; scallion + sesame"
+   }
+  },
+  "dushi-wok/ss": {
+   "key": "dushi-wok/ss",
+   "brand": "dushi-wok",
+   "id": "ss",
+   "name": "Sweet & sour crunch chicken with rice",
+   "img": "../../dushi-wok/assets/dishes/ss.webp",
+   "kind": "main",
+   "price": 1600,
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Sauce",
+     "choices": [
+      "Tossed",
+      "On the side"
+     ]
+    },
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No peppers"
+     ]
+    }
+   ],
+   "aliases": [
+    "Sweet & sour crunch chicken with rice",
+    "Sweet & sour chicken with rice"
+   ],
+   "ahead": {
+    "kind": "hours",
+    "title": "Do this at least 4 hours before",
+    "lines": [
+     "At least 4 h (overnight is best): chicken cubes + 40 ml soy + 20 g garlic + 5 g salt"
+    ],
+    "timers": [
+     {
+      "sec": 14400,
+      "label": "Marinate"
+     }
+    ],
+    "fixes": [
+     {
+      "if": "Not ready in time",
+      "then": "STOP — do not cook this dish yet. Take it off the menu until it is ready"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Drain the marinade",
+      "Pat the chicken dry"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Dip in egg → coat in flour",
+      "Rest 5 min on rack"
+     ],
+     "timers": [
+      {
+       "sec": 300,
+       "label": "Rest"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Fry 175°C small batches until golden and 74°C (about 4–5 min)"
+     ],
+     "timers": [
+      {
+       "sec": 300,
+       "label": "Fry small batches"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Sauce: ketchup 400 g + sugar 120 g + vinegar 100 ml + salt 5 g + water 100 ml",
+      "Simmer to gloss",
+      "Toss the chicken in the sauce",
+      "Long delivery? Sauce under the chicken or in a cup on the side"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Rice in a mound",
+      "Pepper strips on top"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Glossy sauce pooled under crispy chicken; rice side-mounded; thin pepper strips on top",
+     "Stack 5–6 battered pieces vertically — height sells",
+     "Sauce on the side cup if soggy risk"
+    ],
+    "remember": [
+     "If delivery more than 20 min: sauce in side cup"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup"
+    ],
+    "hold": [
+     "Hold fried chicken without sauce on rack max 30 min",
+     "Sauce separate",
+     "Re-crisp 30 s fry if needed"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait — do not drop"
+    },
+    {
+     "if": "Sauce too sharp",
+     "then": "Add 20 g sugar + 30 ml water; simmer 1 min"
+    },
+    {
+     "if": "Sauce split",
+     "then": "Off heat whisk 5 ml oil; or remake ¼ batch"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Chicken cubes: 1500 g",
+    "Flour: 400 g",
+    "Eggs: 5 each (wash)",
+    "Onion: 400 g",
+    "Bell pepper mix: 500 g",
+    "Ketchup: 400 g",
+    "Sugar: 120 g",
+    "Vinegar (white): 100 ml",
+    "Soy (marinade): 40 ml",
+    "Garlic (marinade): 20 g",
+    "Salt: 5 g marinade + 5 g sauce",
+    "Water for sauce: 100 ml",
+    "Oil for fry at 175°C",
+    "Rice dry: 1000 g"
+   ],
+   "label": {
+    "name": "Sweet & sour chicken marinade",
+    "next": "Pat dry → flour → fry 175°C → sauce + rice"
+   }
+  },
+  "dushi-wok/lm": {
+   "key": "dushi-wok/lm",
+   "brand": "dushi-wok",
+   "id": "lm",
+   "name": "Chicken lo mein",
+   "img": "../../dushi-wok/assets/dishes/lm.webp",
+   "kind": "main",
+   "price": 1650,
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No scallion"
+     ]
+    }
+   ],
+   "aliases": [
+    "Chicken lo mein"
+   ],
+   "ahead": null,
+   "before": {
+    "title": "Before you start",
+    "lines": [
+     "Chicken + 40 ml soy + 20 g garlic, 30–60 min (optional)"
+    ],
+    "timers": [
+     {
+      "sec": 3600,
+      "label": "Marinate"
+     }
+    ],
+    "checks": []
+   },
+   "steps": [
+    {
+     "lines": [
+      "Boil noodles al dente",
+      "Toss 20 ml oil",
+      "Chill",
+      "Label it “Lo mein noodles”"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Stir-fry the chicken to 74°C",
+      "Take out, set aside"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Stir-fry onion, cabbage, garlic, ginger 2 min"
+     ],
+     "timers": [
+      {
+       "sec": 120,
+       "label": "Stir-fry onion"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Add noodles + soy + oyster",
+      "Toss high heat 2 min"
+     ],
+     "timers": [
+      {
+       "sec": 120,
+       "label": "Toss high heat"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Chicken back in",
+      "Scallion + sesame",
+      "Twirl into the box with tongs"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Twirl noodles high with tongs; chicken + cabbage peeking; scallion + sesame finish",
+     "Noodle nest looks bigger than a flat dump",
+     "Keep a glossy oyster-soy coat"
+    ],
+    "remember": [
+     "If holding noodles more than 30 min, cook them 1 min less"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup"
+    ],
+    "hold": [
+     "Best from staged veg + noodle cook-to-order",
+     "Keep hot max 1 h",
+     "Splash 10 ml water when re-wok"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Noodles stuck",
+     "then": "15 ml water + 5 ml oil in wok"
+    },
+    {
+     "if": "Too salty",
+     "then": "Add 50 g plain noodles + splash water"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Lo mein / egg noodles or spaghetti dry: 1000 g",
+    "Chicken: 1500 g",
+    "Cabbage shredded: 600 g",
+    "Onion: 400 g",
+    "Garlic: 80 g",
+    "Ginger minced: 40 g",
+    "Soy: 200 ml",
+    "Oyster sauce: 150 ml",
+    "Oil: 200 ml",
+    "Scallion: 80 g",
+    "Sesame seeds: 20 g"
+   ],
+   "label": {
+    "name": "Chicken lo mein",
+    "next": "Wok with noodles + oyster-soy; twirl high"
+   }
+  },
+  "dushi-wok/pk": {
+   "key": "dushi-wok/pk",
+   "brand": "dushi-wok",
+   "id": "pk",
+   "name": "Pork & pepper stir-fry with rice",
+   "img": "../../dushi-wok/assets/dishes/pk.webp",
+   "kind": "main",
+   "price": 1450,
+   "allergens": [
+    "soy",
+    "gluten"
+   ],
+   "flags": [
+    "pork"
+   ],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No peppers"
+     ]
+    }
+   ],
+   "aliases": [
+    "Pork & pepper stir-fry with rice"
+   ],
+   "ahead": {
+    "kind": "hours",
+    "title": "Do this at least 4 hours before",
+    "lines": [
+     "At least 4 h (overnight is best): pork strips + 50 ml soy + 30 g garlic + 20 g ginger + 10 g sugar"
+    ],
+    "timers": [
+     {
+      "sec": 14400,
+      "label": "Marinate"
+     }
+    ],
+    "fixes": [
+     {
+      "if": "Not ready in time",
+      "then": "STOP — do not cook this dish yet. Take it off the menu until it is ready"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Drain well",
+      "Sear the pork in a very hot wok, in batches, to 71°C"
+     ],
+     "timers": [],
+     "checks": [
+      71
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Stir-fry peppers + onion + garlic/ginger 2 min"
+     ],
+     "timers": [
+      {
+       "sec": 120,
+       "label": "Stir-fry peppers"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Pork back in",
+      "Soy + oyster",
+      "Toss 60 s"
+     ],
+     "timers": [
+      {
+       "sec": 60,
+       "label": "Toss"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Plate pork on peppers",
+      "Rice side"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Pork on top of peppers (color first), rice side, ginger-garlic aroma steam",
+     "Slice pork thin against grain — more pieces, same grams",
+     "Fan peppers"
+    ],
+    "remember": [
+     "Wok smoking hot before the pork goes in"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup"
+    ],
+    "hold": [
+     "Hold 60°C or hotter",
+     "Rice separate compartment"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Pork gray/steamed",
+     "then": "Batch smaller; hotter wok"
+    },
+    {
+     "if": "Sauce watery",
+     "then": "Reduce 30–45 s high heat"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Pork strips: 1500 g",
+    "Onion: 500 g",
+    "Bell peppers: 800 g",
+    "Garlic: 80 g",
+    "Ginger: 40 g",
+    "Soy: 150 ml",
+    "Oyster: 100 ml",
+    "Oil: 200 ml",
+    "Rice dry: 1000 g",
+    "Sugar (marinade): 10 g"
+   ],
+   "label": {
+    "name": "Pork marinade",
+    "next": "Hot wok sear → peppers → oyster-soy → rice"
+   }
+  },
+  "dushi-wok/sh": {
+   "key": "dushi-wok/sh",
+   "brand": "dushi-wok",
+   "id": "sh",
+   "name": "Garlic shrimp fried rice",
+   "img": "../../dushi-wok/assets/dishes/sh.webp",
+   "kind": "main",
+   "price": 1900,
+   "allergens": [
+    "shellfish",
+    "egg",
+    "soy",
+    "gluten"
+   ],
+   "flags": [
+    "shrimp"
+   ],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No egg",
+      "No scallion"
+     ]
+    }
+   ],
+   "aliases": [
+    "Garlic shrimp fried rice"
+   ],
+   "ahead": {
+    "kind": "hours",
+    "title": "Start this 4 hours before",
+    "lines": [
+     "Shrimp in garlic brine for 4 h (never more than 8 h)",
+     "Shrimp + 8 g salt + 40 g garlic + 40 ml oil, 4 h fridge (max 8 h)"
+    ],
+    "timers": [
+     {
+      "sec": 14400,
+      "label": "Shrimp"
+     }
+    ],
+    "fixes": [
+     {
+      "if": "Not ready in time",
+      "then": "STOP — do not cook this dish yet. Take it off the menu until it is ready"
+     },
+     {
+      "if": "Shrimp in brine more than 8 h",
+      "then": "Rinse, pat, cook now; do not re-brine"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Pat the shrimp dry"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Stir-fry the shrimp until opaque / 63°C",
+      "Take out, set aside"
+     ],
+     "timers": [],
+     "checks": [
+      63
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Scramble eggs",
+      "Take out, set aside"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Garlic in oil 20 s",
+      "Add rice + soy",
+      "Toss well"
+     ],
+     "timers": [
+      {
+       "sec": 20,
+       "label": "Garlic"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Shrimp and egg back in",
+      "Scallion on top",
+      "Shrimp on top",
+      "Lime wedge"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Shrimp arranged on top (count visible), garlic chips, scallion, lime wedge",
+     "Show every shrimp — never bury",
+     "Butter-sheen from oil + garlic"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup"
+    ],
+    "hold": [
+     "Cook-to-order preferred",
+     "Keep hot max 1 h",
+     "Never re-boil shrimp"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Shrimp rubbery",
+     "then": "Overcooked — next batch 30 s less"
+    },
+    {
+     "if": "Shrimp in brine more than 8 h",
+     "then": "Rinse, pat, cook now; do not re-brine"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Shrimp peeled: 1200 g",
+    "Rice dry: 1000 g (day-old cooked)",
+    "Eggs: 10",
+    "Garlic: 120 g",
+    "Soy: 120 ml",
+    "Oil: 200 ml",
+    "Scallion: 80 g",
+    "Lime: 5 each",
+    "Salt (brine): 8 g"
+   ],
+   "label": {
+    "name": "Garlic shrimp fried rice",
+    "next": "Sear shrimp → garlic rice → shrimp on top + lime"
+   }
+  },
+  "dushi-wok/wg": {
+   "key": "dushi-wok/wg",
+   "brand": "dushi-wok",
+   "id": "wg",
+   "name": "Soy-garlic crispy chicken wings",
+   "img": "../../dushi-wok/assets/dishes/wg.webp",
+   "kind": "main",
+   "price": 1900,
+   "allergens": [
+    "soy",
+    "gluten",
+    "sesame"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Glaze",
+     "choices": [
+      "Tossed",
+      "On the side"
+     ]
+    },
+    {
+     "label": "Leave out",
+     "choices": [
+      "No scallion"
+     ]
+    }
+   ],
+   "aliases": [
+    "Soy-garlic crispy chicken wings"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Wings in soy-garlic marinade at least 8 h",
+     "Wings + soy 200 ml + garlic 100 g + sugar 40 g + white pepper 5 g, at least 8 h"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not made last night",
+      "then": "STOP — emergency wet brine at least 2 h, or take it off the menu today"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Drain well",
+      "Pat very dry",
+      "Light coat of flour"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Fry 175°C 6–8 min to 74°C crispy"
+     ],
+     "timers": [
+      {
+       "sec": 480,
+       "label": "Fry"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Optional second fry 90 s"
+     ],
+     "timers": [
+      {
+       "sec": 90,
+       "label": "Second fry"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Glaze: fresh mix soy 80 ml + garlic 40 g + sugar 20 g reduced 2 min (do not use raw marinade unless boiled at least 1 min)"
+     ],
+     "timers": [
+      {
+       "sec": 120,
+       "label": "Glaze"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Pile it high",
+      "Sesame + scallion"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Pile with height, sesame + scallion snow, tiny chili oil drizzle if available",
+     "Odd number (5/7) looks intentional",
+     "Crispy tips facing up"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup"
+    ],
+    "hold": [
+     "Rack max 30 min",
+     "Re-fry 60 s if limp",
+     "Sauce last"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Oil cool",
+     "then": "Wait to 175°C"
+    },
+    {
+     "if": "Soggy after sauce",
+     "then": "Sauce cup on side for delivery"
+    },
+    {
+     "if": "Not made last night",
+     "then": "STOP — emergency wet brine at least 2 h, or take it off the menu today"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Bone-in wings: 3500 g",
+    "Soy: 200 ml",
+    "Garlic: 100 g",
+    "Sugar: 40 g",
+    "Flour: 300 g",
+    "White pepper: 5 g",
+    "Scallion: 60 g",
+    "Sesame: 30 g",
+    "Oil fry"
+   ],
+   "label": {
+    "name": "Soy-garlic crispy chicken wings",
+    "next": "Pat dry → flour → fry 175°C → glaze → sesame"
+   }
+  },
+  "dushi-wok/er": {
+   "key": "dushi-wok/er",
+   "brand": "dushi-wok",
+   "id": "er",
+   "name": "Egg rolls (2)",
+   "img": "../../dushi-wok/assets/dishes/er.webp",
+   "kind": "side",
+   "price": 450,
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy"
+   ],
+   "flags": [
+    "pork"
+   ],
+   "options": [],
+   "aliases": [
+    "Egg rolls (2)"
+   ],
+   "ahead": {
+    "kind": "optional",
+    "title": "Can be done ahead",
+    "lines": [
+     "You can roll them ahead: raw, sealed, max 24 h"
+    ],
+    "timers": []
+   },
+   "before": {
+    "title": "Before you start",
+    "lines": [
+     "Cook filling",
+     "Cool to 4°C or colder before rolling"
+    ],
+    "timers": [],
+    "checks": []
+   },
+   "steps": [
+    {
+     "lines": [
+      "Cook pork with salt 8 g + white pepper 3 g",
+      "Fold cabbage",
+      "Cool fully"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Roll tight",
+      "Egg-seal"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Fry 175°C 3–4 min golden",
+      "74°C in the middle"
+     ],
+     "timers": [
+      {
+       "sec": 240,
+       "label": "Fry"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Cut diagonally",
+      "Cross the halves",
+      "Add a dip cup"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Diagonal cut, standing on ends or crossed; sweet chili or soy dip cup; scallion dust",
+     "Cut diagonally shows filling — “handmade” cue",
+     "Never serve whole uncut"
+    ],
+    "remember": [
+     "Filling cold before roll"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment 8 × 8\" tray",
+     "Napkins",
+     "Optional sauce cup"
+    ],
+    "hold": [
+     "Fry to order preferred",
+     "Hold max 20 min on rack"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Burst in fryer",
+     "then": "Better seal; if oil above 185°C cool down"
+    },
+    {
+     "if": "Greasy",
+     "then": "Oil too cool — wait to 175°C"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Cabbage: 800 g",
+    "Pork minced: 400 g",
+    "Wrappers: 20 (or buy-in)",
+    "Egg: 2 (seal)",
+    "Salt: 8 g",
+    "White pepper: 3 g",
+    "Soy dip: 100 ml + sugar 10 g",
+    "Oil fry"
+   ],
+   "label": {
+    "name": "Egg rolls (2)",
+    "next": "Fry 175°C → cut diagonally → dip cup"
+   }
+  },
+  "drink/ck": {
+   "key": "drink/ck",
+   "brand": null,
+   "id": "ck",
+   "name": "Coca-Cola (can)",
+   "grab": "Coca-Cola can",
+   "img": "../../shared/drinks/ck.webp",
+   "kind": "drink",
+   "aliases": []
+  },
+  "drink/cz": {
+   "key": "drink/cz",
+   "brand": null,
+   "id": "cz",
+   "name": "Coca-Cola Zero (can)",
+   "grab": "Coca-Cola Zero can",
+   "img": "../../shared/drinks/cz.webp",
+   "kind": "drink",
+   "aliases": []
+  },
+  "drink/sp": {
+   "key": "drink/sp",
+   "brand": null,
+   "id": "sp",
+   "name": "Sprite (can)",
+   "grab": "Sprite can",
+   "img": "../../shared/drinks/sp.webp",
+   "kind": "drink",
+   "aliases": []
+  },
+  "taco-brava/bt": {
+   "key": "taco-brava/bt",
+   "brand": "taco-brava",
+   "id": "bt",
+   "name": "Birria tacos (3) with consommé",
+   "img": "../../taco-brava/assets/dishes/bt-hero.webp",
+   "kind": "main",
+   "price": 2700,
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No cilantro"
+     ]
+    }
+   ],
+   "aliases": [
+    "Birria tacos (3) with consommé"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Beef chuck soaks in chile and cumin liquid at least 8 h, then gets braised",
+     "Chuck + chiles + cumin 15 g + garlic 30 g + salt 15 g + onion 200 g + tomato 400 g + oil 50 ml + water to cover, at least 8 h, then braise"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not made last night",
+      "then": "STOP — take Birria tacos off the menu until the braise is done"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Braise covered (oven or stove) until 93°C in the middle and soft enough to shred (usually 3–3.5 h in a 160°C oven)"
+     ],
+     "timers": [
+      {
+       "sec": 12600,
+       "label": "Braise covered"
+      }
+     ],
+     "checks": [
+      93
+     ],
+     "heat": [
+      {
+       "kind": "Oven",
+       "temp": "160°C"
+      }
+     ],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Shred beef",
+      "Strain consommé",
+      "Skim fat",
+      "Keep 1.5 L consommé"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Dip tortilla lightly in consommé",
+      "Griddle with mozzarella 15 g + beef 50 g",
+      "Fold it"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": [],
+     "checkNotes": [
+      "Reheat beef 74°C before service"
+     ]
+    },
+    {
+     "lines": [
+      "Crisp both sides",
+      "Box 3 tacos + 120 ml consommé cup + onion/cilantro + lime"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Tacos slightly overlapping, cheese pull visible, cilantro + onion confetti, lime; consommé cup sealed",
+     "Cheese melt over edge (cheese pull)",
+     "Fill tacos ¾ so meat shows"
+    ],
+    "remember": [
+     "Braise until shreddable; shred hot"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Paper soup cup 16 oz + lid for consommé",
+     "Napkins"
+    ],
+    "hold": [
+     "Beef + consommé chill to 4°C or colder up to 72 h",
+     "Reheat consommé rolling simmer; beef in consommé to 74°C"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Meat tough",
+     "then": "Braise longer + 200 ml water; do not serve chewy"
+    },
+    {
+     "if": "Consommé bland",
+     "then": "Reduce 10 min; add 3 g salt max — re-taste measured"
+    },
+    {
+     "if": "Not made last night",
+     "then": "STOP — take Birria tacos off the menu until the braise is done"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Beef chuck / stew meat: 1500 g",
+    "Dried chiles (guajillo/ancho mix) or paste: 80 g",
+    "Cumin: 15 g",
+    "Garlic: 50 g",
+    "Onion: 400 g (braise + garnish)",
+    "Tomato: 400 g",
+    "Salt: 20 g",
+    "Oil: 100 ml",
+    "Water/stock: 2.0 L",
+    "Tortillas: 30",
+    "Mozzarella: 450 g",
+    "Cilantro: 50 g",
+    "Lime: 5 each"
+   ],
+   "label": {
+    "name": "Birria tacos (3) with consommé",
+    "next": "Reheat shred 74°C → griddle tacos → consommé cup"
+   }
+  },
+  "taco-brava/gt": {
+   "key": "taco-brava/gt",
+   "brand": "taco-brava",
+   "id": "gt",
+   "name": "Ground beef street tacos (3)",
+   "img": "../../taco-brava/assets/art/gt.webp",
+   "kind": "main",
+   "price": 1450,
+   "allergens": [
+    "gluten"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Salsa",
+     "choices": [
+      "On top",
+      "On the side"
+     ]
+    },
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No cilantro"
+     ]
+    }
+   ],
+   "aliases": [
+    "Ground beef street tacos (3)"
+   ],
+   "ahead": {
+    "kind": "hours",
+    "title": "Do this at least 4 hours before",
+    "lines": [
+     "Mix beef with spice blend",
+     "Rest at least 4 h in the fridge"
+    ],
+    "timers": [
+     {
+      "sec": 14400,
+      "label": "Rest"
+     }
+    ],
+    "fixes": [
+     {
+      "if": "Beef did not rest with the spice",
+      "then": "Cook anyway but make a note for next prep — flavor weaker"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Cook beef + onion + garlic in oil to 74°C",
+      "Drain the fat, leave about 30 ml"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Warm the tortillas",
+      "Fill 3 tacos, 40 g beef each",
+      "Onion/cilantro",
+      "Salsa 10 g",
+      "Lime wedge"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Meat visible; salsa not drowning; cilantro confetti; lime"
+    ],
+    "remember": [
+     "Keep cooked beef hot (60°C or hotter) max 2 h, or chill it"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Napkins"
+    ],
+    "hold": [
+     "Cooked beef chill 72 h",
+     "Reheat to 74°C"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Dry beef",
+     "then": "Add 40 ml water + 10 g salsa into pan"
+    },
+    {
+     "if": "Beef did not rest with the spice",
+     "then": "Cook anyway but make a note for next prep — flavor weaker"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Ground beef: 1200 g",
+    "Taco spice (cumin 20 g + chili powder 20 g + paprika 10 g + salt 15 g + oregano 5 g): 70 g total",
+    "Onion: 300 g",
+    "Garlic: 30 g",
+    "Oil: 50 ml",
+    "Tortillas: 30",
+    "Cilantro: 40 g",
+    "Onion garnish: 200 g",
+    "Salsa: 300 g",
+    "Lime: 5"
+   ],
+   "label": {
+    "name": "Ground beef street tacos (3)",
+    "next": "Reheat beef 74°C → 3 tortillas → salsa/cilantro/lime"
+   }
+  },
+  "taco-brava/lb": {
+   "key": "taco-brava/lb",
+   "brand": "taco-brava",
+   "id": "lb",
+   "name": "Loaded chicken burrito",
+   "img": "../../taco-brava/assets/dishes/lb.webp",
+   "kind": "main",
+   "price": 2050,
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No cream",
+      "No lettuce",
+      "No black beans"
+     ]
+    }
+   ],
+   "aliases": [
+    "Loaded chicken burrito"
+   ],
+   "ahead": null,
+   "before": {
+    "title": "Before you start",
+    "lines": [
+     "Season the chicken: salt 10 g + cumin 8 g",
+     "Cook to 74°C in the middle",
+     "Chill it, or keep it hot"
+    ],
+    "timers": [],
+    "checks": [
+     74
+    ]
+   },
+   "steps": [
+    {
+     "lines": [
+      "Warm the tortilla until it bends"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Layer rice 80 g, beans 80 g, chicken 150 g, cheddar 40 g, salsa 30 g, sour cream 30 g, lettuce 30 g"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": [],
+     "checkNotes": [
+      "Chicken 74°C"
+     ]
+    },
+    {
+     "lines": [
+      "Roll tight",
+      "Foil wrap",
+      "Optional: cut it diagonally"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Tight foil wrap, diagonal cut showing layered cross-section; salsa cup; lime",
+     "Cross-section sell: rice/bean/chicken/cheese layers visible"
+    ],
+    "remember": [
+     "Keep hot fillings 60°C or hotter or assemble from cold then toast"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Napkins"
+    ],
+    "hold": [
+     "Assemble to order preferred",
+     "Wrapped burritos hold max 30 min hot"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Tortilla cracks",
+     "then": "More steam-warm 10 s; less overfill"
+    },
+    {
+     "if": "Soggy",
+     "then": "Lettuce last; drain salsa"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Large tortillas / wraps: 10",
+    "Chicken: 1500 g",
+    "Rice dry: 800 g",
+    "Black beans drained: 800 g",
+    "Cheddar: 400 g",
+    "Sour cream: 300 g",
+    "Lettuce: 300 g",
+    "Salsa house: 400 g",
+    "Salt: 10 g for chicken season",
+    "Cumin: 8 g",
+    "Oil: 50 ml"
+   ],
+   "label": {
+    "name": "Loaded chicken burrito",
+    "next": "Warm tortilla → layer rice/bean/chicken/cheese → roll"
+   }
+  },
+  "taco-brava/cq": {
+   "key": "taco-brava/cq",
+   "brand": "taco-brava",
+   "id": "cq",
+   "name": "Chicken quesadilla",
+   "img": "../../taco-brava/assets/dishes/cq.webp",
+   "kind": "main",
+   "price": 1600,
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No peppers",
+      "No onion"
+     ]
+    }
+   ],
+   "aliases": [
+    "Chicken quesadilla"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Griddle tortilla",
+      "Fill chicken 120 g + cheeses + onion",
+      "Second tortilla on top"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Cook both sides until cheese melt and chicken 74°C"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Cut 4–6 wedges",
+      "Crema drizzle",
+      "Cilantro",
+      "Lime wedge"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Triangles fanned, cheese pull on one piece, crema drizzle, cilantro, lime",
+     "4–6 wedges",
+     "Keep one wedge mid-pull for drama"
+    ],
+    "remember": [
+     "Cheese fully melted before cut"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Napkins"
+    ],
+    "hold": [
+     "Best to-order",
+     "Hold whole max 15 min; cut on send"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Dry",
+     "then": "Add 20 g mozzarella; lower heat"
+    },
+    {
+     "if": "Tortilla burnt before melt",
+     "then": "Heat was too high — lid 30 s to melt"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Tortillas: 20",
+    "Chicken: 1200 g",
+    "Cheddar: 400 g",
+    "Mozzarella: 300 g",
+    "Onion: 300 g",
+    "Sour cream: 250 g",
+    "Oil: 100 ml",
+    "Salsa: 200 g",
+    "Cilantro: 30 g",
+    "Lime: 5"
+   ],
+   "label": {
+    "name": "Chicken quesadilla",
+    "next": "Griddle melt → wedge → crema/cilantro/lime"
+   }
+  },
+  "taco-brava/bn": {
+   "key": "taco-brava/bn",
+   "brand": "taco-brava",
+   "id": "bn",
+   "name": "Beef nachos (fried tortilla chips)",
+   "img": "../../taco-brava/assets/dishes/bn.webp",
+   "kind": "main",
+   "price": 2000,
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Add",
+     "choices": [
+      "Jalapeños"
+     ]
+    },
+    {
+     "label": "Leave out",
+     "choices": [
+      "No black beans",
+      "No cream",
+      "No peppers"
+     ]
+    }
+   ],
+   "aliases": [
+    "Beef nachos (fried tortilla chips)"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Cut tortillas into chips",
+      "Fry 175°C to crisp",
+      "Salt 8 g for the whole batch"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Cook beef with spice to 74°C"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Layer chips → beef → beans → cheese",
+      "Melt under salamander/oven"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Crema zig-zag",
+      "Pico",
+      "Cilantro",
+      "Pile it high"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Tall pile, cheese melted through (not just top), pico/onion/cilantro, crema zig-zag",
+     "Build in layers so bottom chips aren’t naked",
+     "Height sells"
+    ],
+    "remember": [
+     "Serve within 10 min of melt for crunch"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Napkins"
+    ],
+    "hold": [
+     "Chips staged dry",
+     "Assemble to order",
+     "Lid vented"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Soggy chips",
+     "then": "Under-fried or wet toppings — chips longer fry; drain beef"
+    },
+    {
+     "if": "Cheese not melted",
+     "then": "30–45 s more heat"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Tortillas for chips: 30 (or 10 portions chips)",
+    "Ground beef: 1200 g",
+    "Cheddar: 500 g",
+    "Black beans: 600 g",
+    "Sour cream: 300 g",
+    "Oil fry chips",
+    "Spice same as Ground beef street tacos (3) blend: 50 g",
+    "Salsa/pico: 300 g",
+    "Cilantro: 40 g",
+    "Jalapeño optional: 100 g"
+   ],
+   "label": {
+    "name": "Beef nachos (fried tortilla chips)",
+    "next": "Fry chips → layer beef/cheese melt → crema/cilantro"
+   }
+  },
+  "taco-brava/bb": {
+   "key": "taco-brava/bb",
+   "brand": "taco-brava",
+   "id": "bb",
+   "name": "Chicken burrito bowl",
+   "img": "../../taco-brava/assets/dishes/bb.webp",
+   "kind": "main",
+   "price": 2150,
+   "allergens": [
+    "dairy"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No cilantro",
+      "No cheddar",
+      "No tomato"
+     ]
+    }
+   ],
+   "aliases": [
+    "Chicken burrito bowl"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Rice cooked",
+      "Chicken seasoned and cooked to 74°C"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Bowl: rice base 100 g → chicken arc 150 g → beans 80 g → tomato/lettuce zones → cheese 30 g → salsa → cilantro crown → lime"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Compartment or ring: rice base, protein arc, beans, salsa, cheese, crema, cilantro crown",
+     "Color wheel plating — each topping in its zone"
+    ],
+    "remember": [
+     "Hot components 60°C or hotter; cold garnish 4°C or colder"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Napkins"
+    ],
+    "hold": [
+     "Components staged",
+     "Assemble to order for looks"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Flat look",
+     "then": "Rebuild zones; fluff rice height"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Rice dry: 1000 g",
+    "Chicken: 1500 g",
+    "Black beans: 800 g",
+    "Lettuce: 400 g",
+    "Tomato: 400 g",
+    "Cheddar: 300 g",
+    "Lime: 5",
+    "Cilantro: 50 g",
+    "Salsa: 400 g",
+    "Salt/cumin for chicken: 10 g / 8 g"
+   ],
+   "label": {
+    "name": "Chicken burrito bowl",
+    "next": "Rice base → chicken arc → color toppings → cilantro/lime"
+   }
+  },
+  "taco-brava/st": {
+   "key": "taco-brava/st",
+   "brand": "taco-brava",
+   "id": "st",
+   "name": "Crispy shrimp tacos (3)",
+   "img": "../../taco-brava/assets/dishes/st.webp",
+   "kind": "main",
+   "price": 2250,
+   "allergens": [
+    "shellfish",
+    "gluten",
+    "dairy"
+   ],
+   "flags": [
+    "shrimp"
+   ],
+   "options": [
+    {
+     "label": "Lime cream",
+     "choices": [
+      "On top",
+      "On the side"
+     ]
+    },
+    {
+     "label": "Leave out",
+     "choices": [
+      "No cilantro"
+     ]
+    }
+   ],
+   "aliases": [
+    "Crispy shrimp tacos (3)"
+   ],
+   "ahead": {
+    "kind": "hours",
+    "title": "Start this 4 hours before",
+    "lines": [
+     "Shrimp in garlic brine, max 4 h"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not ready in time",
+      "then": "STOP — do not cook this dish yet. Take it off the menu until it is ready"
+     }
+    ]
+   },
+   "before": {
+    "title": "Before you start",
+    "lines": [
+     "Take shrimp from the garlic brine",
+     "Drain well",
+     "Toss flour + salt 10 g + garlic powder 8 g"
+    ],
+    "timers": [],
+    "checks": []
+   },
+   "steps": [
+    {
+     "lines": [
+      "Fry shrimp 175°C until opaque/crisp (about 2–3 min)"
+     ],
+     "timers": [
+      {
+       "sec": 180,
+       "label": "Fry shrimp"
+      }
+     ],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Warm the tortillas",
+      "Slaw 15 g",
+      "Shrimp about 40 g each taco",
+      "Crema",
+      "Cilantro",
+      "Lime wedge"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Slaw peeking, shrimp on top (not under), lime, cilantro, light crema",
+     "Crispy tips up",
+     "Odd count",
+     "Slaw for height without more shrimp"
+    ],
+    "remember": [
+     "Shrimp just opaque",
+     "Assemble immediately for crunch"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Napkins"
+    ],
+    "hold": [
+     "Fry to order",
+     "Slaw cold",
+     "Do not hold battered wet shrimp more than 20 min before fry"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Soggy",
+     "then": "Oil cool or held too long — re-fry 30 s once"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    }
+   ],
+   "ingredients": [
+    "Shrimp: 1200 g",
+    "Flour: 300 g",
+    "Salt: 10 g",
+    "Garlic powder: 8 g",
+    "Tortillas: 30",
+    "Cabbage slaw: 400 g",
+    "Lime: 5",
+    "Sour cream: 250 g",
+    "Cilantro: 50 g",
+    "Oil fry"
+   ],
+   "label": {
+    "name": "Crispy shrimp tacos (3)",
+    "next": "Flour → fry 175°C → taco + slaw/crema/lime"
+   }
+  },
+  "taco-brava/cs": {
+   "key": "taco-brava/cs",
+   "brand": "taco-brava",
+   "id": "cs",
+   "name": "Chips & salsa",
+   "img": "../../taco-brava/assets/dishes/cs.webp",
+   "kind": "side",
+   "price": 550,
+   "allergens": [],
+   "flags": [],
+   "options": [],
+   "aliases": [
+    "Chips & salsa"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Fry chips 175°C",
+      "Salt them"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Salsa: dice tomato/onion",
+      "Cilantro",
+      "Lime juice 40 ml",
+      "Salt 8 g",
+      "Chile 5 g",
+      "Rest 15 min"
+     ],
+     "timers": [
+      {
+       "sec": 900,
+       "label": "Rest"
+      }
+     ],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Chips upright",
+      "Salsa cup",
+      "Cilantro leaf + lime on rim"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Warm chips in cup/tray, salsa in clear cup, cilantro leaf + lime on rim",
+     "Chips upright/stacked for volume look"
+    ],
+    "remember": [
+     "Salsa 4°C or colder hold"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Fiber 3-compartment taco tray",
+     "Napkins"
+    ],
+    "hold": [
+     "Chips airtight dry",
+     "Salsa 48 h fridge"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Stale chips",
+     "then": "Re-fry 30 s or discard"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    }
+   ],
+   "ingredients": [
+    "Tortillas: 20",
+    "Oil fry",
+    "Salt: 8 g",
+    "Tomato: 500 g",
+    "Onion: 200 g",
+    "Cilantro: 50 g",
+    "Lime: 3",
+    "Salt for salsa: 8 g",
+    "Chile flake or fresh: 5 g"
+   ],
+   "label": {
+    "name": "Chips & salsa",
+    "next": "Fry chips → salsa cup → lime/cilantro"
+   }
+  },
+  "smash-shack/sc": {
+   "key": "smash-shack/sc",
+   "brand": "smash-shack",
+   "id": "sc",
+   "name": "Smash cheeseburger",
+   "img": "../../smash-shack/assets/dishes/sc-hero.webp",
+   "kind": "main",
+   "price": 1695,
+   "allergens": [
+    "dairy",
+    "gluten",
+    "egg"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No pickles",
+      "No tomato",
+      "No lettuce",
+      "No ketchup",
+      "No mayo"
+     ]
+    }
+   ],
+   "aliases": [
+    "Smash cheeseburger"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Roll 75 g beef balls the night before",
+     "No salt until you smash them",
+     "Rest overnight in the fridge, lightly wrapped"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not there in the morning",
+      "then": "STOP — do not cook this dish today. Take it off the menu"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Toast buns cut-side on griddle 60–90 s until deep brown"
+     ],
+     "timers": [
+      {
+       "sec": 90,
+       "label": "Toast buns cut-side"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Place 2 balls on hot griddle",
+      "Smash thin",
+      "Salt 0.7 g and a pinch of pepper on each patty"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Cook about 60–90 s",
+      "Flip",
+      "Cheese on one patty",
+      "Stack",
+      "74°C or juices run clear (smash burgers are cooked well-done)"
+     ],
+     "timers": [
+      {
+       "sec": 90,
+       "label": "Cook"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Build from the bottom: bottom bun + mayo 15 g",
+      "Ketchup 15 g",
+      "Pickles 20 g",
+      "Onion",
+      "Tomato",
+      "Lettuce",
+      "Patties",
+      "Top bun"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Into the box on a deli liner",
+      "Lacy edges showing"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Toasted bun, cheese draped over smash edges, pickle fan, mayo swipe on paper",
+     "Smash thin for lacey edges (looks craft)",
+     "Toast bun hard"
+    ],
+    "remember": [
+     "Griddle very hot (about 200°C)",
+     "Bun toasted every time"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Burger box",
+     "Deli wrap liner",
+     "Napkins"
+    ],
+    "hold": [
+     "Smash to order only",
+     "Do not pre-cook patties"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Patty sticks",
+     "then": "Griddle not hot enough / not oiled — heat up"
+    },
+    {
+     "if": "Gray steamed",
+     "then": "Overcrowding — max 2 burgers at once on your own"
+    },
+    {
+     "if": "Bun soggy",
+     "then": "Toast harder; mayo thinner layer"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Ground beef balls: 20 × 75 g (= 1500 g)",
+    "Burger buns: 10",
+    "Cheddar slices: 300 g (≈30 g each)",
+    "Lettuce: 200 g",
+    "Tomato: 300 g",
+    "Onion: 200 g",
+    "Pickles: 200 g",
+    "Ketchup: 150 g",
+    "Mayo: 150 g",
+    "Oil/butter for toast: 50 ml",
+    "Salt: 15 g (for smashing)",
+    "Black pepper: 5 g"
+   ],
+   "label": {
+    "name": "Smash cheeseburger",
+    "next": "Toast bun → smash 2 × 75 g → cheese → stack → box"
+   }
+  },
+  "smash-shack/co": {
+   "key": "smash-shack/co",
+   "brand": "smash-shack",
+   "id": "co",
+   "name": "Smash burger combo (burger + fries)",
+   "img": "../../smash-shack/assets/dishes/co.webp",
+   "kind": "main",
+   "price": 2150,
+   "allergens": [
+    "dairy",
+    "gluten",
+    "egg"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No pickles",
+      "No tomato",
+      "No lettuce",
+      "No ketchup",
+      "No mayo"
+     ]
+    }
+   ],
+   "aliases": [
+    "Smash burger combo (burger + fries)"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Uses the 75 g smash balls rolled the night before",
+     "Rest overnight in the fridge, lightly wrapped"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not there in the morning",
+      "then": "STOP — do not cook this dish today. Take it off the menu"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Drop fries 175°C 3–4 min",
+      "Salt them",
+      "Upright in cup"
+     ],
+     "timers": [
+      {
+       "sec": 240,
+       "label": "Drop fries"
+      }
+     ],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Burger: toast buns cut-side on griddle 60–90 s until deep brown"
+     ],
+     "timers": [
+      {
+       "sec": 90,
+       "label": "Toast buns cut-side"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Burger: place 2 balls on hot griddle",
+      "Smash thin",
+      "Salt 0.7 g and a pinch of pepper on each patty"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Burger: cook about 60–90 s",
+      "Flip",
+      "Cheese on one patty",
+      "Stack",
+      "74°C or juices run clear (smash burgers are cooked well-done)"
+     ],
+     "timers": [
+      {
+       "sec": 90,
+       "label": "Cook"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Burger: build from the bottom: bottom bun + mayo 15 g",
+      "Ketchup 15 g",
+      "Pickles 20 g",
+      "Onion",
+      "Tomato",
+      "Lettuce",
+      "Patties",
+      "Top bun"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Serve burger box + fries cup + ketchup"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Burger as above + fries in cup with height, ketchup cup, pickle on the side",
+     "Fries vertical in cup",
+     "Burger angle facing the customer"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Burger box",
+     "Open chip cup 16 oz for fries",
+     "Deli wrap liner",
+     "Napkins"
+    ],
+    "hold": [
+     "Fries max 5 min under lamp",
+     "Burger to-order"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Fries limp",
+     "then": "Oil cool or held too long — re-fry 45 s once"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Everything for 10 × Smash cheeseburger",
+    "Fries frozen: 1500 g",
+    "Oil fry",
+    "Salt for fries: 15 g",
+    "Extra ketchup cups: 100 g"
+   ],
+   "label": {
+    "name": "Smash burger combo (burger + fries)",
+    "next": "Fries 175°C + smash burger build"
+   }
+  },
+  "smash-shack/ds": {
+   "key": "smash-shack/ds",
+   "brand": "smash-shack",
+   "id": "ds",
+   "name": "Double smash cheeseburger",
+   "img": "../../smash-shack/assets/dishes/ds.webp",
+   "kind": "main",
+   "price": 2600,
+   "allergens": [
+    "dairy",
+    "gluten",
+    "egg"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No pickles",
+      "No ketchup",
+      "No mayo"
+     ]
+    }
+   ],
+   "aliases": [
+    "Double smash cheeseburger"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Uses the 75 g smash balls rolled the night before (4 per burger)",
+     "Smash balls rested overnight"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not there in the morning",
+      "then": "STOP — do not cook this dish today. Take it off the menu"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Toast the bun"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Smash 4 patties (in two rounds if needed)",
+      "Cheese on 2",
+      "Stack all four with cheese layers"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": [],
+     "checkNotes": [
+      "Each patty 74°C"
+     ]
+    },
+    {
+     "lines": [
+      "Dress like the smash cheeseburger: mayo, ketchup, plus lots of pickles and onion"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Toasted bun, cheese draped over smash edges, pickle fan, mayo swipe on paper",
+     "Smash thin for lacey edges (looks craft)",
+     "Toast bun hard"
+    ],
+    "remember": [
+     "Do not compress stack until box"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Burger box",
+     "Deli wrap liner",
+     "Napkins"
+    ],
+    "hold": [
+     "To-order only"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Stack slides",
+     "then": "Rest 20 s; skewer if needed for delivery"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Beef balls: 40 × 75 g (= 3000 g)",
+    "Buns: 10",
+    "Cheddar: 450 g",
+    "Onion: 250 g",
+    "Pickles: 250 g",
+    "Ketchup: 150 g",
+    "Mayo: 150 g",
+    "Salt: 25 g",
+    "Pepper: 8 g"
+   ],
+   "label": {
+    "name": "Double smash cheeseburger",
+    "next": "Toast → 4 smash patties + cheese → tall stack"
+   }
+  },
+  "smash-shack/cc": {
+   "key": "smash-shack/cc",
+   "brand": "smash-shack",
+   "id": "cc",
+   "name": "Crispy chicken sandwich",
+   "img": "../../smash-shack/assets/dishes/cc.webp",
+   "kind": "main",
+   "price": 1750,
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No pickles",
+      "No mayo",
+      "No lettuce"
+     ]
+    }
+   ],
+   "aliases": [
+    "Crispy chicken sandwich"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Chicken cutlets in buttermilk brine at least 8 h",
+     "Chicken + buttermilk 500 ml + salt 20 g + garlic powder 10 g + paprika 10 g, at least 8 h"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not brined last night",
+      "then": "STOP — emergency brine at least 2 h, or take it off the menu today"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Drain well",
+      "Flour → egg → flour"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Fry 175°C to 74°C (about 5–6 min)"
+     ],
+     "timers": [
+      {
+       "sec": 360,
+       "label": "Fry"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Toast the bun",
+      "Mayo 15 g",
+      "Pickles",
+      "Cutlet (let it hang over the edge)",
+      "Lettuce",
+      "Top bun"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Crispy edges out, pickle chips, mayo ribbon, toasted bun",
+     "Cutlet slightly larger than bun (overhang = generous)"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Burger box",
+     "Deli wrap liner",
+     "Napkins"
+    ],
+    "hold": [
+     "Hold fried on rack max 20 min",
+     "Assemble to-order"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Not brined last night",
+     "then": "STOP — emergency brine at least 2 h, or take it off the menu today"
+    },
+    {
+     "if": "Oil cool",
+     "then": "Wait"
+    },
+    {
+     "if": "Coating falls off",
+     "then": "Pat less wet; press flour on"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Chicken cutlets: 1500 g",
+    "Buttermilk or milk+vinegar: 500 ml",
+    "Salt (brine): 20 g",
+    "Garlic powder: 10 g",
+    "Paprika: 10 g",
+    "Flour: 400 g",
+    "Eggs: 5",
+    "Buns: 10",
+    "Lettuce: 250 g",
+    "Pickles: 200 g",
+    "Mayo: 150 g",
+    "Oil fry"
+   ],
+   "label": {
+    "name": "Crispy chicken sandwich",
+    "next": "Flour-egg-flour → fry 175°C → bun/mayo/pickle"
+   }
+  },
+  "smash-shack/ct": {
+   "key": "smash-shack/ct",
+   "brand": "smash-shack",
+   "id": "ct",
+   "name": "Chicken tenders & fries",
+   "img": "../../smash-shack/assets/dishes/ct.webp",
+   "kind": "main",
+   "price": 1550,
+   "allergens": [
+    "gluten",
+    "egg"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Dip",
+     "choices": [
+      "Ketchup",
+      "Mayo",
+      "Ketchup + mayo"
+     ]
+    }
+   ],
+   "aliases": [
+    "Chicken tenders & fries"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Chicken tenders in buttermilk brine at least 8 h",
+     "Same brine as the chicken sandwich: buttermilk, salt, garlic powder, paprika"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not brined last night",
+      "then": "STOP — take it off the menu today"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Bread the tenders",
+      "Fry 175°C to 74°C"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Fry the fries at 175°C",
+      "Salt mix (salt 15 g + paprika 8 g + garlic powder 8 g)"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Lean the tenders up together (3 or 5 - an odd number)",
+      "Fries cup",
+      "Ketchup + mayo cups"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Tenders leaned / tepee, fries cup, ketchup + mayo cups, parsley dust optional",
+     "Odd tender count",
+     "Lean for height"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Burger box",
+     "Open chip cup 16 oz for fries",
+     "Deli wrap liner",
+     "Napkins"
+    ],
+    "hold": [
+     "Rack max 20 min",
+     "Fries max 5 min"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Not brined last night",
+     "then": "STOP — take it off the menu today"
+    },
+    {
+     "if": "Fries limp",
+     "then": "Re-fry 45 s"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Chicken tenders: 1500 g",
+    "Buttermilk brine: same ratios as Crispy chicken sandwich for 1500 g",
+    "Flour: 400 g",
+    "Eggs: 5",
+    "Fries: 1500 g",
+    "Ketchup: 200 g",
+    "Salt seasoning mix (salt 15 g + paprika 8 g + garlic powder 8 g)",
+    "Oil fry"
+   ],
+   "label": {
+    "name": "Chicken tenders & fries",
+    "next": "Fry tenders 175°C → tepee + fries + dips"
+   }
+  },
+  "smash-shack/lf": {
+   "key": "smash-shack/lf",
+   "brand": "smash-shack",
+   "id": "lf",
+   "name": "Loaded fries (cheddar sauce, beef, scallion)",
+   "img": "../../smash-shack/assets/dishes/lf.webp",
+   "kind": "main",
+   "price": 1195,
+   "allergens": [
+    "dairy"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No scallion"
+     ]
+    }
+   ],
+   "aliases": [
+    "Loaded fries (cheddar sauce, beef, scallion)"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Cook beef with salt 10 g + cumin 5 g to 74°C"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Fry fries 175°C",
+      "Layer half cheese mid-pile",
+      "Beef",
+      "Rest of the cheese on top to melt",
+      "Sour cream zig-zag",
+      "Scallion on top"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Tall fries, cheddar melt through, beef crumble, scallion rain, crema zig-zag",
+     "Layer cheese mid-pile so bottom isn’t dry",
+     "Scallion last"
+    ],
+    "remember": [
+     "Serve max 8 min after fry"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Burger box",
+     "Open chip cup 16 oz for fries",
+     "Deli wrap liner",
+     "Napkins"
+    ],
+    "hold": [
+     "Assemble to order"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Soggy",
+     "then": "Fries held too long — fresh drop"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Fries: 2000 g",
+    "Ground beef: 800 g",
+    "Cheddar: 500 g",
+    "Sour cream: 300 g",
+    "Scallion: 100 g",
+    "Salt: 10 g for beef",
+    "Cumin or pepper: 5 g",
+    "Oil fry"
+   ],
+   "label": {
+    "name": "Loaded fries (cheddar sauce, beef, scallion)",
+    "next": "Fries → cheese/beef layers → crema/scallion"
+   }
+  },
+  "smash-shack/fs": {
+   "key": "smash-shack/fs",
+   "brand": "smash-shack",
+   "id": "fs",
+   "name": "Fries (side)",
+   "img": "../../smash-shack/assets/dishes/fs.webp",
+   "kind": "side",
+   "price": 250,
+   "allergens": [],
+   "flags": [],
+   "options": [],
+   "aliases": [
+    "Fries (side)"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Fry 175°C 3–4 min"
+     ],
+     "timers": [
+      {
+       "sec": 240,
+       "label": "Fry"
+      }
+     ],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Salt them",
+      "Fill cup above rim",
+      "Add a ketchup cup"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Hot, salted, upright in chip cup; tiny ketchup cup",
+     "Fill cup above rim for generous look"
+    ],
+    "remember": [
+     "Serve hot max 5 min"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Open chip cup 16 oz for fries",
+     "Napkins"
+    ],
+    "hold": [
+     "Max 5 min lamp"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Limp",
+     "then": "Re-fry 45 s or remake"
+    },
+    {
+     "if": "Oil cool",
+     "then": "Wait"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    }
+   ],
+   "ingredients": [
+    "Fries: 1500 g",
+    "Oil",
+    "Salt: 15 g",
+    "Ketchup packets/cups: 150 g"
+   ],
+   "label": {
+    "name": "Fries (side)",
+    "next": "Fry 175°C → salt → above-rim cup"
+   }
+  },
+  "nonnas-night-in/bp": {
+   "key": "nonnas-night-in/bp",
+   "brand": "nonnas-night-in",
+   "id": "bp",
+   "name": "Baked penne bolognese",
+   "img": "../../nonnas-night-in/assets/dishes/bp-hero.webp",
+   "kind": "main",
+   "price": 2650,
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "flags": [],
+   "options": [],
+   "aliases": [
+    "Baked penne bolognese"
+   ],
+   "ahead": {
+    "kind": "optional",
+    "title": "Can be done ahead",
+    "lines": [
+     "Best made the night before: simmer the bolognese base, then chill overnight",
+     "Cook the bolognese: beef + onion + garlic + tomato + herbs + salt + sugar",
+     "Simmer 45 min",
+     "Chill overnight (optional)"
+    ],
+    "timers": [
+     {
+      "sec": 2700,
+      "label": "Simmer"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Boil penne 1 min less than al dente",
+      "Drain well",
+      "Mix pasta + bolognese",
+      "Portion aluminum trays"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Top mozzarella 40 g + parm 10 g",
+      "Bake 200°C until cheese browned and 74°C in the middle (about 15–20 min)"
+     ],
+     "timers": [
+      {
+       "sec": 1200,
+       "label": "Bake"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oven",
+       "temp": "200°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Parsley 2 g",
+      "Oil gloss on rim"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Cheese-browned top facing up, parsley snow, olive-oil gloss on rim",
+     "Deep tray so cheese crust stays intact in transit",
+     "Don’t drown — sauce cling"
+    ],
+    "remember": [
+     "Cheese browned not pale",
+     "Keep hot 60°C or hotter"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Aluminum oblong 2 lb tray + flat lid",
+     "Fork",
+     "Napkins"
+    ],
+    "hold": [
+     "Bake ahead; reheat covered 160°C to 74°C",
+     "Lid on for delivery; if it steams, open the lid 10 s before closing it"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Dry pasta",
+     "then": "Add 40 ml bolognese sauce or hot water before bake"
+    },
+    {
+     "if": "Pale cheese",
+     "then": "Broil/salamander 60–90 s watching burn"
+    },
+    {
+     "if": "Under 74°C",
+     "then": "Return oven; re-probe"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Penne dry: 1200 g",
+    "Ground beef: 1500 g",
+    "Onion: 300 g",
+    "Garlic: 80 g",
+    "Tomato (crushed/passata): 1200 g",
+    "Mozzarella: 400 g",
+    "Parmesan: 100 g",
+    "Oil: 100 ml",
+    "Salt: 20 g",
+    "Dried Italian herbs: 15 g",
+    "Black pepper: 5 g",
+    "Sugar: 10 g (balance tomato)"
+   ],
+   "label": {
+    "name": "Baked penne bolognese",
+    "next": "Mix pasta+bolognese → cheese → bake 200°C to 74°C"
+   }
+  },
+  "nonnas-night-in/cp": {
+   "key": "nonnas-night-in/cp",
+   "brand": "nonnas-night-in",
+   "id": "cp",
+   "name": "Chicken parmigiana with spaghetti",
+   "img": "../../nonnas-night-in/assets/dishes/cp.webp",
+   "kind": "main",
+   "price": 2400,
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No Parmesan"
+     ]
+    }
+   ],
+   "aliases": [
+    "Chicken parmigiana with spaghetti"
+   ],
+   "ahead": {
+    "kind": "optional",
+    "title": "Can be done ahead",
+    "lines": [
+     "Optional: pound the cutlets the night before and cover (they cook more evenly)"
+    ],
+    "timers": []
+   },
+   "before": {
+    "title": "Before you start",
+    "lines": [
+     "Season the cutlets with salt and pepper",
+     "Bread them: flour → egg → flour (or crumbs if you have them)"
+    ],
+    "timers": [],
+    "checks": []
+   },
+   "steps": [
+    {
+     "lines": [
+      "Fry cutlets 170–175°C to 74°C"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "170–175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Top marinara 40 g + mozzarella 40 g + parm",
+      "Melt the cheese"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Spaghetti tossed in marinara",
+      "Twirl into a nest",
+      "Prop cutlet at 45°",
+      "Parsley"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Cutlet propped on pasta nest, mozzarella stretch, marinara gloss, parm + parsley",
+     "Prop cutlet at 45° — height",
+     "Pasta twirl under"
+    ],
+    "remember": [
+     "Cheese melted"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Aluminum oblong 2 lb tray + flat lid",
+     "Fork",
+     "Napkins"
+    ],
+    "hold": [
+     "Cutlets rack max 20 min; melt cheese on send",
+     "Pasta keep hot oiled"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Soggy crust",
+     "then": "Sauce under not over until melt; less sauce on top"
+    },
+    {
+     "if": "Oil cool",
+     "then": "Wait"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Chicken cutlets: 1500 g",
+    "Flour: 400 g",
+    "Eggs: 10",
+    "Salt: 15 g",
+    "Pepper: 5 g",
+    "Mozzarella: 400 g",
+    "Parmesan: 150 g",
+    "Spaghetti dry: 1000 g",
+    "Tomato marinara: 1000 g",
+    "Oil fry",
+    "Italian herbs: 10 g",
+    "Parsley: 20 g"
+   ],
+   "label": {
+    "name": "Chicken parmigiana with spaghetti",
+    "next": "Fry cutlet → sauce/cheese melt → pasta nest prop"
+   }
+  },
+  "nonnas-night-in/sm": {
+   "key": "nonnas-night-in/sm",
+   "brand": "nonnas-night-in",
+   "id": "sm",
+   "name": "Spaghetti & meatballs",
+   "img": "../../nonnas-night-in/assets/dishes/sm.webp",
+   "kind": "main",
+   "price": 2550,
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No Parmesan"
+     ]
+    }
+   ],
+   "aliases": [
+    "Spaghetti & meatballs"
+   ],
+   "ahead": {
+    "kind": "hours",
+    "title": "Do this at least 4 hours before",
+    "lines": [
+     "Rest the raw meatballs at least 4 h (or overnight)",
+     "Mix beef + eggs + crumbs + onion 150 g + garlic 40 g + salt 15 g + herbs 8 g",
+     "Form 30 × 50 g balls",
+     "Rest at least 4 h"
+    ],
+    "timers": [
+     {
+      "sec": 14400,
+      "label": "Rest raw meatballs"
+     }
+    ],
+    "fixes": [
+     {
+      "if": "Meatballs did not rest",
+      "then": "Still cook but note texture; next time enforce gate"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Bake meatballs 200°C to 74°C (about 18–20 min) or simmer in sauce"
+     ],
+     "timers": [
+      {
+       "sec": 1200,
+       "label": "Bake meatballs"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oven",
+       "temp": "200°C"
+      }
+     ],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Cook the spaghetti",
+      "Coat in sauce"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Twirl the pasta into a nest",
+      "3 meatballs on top",
+      "Spoon sauce over",
+      "Parm 15 g",
+      "Parsley"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Twirl nest, 3 meatballs on top (odd number), sauce spooned last, parm + parsley",
+     "Meatballs on top never buried",
+     "Nest looks abundant"
+    ],
+    "remember": [
+     "Odd count 3 on top never buried"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Aluminum oblong 2 lb tray + flat lid",
+     "Fork",
+     "Napkins"
+    ],
+    "hold": [
+     "Meatballs in sauce max 72 h chill",
+     "Reheat to 74°C"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Balls break",
+     "then": "More chill time; gentler handling"
+    },
+    {
+     "if": "Meatballs did not rest",
+     "then": "Still cook but note texture; next time enforce gate"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Spaghetti dry: 1200 g",
+    "Ground beef: 1500 g",
+    "Eggs: 5",
+    "Breadcrumbs (or bun crumbs): 150 g",
+    "Onion minced: 300 g",
+    "Garlic: 80 g",
+    "Salt: 20 g",
+    "Pepper: 5 g",
+    "Italian herbs: 12 g",
+    "Tomato sauce: 1200 g",
+    "Parmesan: 150 g",
+    "Oil: 100 ml",
+    "Parsley: 20 g"
+   ],
+   "label": {
+    "name": "Spaghetti & meatballs",
+    "next": "Reheat balls 74°C → pasta nest → 3 on top"
+   }
+  },
+  "nonnas-night-in/ca": {
+   "key": "nonnas-night-in/ca",
+   "brand": "nonnas-night-in",
+   "id": "ca",
+   "name": "Chicken Alfredo penne",
+   "img": "../../nonnas-night-in/assets/dishes/ca.webp",
+   "kind": "main",
+   "price": 2050,
+   "allergens": [
+    "dairy",
+    "gluten"
+   ],
+   "flags": [],
+   "options": [],
+   "aliases": [
+    "Chicken Alfredo penne"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Season chicken with salt 8 g",
+      "Cook to 74°C",
+      "Slice it"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Boil the penne",
+      "Keep some pasta water"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Sauce: garlic in butter 30 s",
+      "Cream 600 g",
+      "Parm 200 g",
+      "Loosen with pasta water 150–200 ml",
+      "Salt 4 g",
+      "Pepper"
+     ],
+     "timers": [
+      {
+       "sec": 30,
+       "label": "Sauce"
+      }
+     ],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Toss pasta + chicken",
+      "Sauce should cling, not be soupy"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Into the tray",
+      "Pepper",
+      "Parsley",
+      "Parm snow 5 g"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Creamy coat (not soup), cracked black pepper, parsley, parm snow, optional lemon zest",
+     "Sauce cling > pool",
+     "Gloss from cream/oil"
+    ],
+    "remember": [
+     "Sauce cling (not broken/watery)"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Aluminum oblong 2 lb tray + flat lid",
+     "Fork",
+     "Napkins"
+    ],
+    "hold": [
+     "Sauce + pasta best combined to-order",
+     "If holding, under-sauce and add on send"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Sauce split",
+     "then": "Off heat; whisk 30 ml warm pasta water; if still split remake half sauce"
+    },
+    {
+     "if": "Too thick",
+     "then": "Pasta water 30 ml at a time"
+    },
+    {
+     "if": "Too thin",
+     "then": "Parm 20 g + simmer 1 min"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Penne dry: 1200 g",
+    "Chicken: 1500 g",
+    "Sour cream or cream: 600 g",
+    "Garlic: 100 g",
+    "Parmesan: 250 g",
+    "Butter or oil: 50 g",
+    "Salt: 12 g",
+    "Black pepper: 8 g",
+    "Parsley: 20 g",
+    "Pasta water reserved: 300 ml"
+   ],
+   "label": {
+    "name": "Chicken Alfredo penne",
+    "next": "Toss penne + chicken in Alfredo cling sauce → pepper/parsley"
+   }
+  },
+  "nonnas-night-in/pa": {
+   "key": "nonnas-night-in/pa",
+   "brand": "nonnas-night-in",
+   "id": "pa",
+   "name": "Penne arrabbiata (vegetarian)",
+   "img": "../../nonnas-night-in/assets/dishes/pa.webp",
+   "kind": "main",
+   "price": 1695,
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "flags": [
+    "vegetarian",
+    "spicy"
+   ],
+   "options": [
+    {
+     "label": "Heat",
+     "choices": [
+      "Regular",
+      "Extra spicy"
+     ]
+    },
+    {
+     "label": "Leave out",
+     "choices": [
+      "No Parmesan"
+     ]
+    }
+   ],
+   "aliases": [
+    "Penne arrabbiata (vegetarian)"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Sauté garlic + onion in oil",
+      "Add tomato, chili 12 g, salt, sugar",
+      "Simmer 20 min"
+     ],
+     "timers": [
+      {
+       "sec": 1200,
+       "label": "Simmer"
+      }
+     ],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Boil the penne",
+      "Toss in sauce until every piece coated"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Parm",
+      "Chili flake pinch visible",
+      "Parsley",
+      "Oil sheen"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Glossy red sauce, chili flake, parsley, parm optional, olive-oil sheen",
+     "Sauce coats every penne — no dry pasta",
+     "Heat visible as flake"
+    ],
+    "remember": [
+     "Sauce simmered at least 20 min",
+     "No dry pasta pieces",
+     "Serve 60°C or hotter"
+    ],
+    "timers": [
+     {
+      "sec": 1200,
+      "label": "Sauce simmered"
+     }
+    ]
+   },
+   "pack": {
+    "lines": [
+     "Aluminum oblong 2 lb tray + flat lid",
+     "Fork",
+     "Napkins"
+    ],
+    "hold": [
+     "Sauce 72 h chill",
+     "Pasta combine to-order"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Too spicy",
+     "then": "Add 100 g tomato + 5 g sugar; simmer 5 min — do not add cream"
+    },
+    {
+     "if": "Too bland",
+     "then": "Add 2 g chili flake + 3 g salt max"
+    }
+   ],
+   "ingredients": [
+    "Penne dry: 1200 g",
+    "Tomato: 1500 g",
+    "Garlic: 120 g",
+    "Onion: 400 g",
+    "Oil: 150 ml",
+    "Chili flake: 12 g",
+    "Salt: 18 g",
+    "Sugar: 10 g",
+    "Parmesan: 200 g",
+    "Parsley: 20 g"
+   ],
+   "label": {
+    "name": "Penne arrabbiata (vegetarian)",
+    "next": "Toss penne in arrabbiata → parm/chili/parsley"
+   }
+  },
+  "nonnas-night-in/gb": {
+   "key": "nonnas-night-in/gb",
+   "brand": "nonnas-night-in",
+   "id": "gb",
+   "name": "Cheesy garlic bread",
+   "img": "../../nonnas-night-in/assets/dishes/gb.webp",
+   "kind": "side",
+   "price": 450,
+   "allergens": [
+    "gluten",
+    "dairy"
+   ],
+   "flags": [],
+   "options": [],
+   "aliases": [
+    "Cheesy garlic bread"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Mix garlic + oil + salt + herbs",
+      "Brush bread",
+      "Mozzarella on top",
+      "Bake/broil until blistered"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Score sticks",
+      "Parsley"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Cheese blistered/browned, garlic butter shine, parsley, cut into share sticks",
+     "Score before bake so pull-apart looks intentional"
+    ],
+    "remember": [
+     "Cheese blistered/browned",
+     "Garlic cooked not raw burn"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Aluminum oblong 2 lb tray + flat lid",
+     "Fork",
+     "Napkins"
+    ],
+    "hold": [
+     "Best fresh",
+     "Re-crisp 2 min oven"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Burnt garlic",
+     "then": "Scrape; reduce broiler time"
+    }
+   ],
+   "ingredients": [
+    "Buns or baguette split: 10",
+    "Garlic: 80 g",
+    "Oil or butter: 100 ml",
+    "Mozzarella: 400 g",
+    "Italian herbs: 8 g",
+    "Parsley: 15 g",
+    "Salt: 5 g"
+   ],
+   "label": {
+    "name": "Cheesy garlic bread",
+    "next": "Brush garlic oil → mozzarella → blister → score"
+   }
+  },
+  "oranje-snack/bb": {
+   "key": "oranje-snack/bb",
+   "brand": "oranje-snack",
+   "id": "bb",
+   "name": "Bitterballen (8)",
+   "img": "../../oranje-snack/assets/art/bb.webp",
+   "kind": "main",
+   "price": 1295,
+   "allergens": [
+    "gluten",
+    "dairy",
+    "egg"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Dip",
+     "choices": [
+      "Curry mayo",
+      "Mustard",
+      "Both"
+     ]
+    }
+   ],
+   "aliases": [
+    "Bitterballen (8)"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Roux: butter 100 g + flour 100 g, cook 2 min",
+     "Whisk in the stock",
+     "Add beef, cooked onion, salt, pepper, nutmeg, parsley",
+     "Cook to a thick paste",
+     "Spread the ragout in a pan",
+     "Cool, then chill at least 8 h until firm enough to scoop"
+    ],
+    "timers": [
+     {
+      "sec": 120,
+      "label": "Roux"
+     }
+    ],
+    "fixes": [
+     {
+      "if": "Filling not chilled overnight",
+      "then": "STOP — take it off the menu until the filling is firm"
+     },
+     {
+      "if": "Ragout too soft to scoop",
+      "then": "Chill longer or freeze 45 min — do not fry loose paste"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Scoop 8 balls per order",
+      "Flour → egg → crumbs",
+      "Chill again 30 min"
+     ],
+     "timers": [
+      {
+       "sec": 1800,
+       "label": "Chill again"
+      }
+     ],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Fry 175°C 3–4 min until deep golden",
+      "74°C in the middle"
+     ],
+     "timers": [
+      {
+       "sec": 240,
+       "label": "Fry"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Pile in liner paper",
+      "Mustard cup",
+      "Parsley dust"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "8 pcs on parchment in kraft tray; curry mayo dots; parsley snow",
+     "8 balls (about 18 g each cooked)"
+    ],
+    "remember": [
+     "Rest 60 s before box (lava burn risk)"
+    ],
+    "timers": [
+     {
+      "sec": 60,
+      "label": "Rest"
+     }
+    ]
+   },
+   "pack": {
+    "lines": [
+     "Kraft snack tray",
+     "2-oz sauce cup",
+     "Napkin"
+    ],
+    "hold": [
+     "Breaded balls can be frozen, up to 2 weeks",
+     "Fry from frozen +1 min",
+     "Do not hold fried more than 10 min"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Ragout too soft to scoop",
+     "then": "Chill longer or freeze 45 min — do not fry loose paste"
+    },
+    {
+     "if": "Bursts in oil",
+     "then": "Seal crumb; oil 180°C or colder; thicker chill"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait"
+    },
+    {
+     "if": "Filling not chilled overnight",
+     "then": "STOP — take it off the menu until the filling is firm"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Butter: 100 g",
+    "Flour: 100 g (roux) + 400 g (breading)",
+    "Beef stock: 700 ml",
+    "Cooked shredded beef or cooked ground: 600 g",
+    "Onion: 150 g",
+    "Salt: 12 g",
+    "Black pepper: 4 g",
+    "Nutmeg: 2 g",
+    "Parsley: 20 g",
+    "Eggs: 6 (wash)",
+    "Breadcrumbs: 500 g",
+    "Oil fry",
+    "Mustard cups: 200 g"
+   ],
+   "label": {
+    "name": "Bitterballen (8)",
+    "next": "Egg-crumb → fry 175°C → mustard cup (rest 60 s)"
+   }
+  },
+  "oranje-snack/kr": {
+   "key": "oranje-snack/kr",
+   "brand": "oranje-snack",
+   "id": "kr",
+   "name": "Beef kroket (2)",
+   "img": "../../oranje-snack/assets/art/kr.webp",
+   "kind": "main",
+   "price": 1150,
+   "allergens": [
+    "gluten",
+    "dairy",
+    "egg",
+    "mustard"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Mustard",
+     "choices": [
+      "On the plate",
+      "On the side"
+     ]
+    }
+   ],
+   "aliases": [
+    "Beef kroket (2)"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Chill the kroket filling at least 8 h",
+     "Make the ragout like the bitterballen filling and chill overnight until firm",
+     "Next day: shape, bread, chill again"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not made last night",
+      "then": "STOP — take it off the menu today"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Form 10 cm cylinders from firm ragout"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Flour → egg → crumb (double crumb if cracking)"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": [],
+     "prep": true
+    },
+    {
+     "lines": [
+      "Fry 175°C 4–5 min golden",
+      "74°C in the middle"
+     ],
+     "timers": [
+      {
+       "sec": 300,
+       "label": "Fry"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "2 per order",
+      "Mustard on the side",
+      "Into a tray with a kraft liner"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "2 croquettes cut diagonally; mustard smear; microgreen",
+     "2 × about 70 g"
+    ],
+    "remember": [
+     "Rest 60 s"
+    ],
+    "timers": [
+     {
+      "sec": 60,
+      "label": "Rest"
+     }
+    ]
+   },
+   "pack": {
+    "lines": [
+     "Kraft tray",
+     "Mustard cup"
+    ],
+    "hold": [
+     "Freeze breaded",
+     "Fry to order"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Cracks",
+     "then": "Double crumb; colder fill"
+    },
+    {
+     "if": "Not made last night",
+     "then": "STOP — take it off the menu today"
+    },
+    {
+     "if": "Oil cool",
+     "then": "Wait"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Ragout batch same base as bitterballen scaled for 20 cylinders (about 18–20 g each filling): beef 500 g, butter 80 g, flour 80 g, stock 550 ml, seasoning same ratios",
+    "Flour/egg/crumb same as Bitterballen (8)",
+    "Oil fry",
+    "Mustard: 150 g"
+   ],
+   "label": {
+    "name": "Beef kroket (2)",
+    "next": "Fry 175°C → pair + mustard"
+   }
+  },
+  "oranje-snack/fk": {
+   "key": "oranje-snack/fk",
+   "brand": "oranje-snack",
+   "id": "fk",
+   "name": "Frikandel special",
+   "img": "../../oranje-snack/assets/art/fk.webp",
+   "kind": "main",
+   "price": 995,
+   "allergens": [
+    "gluten",
+    "egg"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Leave out",
+     "choices": [
+      "No onion",
+      "No mayo",
+      "No curry ketchup"
+     ]
+    }
+   ],
+   "aliases": [
+    "Frikandel special"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Deep-fry or griddle frikandel until 74°C and browned (time on the pack, then check with the probe)"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Split it lengthwise",
+      "Mayo 20 g zig-zag",
+      "Curry ketchup 20 g",
+      "Onion 25 g in the split",
+      "Into a tray with a paper liner"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Split lengthways; mayo ribbon; curry ketchup; shaved onion",
+     "1 frankfurter-style stick"
+    ],
+    "remember": [
+     "Onion cold/crisp"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Boat tray",
+     "Napkin"
+    ],
+    "hold": [
+     "Cook to order",
+     "Sauces cold"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Sausage splits apart",
+     "then": "Lower fry time; handle with tongs mid-body"
+    },
+    {
+     "if": "Under 74°C",
+     "then": "Return heat; re-probe"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Frikandel sausages: 10 (buy-in)",
+    "Soft rolls optional or serve paper tray: 10 if using",
+    "Mayo: 200 g",
+    "Curry ketchup or ketchup+curry powder: 200 g ketchup + 15 g curry powder mixed",
+    "Onion raw minced: 250 g",
+    "Oil/fryer or griddle"
+   ],
+   "label": {
+    "name": "Frikandel special",
+    "next": "Cook 74°C → split → mayo/curry ketchup/onion"
+   }
+  },
+  "oranje-snack/mx": {
+   "key": "oranje-snack/mx",
+   "brand": "oranje-snack",
+   "id": "mx",
+   "name": "Mixed snack box",
+   "img": "../../oranje-snack/assets/art/mx.webp",
+   "kind": "main",
+   "price": 1895,
+   "allergens": [
+    "gluten",
+    "dairy",
+    "egg",
+    "mustard"
+   ],
+   "flags": [],
+   "options": [],
+   "aliases": [
+    "Mixed snack box"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Needs the bitterballen and kroket fillings chilled overnight"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not there in the morning",
+      "then": "STOP — do not cook this dish today. Take it off the menu"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Fry the bitterballen, kroket and frikandel at 175°C until 74°C in the middle"
+     ],
+     "timers": [
+      {
+       "sec": 240,
+       "label": "Fry bitterballen"
+      },
+      {
+       "sec": 300,
+       "label": "Fry kroket"
+      }
+     ],
+     "checks": [
+      74
+     ],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Drop the fries at 175°C"
+     ],
+     "timers": [
+      {
+       "sec": 240,
+       "label": "Fry fries"
+      }
+     ],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Kraft liner in the box",
+      "Group the items",
+      "Two dip cups",
+      "Sauce goes on the bitterballen only once they are in the box"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "4 bitterballen + 1 kroket half + fries; dual sauce cups",
+     "Share box"
+    ],
+    "remember": [
+     "Assemble fast for crunch"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Larger kraft box",
+     "2 sauce cups"
+    ],
+    "hold": [
+     "Fry components to order into box"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "One component unavailable",
+     "then": "Substitute extra bitterballen ×2 and note on ticket — or take the Mixed snack box off the menu"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Bitterballen: 4 per box (from Bitterballen (8))",
+    "Kroket: 1 (from Beef kroket (2))",
+    "Frikandel mini or half: 1 (from Frikandel special)",
+    "Fries: 100 g",
+    "Mayo: 30 g",
+    "Mustard: 20 g"
+   ],
+   "label": {
+    "name": "Mixed snack box",
+    "next": "Fry bitterballen, kroket, frikandel, fries → box + mayo and mustard"
+   }
+  },
+  "oranje-snack/st": {
+   "key": "oranje-snack/st",
+   "brand": "oranje-snack",
+   "id": "st",
+   "name": "Chicken saté (3) with peanut sauce",
+   "img": "../../oranje-snack/assets/art/st.webp",
+   "kind": "main",
+   "price": 1650,
+   "allergens": [
+    "peanut",
+    "soy"
+   ],
+   "flags": [
+    "peanut"
+   ],
+   "options": [
+    {
+     "label": "Peanut sauce",
+     "choices": [
+      "On top",
+      "On the side"
+     ]
+    },
+    {
+     "label": "Leave out",
+     "choices": [
+      "No shallot"
+     ]
+    }
+   ],
+   "aliases": [
+    "Chicken saté (3) with peanut sauce"
+   ],
+   "ahead": {
+    "kind": "night",
+    "title": "Do this the night before",
+    "lines": [
+     "Chicken in ketjap and garlic marinade at least 8 h",
+     "Chicken + ketjap/soy-sugar + garlic + oil + salt at least 8 h",
+     "Skewer 50 g each"
+    ],
+    "timers": [],
+    "fixes": [
+     {
+      "if": "Not marinated last night",
+      "then": "STOP — emergency marinade at least 2 h, or take it off the menu today"
+     }
+    ]
+   },
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Grill, griddle or broil the skewers to 74°C with char marks"
+     ],
+     "timers": [],
+     "checks": [
+      74
+     ],
+     "heat": []
+    },
+    {
+     "lines": [
+      "Warm peanut sauce to a simmer",
+      "Thin with water until it pours"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    },
+    {
+     "lines": [
+      "3 skewers",
+      "Peanut sauce 40 g: in a cup or drizzled on top",
+      "Cucumber",
+      "Fried onion"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "3 skewers fanned; peanut pool; cucumber coins; fried shallot",
+     "3 × 35 g chicken"
+    ],
+    "remember": [
+     "Peanut sauce served hot 60°C or hotter or labeled cold cup"
+    ],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Flat tray",
+     "Peanut cup if extra"
+    ],
+    "hold": [
+     "Marinated skewers max 24 h",
+     "Cook to order",
+     "Sauce 72 h fridge"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Not marinated last night",
+     "then": "STOP — emergency marinade at least 2 h, or take it off the menu today"
+    },
+    {
+     "if": "Sauce too thick",
+     "then": "Add 20 ml hot water whisk"
+    },
+    {
+     "if": "Sauce oily split",
+     "then": "Whisk hot water; lower heat"
+    },
+    {
+     "if": "Dry chicken",
+     "then": "Baste marinade boiled at least 1 min mid-cook"
+    },
+    {
+     "if": "Probe reads under the target",
+     "then": "Keep cooking and probe again. Never serve under"
+    }
+   ],
+   "ingredients": [
+    "Chicken strips: 1500 g",
+    "Ketjap manis or soy+sugar: 150 ml soy + 60 g sugar if no ketjap",
+    "Garlic: 40 g",
+    "Oil: 40 ml",
+    "Salt: 8 g",
+    "Skewers: 30",
+    "Peanut sauce: peanut butter 400 g + water 300 ml + soy 40 ml + sugar 40 g + garlic 20 g + chili 5 g + lime 30 ml",
+    "Cucumber slices optional: 300 g",
+    "Fried onion garnish: 50 g"
+   ],
+   "label": {
+    "name": "Chicken saté (3) with peanut sauce",
+    "next": "Grill skewers 74°C → peanut cup → onion"
+   }
+  },
+  "oranje-snack/fs": {
+   "key": "oranje-snack/fs",
+   "brand": "oranje-snack",
+   "id": "fs",
+   "name": "Fries with mayo",
+   "img": "../../oranje-snack/assets/art/fs.webp",
+   "kind": "side",
+   "price": 450,
+   "allergens": [
+    "egg"
+   ],
+   "flags": [],
+   "options": [
+    {
+     "label": "Sauce",
+     "choices": [
+      "Mayo",
+      "Curry ketchup",
+      "Mayo + curry ketchup"
+     ]
+    }
+   ],
+   "aliases": [
+    "Fries with mayo"
+   ],
+   "ahead": null,
+   "before": null,
+   "steps": [
+    {
+     "lines": [
+      "Fry 175°C"
+     ],
+     "timers": [
+      {
+       "sec": 240,
+       "label": "Fry fries"
+      }
+     ],
+     "checks": [],
+     "heat": [
+      {
+       "kind": "Oil",
+       "temp": "175°C"
+      }
+     ]
+    },
+    {
+     "lines": [
+      "Salt them",
+      "Fill the cup above the rim",
+      "Add a mayo cup (30 g)"
+     ],
+     "timers": [],
+     "checks": [],
+     "heat": []
+    }
+   ],
+   "plating": {
+    "lines": [
+     "Cone or tray; mayo swirl; cracked pepper from the pepper grinder only",
+     "120 g fries"
+    ],
+    "remember": [],
+    "timers": []
+   },
+   "pack": {
+    "lines": [
+     "Cone/tray",
+     "Napkin"
+    ],
+    "hold": [
+     "Max 5 min"
+    ]
+   },
+   "fixes": [
+    {
+     "if": "Limp",
+     "then": "Re-fry 45 s"
+    },
+    {
+     "if": "Oil cool",
+     "then": "Wait"
+    },
+    {
+     "if": "Oil below 165°C",
+     "then": "Wait. Do not drop food in yet"
+    },
+    {
+     "if": "Oil above 185°C",
+     "then": "Turn the heat off and let it cool to 175°C"
+    },
+    {
+     "if": "Food still pale after the time",
+     "then": "Oil too cool or basket too full - fry smaller batches"
+    },
+    {
+     "if": "Oil smoking",
+     "then": "Turn the heat off. Check for burnt bits"
+    }
+   ],
+   "ingredients": [
+    "Fries: 1500 g",
+    "Mayo: 300 g",
+    "Salt: 15 g",
+    "Oil"
+   ],
+   "label": {
+    "name": "Fries with mayo",
+    "next": "Fry 175°C → salt → mayo cup"
+   }
+  }
+ },
+ "prep": [
+  {
+   "id": "night",
+   "title": "Night before",
+   "short": "Night before",
+   "note": "All overnight items done before you sleep. Missing in the morning = do not sell that dish.",
+   "tasks": [
+    {
+     "id": "n-fridge",
+     "text": "Clear the fridge shelves and wipe them",
+     "sub": "Shelf tape: Dushi Wok red · Taco Brava orange · Smash Shack yellow · Nonna’s green · Oranje Snack blue",
+     "src": "Night before 1"
+    },
+    {
+     "id": "n-thaw",
+     "text": "Thaw tomorrow’s meat, chicken and shrimp in the fridge",
+     "sub": "Never on the counter",
+     "src": "Night before 3"
+    },
+    {
+     "id": "n-labels",
+     "text": "Write a label for every overnight container",
+     "sub": "Restaurant · dish · allergens · use-by date + time · next step",
+     "src": "Night before 2"
+    },
+    {
+     "id": "n-rice",
+     "text": "Fried rice: cook the rice, spread it on a tray, chill",
+     "sub": "Day-old cold rice makes good fried rice",
+     "link": {
+      "dish": "dushi-wok/fr",
+      "flow": "ahead"
+     },
+     "src": "Recipe: Chicken fried rice step 1",
+     "overnight": true
+    },
+    {
+     "id": "n-dw-wg-mar",
+     "text": "Soy-garlic wings: marinate",
+     "sub": "at least 8 h",
+     "link": {
+      "dish": "dushi-wok/wg",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: DW-wg-MAR",
+     "overnight": true
+    },
+    {
+     "id": "n-dw-ss-mar",
+     "text": "Sweet & sour chicken: marinate the chicken cubes",
+     "sub": "at least 4 h, overnight is best",
+     "link": {
+      "dish": "dushi-wok/ss",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: DW-ss-MAR",
+     "overnight": true
+    },
+    {
+     "id": "n-dw-pk-mar",
+     "text": "Pork & pepper stir-fry: marinate the pork strips",
+     "sub": "at least 4 h, overnight is best",
+     "link": {
+      "dish": "dushi-wok/pk",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: DW-pk-MAR",
+     "overnight": true
+    },
+    {
+     "id": "n-tb-birria",
+     "text": "Birria beef: soak in chile liquid (braise tomorrow)",
+     "sub": "at least 8 h",
+     "link": {
+      "dish": "taco-brava/bt",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: TB-BIRRIA",
+     "overnight": true
+    },
+    {
+     "id": "n-tb-gt-spice",
+     "text": "Street taco beef: mix with taco spice",
+     "sub": "at least 4 h, overnight is best",
+     "link": {
+      "dish": "taco-brava/gt",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: TB-gt-SPICE",
+     "overnight": true
+    },
+    {
+     "id": "n-ss-smash-75",
+     "text": "Smash burgers: roll 75 g beef balls",
+     "sub": "night before - no salt yet",
+     "link": {
+      "dish": "smash-shack/sc",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: SS-SMASH-75",
+     "overnight": true
+    },
+    {
+     "id": "n-ss-cc-brine",
+     "text": "Crispy chicken sandwich: cutlets in buttermilk brine",
+     "sub": "at least 8 h",
+     "link": {
+      "dish": "smash-shack/cc",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: SS-cc-BRINE",
+     "overnight": true
+    },
+    {
+     "id": "n-ss-ct-brine",
+     "text": "Chicken tenders: buttermilk brine",
+     "sub": "at least 8 h",
+     "link": {
+      "dish": "smash-shack/ct",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: SS-ct-BRINE",
+     "overnight": true
+    },
+    {
+     "id": "n-nn-mball",
+     "text": "Meatballs: roll 50 g balls and let them rest",
+     "sub": "at least 4 h",
+     "link": {
+      "dish": "nonnas-night-in/sm",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: NN-MBALL",
+     "overnight": true
+    },
+    {
+     "id": "n-nn-bolo",
+     "text": "Bolognese base: cook it and chill",
+     "sub": "chill overnight",
+     "link": {
+      "dish": "nonnas-night-in/bp",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: NN-BOLO",
+     "overnight": true
+    },
+    {
+     "id": "n-os-bb-fill",
+     "text": "Bitterballen: make the beef filling and chill it",
+     "sub": "at least 8 h",
+     "link": {
+      "dish": "oranje-snack/bb",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: OS-bb-FILL",
+     "overnight": true
+    },
+    {
+     "id": "n-os-kr-fill",
+     "text": "Kroket: make the beef filling and chill it",
+     "sub": "at least 8 h",
+     "link": {
+      "dish": "oranje-snack/kr",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: OS-kr-FILL",
+     "overnight": true
+    },
+    {
+     "id": "n-os-st-mar",
+     "text": "Chicken saté: marinate",
+     "sub": "at least 8 h",
+     "link": {
+      "dish": "oranje-snack/st",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: OS-st-MAR",
+     "overnight": true
+    },
+    {
+     "id": "n-photo",
+     "text": "Take a photo of the full fridge",
+     "src": "Night before 6"
+    },
+    {
+     "id": "n-drinks",
+     "text": "Drinks in the cooler. Boxes and bags stacked by restaurant",
+     "src": "Night before 7"
+    }
+   ]
+  },
+  {
+   "id": "first",
+   "title": "Morning: start these first",
+   "short": "Start first",
+   "note": "Long jobs first.",
+   "tasks": [
+    {
+     "id": "m-check",
+     "text": "Check every overnight container is in the fridge and labelled",
+     "sub": "One missing? Remake it (needs at least 4 h) or take that dish off the menu today",
+     "src": "Morning 1-2"
+    },
+    {
+     "id": "m-shrimp",
+     "text": "Shrimp: start the garlic brine",
+     "sub": "4 h before service - never more than 8 h",
+     "link": {
+      "dish": "dushi-wok/sh",
+      "flow": "ahead"
+     },
+     "src": "Overnight list: SHARE-SHRIMP-C"
+    },
+    {
+     "id": "m-birria",
+     "text": "Birria: braise the beef, shred it, strain the consommé",
+     "sub": "About 3–3.5 h - start early",
+     "link": {
+      "dish": "taco-brava/bt",
+      "flow": "steps",
+      "steps": [
+       0,
+       1
+      ]
+     },
+     "src": "Day-of 3"
+    },
+    {
+     "id": "m-rice",
+     "text": "Rice cooker on: rice for Dushi Wok and Taco Brava",
+     "sub": "About 1.5 kg dry rice",
+     "src": "Day-of 1"
+    }
+   ]
+  },
+  {
+   "id": "cook",
+   "title": "Morning: stove and oven",
+   "short": "Stove & oven",
+   "tasks": [
+    {
+     "id": "m-chicken",
+     "text": "Cook the shared chicken (burrito, bowl, quesadilla) to 74°C",
+     "sub": "Keep hot at 60°C or more - or chill to 4°C within 2 h",
+     "link": {
+      "dish": "taco-brava/lb",
+      "flow": "before"
+     },
+     "src": "Day-of 4 + shared chicken batch"
+    },
+    {
+     "id": "m-tacobeef",
+     "text": "Street taco beef: cook from last night’s spice mix to 74°C",
+     "link": {
+      "dish": "taco-brava/gt",
+      "flow": "steps",
+      "steps": [
+       0
+      ]
+     },
+     "src": "Day-of 5"
+    },
+    {
+     "id": "m-bolo",
+     "text": "Bolognese: finish or reheat the base",
+     "link": {
+      "dish": "nonnas-night-in/bp",
+      "flow": "ahead"
+     },
+     "src": "Day-of 5"
+    },
+    {
+     "id": "m-meatballs",
+     "text": "Meatballs: bake at 200°C to 74°C in the middle",
+     "link": {
+      "dish": "nonnas-night-in/sm",
+      "flow": "steps",
+      "steps": [
+       0
+      ]
+     },
+     "src": "Day-of 5"
+    },
+    {
+     "id": "m-sweetsour",
+     "text": "Sweet & sour sauce",
+     "link": {
+      "dish": "dushi-wok/ss",
+      "flow": "steps",
+      "steps": [
+       3
+      ]
+     },
+     "src": "Day-of 6"
+    },
+    {
+     "id": "m-arrabbiata",
+     "text": "Arrabbiata sauce: simmer 20 min",
+     "link": {
+      "dish": "nonnas-night-in/pa",
+      "flow": "steps",
+      "steps": [
+       0
+      ]
+     },
+     "src": "Day-of 6"
+    },
+    {
+     "id": "m-peanut",
+     "text": "Peanut sauce for saté",
+     "sub": "Peanut butter 400 g + water 300 ml + soy 40 ml + sugar 40 g + garlic 20 g + chili 5 g + lime 30 ml",
+     "link": {
+      "dish": "oranje-snack/st",
+      "flow": "steps",
+      "steps": [
+       1
+      ]
+     },
+     "src": "Day-of 6 + saté ingredients"
+    },
+    {
+     "id": "m-salsa",
+     "text": "Salsa: dice, mix, rest 15 min",
+     "link": {
+      "dish": "taco-brava/cs",
+      "flow": "steps",
+      "steps": [
+       1
+      ]
+     },
+     "src": "Day-of 6"
+    },
+    {
+     "id": "m-currykatchup",
+     "text": "Curry ketchup and mayo into labelled squeeze bottles",
+     "sub": "Curry ketchup = 200 g ketchup + 15 g curry powder",
+     "src": "Day-of 6 + frikandel ingredients"
+    }
+   ]
+  },
+  {
+   "id": "bench",
+   "title": "Morning: bench and fryer prep",
+   "short": "Bench & fryer",
+   "tasks": [
+    {
+     "id": "m-noodles",
+     "text": "Lo mein noodles: boil, oil, chill",
+     "link": {
+      "dish": "dushi-wok/lm",
+      "flow": "steps",
+      "steps": [
+       0
+      ]
+     },
+     "src": "Recipe: Chicken lo mein step 1"
+    },
+    {
+     "id": "m-pasta",
+     "text": "Pasta for Nonna’s: water on, oiled pasta ready",
+     "src": "Day-of 2"
+    },
+    {
+     "id": "m-eggrolls",
+     "text": "Egg rolls: cook the filling, cool it, roll and seal",
+     "sub": "Raw rolls keep sealed in the fridge max 24 h",
+     "link": {
+      "dish": "dushi-wok/er",
+      "flow": "steps",
+      "steps": [
+       0,
+       1
+      ]
+     },
+     "src": "Day-of 8"
+    },
+    {
+     "id": "m-bitterballen",
+     "text": "Bitterballen: scoop, bread, chill 30 min",
+     "link": {
+      "dish": "oranje-snack/bb",
+      "flow": "steps",
+      "steps": [
+       0
+      ]
+     },
+     "src": "Recipe: Bitterballen step 3"
+    },
+    {
+     "id": "m-kroket",
+     "text": "Kroket: shape 10 cm rolls and bread them",
+     "link": {
+      "dish": "oranje-snack/kr",
+      "flow": "steps",
+      "steps": [
+       0,
+       1
+      ]
+     },
+     "src": "Recipe: Kroket steps 1-2"
+    },
+    {
+     "id": "m-sate",
+     "text": "Saté: thread the chicken on skewers, 50 g each",
+     "link": {
+      "dish": "oranje-snack/st",
+      "flow": "ahead"
+     },
+     "src": "Recipe: saté marinade"
+    },
+    {
+     "id": "m-chips",
+     "text": "Tortilla chips: cut, fry at 175°C, salt, keep dry",
+     "link": {
+      "dish": "taco-brava/cs",
+      "flow": "steps",
+      "steps": [
+       0
+      ]
+     },
+     "src": "Recipe: Chips & salsa step 1"
+    },
+    {
+     "id": "m-garnish",
+     "text": "Garnish ready: scallion, sesame, cilantro, lime, parsley, pickles",
+     "src": "Station 7"
+    },
+    {
+     "id": "m-fries",
+     "text": "Fries stay in the freezer until you drop them",
+     "src": "Day-of 9"
+    },
+    {
+     "id": "m-label",
+     "text": "Label every finished container and put it on its restaurant shelf",
+     "src": "Day-of 10"
+    }
+   ]
+  },
+  {
+   "id": "open",
+   "title": "Before you open",
+   "short": "Before you open",
+   "note": "Do not take orders until every box here is ticked.",
+   "tasks": [
+    {
+     "id": "o-oil",
+     "text": "Fryer oil at 175°C. Basket clean, spider and trays out",
+     "src": "Station 2"
+    },
+    {
+     "id": "o-griddle",
+     "text": "Griddle oiled, smash spatula ready",
+     "src": "Station 3"
+    },
+    {
+     "id": "o-wok",
+     "text": "Wok clear. Rice hot, or a plan to reheat it",
+     "src": "Station 4"
+    },
+    {
+     "id": "o-probe",
+     "text": "Oil thermometer and probe thermometer on the hook",
+     "src": "Station 6"
+    },
+    {
+     "id": "o-sauces",
+     "text": "Every sauce labelled",
+     "src": "Station 8"
+    },
+    {
+     "id": "o-boxes",
+     "text": "Boxes and liners stacked by restaurant",
+     "sub": "Wok trays · taco trays · burger boxes · aluminium pasta trays · kraft snack trays",
+     "src": "Station 9 + packaging"
+    },
+    {
+     "id": "o-cups",
+     "text": "Sauce cups and lids",
+     "sub": "Consommé · peanut · mayo · salsa · mustard",
+     "src": "Packaging"
+    },
+    {
+     "id": "o-bags",
+     "text": "Napkins, forks and bags",
+     "src": "Packaging"
+    },
+    {
+     "id": "o-drinks",
+     "text": "Drinks on ice: Coca-Cola, Coke Zero, Sprite",
+     "src": "Station 10 + packaging"
+    },
+    {
+     "id": "o-labels",
+     "text": "Waterproof labels and tape at hand",
+     "src": "Packaging"
+    }
+   ]
+  }
+ ],
+ "close": [
+  {
+   "id": "cool",
+   "title": "Cool down and keep",
+   "short": "Cool & keep",
+   "note": "Hot food you keep must reach 4°C or colder within 2 hours.",
+   "tasks": [
+    {
+     "id": "c-cool",
+     "text": "Spread leftover hot food thin on trays and put it in the fridge",
+     "sub": "4°C or colder within 2 h - if not, throw it away",
+     "src": "Safe temperature: keep hot or chill within 2 h"
+    },
+    {
+     "id": "c-birria",
+     "text": "Birria beef and consommé: chill",
+     "sub": "Keeps 72 h",
+     "src": "Birria tacos hold"
+    },
+    {
+     "id": "c-tacobeef",
+     "text": "Cooked street taco beef: chill",
+     "sub": "Keeps 72 h",
+     "src": "Street tacos hold"
+    },
+    {
+     "id": "c-meatballs",
+     "text": "Meatballs in sauce: chill",
+     "sub": "Keeps 72 h",
+     "src": "Spaghetti & meatballs hold"
+    },
+    {
+     "id": "c-sauces",
+     "text": "Arrabbiata sauce and peanut sauce: chill",
+     "sub": "Keep 72 h",
+     "src": "Arrabbiata + saté hold"
+    },
+    {
+     "id": "c-salsa",
+     "text": "Salsa: chill",
+     "sub": "Keeps 48 h",
+     "src": "Chips & salsa hold"
+    },
+    {
+     "id": "c-chips",
+     "text": "Tortilla chips: airtight box, keep dry",
+     "src": "Chips & salsa hold"
+    },
+    {
+     "id": "c-breaded",
+     "text": "Breaded bitterballen and kroket you did not fry: freeze",
+     "sub": "Up to 2 weeks. Fry from frozen, +1 min",
+     "src": "Bitterballen hold"
+    },
+    {
+     "id": "c-skewers",
+     "text": "Marinated saté skewers: fridge",
+     "sub": "Max 24 h from marinating",
+     "src": "Saté hold"
+    },
+    {
+     "id": "c-eggrolls",
+     "text": "Raw rolled egg rolls: sealed in the fridge",
+     "sub": "Max 24 h",
+     "src": "Egg rolls night-before note"
+    },
+    {
+     "id": "c-shrimp",
+     "text": "Shrimp still in brine: do not leave it overnight",
+     "sub": "Max 8 h in brine. Rinse, pat dry, cook now - do not brine again",
+     "src": "Garlic shrimp fix"
+    }
+   ]
+  },
+  {
+   "id": "throw",
+   "title": "Throw away",
+   "short": "Throw away",
+   "tasks": [
+    {
+     "id": "t-fried",
+     "text": "All leftover fried food",
+     "sub": "Fries, wings, tenders, crispy chicken, bitterballen, kroket, egg rolls",
+     "src": "Hold limits 5–30 min"
+    },
+    {
+     "id": "t-hot",
+     "text": "Anything kept hot for more than 2 hours",
+     "src": "Safe temperature: hot-hold max 2 h"
+    },
+    {
+     "id": "t-wok",
+     "text": "Shrimp fried rice and lo mein kept hot more than 1 hour",
+     "src": "Hold max 1 h"
+    },
+    {
+     "id": "t-shrimp",
+     "text": "Cooked shrimp left over",
+     "sub": "Never reheat shrimp",
+     "src": "Garlic shrimp hold"
+    },
+    {
+     "id": "t-built",
+     "text": "Built dishes: burgers, burritos, tacos, nachos, quesadillas",
+     "src": "Assemble to order"
+    },
+    {
+     "id": "t-label",
+     "text": "Any container with no label or past its use-by",
+     "src": "Global rules"
+    },
+    {
+     "id": "t-oil",
+     "text": "Fryer oil if it foams, is dark or smells fishy",
+     "sub": "Usually every 3–4 fry days",
+     "src": "Fryer rules"
+    }
+   ]
+  },
+  {
+   "id": "store",
+   "title": "Label and store",
+   "short": "Label & store",
+   "tasks": [
+    {
+     "id": "s-label",
+     "text": "Label everything you keep",
+     "sub": "Restaurant · dish · allergens · use-by date + time · next step",
+     "src": "Container label system"
+    },
+    {
+     "id": "s-raw",
+     "text": "Raw and marinating food on the bottom shelf, drip tray under it",
+     "sub": "Never put ready-to-eat food under raw",
+     "src": "Fridge map"
+    },
+    {
+     "id": "s-shelves",
+     "text": "Sauces in the door, garnish on top, each restaurant on its own shelf",
+     "src": "Fridge map"
+    }
+   ]
+  },
+  {
+   "id": "clean",
+   "title": "Clean",
+   "short": "Clean",
+   "tasks": [
+    {
+     "id": "k-filter",
+     "text": "Filter the fryer oil",
+     "sub": "Every day",
+     "src": "Fryer rules"
+    },
+    {
+     "id": "k-griddle",
+     "text": "Scrape and clean the griddle",
+     "src": "house"
+    },
+    {
+     "id": "k-wok",
+     "text": "Wash the wok, pots, pans and fryer basket",
+     "src": "house"
+    },
+    {
+     "id": "k-probe",
+     "text": "Clean the probe thermometer",
+     "src": "house"
+    },
+    {
+     "id": "k-boards",
+     "text": "Wash and sanitise boards, knives and benches",
+     "src": "house"
+    },
+    {
+     "id": "k-floor",
+     "text": "Sweep and mop the floor. Empty the bins",
+     "src": "house"
+    },
+    {
+     "id": "k-next",
+     "text": "Start tomorrow’s night-before list",
+     "goto": "prep#night",
+     "src": "Night before"
+    }
+   ]
+  }
+ ]
+}
