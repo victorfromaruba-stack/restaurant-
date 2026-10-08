@@ -37,7 +37,7 @@
    "name": "Smash cheeseburger",
    "price": 1695,
    "style": "signature",
-   "desc": "Smashed beef patty with cheddar, lettuce, tomato, onion, pickles, ketchup and mayo on a burger bun.",
+   "desc": "Two thin smashed beef patties with cheddar, lettuce, tomato, onion, pickles, ketchup and mayo on a toasted bun.",
    "img": "smash-shack/assets/dishes/sc-hero.webp",
    "allergens": [
     "dairy",
@@ -130,7 +130,7 @@
    "section": "mains",
    "name": "Double smash cheeseburger",
    "price": 2600,
-   "desc": "Two smashed beef patties with cheddar, onion, pickles, ketchup and mayo on a burger bun.",
+   "desc": "Four thin smashed beef patties with cheddar, onion, pickles, ketchup and mayo on a toasted bun.",
    "img": "smash-shack/assets/dishes/ds.webp",
    "allergens": [
     "dairy",

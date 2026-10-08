@@ -7,6 +7,7 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
+- [ ] H · S · On Victor's VPS copy only: add the 8 Oct allergens (tenders milk; fried rice, lo mein, Family Table sesame; lo mein, pork stir-fry, Family Table shellfish; bitterballen mustard; chips gluten) to the private kitchen-data builder in ops/kitchen/_build/, so a rebuild keeps them (needs Victor's server) · done when: a rebuilt kitchen-data.json still passes qa/check_site.py
 - [ ] M · M · Share a dish: a share button on every dish sheet and links like taco-brava/#d=bt that open that dish (customers hear about us on WhatsApp) · done when: a shared link opens the dish ready to add, in all four languages (idea from a skill test run)
 - [ ] H · S · Smash Shack and Taco Brava: the dish under "Start here" is still a glossy generated shot (birria has paint streaks). Needs real photos (needs Victor)
 - [ ] M · S · Home "basics" strip (ƒ5 delivery / Free pickup / 10 PM–2 AM) is a three-column feature grid, the template look. Try one plain sentence block · done when: screenshots read as a note from the kitchen, not a feature grid

@@ -11,6 +11,3 @@ When answered: record the decision in victor.md (dated) and delete it here.
 - One sentence in his own words about why this kitchen exists (for the home page). Only use it if he writes it.
 - Registered business name and KvK number, for customer receipts (`receipt` block in site.json). Only if he wants them on receipts.
 - Each phone that changes the menu needs its own GitHub key (steps on the chef app's Menu screen). Has he and the chef set it up?
-- Smash Shack patties: the kitchen's recipe cards cook the Smash cheeseburger with 2 thin patties and the Double with 4, but the website says 1 and 2. Which is right? I'll make the website match.
-- Chips & salsa: are the tortilla chips corn or flour? I marked them 'contains gluten' to be safe; if they're pure corn I'll take it off.
-- Allergens: I added milk (tenders), sesame and shellfish (oyster sauce) to Dushi Wok dishes, mustard (bitterballen), gluten (chips) on the website and in the chef app's data. Please make the same change in the recipe builder on your server, or the next rebuild undoes it in the chef app.
