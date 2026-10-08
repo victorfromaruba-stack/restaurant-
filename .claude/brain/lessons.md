@@ -6,7 +6,7 @@ Newest on top. When a lesson turns into a rule everyone must follow, move it int
 CLAUDE.md and delete it here.
 
 - 2026-10-08 · qa/check_site.py rewrites qa/wa-samples.json with new order numbers on every run. Commit it only when a ticket's content changed.
-- 2026-10-08 · Routine runs in a fresh session can't push unless the restaurant- repo is in that session's sources (the proxy answers 403). The daily routine is bound to a session that has the repo.
+- 2026-10-08 · Routine runs start in a fresh session without this repo, so a push gets 403 ("not in this session's authorized repository set"). Fix: call mcp__claude-code-remote__add_repo directly (owner victorfromaruba-stack, repo restaurant-, access push) before cloning. It's already loaded, so ToolSearch won't find it; the first run searched, found nothing and gave up. A forced run (fire_trigger) always starts a fresh session, even for a routine bound to one.
 - 2026-10-08 · Website allergens must cover the recipe card in ops/kitchen/kitchen-data.json (tenders in buttermilk, sesame garnish and oyster sauce were missing until today). qa/check_site.py now compares them; when it fails, add the allergen to menu.json and kitchen-data.json, and tell Victor to fix his private builder too.
 - 2026-10-08 · Full-page screenshots show empty boxes where lazy pictures haven't loaded. Scroll through the page first (`shoot.py` does).
 - 2026-10-08 · The chef app's menu editor saves menu.json with `JSON.stringify(data, null, 1)`, which matches the repo's format exactly (Python `json.dumps(indent=1, ensure_ascii=False)`, no trailing newline). Keep that format when editing menus by script, or every app save shows a huge diff.

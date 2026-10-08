@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-08 · claude (cloud) · Daily routine rebuilt: a fresh session each day at 1:48 PM Aruba that attaches the repo itself (add_repo) and sends Victor the three lines as a phone notification · waiting: first scheduled run today
 - 2026-10-08 · claude (cloud) · Allergens fixed to match the recipe cards (tenders milk, sesame, oyster sauce, mustard, chip gluten) plus a QA check for it; QA serves the repo itself (qa/local_server.py); home card and chef-photo fixes from skill tests · waiting: Victor on patty count, chips, builder
 - 2026-10-08 · claude (cloud) · Less AI-made pass with the human-touch skill: no sparkle logo or app icon (OA neon sign instead), plain home line, sentence-case headings, facts as one line, own tagline per restaurant, no photo twice on one screen, new Smash/Taco cover loops · waiting: real photos from Victor
 - 2026-10-08 · claude (cloud) · Skills added: human-touch (look less AI-made, check.py + shoot.py), brain (this memory), daily-improvement (one improvement a day) · waiting: Victor's real photos
