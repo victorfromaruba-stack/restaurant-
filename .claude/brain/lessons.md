@@ -5,6 +5,7 @@ session doesn't pay for them again. One entry: date, what happens, what to do.
 Newest on top. When a lesson turns into a rule everyone must follow, move it into
 CLAUDE.md and delete it here.
 
+- 2026-10-08 · Nobody but the account owner can make a GitHub personal key: there is no API, and Claude's own GitHub access can't be handed to a phone. The template link (?name=&description=&target_name=&expires_in=&contents=write) pre-fills everything except which repository; that one tap stays with Victor.
 - 2026-10-08 · A strong model already avoids most slop when the request says 'not AI'; skills earn their keep on consistency, tools and rules for proof and messages. Testing a skill against a no-skill run shows where it makes things worse (the first anti-slop draft made emails longer).
 - 2026-10-08 · qa/check_site.py rewrites qa/wa-samples.json with new order numbers on every run. Commit it only when a ticket's content changed.
 - 2026-10-08 · Routine runs start in a fresh session without this repo, so a push gets 403 ("not in this session's authorized repository set"). Fix: call mcp__claude-code-remote__add_repo directly (owner victorfromaruba-stack, repo restaurant-, access push) before cloning. It's already loaded, so ToolSearch won't find it; the first run searched, found nothing and gave up. A forced run (fire_trigger) always starts a fresh session, even for a routine bound to one.

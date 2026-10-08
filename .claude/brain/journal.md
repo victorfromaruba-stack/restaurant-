@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-08 · claude (cloud) · Chef app Connect screen: one pre-filled GitHub link (name, 1 year, Contents read and write), so making a key is pick restaurant- → Generate → paste · waiting: Victor to make the keys
 - 2026-10-08 · claude (cloud) · New general skill anti-ai-slop (slop_check.py for any files, URL or text; shoot.py for any folder or URL), tested twice against no-skill runs; packaged for Victor's Claude profile · waiting: Victor to tap Save skill
 - 2026-10-08 · claude (cloud) · Daily routine rebuilt: a fresh session each day at 1:48 PM Aruba that attaches the repo itself (add_repo) and sends Victor the three lines as a phone notification · waiting: first scheduled run today
 - 2026-10-08 · claude (cloud) · Allergens fixed to match the recipe cards (tenders milk, sesame, oyster sauce, mustard, chip gluten) plus a QA check for it; QA serves the repo itself (qa/local_server.py); home card and chef-photo fixes from skill tests · waiting: Victor on patty count, chips, builder

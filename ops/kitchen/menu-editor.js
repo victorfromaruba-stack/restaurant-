@@ -8,6 +8,9 @@
   if (!UI) return;
   var GH = { api: 'https://api.github.com', owner: 'victorfromaruba-stack', repo: 'restaurant-', branch: 'main' };
   var KEY = 'kitchen.github.v1';
+  // GitHub's "new key" page, pre-filled: name, 1 year, Contents read and write. The repository can't be pre-picked by link.
+  var TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new?name=Kitchen+app&description=Change+the+Order+Aruba+menu+from+the+chef+app' +
+    '&target_name=' + GH.owner + '&expires_in=365&contents=write';
   var esc = UI.esc, main = UI.main, foot = UI.foot;
   var FLAGS = [['spicy', 'Spicy'], ['vegetarian', 'Vegetarian'], ['pork', 'Contains pork'], ['shrimp', 'Contains shrimp'], ['peanut', 'Contains peanuts']];
   var ALLERGENS = [['gluten', 'Gluten'], ['egg', 'Egg'], ['dairy', 'Milk'], ['soy', 'Soy'], ['shellfish', 'Shellfish'], ['sesame', 'Sesame'],
@@ -137,11 +140,10 @@
   function connect() {
     UI.setBar({ title: 'Connect the menu', sub: 'One time per phone' });
     main.innerHTML = '<div class="me-wrap"><p>To change dishes from this phone, it needs a key from GitHub (where the website lives). Make one, paste it here, done. Only phones with the key can change the menu.</p>' +
-      '<ol class="me-steps"><li>On GitHub, logged in as <b>victorfromaruba-stack</b>, open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">New fine-grained token</a>.</li>' +
-      '<li>Name: <b>Kitchen app</b> (or the chef’s name). Expiration: <b>1 year</b>.</li>' +
-      '<li>Repository access: <b>Only select repositories</b> → <b>restaurant-</b>.</li>' +
-      '<li>Permissions → Repository permissions → <b>Contents: Read and write</b>.</li>' +
+      '<ol class="me-steps"><li>Logged in to GitHub as <b>victorfromaruba-stack</b>, open <a href="' + TOKEN_URL + '" target="_blank" rel="noopener">this ready-made key</a>. Name, 1 year and the permission are already filled in.</li>' +
+      '<li>Repository access: <b>Only select repositories</b> → <b>restaurant-</b>. (GitHub doesn’t let a link choose this.)</li>' +
       '<li>Tap <b>Generate token</b>, copy it, paste it below.</li></ol>' +
+      '<p class="hint">If the permission isn’t filled in: Permissions → Repository permissions → <b>Contents: Read and write</b>. For the chef’s phone, make a second key and call it <b>Kitchen app (chef)</b>.</p>' +
       '<label class="me-field"><span>GitHub key</span><input id="me-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>' +
       '<div class="row-btns"><button class="btn primary wide" data-mact="savetoken">Check and save</button></div>' +
       '<p class="hint">Lost a phone? Delete its key on GitHub (Settings → Developer settings → Fine-grained tokens) and the phone can’t change anything.</p></div>';
