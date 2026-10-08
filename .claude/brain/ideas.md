@@ -11,10 +11,9 @@ under 25 lines: drop ideas that stopped making sense.
 - [ ] H · S · Smash Shack: the cheeseburger under "Start here" is still a generated shot with a thick patty. Needs a real photo (needs Victor)
 - [ ] H · L · Real photos, signatures first (needs Victor) · done when: the five signature dishes are real photos
 - [ ] M · M · Chef app: send cash sales to Book Keeper at Close up (Book Keeper's /api/intake/sales is live; only orders paid cash, same date the order was placed, never bank transfers) · done when: a test order sent twice shows once in Book Keeper
-- [ ] M · S · Unused menu.json fields (`kicker`, `headline`, `intro`) are never shown: use the best line of each somewhere real, or remove them
-- [ ] M · S · 320px check of the chef app's Menu screens (long dish names, the three status buttons)
 
 ## Shipped
+- [x] 2026-10-08 · M · S · Unused menu.json fields kicker/headline removed (intro stays: it's Google's description); chef app Menu screens fixed at 320px (long names wrap)
 - [x] 2026-10-08 · M · M · Share a dish: share button on the dish sheet, links like taco-brava/#d=bt open the dish (checked in qa/check_site.py)
 - [x] 2026-10-08 · H · M · Home: "How ordering works" (WhatsApp, we confirm, pay cash or transfer) replaces the three-column basics strip; restaurants as compact rows with dish names (home a fifth shorter)
 - [x] 2026-10-08 · L · M · One shared grade on every generated picture and cover video (build/grade.py); birria paint dust removed
