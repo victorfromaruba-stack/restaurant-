@@ -1,0 +1,6 @@
+# Note: search engines only read robots.txt at the root of a domain. This file starts working
+# once the site has its own domain; until then the sitemap is submitted in Google Search Console.
+User-agent: *
+Allow: /
+
+Sitemap: https://victorfromaruba-stack.github.io/restaurant-/sitemap.xml

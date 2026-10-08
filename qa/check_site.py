@@ -45,6 +45,8 @@ tb = {i["id"]: i for i in menus["taco-brava"]["items"]}
 check(tb["bt"]["price"] == 2700, "Birria tacos stay at ƒ27.00")
 check(site["deliveryFee"] == 500, "Delivery fee is ƒ5.00")
 lang = subprocess.run([sys.executable, os.path.join(ROOT, "build/lang_keys.py"), "--check"], capture_output=True, text=True)
+seo = subprocess.run([sys.executable, os.path.join(ROOT, "build/seo.py"), "--check"], capture_output=True, text=True)
+check(seo.returncode == 0, "Google listing data matches site.json and the menus (else run: python3 build/seo.py)" + ("" if seo.returncode == 0 else ": " + seo.stdout.strip()))
 check(lang.returncode == 0, "every screen phrase has a Papiamento, Dutch and Spanish translation" + ("" if lang.returncode == 0 else ":\n" + lang.stdout[-1500:]))
 
 SAMPLES = [
