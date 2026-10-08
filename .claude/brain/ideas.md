@@ -12,12 +12,13 @@ under 25 lines: drop ideas that stopped making sense.
 - [ ] H · S · Smash Shack and Taco Brava: the dish under "Start here" is still a glossy generated shot (birria has paint streaks). Needs real photos (needs Victor)
 - [ ] M · S · Home "basics" strip (ƒ5 delivery / Free pickup / 10 PM–2 AM) is a three-column feature grid, the template look. Try one plain sentence block · done when: screenshots read as a note from the kitchen, not a feature grid
 - [ ] H · L · Real photos, signatures first (needs Victor) · done when: the five signature dishes are real photos
-- [ ] M · M · Chef app: send cash sales and receipt photos to Book Keeper (needs Victor: Book Keeper PR #3 merged and migration applied first)
+- [ ] M · M · Chef app: send cash sales to Book Keeper at Close up (Book Keeper's /api/intake/sales is live; only orders paid cash, same date the order was placed, never bank transfers) · done when: a test order sent twice shows once in Book Keeper
 - [ ] M · S · Unused menu.json fields (`kicker`, `headline`, `intro`) are never shown: use the best line of each somewhere real, or remove them
 - [ ] L · M · Picture cards: a subtle shared grade (slightly less saturation) so the illustrations look like one set, not five prompts · done when: before/after screenshots look calmer and Victor agrees
 - [ ] M · S · 320px check of the chef app's Menu screens (long dish names, the three status buttons)
 
 ## Shipped
+- [x] 2026-10-08 · M · M · Chef app Receipts: photo straight into Book Keeper's review list, no login (books.js, 72b0161); Book Keeper intake API live
 - [x] 2026-10-08 · H · S · Home: each restaurant card shows a different dish from the one in the dish rail (no photo twice on the home page) · done when: check.py has no "restaurant card shows the same photo" warning
 - [x] 2026-10-08 · H · S · Replace the sparkle star in the Order Aruba logo (it's the icon of AI products) · done when: no four-point star on any page
 - [x] 2026-10-08 · H · M · Section titles in sentence case and smaller; one loud thing per screen · done when: screenshots show only the page title or the OPEN sign shouting
