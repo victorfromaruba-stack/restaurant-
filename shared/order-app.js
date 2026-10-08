@@ -907,7 +907,8 @@
       if (groups.length > 1) html += '<h3 class="lines__brand">' + esc(g.t) + "</h3>";
       html += '<ul class="lines">' + g.lines.map(function (l) {
         var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
-        return '<li class="line">' +
+        var it = MENU[l.b] && MENU[l.b].byId[l.id];   // a small picture per line, so the order can be checked at a glance
+        return '<li class="line">' + (it ? thumbImg(it, ' class="line__pic' + (it.kind === "drink" ? " line__pic--can" : "") + '" loading="lazy" decoding="async"') : "") +
           '<div class="line__main"><p class="line__n">' + esc(l.n) + "</p>" +
           (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
           (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +

@@ -230,7 +230,9 @@ body.past-name .top__title{opacity:1;transform:none}
 .lines__brand{margin:18px 0 0;font-size:15px;font-weight:800;color:var(--haze);text-transform:uppercase;letter-spacing:.06em}
 .lines{list-style:none;margin:4px 0 0;padding:0}
 .line{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--rule)}
-.line__main{min-width:0}
+.line__main{min-width:0;flex:1 1 auto}
+.line__pic{width:56px;height:56px;flex:none;border-radius:10px;object-fit:cover;background:var(--night-2)}
+.line__pic--can{object-fit:contain;padding:6px}
 .line__n{margin:0;font:700 16px/1.3 var(--font)}
 .line__d{margin:3px 0 0;font-size:14px;line-height:1.35;color:var(--sodium)}
 .line__d--warn{color:var(--bad)}
