@@ -15,6 +15,8 @@
   var OLD_NAMES = { "Dushi Wok": "dushi-wok", "Taco Brava": "taco-brava", "Smash Shack": "smash-shack",
     "Nonna's Night In": "nonnas-night-in", "Nonna’s Night In": "nonnas-night-in", "Oranje Snack": "oranje-snack" };
   var MAX_QTY = 20;
+  var OTHER = "Other area";
+  var OTHER_NOTE = "Outside our usual area. We\u2019ll confirm on WhatsApp if we can reach you, and the fee.";
   var WA_URL_LIMIT = 1900;
   var DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   var DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -44,6 +46,8 @@
     close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>',
     back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></svg>',
     flame: '<svg viewBox="0 0 34 50" aria-hidden="true"><path fill="currentColor" d="M17,0 C21.2,11 34,19 34,32 C34,44 26,50 17,50 C8,50 0,44 0,32 C0,23 8,18 11,9 C13,17 15,20 18,22 C20,14 19,6 17,0 Z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>',
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13l11-6.5z"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.22 8.22 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.13-.56-1.35-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.29Z"/></svg>'
   };
@@ -99,25 +103,45 @@
     if (c <= o) c += 24 * 60;
     return { o: o, c: c };
   }
+  /* Last orders: site.json "lastOrder" (e.g. "01:30"). New orders stop then; the kitchen finishes what it has. */
+  function cutFor(w) {
+    if (!w) return w;
+    var cut = w.c;
+    if (SITE.lastOrder) {
+      var lo = mins(SITE.lastOrder);
+      if (lo <= w.o % 1440) lo += 1440;
+      if (lo > w.o && lo < w.c) cut = lo;
+    }
+    return { o: w.o, c: w.c, cut: cut };
+  }
   function kitchenStatus() {
     var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
-    // still open from last night's late shift?
-    var y = windowFor(d - 1);
-    if (y && y.c > 24 * 60 && now < y.c - 24 * 60) {
-      var left = y.c - 24 * 60 - now;
-      return { open: true, soon: left <= 30, label: "Open until " + fmtTime(y.c) };
+    var wins = [];
+    var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
+    if (y) wins.push({ o: y.o - 1440, c: y.c - 1440, cut: y.cut - 1440 });
+    if (w) wins.push(w);
+    for (var k = 0; k < wins.length; k++) {
+      var x = wins[k];
+      if (now >= x.o && now < x.cut) {
+        var left = x.cut - now, hasCut = x.cut < x.c;
+        return { open: true, soon: left <= 30, lastOrder: hasCut ? fmtTime(x.cut) : "",
+          label: left <= 30 && hasCut ? "Last orders " + fmtTime(x.cut) : "Open until " + fmtTime(x.c) };
+      }
     }
-    var w = windowFor(d);
-    if (w && now >= w.o && now < w.c) return { open: true, soon: w.c - now <= 30, label: "Open until " + fmtTime(w.c) };
-    if (w && now < w.o) return { open: false, label: "Opens " + (w.o >= 18 * 60 ? "tonight " : "today ") + fmtTime(w.o), opens: fmtTime(w.o) };
-    for (var i = 1; i <= 7; i++) {
+    var finishing = wins.some(function (x) { return now >= x.cut && now < x.c; });
+    var res = null;
+    if (w && now < w.o) res = { label: "Opens " + (w.o >= 18 * 60 ? "tonight " : "today ") + fmtTime(w.o), opens: fmtTime(w.o) };
+    for (var i = 1; i <= 7 && !res; i++) {
       var n = windowFor(d + i);
       if (n) {
         var when = (i === 1 ? (n.o >= 18 * 60 ? "tomorrow night " : "tomorrow ") : DAY_NAMES[(d + i) % 7] + " ") + fmtTime(n.o);
-        return { open: false, label: "Opens " + when, opens: when };
+        res = { label: "Opens " + when, opens: when };
       }
     }
-    return { open: false, label: "Closed", opens: "" };
+    res = res || { label: "Closed", opens: "" };
+    res.open = false;
+    res.finishing = finishing;
+    return res;
   }
   function hoursLabel() {
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
@@ -171,7 +195,25 @@
     if (!silent) emit();
   }
   var state = null;
-  function S() { if (!state) state = readStore(); return state; }
+  var SENT_KEEP = 3 * 3600 * 1000;   // a sent order stays on screen for 3 hours, then the bag is empty again
+  function S() { if (!state) { state = readStore(); tidy(state); } return state; }
+  /* drinks are one shared group: one Coke line, whichever restaurant it was added from */
+  function isDrinkLine(l) { return l.dr || /^(ck|cz|sp)$/.test(l.id); }
+  function tidy(s) {
+    var seen = {}, changed = false;
+    s.lines = s.lines.filter(function (l) {
+      if (!isDrinkLine(l)) return true;
+      l.dr = true;
+      var k = "drink|" + l.id;
+      if (seen[k]) { seen[k].q = Math.min(MAX_QTY, seen[k].q + l.q); changed = true; return false; }
+      seen[k] = l; if (l.k !== k) { l.k = k; changed = true; }
+      return true;
+    });
+    if (s.sentAt && Date.now() - s.sentAt > SENT_KEEP) { retire(s); changed = true; }
+    if (changed) writeStore(s, true);
+  }
+  /* the sent order is already saved as "Order again"; empty the bag and forget its number */
+  function retire(s) { s.lines = []; s.no = ""; s.sentAt = 0; s.note = ""; s.when = ""; }
   function commit() { writeStore(state); }
   window.addEventListener("storage", function (e) { if (e.key === KEY) { state = readStore(); emit(); } });
 
@@ -226,22 +268,31 @@
   function includesNames(menu, item) {
     return (item.includes || []).map(function (id) { return menu.byId[id] ? menu.byId[id].name : id; });
   }
+  var freshStart = false;
   function addItem(b, id, opts, qty) {
     var menu = MENU[b], item = menu && menu.byId[id];
     if (!item || item.soldOut || brandStatus(b) !== "open") return null;
     var o = normOpts(item, opts || {});
-    var k = lineKey(b, id, o);
+    var drink = item.kind === "drink";
+    var k = drink ? "drink|" + id : lineKey(b, id, o);
     var s = S();
-    if (s.sentAt) { s.sentAt = 0; }
+    if (s.sentAt) { retire(s); freshStart = true; }
     var line = s.lines.filter(function (l) { return l.k === k; })[0];
     if (line) line.q = Math.min(MAX_QTY, line.q + (qty || 1));
     else {
       line = { k: k, b: b, id: id, q: Math.min(MAX_QTY, qty || 1), o: o, d: describe(item, o), n: item.name, p: unitPrice(item, o) };
+      if (drink) line.dr = true;
       if (item.includes) line.inc = includesNames(menu, item);
       s.lines.push(line);
     }
     commit();
     return line;
+  }
+  /* toast text after an add; says so once when a new order started after a sent one */
+  function addedMsg(text) {
+    if (!freshStart) return text;
+    freshStart = false;
+    return "New order started. " + text;
   }
   function setLineQty(k, q) {
     var s = S();
@@ -272,40 +323,57 @@
   function subtotal() { return liveLines().reduce(function (n, l) { return n + l.q * l.p; }, 0); }
   function fee() { return S().mode === "delivery" && count() > 0 ? SITE.deliveryFee : 0; }
   function total() { return subtotal() + fee(); }
+  /* restaurants with food in the order (drinks don't count unless the order is only drinks) */
   function brandsInCart() {
-    var seen = [];
-    brandList(true).forEach(function (b) { if (liveLines().some(function (l) { return l.b === b; })) seen.push(b); });
-    liveLines().forEach(function (l) { if (seen.indexOf(l.b) < 0) seen.push(l.b); });
+    var lines = liveLines(), food = lines.filter(function (l) { return !isDrinkLine(l); });
+    var use = food.length ? food : lines.slice(0, 1), seen = [];
+    brandList(true).forEach(function (b) { if (use.some(function (l) { return l.b === b; })) seen.push(b); });
+    use.forEach(function (l) { if (seen.indexOf(l.b) < 0) seen.push(l.b); });
     return seen;
   }
+  function foodLines(b) { return liveLines().filter(function (l) { return l.b === b && !isDrinkLine(l); }); }
+  function drinkLines() { return liveLines().filter(isDrinkLine); }
+  /* menus needed to show the order: every restaurant with a line in it, drinks included */
+  function menusInCart() {
+    var ids = [];
+    liveLines().forEach(function (l) { if (ids.indexOf(l.b) < 0) ids.push(l.b); });
+    return ids;
+  }
   function brandName(b) { return MENU[b] ? MENU[b].name : b.replace(/-/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
+  /* Order number = Aruba time it was sent + 2 letters, e.g. 2314-K7. Readable on the phone, and
+     two orders only share a number if they're sent in the same minute AND draw the same letters. */
+  var NO_CHARS = "ACDEFGHJKLMNPRTUVWXY34679";
+  function newOrderNo() {
+    var t = arubaNow(), r = "";
+    for (var i = 0; i < 2; i++) r += NO_CHARS.charAt(Math.floor(Math.random() * NO_CHARS.length));
+    return String(t.getHours()).padStart(2, "0") + String(t.getMinutes()).padStart(2, "0") + "-" + r;
+  }
   function orderNo() {
     var s = S();
-    if (!s.no) { s.no = String(1000 + Math.floor(Math.random() * 9000)); writeStore(s, true); }
+    if (!s.no) { s.no = newOrderNo(); writeStore(s, true); }
     return s.no;
   }
   function clearOrder() {
     var s = S();
-    s.lines = []; s.no = ""; s.sentAt = 0; s.note = "";
+    retire(s);
     commit();
   }
 
   /* ---------------------------------------------------------------- order time: as soon as possible, or a slot tonight */
+  function slotLabel(m) { m = m % 1440; return m === 0 ? "Midnight" : fmtTime(m); }
+  /* Time choices run from 30 min after opening (or 45 min from now) until last orders, never the closing minute itself. */
   function timeSlots() {
     var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
     var st = kitchenStatus(), win = null, prefix = "";
-    var y = windowFor(d - 1);
-    if (y && y.c > 1440 && now < y.c - 1440) win = { o: now, c: y.c - 1440 };
-    else {
-      var w = windowFor(d);
-      if (w && now < w.c) win = w;
-      else { var n = windowFor(d + 1); if (n) { win = { o: n.o + 1440, c: n.c + 1440 }; prefix = "Tomorrow "; } }
-    }
+    function endOf(x, shift) { return (x.cut < x.c ? x.cut : x.c - 15) + shift; }
+    var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
+    if (y && y.cut > 1440 && now < y.cut - 1440) win = { o: y.o - 1440, end: endOf(y, -1440) };
+    else if (w && now < w.cut) win = { o: w.o, end: endOf(w, 0) };
+    else { var n = cutFor(windowFor(d + 1)); if (n) { win = { o: n.o + 1440, end: endOf(n, 1440) }; prefix = "Tomorrow "; } }
     var slots = [];
     if (win) {
-      var start = Math.max(win.o + 30, now + 45);
-      start = Math.ceil(start / 15) * 15;
-      for (var m = start; m <= win.c; m += 15) slots.push(prefix + fmtTime(m % 1440));
+      var start = Math.ceil(Math.max(win.o + 30, now + 45) / 15) * 15;
+      for (var m = start; m <= win.end; m += 15) slots.push(prefix + slotLabel(m));
     }
     return { asap: st.open, slots: slots };
   }
@@ -321,18 +389,24 @@
     var no = "#" + orderNo();
     if (brands.length === 1) out.push("*" + brandName(brands[0]) + " order* " + no);
     else out.push("*Kitchen order* " + no + " · " + brands.length + " restaurants");
-    out.push(s.mode === "delivery" ? "Delivery · " + (s.area || "area not set") : "Pickup");
+    out.push(s.mode === "delivery" ? "Delivery · " + (s.area ? s.area + (s.area === OTHER ? " (please confirm)" : "") : "area not set") : "Pickup");
     out.push("Time: " + (validWhen() || "As soon as possible"));
     if (!kitchenStatus().open) out.push("Pre-order — sent while we were closed");
     out.push("");
+    function put(l) {
+      out.push(l.q + " × " + l.n + " — " + money(l.q * l.p));
+      if (l.inc && l.inc.length) out.push("   Includes: " + l.inc.join(", "));
+      if (l.d && l.d.length) out.push("   " + l.d.join(" · "));
+    }
+    var drinks = drinkLines(), onlyDrinks = drinks.length === lines.length;
     brands.forEach(function (b) {
       if (brands.length > 1) out.push("*" + brandName(b) + "*");
-      lines.filter(function (l) { return l.b === b; }).forEach(function (l) {
-        out.push(l.q + " × " + l.n + " — " + money(l.q * l.p));
-        if (l.inc && l.inc.length) out.push("   Includes: " + l.inc.join(", "));
-        if (l.d && l.d.length) out.push("   " + l.d.join(" · "));
-      });
+      (onlyDrinks ? [] : foodLines(b)).forEach(put);
     });
+    if (drinks.length) {
+      if (brands.length > 1) out.push("*Drinks*");
+      drinks.forEach(put);
+    }
     out.push("");
     out.push("Subtotal " + money(subtotal()));
     out.push(s.mode === "delivery" ? "Delivery " + money(fee()) : "Pickup " + money(0));
@@ -343,6 +417,8 @@
     if (clean(s.note)) out.push("Note: " + clean(s.note));
     return out.join("\n");
   }
+  /* how to pay: site.json "payment", e.g. "Pay the driver in cash (florin or US$) or by card." Empty = say nothing. */
+  function payLine() { return SITE.payment ? clean(SITE.payment) + " " : ""; }
   function waLink(text) { return "https://wa.me/" + SITE.whatsapp + "?text=" + encodeURIComponent(text); }
   function checkoutLink() {
     var full = buildMessage(), u = waLink(full);
@@ -358,6 +434,11 @@
     if (!t) { t = el('<div id="oa-toast" class="oa-toast" role="status" aria-live="polite" hidden></div>'); BODY.appendChild(t); }
     t.textContent = msg; t.hidden = false;
     clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+  /* the bag gives a small bounce (and a tiny buzz on Android) when something goes in */
+  function bump() {
+    $$(".bag, #oa-bar .bar__btn").forEach(function (b) { b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); });
+    try { if (navigator.vibrate && !matchMedia("(prefers-reduced-motion: reduce)").matches) navigator.vibrate(8); } catch (e) { /* not supported */ }
   }
   function copyText(text) {
     if (navigator.clipboard && window.isSecureContext) {
@@ -387,6 +468,7 @@
     var rec = { wrap: wrap, last: document.activeElement, onClose: opts.onClose };
     openSheets.push(rec);
     BODY.classList.add("oa-lock");
+    paintBar();
     requestAnimationFrame(function () { wrap.classList.add("is-open"); });
     wrap.addEventListener("click", function (e) { if (e.target.closest("[data-close]")) closeSheet(rec); });
     setTimeout(function () { var f = $("[data-autofocus]", panel) || $(".x", panel); if (f) f.focus({ preventScroll: true }); }, 60);
@@ -419,9 +501,13 @@
   function flagText(item) {
     return (item.flags || []).map(function (f) { return '<span class="fl fl--' + esc(f) + '">' + esc(FLAG_NAMES[f] || f) + "</span>"; }).join("");
   }
+  /* What the recipe contains, plus the honest part: one kitchen cooks everything, so traces are possible. */
   function allergenLine(item) {
-    if (!item.allergens || !item.allergens.length) return item.kind === "drink" ? "" : "No major allergens.";
-    return "Contains " + item.allergens.map(function (a) { return ALLERGEN_NAMES[a] || a; }).join(", ") + ".";
+    if (item.kind === "drink") return "";
+    var base = !item.allergens || !item.allergens.length ? "No major allergens in the recipe." :
+      "Contains " + item.allergens.map(function (a) { return ALLERGEN_NAMES[a] || a; }).join(", ") + ".";
+    return base + " Everything is cooked in one kitchen" + (item.fried ? " and fried in shared oil" : "") +
+      ", so traces of gluten, egg, milk, soy, sesame, peanuts or shellfish are possible.";
   }
   function fromPrice(m) {
     var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
@@ -467,10 +553,10 @@
   function featHTML(b, item, opts) {
     opts = opts || {};
     var m = MENU[b], n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
-    var tag = opts.brand ? m.name : item.style === "bundle" ? "Family deal" : item.style === "signature" ? "Signature" : "";
-    return '<article class="feat" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
-      '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + '"></button>' +
-      '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' + qtyBadge(n) + plusBtn(item, orderable) + "</div>" +
+    var tag = item.soldOut ? "Sold out today" : opts.brand ? m.name : item.style === "bundle" ? "Family deal" : item.style === "signature" ? "Signature" : "";
+    return '<article class="feat' + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
+      '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", sold out today" : "") + '"></button>' +
+      '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (opts.eager ? "eager" : "lazy") + '"' + (opts.eager ? ' fetchpriority="high"' : "") + ' decoding="async">' + qtyBadge(n) + plusBtn(item, orderable) + "</div>" +
       '<h3 class="feat__name">' + esc(item.name) + "</h3>" +
       '<p class="feat__meta"><span>' + money(item.price) + "</span>" + (tag ? "<span>" + esc(tag) + "</span>" : "") + "</p></article>";
   }
@@ -488,7 +574,8 @@
     if (!it) return;
     var line = addItem(it.b, it.id, {}, 1);
     if (line) {
-      toast(line.n + " added");
+      toast(addedMsg(line.n + " added"));
+      bump();
       btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop");
     }
   }
@@ -528,7 +615,7 @@
         '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' +
         '<div class="dish__body">' +
           (PAGE !== "brand" ? '<p class="dish__brand">' + esc(menu.name) + "</p>" : "") +
-          '<h2 class="dish__name">' + esc(item.name) + "</h2>" +
+          '<h2 class="dish__name" tabindex="-1" data-autofocus>' + esc(item.name) + "</h2>" +
           '<p class="dish__price">' + money(item.price) + "</p>" +
           '<p class="dish__desc">' + esc(item.desc) + "</p>" + inc +
           (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
@@ -537,7 +624,7 @@
         "</div>" +
         '<div class="dish__foot">' +
           '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="One less">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="One more">' + ICON.plus + "</button></div>" +
-          '<button type="button" class="btn btn--accent dish__add" data-autofocus' + (orderable ? "" : " disabled") + "></button>" +
+          '<button type="button" class="btn btn--accent dish__add"' + (orderable ? "" : " disabled") + "></button>" +
         "</div>" +
       "</div>");
     function pickedPairs() {
@@ -557,7 +644,10 @@
       $(".qty__n", node).textContent = qty;
       var btn = $(".dish__add", node);
       if (!orderable) btn.textContent = item.soldOut ? "Sold out today" : "Opening soon";
-      else btn.innerHTML = "<span>Add " + qty + "</span><span>" + money(unitPrice(item, o) * qty + pickedPairs().reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
+      else {
+        var extra = pickedPairs(), n = qty + extra.length;
+        btn.innerHTML = "<span>Add" + (n > 1 ? " " + n + " items" : "") + "</span><span>" + money(unitPrice(item, o) * qty + extra.reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
+      }
     }
     node.addEventListener("change", paint);
     node.addEventListener("click", function (e) {
@@ -571,7 +661,8 @@
       addItem(b, id, readOpts(), qty);
       extra.forEach(function (i) { addItem(b, i.id, {}, 1); });
       closeSheet(rec);
-      toast(qty + " × " + item.name + (extra.length ? " + " + plural(extra.length, "extra", "extras") : "") + " added");
+      toast(addedMsg(qty + " × " + item.name + (extra.length ? " + " + plural(extra.length, "extra", "extras") : "") + " added"));
+      bump();
     });
     paint();
   }
@@ -584,7 +675,7 @@
   }
   function paintDeliver() { $$("[data-oa-deliver] .deliver__t").forEach(function (t) { t.textContent = deliverLabel(); }); }
   function openDeliver() {
-    var s = S(), areas = (SITE.areas || []).concat(["Other area"]);
+    var s = S(), areas = (SITE.areas || []).concat([OTHER]);
     var node = el('<div class="dl">' +
       '<div class="sheet__head"><h2>Delivery or pickup</h2><button type="button" class="x" data-close aria-label="Close">' + ICON.close + "</button></div>" +
       '<fieldset class="seg"><legend class="sr">Delivery or pickup</legend>' +
@@ -593,12 +684,12 @@
       "</fieldset>" +
       '<fieldset class="dl__areas"' + (s.mode === "pickup" ? " hidden" : "") + '><legend>Area</legend><div class="chips">' +
         areas.map(function (a) { return '<label class="chip"><input type="radio" name="dl-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(a) + "</span></label>"; }).join("") +
-      "</div></fieldset>" +
+      '</div><p class="note note--warn dl__other"' + (s.area === OTHER && s.mode !== "pickup" ? "" : " hidden") + ">" + OTHER_NOTE + "</p></fieldset>" +
       '<button type="button" class="btn btn--accent dl__done" data-close>Done</button></div>');
     node.addEventListener("change", function (e) {
       var t = e.target;
       if (t.name === "dl-mode") { S().mode = t.value; $(".dl__areas", node).hidden = t.value === "pickup"; commit(); }
-      if (t.name === "dl-area") { S().area = t.value; commit(); }
+      if (t.name === "dl-area") { S().area = t.value; $(".dl__other", node).hidden = t.value !== OTHER; commit(); }
       paintDeliver();
     });
     openSheet(node, { label: "Delivery or pickup" });
@@ -620,7 +711,7 @@
       if (a) {
         var p = a.getAttribute("data-add").split("|");
         var line = addItem(p[0], p[1], {}, 1);
-        if (line) toast(line.n + " added");
+        if (line) { toast(addedMsg(line.n + " added")); bump(); }
         return;
       }
       if (e.target.closest("[data-copy]")) {
@@ -649,52 +740,88 @@
     });
     return node;
   }
+  /* cheap add-ons from the other restaurants: the whole point of one kitchen is one delivery */
+  var CROSS = [["dushi-wok", "er"], ["nonnas-night-in", "gb"], ["taco-brava", "cs"], ["smash-shack", "fs"], ["oranje-snack", "bb"]];
+  function suggItem(b, i) {
+    return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(b + "|" + i.id) + '" aria-label="Add ' + esc(i.name) + ", " + money(i.price) + '">' +
+      '<span class="sugg__img"><img src="' + esc(path(i.img)) + '" alt="" loading="lazy" decoding="async"><i>' + ICON.plus + "</i></span>" +
+      '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
+  }
   function suggestions() {
     var lines = liveLines(), brands = brandsInCart();
     if (!brands.length) return "";
     var host = brands.indexOf(HERE) >= 0 ? HERE : brands[0];
-    var menu = MENU[host];
-    if (!menu || brandStatus(host) !== "open") return "";
-    var hasDrink = lines.some(function (l) { var m = MENU[l.b], it = m && m.byId[l.id]; return it && it.kind === "drink"; });
+    var menu = MENU[host], out = "";
+    var hasDrink = drinkLines().length > 0;
     var hasSide = lines.some(function (l) { var m = MENU[l.b], it = m && m.byId[l.id]; return l.b === host && it && it.kind === "side"; });
-    var picks = [];
-    if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
-    if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
-    if (!picks.length) return "";
-    return '<section class="sugg" aria-label="Add to your order"><h3>' + (!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side") + "</h3>" +
-      '<div class="sugg__row">' + picks.map(function (i) {
-        return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(host + "|" + i.id) + '" aria-label="Add ' + esc(i.name) + ", " + money(i.price) + '">' +
-          '<span class="sugg__img"><img src="' + esc(path(i.img)) + '" alt="" loading="lazy" decoding="async"><i>' + ICON.plus + "</i></span>" +
-          '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
-      }).join("") + "</div></section>";
+    if (menu && brandStatus(host) === "open") {
+      var picks = [];
+      if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
+      if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
+      if (picks.length) out += '<section class="sugg" aria-label="Add to your order"><h3>' + (!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side") + "</h3>" +
+        '<div class="sugg__row">' + picks.map(function (i) { return suggItem(host, i); }).join("") + "</div></section>";
+    }
+    var other = CROSS.filter(function (c) {
+      var m = MENU[c[0]], i = m && m.byId[c[1]];
+      return i && !i.soldOut && brandStatus(c[0]) === "open" && brands.indexOf(c[0]) < 0;
+    }).slice(0, 4);
+    if (other.length) {
+      out += '<section class="sugg sugg--x" aria-label="Add from our other restaurants"><h3>From our other restaurants' +
+        (S().mode === "delivery" ? " <span>Still one " + shortMoney(SITE.deliveryFee) + " delivery</span>" : "") + "</h3>" +
+        '<div class="sugg__row">' + other.map(function (c) { return suggItem(c[0], MENU[c[0]].byId[c[1]]); }).join("") + "</div></section>";
+    }
+    return out;
+  }
+  function crossMenus() { return CROSS.map(function (c) { return c[0]; }).filter(function (b) { return brandStatus(b) === "open"; }); }
+  /* keep keyboard focus on the same control after the order re-renders */
+  function focusKey(n) {
+    if (!n) return null;
+    if (n.id) return "#" + n.id;
+    if (n.getAttribute("data-line")) return '[data-line="' + n.getAttribute("data-line") + '"][data-d="' + n.getAttribute("data-d") + '"]';
+    if (n.name && n.type === "radio") return 'input[name="' + n.name + '"][value="' + n.value + '"]';
+    if (n.getAttribute("data-add")) return '[data-add="' + n.getAttribute("data-add") + '"]';
+    return null;
+  }
+  function restoreFocus(node, key, fallback) {
+    var f = null;
+    try { f = key && node.querySelector(key); } catch (e) { f = null; }
+    f = f || (fallback && node.querySelector(fallback));
+    if (f) f.focus({ preventScroll: true });
   }
   function renderOrder(node) {
     var s = S(), lines = liveLines(), brands = brandsInCart(), st = kitchenStatus();
-    var focusId = document.activeElement && node.contains(document.activeElement) ? document.activeElement.id : null;
+    var had = document.activeElement && node.contains(document.activeElement) && document.activeElement !== node;
+    var fKey = had ? focusKey(document.activeElement) : null;
     var html = "";
     var head = node._mode === "sheet"
       ? '<div class="sheet__head"><h2>Your order</h2><button type="button" class="x" data-close aria-label="Close">' + ICON.close + "</button></div>"
       : "";
     if (!lines.length) {
-      node.innerHTML = head + '<div class="empty"><p class="empty__t">Your order is empty</p><p>Tap + on any dish.</p>' +
+      node.innerHTML = head + '<div class="empty"><p class="empty__t">' + (node._mode === "page" ? "Nothing in it yet" : "Your order is empty") + "</p><p>Tap + on any dish.</p>" +
         (PAGE === "brand" && node._mode === "sheet" ? '<button type="button" class="btn btn--accent" data-close>Back to the menu</button>' : '<a class="btn btn--accent" href="' + path("index.html") + '">Browse restaurants</a>') + "</div>";
+      if (had) restoreFocus(node, null, ".x, .btn");
       return;
     }
     if (s.sentAt) {
-      node.innerHTML = head + '<div class="sent"><div class="sent__icon">' + ICON.check + "</div>" +
-        "<h3>Order #" + esc(s.no) + " is in WhatsApp</h3>" +
-        "<p>Tap <b>Send</b> there. We reply to confirm.</p>" +
+      node.innerHTML = head + '<div class="sent"><div class="sent__icon">' + ICON.wa + "</div>" +
+        '<p class="sent__k">Order #' + esc(s.no) + "</p>" +
+        "<h3>One more step: press Send in WhatsApp</h3>" +
+        "<p>Your order is typed out in the chat. Once you press <b>Send</b>, we reply on WhatsApp to confirm it.</p>" +
         '<a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "<span>Open WhatsApp again</span></a>" +
         '<button type="button" class="btn btn--line" data-new>Start a new order</button>' +
         '<button type="button" class="link" data-edit>Edit this order</button></div>';
       wireSend(node);
+      if (had) restoreFocus(node, null, "[data-send]");
       return;
     }
     html += head;
-    if (!st.open) html += '<p class="note note--warn">We’re closed. ' + esc(st.label) + ". Order now and we confirm when we open.</p>";
-    brands.forEach(function (b) {
-      if (brands.length > 1) html += '<h3 class="lines__brand">' + esc(brandName(b)) + "</h3>";
-      html += '<ul class="lines">' + lines.filter(function (l) { return l.b === b; }).map(function (l) {
+    if (!st.open) html += '<p class="note note--warn">' + (st.finishing ? "Last orders have passed for tonight. " : "We\u2019re closed. ") + esc(st.label) + ". Order now for later and we confirm when we open.</p>";
+    var drinks = drinkLines(), groups = [];
+    brands.forEach(function (b) { var f = foodLines(b); if (f.length) groups.push({ t: brandName(b), lines: f }); });
+    if (drinks.length) groups.push({ t: "Drinks", lines: drinks });
+    groups.forEach(function (g) {
+      if (groups.length > 1) html += '<h3 class="lines__brand">' + esc(g.t) + "</h3>";
+      html += '<ul class="lines">' + g.lines.map(function (l) {
         var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
         return '<li class="line">' +
           '<div class="line__main"><p class="line__n">' + esc(l.n) + "</p>" +
@@ -707,7 +834,7 @@
       }).join("") + "</ul>";
     });
     html += suggestions();
-    var areas = (SITE.areas || []).concat(["Other area"]);
+    var areas = (SITE.areas || []).concat([OTHER]);
     html += '<form class="form" novalidate onsubmit="return false">' +
       '<fieldset class="seg"><legend class="sr">Delivery or pickup</legend>' +
         '<label><input type="radio" name="oa-mode" value="delivery"' + (s.mode === "delivery" ? " checked" : "") + "><span><b>Delivery</b><small>" + shortMoney(SITE.deliveryFee) + " per order</small></span></label>" +
@@ -721,9 +848,11 @@
       html += '<fieldset class="field field--areas" id="oa-f-area"><legend>Area</legend><div class="chips">' +
         areas.map(function (a) {
           return '<label class="chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(a) + "</span></label>";
-        }).join("") + '</div><p class="field__err">Pick your area.</p></fieldset>' +
+        }).join("") + '</div><p class="field__err">Pick your area.</p>' +
+        (s.area === OTHER ? '<p class="note note--warn">' + OTHER_NOTE + "</p>" : "") + "</fieldset>" +
         '<label class="field" id="oa-f-addr"><span class="field__l">Address or landmark</span>' +
-        '<textarea id="oa-addr" data-f="addr" rows="2" maxlength="160" autocomplete="street-address" placeholder="Palm Beach 12, yellow house">' + esc(s.addr) + "</textarea>" +
+        '<textarea id="oa-addr" data-f="addr" rows="2" maxlength="160" autocomplete="street-address" aria-describedby="oa-addr-help">' + esc(s.addr) + "</textarea>" +
+        '<span class="field__help" id="oa-addr-help">Street and house number, or a landmark. House colour helps the driver.</span>' +
         '<span class="field__err">Add an address for the driver.</span></label>';
     } else {
       html += '<p class="note">We send the pickup address and time on WhatsApp.</p>';
@@ -738,13 +867,13 @@
       "<div><dt>" + (s.mode === "delivery" ? "Delivery" : "Pickup") + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : "Free") + "</dd></div>" +
       '<div class="sum__total"><dt>Total</dt><dd>' + money(total()) + "</dd></div></dl>";
     html += '<details class="ticket"><summary>Preview the message</summary><pre>' + esc(buildMessage()) + "</pre></details>";
-    html += '<p class="order__hint">Opens WhatsApp with your order. Tap <b>Send</b> there.</p>' +
+    html += '<p class="order__hint">' + esc(payLine()) + "Opens WhatsApp with your order typed out. Press <b>Send</b> there.</p>" +
       '<button type="button" class="link" data-copy>Copy the order instead</button>' +
       '<div class="order__send"><a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
-      '<span>Send on WhatsApp</span><span class="btn__total">' + money(total()) + "</span></a></div>";
+      '<span class="lg">Send on WhatsApp</span><span class="sm">Send order</span><span class="btn__total">' + money(total()) + "</span></a></div>";
     node.innerHTML = html;
     wireSend(node);
-    if (focusId) { var f = document.getElementById(focusId); if (f) f.focus({ preventScroll: true }); }
+    if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-send]");
   }
   function validate(node) {
     var s = S(), first = null;
@@ -779,6 +908,7 @@
       if (!liveLines().length) { e.preventDefault(); return; }
       if (!S().sentAt && !validate(node)) { e.preventDefault(); return; }
       if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast("Remove the sold-out dish first"); return; }
+      if (!S().sentAt) { S().no = newOrderNo(); writeStore(S(), true); }   // number = the minute it's sent
       var link = checkoutLink();
       a.href = link.url;
       if (link.short) copyText(link.full).then(function (ok) { toast(ok ? "Long order: it’s copied. Paste it in the chat." : "Tap “Copy the order” and paste it in WhatsApp."); });
@@ -807,22 +937,36 @@
     if (!n) return;
     var stale = Date.now() - (S().updated || 0) > 2 * 3600 * 1000;
     $(".bar__count", bar).textContent = n;
-    $(".bar__label", bar).textContent = S().sentAt ? "Check your order" : stale ? "Continue order" : "View order";
-    $(".bar__total", bar).textContent = money(total());
-    $("button", bar).setAttribute("aria-label", "View order: " + plural(n, "item", "items") + ", " + money(total()));
+    $(".bar__label", bar).textContent = S().sentAt ? "Sent: see order" : stale ? "Continue order" : "View order";
+    // food only here; delivery is added at checkout, once the customer has picked delivery or pickup
+    $(".bar__total", bar).textContent = money(subtotal());
+    $("button", bar).setAttribute("aria-label", "View order: " + plural(n, "item", "items") + ", " + money(subtotal()) + " before delivery");
   }
   var orderSheet = null;
   function openOrder() {
     if (orderSheet) return;
     var node = orderNode("sheet");
-    Promise.all(brandsInCart().map(loadMenu)).then(function () { renderOrder(node); }, function () {});
+    Promise.all(menusInCart().concat(crossMenus()).map(function (b) { return loadMenu(b).catch(function () {}); })).then(function () { renderOrder(node); });
     orderSheet = openSheet(node, { label: "Your order", cls: "sheet__panel--order", onClose: function () { orderSheet = null; } });
     orderSheet.node = node;
   }
 
   /* ---------------------------------------------------------------- shared bits */
+  /* "10 PM–2 AM" + "Every night" when every day is the same; otherwise today's hours */
+  function hoursShort() {
+    var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
+    var same = vals.every(function (v) { return v === vals[0]; }) && SITE.hours.mon;
+    var h = same ? SITE.hours.mon : SITE.hours[DAYS[arubaNow().getDay()]];
+    if (!h) return { t: "Closed", d: "Today" };
+    var night = mins(h[1]) <= mins(h[0]) || mins(h[0]) >= 18 * 60;
+    return { t: fmtTime(mins(h[0])) + "–" + fmtTime(mins(h[1])), d: same ? (night ? "Every night" : "Every day") : "Today" };
+  }
   function fillCommon() {
+    var hs = hoursShort();
     $$("[data-oa-hours]").forEach(function (n) { n.textContent = hoursLabel(); });
+    $$("[data-oa-hours-t]").forEach(function (n) { n.textContent = hs.t; });
+    $$("[data-oa-hours-d]").forEach(function (n) { n.textContent = hs.d + (SITE.lastOrder ? " · last orders " + fmtTime(mins(SITE.lastOrder)) : ""); });
+    $$("[data-oa-pay]").forEach(function (n) { n.textContent = clean(SITE.payment || ""); n.hidden = !SITE.payment; });
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     $$("[data-oa-eta]").forEach(function (n) { n.textContent = SITE.eta || ""; });
     $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
@@ -834,8 +978,8 @@
     var iab = /(Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|Snapchat|Line\/)/i.test(ua);
     if (!iab) return;
     var app = /Instagram/i.test(ua) ? "Instagram" : /FBAN|FBAV|FB_IAB/i.test(ua) ? "Facebook" : /musical_ly|Bytedance/i.test(ua) ? "TikTok" : /Snapchat/i.test(ua) ? "Snapchat" : "this app";
-    var box = el('<div class="iab"><p>Opened in ' + esc(app) + "? Tap <b>•••</b> and <b>Open in browser</b> to order on WhatsApp.</p>" +
-      '<button type="button" class="btn btn--line btn--sm">Copy link</button></div>');
+    var box = el('<div class="iab"><p>In ' + esc(app) + "? If WhatsApp doesn’t open, tap <b>•••</b> → <b>Open in browser</b>.</p>" +
+      '<button type="button" class="link">Copy link</button></div>');
     var host = $("main") || BODY;
     host.insertBefore(box, host.firstChild);
     $("button", box).addEventListener("click", function () {
@@ -866,8 +1010,12 @@
     var sign = $("[data-oa-sign]");
     if (!sign) return;
     var st = kitchenStatus();
-    sign.innerHTML = st.open ? "<b>Open</b><span>" + esc(st.label.replace(/^Open /, "")) + "</span>" : "<b>Closed</b><span>" + esc(st.label) + "</span>";
+    var html = st.open ? "<b>Open</b><span>" + esc(st.label.replace(/^Open /, "")) + "</span>" : "<b>Closed</b><span>" + esc(st.label) + "</span>";
+    if (sign._html === html) return;   // only touch it when it changes, so screen readers don't repeat it every minute
+    sign._html = html;
+    sign.innerHTML = html;
     sign.classList.toggle("is-on", st.open);
+    sign.classList.toggle("is-last", !!(st.open && st.soon && st.lastOrder));
     if (first && st.open) sign.classList.add("flick");
   }
 
@@ -884,9 +1032,9 @@
     }).filter(function (s) { return s.items.length; });
     // cover: a dish that is not already in Featured, real photo first
     var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && featIds.indexOf(i.id) < 0; });
-    var pick = pool.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || pool[0] || feat[0] || menu.items[0];
+    var pick = (menu.cover && menu.byId[menu.cover]) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0] || feat[0] || menu.items[0];
     var cover = pick.img;
-    var html = '<div class="cover"><img src="' + esc(path(cover)) + '" alt="" width="780" height="446" fetchpriority="high" decoding="async"></div>' +
+    var html = '<div class="cover">' + coverMedia(menu, cover) + "</div>" +
       '<header class="store">' +
         '<img class="store__mark" src="' + esc(path(menu.mark)) + '" alt="" width="76" height="76">' +
         '<h1 class="store__name" id="store-name">' + esc(menu.name) + "</h1>" +
@@ -907,9 +1055,23 @@
       html += '<section class="sec" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' + esc(s.title) + "</h2>" +
         '<div class="' + (s.id === "drinks" ? "cans" : "rows") + '">' + s.items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
     });
+    html += '<section class="sec also" id="oa-also" aria-labelledby="h-also" hidden></section>';
     html += '<footer class="pfoot"><p>' + esc(menu.imageNote) + " Prices in Aruban florin (ƒ).</p>" +
       '<a class="pfoot__all" href="' + path("index.html") + '">All restaurants</a></footer>';
     main.innerHTML = html;
+    wireVideo(main);
+    later(function () {
+      var others = brandList(false).filter(function (x) { return x !== b; });
+      Promise.all(others.map(function (x) { return loadMenu(x).catch(function () { return null; }); })).then(function () {
+        var box = $("#oa-also");
+        var cards = others.filter(function (x) { return MENU[x]; }).map(function (x) { return miniShop(x); }).join("");
+        if (!box || !cards) return;
+        box.innerHTML = '<h2 class="sec__t" id="h-also">Also tonight from our kitchen</h2>' +
+          '<p class="also__sub">Mix dishes from any of them. Still one ' + shortMoney(SITE.deliveryFee) + " delivery.</p>" +
+          '<div class="minis">' + cards + "</div>";
+        box.hidden = false;
+      });
+    });
 
     var nav = $("#oa-cats");
     if (nav) {
@@ -940,43 +1102,121 @@
     }
   }
 
+  /* cover picture, or a short silent loop when the menu has one (never for reduce-motion or data saver) */
+  function quietMode() {
+    var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var save = navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || ""));
+    return reduce || save;
+  }
+  function coverMedia(menu, img) {
+    var pic = '<img src="' + esc(path(img)) + '" alt="" width="780" height="446" fetchpriority="high" decoding="async">';
+    if (!menu.video || quietMode()) return pic;
+    return '<video class="cover__v" muted loop playsinline autoplay preload="none" poster="' + esc(path(menu.video.poster || img)) + '" aria-hidden="true">' +
+      '<source src="' + esc(path(menu.video.src)) + '" type="video/mp4"></video>' +
+      '<button type="button" class="cover__pp" aria-label="Pause video" data-pp>' + ICON.pause + "</button>";
+  }
+  function wireVideo(root) {
+    $$("video.cover__v", root).forEach(function (v) {
+      var btn = v.parentNode.querySelector("[data-pp]");
+      var p = v.play && v.play(); if (p && p.catch) p.catch(function () { /* autoplay blocked: poster stays */ });
+      if (btn) btn.addEventListener("click", function () {
+        if (v.paused) { v.play(); btn.innerHTML = ICON.pause; btn.setAttribute("aria-label", "Pause video"); }
+        else { v.pause(); btn.innerHTML = ICON.play; btn.setAttribute("aria-label", "Play video"); }
+      });
+    });
+  }
+  function later(fn) { if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 2500 }); else setTimeout(fn, 600); }
+  function miniShop(b) {
+    var m = MENU[b];
+    return '<a class="mini" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
+      '<img src="' + esc(path(heroImg(m))) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' +
+      '<span class="mini__n">' + esc(m.name) + '</span><span class="mini__c">' + esc(m.cuisine) + "</span></a>";
+  }
+
   /* ---------------------------------------------------------------- home page */
+  /* the restaurant's showcase picture, skipping a dish that is sold out tonight */
+  function heroImg(m) {
+    var hero = m.hero && m.items.filter(function (i) { return i.img === m.hero; })[0];
+    if (m.hero && (!hero || !hero.soldOut)) return m.hero;
+    var alt = m.items.filter(function (i) { return !i.soldOut && i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; })[0];
+    return alt ? alt.img : m.items[0].img;
+  }
   function shopHTML(b, idx) {
     var m = MENU[b];
     if (!m) return "";
     var status = brandStatus(b), from = fromPrice(m);
-    var sig = m.items.filter(function (i) { return i.style === "signature"; })[0] || m.items[0];
-    return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
-      '<div class="shop__media"><img src="' + esc(path(m.hero || sig.img)) + '" alt="' + esc(sig.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
+    var img = heroImg(m), shown = m.items.filter(function (i) { return i.img === img; })[0] || m.items[0];
+    return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
+      '<div class="shop__media"><img src="' + esc(path(img)) + '" alt="' + esc(shown.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
         (status !== "open" ? '<span class="shop__soon">Opening soon</span>' : "") + "</div>" +
       '<div class="shop__body"><img class="shop__mark" src="' + esc(path(m.mark)) + '" alt="" width="48" height="48" loading="lazy">' +
         '<div><h3 class="shop__name">' + esc(m.name) + "</h3>" +
         '<p class="shop__meta"><span>' + esc(m.cuisine) + "</span>" + (from && status === "open" ? "<span>From " + money(from) + "</span>" : "") + "</p></div></div></a>";
   }
+  /* words people type for the same food: English, Papiamento, Dutch, Spanish */
+  var SYNONYMS = {
+    chicken: "kip pollo galina", shrimp: "kamaron camaron garnalen prawn", fries: "papita papitas patat friet frietjes french",
+    rice: "aros arroz rijst", noodles: "noodle mie bami fideos", beef: "karni carne rund rundvlees", pork: "porko cerdo varken",
+    burger: "hamburger hamburguesa", cheeseburger: "hamburger burger", penne: "pasta", spaghetti: "pasta", "lo mein": "pasta noodles",
+    tacos: "taco", taco: "tacos", burrito: "wrap", quesadilla: "kesadilla", nachos: "chips", "coca-cola": "coke cola soda frisdrank refresco",
+    sprite: "soda frisdrank refresco lemon", kroket: "croquette croqueta", bitterballen: "bitterbal", "sate": "satay sateh",
+    "saté": "sate satay sateh", wings: "wing alitas vleugels", "garlic bread": "pan bread", "egg rolls": "loempia springroll spring",
+    "sweet & sour": "sweet sour zoetzuur agridulce", "fried rice": "nasi bami", "frikandel": "frikadel", vegetarian: "veggie vega vegetariano"
+  };
+  var SUGGEST = ["Chicken", "Fries", "Tacos", "Pasta", "Burgers", "Shrimp", "Bitterballen"];
   function setupSearch(ids) {
     var input = $("#oa-q"), out = $("#oa-results"), browse = $("#oa-browse");
     if (!input || !out || !browse) return;
-    function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+    function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+    function extra(text) {
+      var t = norm(text), add = [];
+      Object.keys(SYNONYMS).forEach(function (k) { if (t.indexOf(norm(k)) >= 0) add.push(SYNONYMS[k]); });
+      return add.join(" ");
+    }
     var all = [], seenDrink = {};
     ids.forEach(function (b) {
       var m = MENU[b];
       if (!m || brandStatus(b) !== "open") return;
       m.items.forEach(function (i) {
         if (i.kind === "drink") { if (seenDrink[i.id]) return; seenDrink[i.id] = 1; }
-        all.push({ b: b, i: i, hay: norm([i.name, i.desc, m.name, m.cuisine, (i.flags || []).join(" "), i.kind === "drink" ? "drink soda can" : ""].join(" ")) });
+        all.push({ b: b, i: i,
+          name: norm(i.name + " " + extra(i.name) + (i.kind === "drink" ? " drink soda can" : "")),
+          rest: norm([m.name, m.cuisine].join(" ")),
+          desc: norm([i.desc, (i.flags || []).join(" "), extra(i.desc)].join(" ")) });
       });
     });
+    function score(x, words) {
+      var sc = 0;
+      for (var k = 0; k < words.length; k++) {
+        var w = words[k], s1 = 0;
+        if (new RegExp("(^|\\W)" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(x.name)) s1 = 6;
+        else if (x.name.indexOf(w) >= 0) s1 = 4;
+        else if (x.rest.indexOf(w) >= 0) s1 = 2;
+        else if (x.desc.indexOf(w) >= 0) s1 = 1;
+        if (!s1) return 0;
+        sc += s1;
+      }
+      return sc + (x.i.style === "signature" ? 0.5 : 0) - (x.i.kind === "drink" ? 0.3 : 0);
+    }
     var t;
+    function chips() {
+      return '<div class="chips chips--suggest">' + SUGGEST.map(function (w) { return '<button type="button" class="chip chip--btn" data-q="' + esc(w) + '">' + esc(w) + "</button>"; }).join("") + "</div>";
+    }
     function run() {
       var raw = input.value.trim(), q = norm(raw);
       if (!q) { out.hidden = true; browse.hidden = false; return; }
-      var words = q.split(/\s+/);
-      var hits = all.filter(function (x) { return words.every(function (w) { return x.hay.indexOf(w) >= 0; }); });
+      var words = q.split(/\s+/).filter(Boolean);
+      var hits = all.map(function (x) { return { x: x, s: score(x, words) }; }).filter(function (h) { return h.s > 0; })
+        .sort(function (a, b) { return b.s - a.s; }).map(function (h) { return h.x; });
       browse.hidden = true; out.hidden = false;
       out.innerHTML = hits.length
         ? '<p class="results__n">' + plural(hits.length, "dish", "dishes") + "</p>" + '<div class="rows">' + hits.map(function (x) { return rowHTML(x.b, x.i, { brand: true }); }).join("") + "</div>"
-        : '<p class="results__none">Nothing matches “' + esc(raw) + '”. Try chicken, shrimp or fries.</p>';
+        : '<p class="results__none">Nothing matches \u201c' + esc(raw) + '\u201d. Try one of these:</p>' + chips();
     }
+    out.addEventListener("click", function (e) {
+      var c = e.target.closest("[data-q]");
+      if (c) { input.value = c.getAttribute("data-q"); run(); input.focus({ preventScroll: true }); }
+    });
     input.addEventListener("input", function () { clearTimeout(t); t = setTimeout(run, 90); });
     input.addEventListener("search", run);
   }
@@ -1006,25 +1246,65 @@
       box.hidden = true;
     });
   }
+  function quickRow(ids) {
+    var row = $("#oa-quick");
+    if (!row) return;
+    row.innerHTML = ids.filter(function (b) { return MENU[b]; }).map(function (b) {
+      var m = MENU[b];
+      return '<a class="qk" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
+        '<img src="' + esc(path(m.mark)) + '" alt="" width="64" height="64" decoding="async">' +
+        '<span class="qk__c">' + esc(m.cuisine) + '</span><span class="qk__n">' + esc(m.name) + "</span></a>";
+    }).join("");
+  }
   function renderHub() {
     var ids = brandList(false);
     paintSign(true);
     paintDeliver();
     Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
       var rail = $("#oa-rail"), list = $("#oa-list");
+      quickRow(ids);
       if (rail) {
         var picks = [];
         ids.forEach(function (b) {
           var m = MENU[b];
           if (!m || brandStatus(b) !== "open") return;
-          m.items.filter(function (i) { return (i.style === "signature" || i.style === "bundle") && !i.soldOut; }).forEach(function (i) { picks.push(featHTML(b, i, { brand: true })); });
+          m.items.filter(function (i) { return (i.style === "signature" || i.style === "bundle") && !i.soldOut; }).forEach(function (i) { picks.push([b, i]); });
         });
-        rail.innerHTML = picks.join("");
+        rail.innerHTML = picks.map(function (p, n) { return featHTML(p[0], p[1], { brand: true, eager: n < 2 }); }).join("");
+        railArrows(rail);
       }
-      if (list) list.innerHTML = ids.map(shopHTML).join("");
+      if (list) {
+        list.innerHTML = ids.map(function (b, i) {
+          return MENU[b] ? shopHTML(b, i) :
+            '<div class="shop shop--fail"><p>One menu didn\u2019t load.</p><button type="button" class="btn btn--line btn--sm" data-retry>Try again</button></div>';
+        }).join("");
+        $$("[data-retry]", list).forEach(function (r) { r.addEventListener("click", function () { location.reload(); }); });
+      }
+      BODY.classList.add("oa-loaded");
       setupSearch(ids);
       paintAgain();
     });
+  }
+  /* desktop: arrow buttons for sideways rails (a mouse wheel can't scroll them) */
+  function railArrows(rail) {
+    if (!rail || rail._arrows) return;
+    rail._arrows = true;
+    var wrap = rail.parentNode;
+    var nav = el('<div class="railnav" aria-hidden="true"><button type="button" tabindex="-1" data-dir="-1">' + ICON.back + '</button><button type="button" tabindex="-1" data-dir="1">' + ICON.back + "</button></div>");
+    wrap.insertBefore(nav, rail);
+    function upd() {
+      var max = rail.scrollWidth - rail.clientWidth - 4;
+      nav.hidden = max <= 0;
+      $("[data-dir='-1']", nav).disabled = rail.scrollLeft <= 4;
+      $("[data-dir='1']", nav).disabled = rail.scrollLeft >= max;
+    }
+    nav.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-dir]");
+      if (b) rail.scrollBy({ left: +b.getAttribute("data-dir") * rail.clientWidth * 0.85, behavior: "smooth" });
+    });
+    rail.addEventListener("scroll", upd, { passive: true });
+    window.addEventListener("resize", upd);
+    upd();
   }
 
   /* ---------------------------------------------------------------- cart page */
@@ -1032,7 +1312,7 @@
     var host = $("#oa-main");
     var node = orderNode("page");
     host.appendChild(node);
-    Promise.all(brandsInCart().map(function (b) { return loadMenu(b).catch(function () {}); })).then(function () { renderOrder(node); });
+    Promise.all(menusInCart().concat(crossMenus()).map(function (b) { return loadMenu(b).catch(function () {}); })).then(function () { renderOrder(node); });
     onChange(function () { renderOrder(node); });
   }
 
@@ -1055,7 +1335,7 @@
           if (orderSheet && orderSheet.node) renderOrder(orderSheet.node);
         });
         // menus for lines from other restaurants (keeps names and prices fresh)
-        brandsInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });
+        menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { state = readStore(); emit(); } });
         BODY.classList.add("oa-ready");
       });

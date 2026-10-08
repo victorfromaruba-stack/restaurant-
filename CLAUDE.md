@@ -16,8 +16,8 @@ Static site, no framework, no build step. Hosted on GitHub Pages from this repo 
 Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026. Don't bring them back unless Victor asks.
 
 ## Where things live
-- `shared/site.json`: WhatsApp number, opening hours, delivery fee, delivery areas, delivery time text, and which restaurants are `open` / `soon` / `hidden`. Most day-to-day changes happen here.
-- `<restaurant>/menu.json`: the menu. Names, prices in cents (1295 = ƒ12.95), descriptions, pictures, allergens, flags (shrimp, pork, peanut, spicy, vegetarian), tap options, `"soldOut": true`.
+- `shared/site.json`: WhatsApp number, opening hours, delivery fee, delivery areas, delivery time text, and which restaurants are `open` / `soon` / `hidden`. Most day-to-day changes happen here. Optional: `"lastOrder": "01:30"` (new orders stop then) and `"payment": "…"` (how to pay, shown above Send). Only add these once Victor gives the values.
+- `<restaurant>/menu.json`: the menu. Names, prices in cents (1295 = ƒ12.95), descriptions, pictures, allergens, flags (shrimp, pork, peanut, spicy, vegetarian), tap options, `"soldOut": true`. Optional: `"fried": true` (adds a shared-oil note), `"cover": "<item id>"` (restaurant cover picture), `"video": {"src","poster"}` (silent cover loop).
 - `shared/order-app.js`: the one ordering engine for every page. Shared cart in localStorage `orderaruba.cart.v2`.
 - `shared/order.css` (the whole look: one font, Archivo, in `shared/fonts/`; night palette), `shared/hub.css` (home + cart extras). Each restaurant's accent colour comes from `color` in its menu.json. There are no per-restaurant stylesheets or fonts any more.
 - `index.html` home, `cart.html` full-page order, `<restaurant>/index.html` thin shell.
