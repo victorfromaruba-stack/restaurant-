@@ -37,7 +37,7 @@
   function shortMoney(c) { return "ƒ" + (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2)); }
   function path(p) { return ROOT + p; }
   /* small square pictures for menu rows (build/thumbs.py makes them); drinks are small already */
-  function thumb(img) { return String(img).replace(/([^/]+)\.(webp|jpe?g|png)$/i, "thumbs/$1.webp"); }
+  function thumb(img) { return String(img).replace(/([^/]+)$/, "thumbs/$1"); }   // same file name, in thumbs/
   function thumbImg(item, attrs) {
     if (item.kind === "drink") return '<img src="' + esc(path(item.img)) + '" alt="" width="360" height="360"' + attrs + ">";
     return '<img src="' + esc(path(thumb(item.img))) + '" data-full="' + esc(path(item.img)) + '" alt="" width="360" height="360"' + attrs + ">";

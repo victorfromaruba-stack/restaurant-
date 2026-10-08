@@ -1,4 +1,5 @@
-"""Small square pictures for the menu rows: <picture folder>/thumbs/<name>.webp, 360x360, centre crop.
+"""Small square pictures for the menu rows: <picture folder>/thumbs/<same file name>, 360x360, centre crop.
+Same format as the picture (WebP, or JPEG for photos the chef app saved from an iPhone).
 Run from the repo folder after adding or replacing any dish picture:  python3 build/thumbs.py
 (qa/check_site.py fails when a thumbnail is missing or no longer matches its picture.)"""
 import json, os
@@ -7,9 +8,12 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE, QUALITY = 360, 76
 
+FORMATS = {".webp": ("WEBP", {"quality": QUALITY, "method": 6}), ".jpg": ("JPEG", {"quality": 80, "optimize": True}),
+           ".jpeg": ("JPEG", {"quality": 80, "optimize": True}), ".png": ("PNG", {"optimize": True})}
+
 def thumb_path(img):
     d, f = os.path.split(img)
-    return os.path.join(d, "thumbs", os.path.splitext(f)[0] + ".webp")
+    return os.path.join(d, "thumbs", f)
 
 def make(img):
     src, out = os.path.join(ROOT, img), os.path.join(ROOT, thumb_path(img))
@@ -17,7 +21,8 @@ def make(img):
     s = min(im.size); l, t = (im.width - s) // 2, (im.height - s) // 2
     im = im.crop((l, t, l + s, t + s)).resize((SIZE, SIZE), Image.LANCZOS)
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    im.save(out, "WEBP", quality=QUALITY, method=6)
+    fmt, opts = FORMATS[os.path.splitext(img)[1].lower()]
+    im.save(out, fmt, **opts)
     return out
 
 def dish_pictures():

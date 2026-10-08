@@ -45,6 +45,12 @@ One commit per step on `audit-fixes`; `qa/check_site.py` reports 0 problems. Vic
 | 8 | Languages | Done: `shared/lang/*.json`, `build/lang_keys.py`. **Papiamento is a draft: Victor was sent a numbered list to correct.** |
 | 9 | Google listing | Done: `build/seo.py` writes the JSON-LD, `sitemap.xml`, `robots.txt`. robots.txt only works once there's an own domain. A Google Business Profile is the way onto Maps. |
 
+## Session 3 (8 Oct 2026): chef app for Victor and the chef
+- Checkout asks "How will you pay?" (Cash / Bank transfer); the ticket says `Pay: …` and the chef app shows it.
+- Customer receipt from any order (picture or text on WhatsApp). Receipts tile opens Book Keeper's receipt scanner.
+- Menu tile: change the website's menus from the phone (see CLAUDE.md, Features). Tested against a fake GitHub with Playwright: exact JSON format kept, clash retry, iPhone JPEG + Android WebP photos, bundle guard; the site check passed on the result. Each phone needs its own fine-grained GitHub key (steps are on the Connect screen).
+- In progress: Book Keeper intake API on branch `claude/intake-api` in `victorfromaruba-stack/bookingkeepingaruba` (cash sales and receipt photos from the chef app). Needs Victor's OK before its database change goes live.
+
 ## Still waiting on Victor
 - Answered 8 Oct: payment "cash or bank transfer" and last orders 1:30 AM are set in site.json; frikandel has pork (flag stays); videos approved at top quality (Veo 3.1 standard).
 - Papiamento corrections → `shared/lang/pap.json`.

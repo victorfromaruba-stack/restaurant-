@@ -12,7 +12,7 @@ def square_sample(path):
     im = Image.open(path).convert("L"); s = min(im.size); l, t = (im.width - s) // 2, (im.height - s) // 2
     return im.crop((l, t, l + s, t + s)).resize((24, 24), Image.LANCZOS)
 def thumb_ok(img):
-    d, f = os.path.split(os.path.join(ROOT, img)); th = os.path.join(d, "thumbs", os.path.splitext(f)[0] + ".webp")
+    d, f = os.path.split(os.path.join(ROOT, img)); th = os.path.join(d, "thumbs", f)   # same name as the picture
     if not os.path.exists(th): return False
     return ImageStat.Stat(ImageChops.difference(square_sample(os.path.join(ROOT, img)), square_sample(th))).mean[0] < 8
 def check(ok, msg):

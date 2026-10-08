@@ -1,0 +1,32 @@
+# The chef app saves menu changes straight to main. This keeps the Google data (JSON-LD in the pages,
+# sitemap.xml) in step with the menus afterwards, so qa/check_site.py and Google see the same prices.
+name: Google data after a menu change
+on:
+  push:
+    branches: [main]
+    paths: ["*/menu.json", "shared/site.json"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: site-data
+  cancel-in-progress: false
+jobs:
+  seo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild Google data
+        run: python3 build/seo.py
+      - name: Save it if anything changed
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then echo "Google data already up to date"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Google data: update after a menu change"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
