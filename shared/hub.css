@@ -1,15 +1,15 @@
 /* Order Aruba home + cart. Builds on shared/order.css (same font, same night palette). */
 .home{max-width:1100px;margin:0 auto;padding:0 0 calc(120px + var(--safe-b))}
-.hero{padding:30px 16px 8px;display:grid;gap:18px}
-.hero__row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
-.hero h1{font-size:clamp(60px,19vw,140px);line-height:.84;font-weight:900;font-stretch:62%;text-transform:uppercase;letter-spacing:-.005em}
-.hero__sub{margin:0;font-size:18px;line-height:1.35;color:var(--haze)}
+.hero{padding:18px 16px 4px;display:grid;gap:14px}
+.hero__row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hero h1{font-size:44px;line-height:.95;font-weight:900;font-stretch:62%;text-transform:uppercase;letter-spacing:-.005em;white-space:nowrap}
+.hero__sub{margin:0;font-size:17px;line-height:1.35;color:var(--haze)}
 .hero__sub b{color:var(--cream)}
 
 /* the OPEN sign: the one glowing thing on the page */
-.sign{flex:none;display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:10px 14px 11px;border:2.5px solid #40557A;border-radius:10px;color:#8FA0BF;text-transform:uppercase}
-.sign b{font:900 30px/.9 var(--font);font-stretch:62%;letter-spacing:.05em}
-.sign span{font:800 11.5px/1.1 var(--font);font-stretch:75%;letter-spacing:.08em;white-space:nowrap}
+.sign{flex:none;display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px 7px;border:2px solid #40557A;border-radius:9px;color:#8FA0BF;text-transform:uppercase}
+.sign b{font:900 22px/.9 var(--font);font-stretch:62%;letter-spacing:.05em}
+.sign span{font:800 10.5px/1.1 var(--font);font-stretch:75%;letter-spacing:.07em;white-space:nowrap}
 .sign.is-on{border-color:var(--sodium);color:var(--sodium);box-shadow:0 0 22px rgba(255,201,60,.28),inset 0 0 14px rgba(255,201,60,.12)}
 .sign.is-on b{text-shadow:0 0 6px rgba(255,201,60,.9),0 0 20px rgba(255,201,60,.5)}
 .sign.is-last{border-color:#FF9F43;color:#FF9F43;box-shadow:0 0 22px rgba(255,159,67,.28),inset 0 0 14px rgba(255,159,67,.12)}
@@ -42,6 +42,7 @@
 .qk__n{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .qk:hover img{transform:translateY(-2px)}
 @media (prefers-reduced-motion:no-preference){.qk img{transition:transform .2s}}
+@media (max-width:359px){.quick{gap:6px}.qk__c{font-size:11.5px}}
 
 .hsec{padding:34px 16px 0}
 .hsec{position:relative}
@@ -89,10 +90,12 @@
 .cart h1{font-size:clamp(46px,13vw,72px);line-height:.9;font-weight:900;font-stretch:62%;text-transform:uppercase;margin:18px 0 10px}
 
 @media (min-width:760px){
-  .hero{padding:56px 24px 12px;grid-template-columns:minmax(0,1fr) 420px;align-items:end;column-gap:40px}
-  .hero__row{grid-column:1/-1}
-  .sign b{font-size:40px}
-  .sign span{font-size:13px}
+  .hero{padding:40px 24px 8px;grid-template-columns:minmax(0,1fr) 420px;align-items:center;column-gap:40px}
+  .hero__row{grid-column:1/-1;justify-content:flex-start;gap:24px}
+  .hero h1{font-size:72px}
+  .sign b{font-size:30px}
+  .sign span{font-size:12px}
+  .quick{grid-column:1/-1;grid-template-columns:repeat(5,84px);gap:14px}
   .hsec{padding:44px 24px 0}
   .rail{margin:12px -24px 0;padding:0 24px 6px;scroll-padding-inline:24px}
   .shops{grid-template-columns:repeat(2,minmax(0,1fr))}

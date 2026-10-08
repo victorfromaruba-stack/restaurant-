@@ -60,7 +60,7 @@ body.past-name .top__title{opacity:1;transform:none}
 
 /* ---------- restaurant page */
 .page{max-width:720px;margin:0 auto;padding:0 0 calc(120px + var(--safe-b))}
-.cover{aspect-ratio:16/9;max-height:42vh;width:100%;overflow:hidden;background:var(--night-2)}
+.cover{height:180px;width:100%;overflow:hidden;background:var(--night-2)}
 .cover{position:relative}
 .cover img,.cover__v{width:100%;height:100%;object-fit:cover;display:block}
 .cover__pp{position:absolute;right:12px;bottom:12px;z-index:2;width:44px;height:44px;border:0;border-radius:50%;background:rgba(11,29,58,.72);color:var(--cream);display:grid;place-items:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -314,7 +314,7 @@ body.past-name .top__title{opacity:1;transform:none}
 
 @media (min-width:720px){
   .page{padding-top:16px}
-  .cover{border-radius:18px}
+  .cover{height:auto;aspect-ratio:16/9;max-height:42vh;border-radius:18px}
   .row{grid-template-columns:minmax(0,1fr) 132px}
   .row__media{width:132px;height:132px}
   .cans .row__media{width:100%;height:auto}

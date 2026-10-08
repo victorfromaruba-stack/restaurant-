@@ -1264,11 +1264,14 @@
       var rail = $("#oa-rail"), list = $("#oa-list");
       quickRow(ids);
       if (rail) {
+        // one signature dish per restaurant first, family deals after, so no restaurant fills the first screen
         var picks = [];
-        ids.forEach(function (b) {
-          var m = MENU[b];
-          if (!m || brandStatus(b) !== "open") return;
-          m.items.filter(function (i) { return (i.style === "signature" || i.style === "bundle") && !i.soldOut; }).forEach(function (i) { picks.push([b, i]); });
+        ["signature", "bundle"].forEach(function (style) {
+          ids.forEach(function (b) {
+            var m = MENU[b];
+            if (!m || brandStatus(b) !== "open") return;
+            m.items.filter(function (i) { return i.style === style && !i.soldOut; }).forEach(function (i) { picks.push([b, i]); });
+          });
         });
         rail.innerHTML = picks.map(function (p, n) { return featHTML(p[0], p[1], { brand: true, eager: n < 2 }); }).join("");
         railArrows(rail);
