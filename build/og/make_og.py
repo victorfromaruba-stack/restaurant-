@@ -52,8 +52,8 @@ def brand_html(b):
 
 def home_html():
     pics = [menus[b]["hero"] for b in ids[:4]]
-    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg"><b>&#10022;</b> Order Aruba</div>
-<div class="h1">Bon<br>nochi.</div><p class="sub">Five restaurants. One kitchen.<br><b>One {FEE} delivery in Aruba.</b></p>
+    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg">Order Aruba</div>
+<div class="h1">Bon<br>nochi.</div><p class="sub">Mix dishes from all five restaurants.<br><b>You pay {FEE} delivery once.</b></p>
 <div class="sg"><b>Open</b><span>{t12(o)}<br>to {t12(c)}</span></div></div>
 <div class="grid">{''.join(f'<img src="{p}">' for p in pics)}</div></div></body></html>"""
 

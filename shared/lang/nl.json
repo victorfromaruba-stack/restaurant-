@@ -98,8 +98,6 @@
  "View order: {items}, {total} before delivery": "Bekijk bestelling: {items}, {total} zonder bezorging",
  "Today": "Vandaag",
  "last orders {time}": "laatste bestelling {time}",
- "Five restaurants. One kitchen.": "Vijf restaurants. Eén keuken.",
- "One {fee} delivery.": "Eén keer {fee} bezorging.",
  "We deliver to {areas}.": "We bezorgen in {areas}.",
  "Elsewhere?": "Ergens anders?",
  "Ask us": "Vraag het ons",
@@ -113,7 +111,6 @@
  "{fee} delivery": "{fee} bezorging",
  "Opening soon. Ordering starts shortly.": "Binnenkort open. Bestellen kan straks.",
  "Not taking orders right now.": "Op dit moment geen bestellingen.",
- "Featured": "Uitgelicht",
  "Prices in Aruban florin (ƒ).": "Prijzen in Arubaanse florin (ƒ).",
  "All restaurants": "Alle restaurants",
  "Also tonight from our kitchen": "Vanavond ook uit onze keuken",
@@ -185,7 +182,6 @@
  "Snacks": "Snacks",
  "Skip to the menus": "Naar de menu's",
  "Search all menus": "Zoek in alle menu's",
- "Signature dishes": "Specialiteiten",
  "Restaurants": "Restaurants",
  "Once per order": "Eén keer per bestelling",
  "Free pickup": "Gratis afhalen",
@@ -202,5 +198,9 @@
  "How will you pay?": "Hoe betaal je?",
  "Pick how you’ll pay.": "Kies hoe je betaalt.",
  "Cash": "Contant",
- "Bank transfer": "Bankoverschrijving"
+ "Bank transfer": "Bankoverschrijving",
+ "Mix dishes from all five restaurants.": "Combineer gerechten van alle vijf restaurants.",
+ "You pay {fee} delivery once.": "Je betaalt maar één keer {fee} bezorging.",
+ "Start with these": "Begin hiermee",
+ "Start here": "Begin hier"
 }

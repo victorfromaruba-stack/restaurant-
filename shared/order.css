@@ -39,9 +39,8 @@ h1,h2,h3{margin:0;font-weight:800;line-height:1.1}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(11,29,58,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .top__in{max-width:1100px;margin:0 auto;height:60px;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px}
 .logo{display:flex;align-items:center;gap:8px;text-decoration:none;font:900 21px/1 var(--font);font-stretch:70%;text-transform:uppercase;letter-spacing:.01em;flex:none}
-.logo svg{width:20px;height:20px;color:var(--sodium)}
 /* small phones: the star alone, so the delivery chip has room (the link keeps its name for screen readers) */
-@media (max-width:359px){.logo{min-width:44px;min-height:44px}.logo__t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
+@media (max-width:359px){.logo{font-size:17px;min-height:44px}}
 .top__back{width:44px;height:44px;margin-left:-8px;display:grid;place-items:center;border-radius:50%;text-decoration:none;flex:none}
 .top__back svg{width:24px;height:24px}
 .top__title{flex:1;min-width:0;font:800 18px/1 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s}
@@ -72,13 +71,15 @@ body.past-name .top__title{opacity:1;transform:none}
 .store__mark{width:76px;height:76px;margin-top:-38px;border-radius:18px;border:4px solid var(--night);background:var(--night);object-fit:cover;box-shadow:0 8px 20px rgba(0,0,0,.35)}
 .store__name{margin-top:12px;font-size:clamp(38px,11vw,56px);font-weight:900;font-stretch:68%;text-transform:uppercase;line-height:.92;letter-spacing:.005em}
 .store__tag{margin:8px 0 0;color:var(--haze);font-size:16px}
-.facts{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
-.facts li{display:flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:999px;background:var(--night-2);font:700 14px/1 var(--font)}
+.facts{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-wrap:wrap;align-items:center;row-gap:4px;color:var(--haze);font:600 15px/1.3 var(--font)}
+.facts li{display:flex;align-items:center;gap:7px}
+.facts li+li::before{content:"\00b7";margin:0 9px;color:var(--haze)}
+.facts__status{color:var(--cream)}
 .facts__status i{width:8px;height:8px;border-radius:50%;background:var(--bad)}
 .facts__status.is-open i{background:var(--ok)}
 
 .sec{padding:30px 16px 0}
-.sec__t{font-size:30px;font-weight:900;font-stretch:68%;text-transform:uppercase;letter-spacing:.01em;margin-bottom:6px}
+.sec__t{font-size:25px;font-weight:900;font-stretch:75%;letter-spacing:0;margin-bottom:6px}
 .note{margin:14px 0 0;padding:12px 14px;border-radius:var(--r-sm);background:var(--night-3);font-size:15px;line-height:1.45}
 .note--warn{background:var(--warn-bg);color:var(--warn-ink)}
 

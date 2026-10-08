@@ -98,8 +98,6 @@
  "View order: {items}, {total} before delivery": "Ver pedido: {items}, {total} sin la entrega",
  "Today": "Hoy",
  "last orders {time}": "últimos pedidos {time}",
- "Five restaurants. One kitchen.": "Cinco restaurantes. Una cocina.",
- "One {fee} delivery.": "Una sola entrega de {fee}.",
  "We deliver to {areas}.": "Entregamos en {areas}.",
  "Elsewhere?": "¿En otro lugar?",
  "Ask us": "Pregúntanos",
@@ -113,7 +111,6 @@
  "{fee} delivery": "Entrega {fee}",
  "Opening soon. Ordering starts shortly.": "Abre pronto. Muy pronto podrás pedir.",
  "Not taking orders right now.": "Ahora no aceptamos pedidos.",
- "Featured": "Destacados",
  "Prices in Aruban florin (ƒ).": "Precios en florines arubeños (ƒ).",
  "All restaurants": "Todos los restaurantes",
  "Also tonight from our kitchen": "Esta noche también de nuestra cocina",
@@ -185,7 +182,6 @@
  "Snacks": "Snacks",
  "Skip to the menus": "Ir a los menús",
  "Search all menus": "Buscar en todos los menús",
- "Signature dishes": "Especialidades",
  "Restaurants": "Restaurantes",
  "Once per order": "Una vez por pedido",
  "Free pickup": "Recoger gratis",
@@ -202,5 +198,9 @@
  "How will you pay?": "¿Cómo vas a pagar?",
  "Pick how you’ll pay.": "Elige cómo vas a pagar.",
  "Cash": "Efectivo",
- "Bank transfer": "Transferencia bancaria"
+ "Bank transfer": "Transferencia bancaria",
+ "Mix dishes from all five restaurants.": "Combina platos de los cinco restaurantes.",
+ "You pay {fee} delivery once.": "Pagas la entrega de {fee} una sola vez.",
+ "Start with these": "Empieza con estos",
+ "Start here": "Empieza aquí"
 }

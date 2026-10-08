@@ -1056,7 +1056,7 @@
     $$("[data-oa-pay]").forEach(function (n) { n.textContent = SITE.payment ? clean(tr(SITE.payment)) : ""; n.hidden = !SITE.payment; });
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     $$("[data-oa-fee-t]").forEach(function (n) { n.textContent = tr(n.getAttribute("data-oa-fee-t"), { fee: shortMoney(SITE.deliveryFee) }); });
-    setHTML("[data-oa-hero]", esc(tr("Five restaurants. One kitchen.")) + " <b>" + esc(tr("One {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
+    setHTML("[data-oa-hero]", esc(tr("Mix dishes from all five restaurants.")) + " <b>" + esc(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
     setHTML("[data-oa-deliver-to]", esc(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + esc(tr("Elsewhere?")) +
       ' <a data-oa-ask href="#" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.");
     $$("[data-oa-eta]").forEach(function (n) { n.textContent = SITE.eta || ""; });
@@ -1121,7 +1121,7 @@
     var secs = menu.sections.map(function (s) {
       return { id: s.id, title: s.title, items: menu.items.filter(function (i) { return i.section === s.id && featIds.indexOf(i.id) < 0; }) };
     }).filter(function (s) { return s.items.length; });
-    // cover: a dish that is not already in Featured, real photo first
+    // cover: a dish that is not already in "Start here", real photo first
     var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && featIds.indexOf(i.id) < 0; });
     var pick = (menu.cover && menu.byId[menu.cover]) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0] || feat[0] || menu.items[0];
     var cover = pick.img;
@@ -1139,7 +1139,7 @@
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>";
     if (feat.length) {
-      html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Featured")) + "</h2>" +
+      html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Start here")) + "</h2>" +
         '<div class="rail rail--feat">' + feat.map(function (i) { return featHTML(b, i); }).join("") + "</div></section>";
     }
     secs.forEach(function (s) {
@@ -1166,7 +1166,7 @@
 
     var nav = $("#oa-cats");
     if (nav) {
-      var tabs = (feat.length ? [{ id: "featured", title: "Featured" }] : []).concat(secs);
+      var tabs = (feat.length ? [{ id: "featured", title: "Start here" }] : []).concat(secs);
       nav.innerHTML = tabs.map(function (s, i) { return '<a href="#' + esc(s.id) + '" data-nav="' + esc(s.id) + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(tr(s.title)) + "</a>"; }).join("");
       if ("IntersectionObserver" in window) {
         var io = new IntersectionObserver(function (es) {

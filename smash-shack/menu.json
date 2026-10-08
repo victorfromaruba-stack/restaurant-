@@ -4,13 +4,13 @@
  "cuisine": "Burgers",
  "code": "SS",
  "color": "#FFC72C",
- "tagline": "Smash burgers, tenders & loaded fries",
+ "tagline": "Thin patties, smashed hard on the flat-top",
  "kicker": "Smash burgers & fries",
  "headline": "Loud smash burgers, loaded fries & more.",
  "intro": "Thin patties smashed hard on the flat-top for crispy edges. Cooked to order in Aruba.",
  "logo": "shared/logos/smash-shack.svg",
  "mark": "shared/logos/smash-shack-mark.webp",
- "hero": "smash-shack/assets/dishes/sc-hero.webp",
+ "hero": "smash-shack/assets/dishes/ds.webp",
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -300,5 +300,6 @@
  "video": {
   "src": "smash-shack/video/cover.mp4",
   "poster": "smash-shack/video/cover.webp"
- }
+ },
+ "cover": "ds"
 }

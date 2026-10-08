@@ -98,8 +98,6 @@
  "View order: {items}, {total} before delivery": "Mira bo orden: {items}, {total} sin entrega",
  "Today": "Awe",
  "last orders {time}": "ultimo orden {time}",
- "Five restaurants. One kitchen.": "Cinco restaurant. Un cushina.",
- "One {fee} delivery.": "Un solo entrega di {fee}.",
  "We deliver to {areas}.": "Nos ta entrega na {areas}.",
  "Elsewhere?": "Otro caminda?",
  "Ask us": "Puntra nos",
@@ -113,7 +111,6 @@
  "{fee} delivery": "Entrega {fee}",
  "Opening soon. Ordering starts shortly.": "Ta habri pronto. Bo por ordena dentro di poco.",
  "Not taking orders right now.": "Nos no ta tuma orden awor.",
- "Featured": "Recomenda",
  "Prices in Aruban florin (ƒ).": "Prijs na florin arubano (ƒ).",
  "All restaurants": "Tur restaurant",
  "Also tonight from our kitchen": "Awe nochi tambe for di nos cushina",
@@ -185,7 +182,6 @@
  "Snacks": "Snacks",
  "Skip to the menus": "Bai na e menunan",
  "Search all menus": "Busca den tur menu",
- "Signature dishes": "Specialidadnan",
  "Restaurants": "Restaurantnan",
  "Once per order": "Un biaha pa orden",
  "Free pickup": "Bin busca gratis",
@@ -202,5 +198,9 @@
  "How will you pay?": "Con bo ta paga?",
  "Pick how you’ll pay.": "Scoge con bo ta paga.",
  "Cash": "Cash",
- "Bank transfer": "Transferencia di banco"
+ "Bank transfer": "Transferencia di banco",
+ "Mix dishes from all five restaurants.": "Combina cuminda di tur cinco restaurant.",
+ "You pay {fee} delivery once.": "Bo ta paga entrega di {fee} un biaha so.",
+ "Start with these": "Cuminsa cu esakinan",
+ "Start here": "Cuminsa aki"
 }

@@ -46,7 +46,7 @@
 
 .hsec{padding:34px 16px 0}
 .hsec{position:relative}
-.hsec__t{font-size:30px;font-weight:900;font-stretch:68%;text-transform:uppercase;letter-spacing:.01em}
+.hsec__t{font-size:25px;font-weight:900;font-stretch:75%;letter-spacing:0}
 /* prev/next arrows for the dish rail: only on wide screens, where a mouse can't swipe */
 .railnav{display:none}
 @media (min-width:760px){

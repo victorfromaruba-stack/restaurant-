@@ -4,7 +4,7 @@
    Pictures and fonts: the cached copy shows straight away and is refreshed in the background,
    so a picture replaced at the same path shows up on the next visit. Videos are never cached.
    The chef app (ops/kitchen/) has its own cache. Change CACHE to drop everything stored. */
-var CACHE = "orderaruba-v1";
+var CACHE = "orderaruba-v2";
 var CORE = ["./", "index.html", "cart.html", "shared/order.css", "shared/hub.css", "shared/order-app.js", "shared/site.json", "shared/fonts/archivo.woff2"];
 
 self.addEventListener("install", function (e) {

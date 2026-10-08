@@ -4,7 +4,7 @@
  "cuisine": "Chinese",
  "code": "DW",
  "color": "#0F7B6C",
- "tagline": "Fried rice, lo mein & wok dishes",
+ "tagline": "Chinese takeout, straight off the wok",
  "kicker": "Chinese wok kitchen",
  "headline": "Fried rice, lo mein & wok favourites.",
  "intro": "Cooked to order in our delivery kitchen in Aruba. Hot from the wok, packed to travel.",
@@ -41,7 +41,7 @@
    "name": "Family Table",
    "price": 4250,
    "style": "bundle",
-   "desc": "Three wok mains in one order — enough for the table.",
+   "desc": "Three wok mains in one order. Enough for the table.",
    "includes": [
     "fr",
     "ss",
