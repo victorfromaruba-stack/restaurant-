@@ -11,7 +11,7 @@
  "logo": "shared/logos/nonnas-night-in.svg",
  "mark": "shared/logos/nonnas-night-in-mark.webp",
  "hero": "nonnas-night-in/assets/dishes/bp-hero.webp",
- "imageNote": "Dish photos show how we plate it. Yours is cooked fresh to order.",
+ "imageNote": "Photos show how we plate it.",
  "sections": [
   {
    "id": "signature",

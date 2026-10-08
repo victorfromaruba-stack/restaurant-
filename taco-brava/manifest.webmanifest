@@ -3,8 +3,8 @@
  "short_name": "Taco Brava",
  "start_url": "./",
  "display": "standalone",
- "background_color": "#E6246E",
- "theme_color": "#E6246E",
+ "background_color": "#0B1D3A",
+ "theme_color": "#0B1D3A",
  "icons": [
   {
    "src": "assets/icon-192.png",

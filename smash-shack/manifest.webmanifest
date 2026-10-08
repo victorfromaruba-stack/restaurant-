@@ -3,8 +3,8 @@
  "short_name": "Smash Shack",
  "start_url": "./",
  "display": "standalone",
- "background_color": "#161616",
- "theme_color": "#161616",
+ "background_color": "#0B1D3A",
+ "theme_color": "#0B1D3A",
  "icons": [
   {
    "src": "assets/icon-192.png",

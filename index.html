@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Order Aruba · Late-night food from five kitchens · WhatsApp delivery</title>
-<meta name="description" content="Late-night delivery in Aruba, 10 PM to 2 AM. Chinese, Mexican, smash burgers, Italian and Dutch snackbar from one kitchen. One order, ƒ5 delivery, sent on WhatsApp.">
+<title>Order Aruba · Late-night delivery, 10 PM to 2 AM</title>
+<meta name="description" content="Late-night delivery in Aruba, 10 PM to 2 AM. Chinese, Mexican, smash burgers, Italian and Dutch snacks in one order. ƒ5 delivery. Order on WhatsApp.">
 <meta name="theme-color" content="#0B1D3A">
-<meta property="og:title" content="Order Aruba · Late-night food from five kitchens">
-<meta property="og:description" content="10 PM to 2 AM. Mix dishes from five menus in one order. ƒ5 delivery, free pickup. Order on WhatsApp.">
+<meta property="og:title" content="Order Aruba · Late-night delivery">
+<meta property="og:description" content="Five kitchens. One order. ƒ5 delivery. 10 PM to 2 AM.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1D3A'/%3E%3Cpath d='M32 9l5.5 17.5L55 32l-17.5 5.5L32 55l-5.5-17.5L9 32l17.5-5.5z' fill='%23FFC93C'/%3E%3C/svg%3E">
 <link rel="preload" href="shared/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
@@ -15,40 +15,46 @@
 <link rel="stylesheet" href="shared/hub.css">
 </head>
 <body data-page="hub" data-root="">
-<a class="oa-skip" href="#street">Skip to the restaurants</a>
-<header class="st-top">
-  <div class="st-top__in">
-    <a class="st-logo" href="index.html" aria-label="Order Aruba home">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l6.5 21.5L60 32l-21.5 6.5L32 60l-6.5-21.5L4 32l21.5-6.5z" fill="currentColor"/></svg>
-      Order Aruba
-    </a>
-    <button type="button" class="oa-bag" data-oa-open-order aria-label="View your order"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 8Zm4 0V6.5a3 3 0 0 1 6 0V8"/></svg><span class="oa-bag__n" data-oa-count hidden>0</span></button>
+<a class="oa-skip" href="#oa-main">Skip to the menus</a>
+<header class="top">
+  <div class="top__in">
+    <a class="logo" href="index.html" aria-label="Order Aruba home"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l6.5 21.5L60 32l-21.5 6.5L32 60l-6.5-21.5L4 32l21.5-6.5z" fill="currentColor"/></svg>Order Aruba</a>
+    <span class="top__spacer"></span>
+    <button type="button" class="deliver" data-oa-deliver aria-label="Delivery or pickup"><span class="deliver__t">Delivery</span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg></button>
+    <button type="button" class="bag" data-oa-open-order aria-label="View your order"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 8Zm4 0V6.5a3 3 0 0 1 6 0V8"/></svg><span class="bag__n" data-oa-count hidden>0</span></button>
   </div>
 </header>
 
-<main class="st" id="oa-main">
-  <section class="st-hero" aria-labelledby="hero-h">
-    <h1 id="hero-h">Bon nochi.</h1>
-    <p>Late-night food from five kitchens under one roof in Aruba. Pick dishes from any of them, send <b>one order</b> on WhatsApp, and pay <b><span data-oa-fee>ƒ5</span> delivery</b> once.</p>
-    <div class="st-sign" data-oa-sign role="status"><b>Open</b><span>10 PM to 2 AM</span></div>
+<main class="home" id="oa-main">
+  <section class="hero" aria-labelledby="hero-h">
+    <div class="hero__row">
+      <h1 id="hero-h">Bon nochi.</h1>
+      <div class="sign" data-oa-sign role="status"><b>Open</b><span>10 PM to 2 AM</span></div>
+    </div>
+    <p class="hero__sub">Five kitchens. <b>One order.</b> <span data-oa-fee>ƒ5</span> delivery.</p>
+    <label class="search"><span class="sr">Search all menus</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><input id="oa-q" type="search" placeholder="Search tacos, fried rice, bitterballen" autocomplete="off" enterkeyhint="search"></label>
   </section>
 
-  <section class="st-street" id="street" aria-label="Restaurants"></section>
+  <section class="results" id="oa-results" aria-live="polite" hidden></section>
 
-  <section class="st-info" aria-labelledby="info-h">
-    <h2 id="info-h">How it works</h2>
-    <dl>
-      <div><dt>Ordering</dt><dd>Add dishes from one kitchen or all five. Your order opens in WhatsApp already typed out. Tap send and we reply to confirm it.</dd></div>
-      <div><dt>Delivery</dt><dd><b><span data-oa-fee>ƒ5</span> for the whole order</b>, usually <span data-oa-eta>35–50 min</span>. We drive from Santa Cruz to Noord: <span data-oa-areas>Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera and Santa Cruz</span>. Somewhere else? <a data-oa-ask href="#" target="_blank" rel="noopener">Ask us on WhatsApp</a>.</dd></div>
-      <div><dt>Pickup</dt><dd>Free. We send the address and a pickup time on WhatsApp.</dd></div>
-      <div><dt>Hours</dt><dd data-oa-hours>Every night, 10 PM to 2 AM</dd></div>
-    </dl>
+  <div id="oa-browse">
+    <section class="hsec" aria-labelledby="sig-h">
+      <h2 class="hsec__t" id="sig-h">Signature dishes</h2>
+      <div class="rail" id="oa-rail"></div>
+    </section>
+    <section class="hsec" aria-labelledby="rest-h">
+      <h2 class="hsec__t" id="rest-h">Restaurants</h2>
+      <div class="shops" id="oa-list"></div>
+    </section>
+  </div>
+
+  <section class="basics" aria-label="Delivery, pickup and hours">
+    <div><b><span data-oa-fee>ƒ5</span> delivery</b><span>Once per order</span></div>
+    <div><b>Free pickup</b><span>From our kitchen</span></div>
+    <div><b>10 PM–2 AM</b><span>Every night</span></div>
   </section>
-
-  <footer class="st-foot">
-    <p>Everything is cooked to order in our licensed kitchen in Aruba. Prices are in Aruban florin (ƒ).</p>
-    <p>Oranje Snack and a few other dishes are shown as drawings until our own kitchen photos are ready.</p>
-  </footer>
+  <p class="areas">We deliver to <span data-oa-areas>Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera and Santa Cruz</span>. Elsewhere? <a data-oa-ask href="#" target="_blank" rel="noopener">Ask us</a>.</p>
+  <footer class="hfoot">Cooked to order in Aruba. Prices in Aruban florin (ƒ). Some dishes are drawings until our kitchen photos are ready.</footer>
 </main>
 
 <script src="shared/order-app.js" defer></script>

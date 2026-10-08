@@ -362,7 +362,7 @@
     BODY.classList.add("oa-lock");
     requestAnimationFrame(function () { wrap.classList.add("is-open"); });
     wrap.addEventListener("click", function (e) { if (e.target.closest("[data-close]")) closeSheet(rec); });
-    setTimeout(function () { var f = $("[data-autofocus]", panel) || $(".oa-x", panel); if (f) f.focus({ preventScroll: true }); }, 60);
+    setTimeout(function () { var f = $("[data-autofocus]", panel) || $(".x", panel); if (f) f.focus({ preventScroll: true }); }, 60);
     return rec;
   }
   function closeSheet(rec) {
@@ -388,14 +388,91 @@
     }
   });
 
-  /* ---------------------------------------------------------------- dish sheet (tap modifiers) */
-  function flagChips(item) {
-    return (item.flags || []).map(function (f) { return '<span class="oa-flag oa-flag--' + esc(f) + '">' + esc(FLAG_NAMES[f] || f) + "</span>"; }).join("");
+  /* ---------------------------------------------------------------- small UI helpers */
+  function flagText(item) {
+    return (item.flags || []).map(function (f) { return '<span class="fl fl--' + esc(f) + '">' + esc(FLAG_NAMES[f] || f) + "</span>"; }).join("");
   }
   function allergenLine(item) {
-    if (!item.allergens || !item.allergens.length) return item.kind === "drink" ? "" : "No major allergens listed.";
+    if (!item.allergens || !item.allergens.length) return item.kind === "drink" ? "" : "No major allergens.";
     return "Contains " + item.allergens.map(function (a) { return ALLERGEN_NAMES[a] || a; }).join(", ") + ".";
   }
+  function fromPrice(m) {
+    var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
+    return mains.length ? Math.min.apply(null, mains.map(function (i) { return i.price; })) : 0;
+  }
+  function inkFor(hex) {
+    var h = String(hex || "").replace("#", "");
+    if (h.length !== 6) return "#FFFFFF";
+    var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#0B1D3A" : "#FFFFFF";
+  }
+  function setAccent(hex) {
+    if (!hex) return;
+    BODY.style.setProperty("--accent", hex);
+    BODY.style.setProperty("--accent-ink", inkFor(hex));
+  }
+  function itemFrom(node) {
+    var host = node.closest("[data-b][data-id]");
+    return host ? { b: host.getAttribute("data-b"), id: host.getAttribute("data-id") } : null;
+  }
+  function plusBtn(item, orderable) {
+    return orderable ? '<button type="button" class="plus" data-quick aria-label="Add ' + esc(item.name) + '">' + ICON.plus + "</button>" : "";
+  }
+  function qtyBadge(n) { return '<span class="qtybadge"' + (n ? "" : " hidden") + ">" + n + "</span>"; }
+
+  /* a menu row: words on the left, picture with a + on the right */
+  function rowHTML(b, item, opts) {
+    opts = opts || {};
+    var m = MENU[b], n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
+    return '<article class="row' + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
+      '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + '"></button>' +
+      '<div class="row__text">' +
+        (opts.brand ? '<p class="row__brand">' + esc(m.name) + "</p>" : "") +
+        '<h3 class="row__name">' + esc(item.name) + "</h3>" +
+        '<p class="row__price">' + money(item.price) + (item.soldOut ? ' <span class="row__out">Sold out today</span>' : "") + "</p>" +
+        (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + esc(item.desc) + "</p>" : "") +
+        (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
+      "</div>" +
+      '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' +
+        qtyBadge(n) + plusBtn(item, orderable) + "</div></article>";
+  }
+  /* a big picture card for featured dishes */
+  function featHTML(b, item, opts) {
+    opts = opts || {};
+    var m = MENU[b], n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
+    var tag = opts.brand ? m.name : item.style === "bundle" ? "Family deal" : item.style === "signature" ? "Signature" : "";
+    return '<article class="feat" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
+      '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + '"></button>' +
+      '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' + qtyBadge(n) + plusBtn(item, orderable) + "</div>" +
+      '<h3 class="feat__name">' + esc(item.name) + "</h3>" +
+      '<p class="feat__meta"><span>' + money(item.price) + "</span>" + (tag ? "<span>" + esc(tag) + "</span>" : "") + "</p></article>";
+  }
+  function repaintCards() {
+    $$("[data-b][data-id]").forEach(function (c) {
+      var n = itemCount(c.getAttribute("data-b"), c.getAttribute("data-id"));
+      var badge = $(".qtybadge", c);
+      if (badge) { badge.textContent = n; badge.hidden = n === 0; }
+    });
+    paintDeliver();
+  }
+  function quickAdd(btn) {
+    var it = itemFrom(btn);
+    if (!it) return;
+    var line = addItem(it.b, it.id, {}, 1);
+    if (line) {
+      toast(line.n + " added");
+      btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop");
+    }
+  }
+  document.addEventListener("click", function (e) {
+    var q = e.target.closest("[data-quick]");
+    if (q) { e.preventDefault(); quickAdd(q); return; }
+    var o = e.target.closest("[data-open]");
+    if (o) { var it = itemFrom(o); if (it) openDish(it.b, it.id); return; }
+    if (e.target.closest("[data-oa-deliver]")) { openDeliver(); }
+  });
+
+  /* ---------------------------------------------------------------- dish sheet (tap modifiers) */
   function openDish(b, id) {
     var menu = MENU[b], item = menu && menu.byId[id];
     if (!item) return;
@@ -403,29 +480,30 @@
     var o = normOpts(item, {}), qty = 1;
     var groups = (item.options || []).map(function (g) {
       var type = g.type === "one" ? "radio" : "checkbox";
-      return '<fieldset class="oa-opt"><legend>' + esc(g.label) + (g.type === "one" ? "" : ' <span>optional</span>') + "</legend><div class=\"oa-opt__chips\">" +
+      return '<fieldset class="opt"><legend>' + esc(g.label) + (g.type === "one" ? "" : " <span>optional</span>") + '</legend><div class="chips">' +
         g.choices.map(function (c) {
           var on = g.type === "one" ? o[g.id] === c.id : false;
-          return '<label class="oa-chip"><input type="' + type + '" name="g-' + esc(g.id) + '" value="' + esc(c.id) + '"' + (on ? " checked" : "") + ">" +
+          return '<label class="chip"><input type="' + type + '" name="g-' + esc(g.id) + '" value="' + esc(c.id) + '"' + (on ? " checked" : "") + ">" +
             "<span>" + esc(c.label) + (c.price ? " +" + shortMoney(c.price) : "") + "</span></label>";
         }).join("") + "</div></fieldset>";
     }).join("");
-    var inc = item.includes ? '<ul class="oa-dish__inc">' + includesNames(menu, item).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "";
+    var inc = item.includes ? '<ul class="dish__inc">' + includesNames(menu, item).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "";
     var node = el(
-      '<div class="oa-dish' + (item.kind === "drink" ? " oa-dish--drink" : "") + '">' +
-        '<button type="button" class="oa-x oa-x--float" data-close aria-label="Close">' + ICON.close + "</button>" +
-        '<div class="oa-dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' +
-        '<div class="oa-dish__body">' +
-          '<h2 class="oa-dish__name">' + esc(item.name) + "</h2>" +
-          '<p class="oa-dish__price">' + money(item.price) + "</p>" +
-          '<p class="oa-dish__desc">' + esc(item.desc) + "</p>" + inc +
-          ((item.flags && item.flags.length) ? '<div class="oa-flags">' + flagChips(item) + "</div>" : "") +
-          (allergenLine(item) ? '<p class="oa-dish__allergens">' + esc(allergenLine(item)) + " Allergic? Add it in the note at checkout.</p>" : "") +
+      '<div class="dish' + (item.kind === "drink" ? " dish--drink" : "") + '" style="--accent:' + esc(menu.color) + ";--accent-ink:" + inkFor(menu.color) + '">' +
+        '<button type="button" class="x x--float" data-close aria-label="Close">' + ICON.close + "</button>" +
+        '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' +
+        '<div class="dish__body">' +
+          (PAGE !== "brand" ? '<p class="dish__brand">' + esc(menu.name) + "</p>" : "") +
+          '<h2 class="dish__name">' + esc(item.name) + "</h2>" +
+          '<p class="dish__price">' + money(item.price) + "</p>" +
+          '<p class="dish__desc">' + esc(item.desc) + "</p>" + inc +
+          (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
+          (allergenLine(item) ? '<p class="dish__allergens">' + esc(allergenLine(item)) + " Allergies? Add a note at checkout.</p>" : "") +
           groups +
         "</div>" +
-        '<div class="oa-dish__foot">' +
-          '<div class="oa-qty oa-qty--lg"><button type="button" class="oa-qty__b" data-q="-1" aria-label="One less">' + ICON.minus + '</button><span class="oa-qty__n" aria-live="polite">1</span><button type="button" class="oa-qty__b" data-q="1" aria-label="One more">' + ICON.plus + "</button></div>" +
-          '<button type="button" class="oa-btn oa-btn--brand oa-dish__add" data-autofocus' + (orderable ? "" : " disabled") + "></button>" +
+        '<div class="dish__foot">' +
+          '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="One less">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="One more">' + ICON.plus + "</button></div>" +
+          '<button type="button" class="btn btn--accent dish__add" data-autofocus' + (orderable ? "" : " disabled") + "></button>" +
         "</div>" +
       "</div>");
     function readOpts() {
@@ -439,18 +517,18 @@
     }
     function paint() {
       o = readOpts();
-      $(".oa-qty__n", node).textContent = qty;
-      var btn = $(".oa-dish__add", node);
+      $(".qty__n", node).textContent = qty;
+      var btn = $(".dish__add", node);
       if (!orderable) btn.textContent = item.soldOut ? "Sold out today" : "Opening soon";
-      else btn.textContent = "Add " + qty + " · " + money(unitPrice(item, o) * qty);
+      else btn.innerHTML = "<span>Add " + qty + "</span><span>" + money(unitPrice(item, o) * qty) + "</span>";
     }
     node.addEventListener("change", paint);
     node.addEventListener("click", function (e) {
       var q = e.target.closest("[data-q]");
       if (q) { qty = Math.max(1, Math.min(MAX_QTY, qty + (+q.getAttribute("data-q")))); paint(); }
     });
-    var rec = openSheet(node, { label: item.name, cls: "oa-sheet__panel--dish" });
-    $(".oa-dish__add", node).addEventListener("click", function () {
+    var rec = openSheet(node, { label: item.name, cls: "sheet__panel--dish" });
+    $(".dish__add", node).addEventListener("click", function () {
       if (!orderable) return;
       addItem(b, id, readOpts(), qty);
       closeSheet(rec);
@@ -459,9 +537,37 @@
     paint();
   }
 
+  /* ---------------------------------------------------------------- delivery or pickup, chosen up front */
+  function deliverLabel() {
+    var s = S();
+    if (s.mode === "pickup") return "Pickup";
+    return s.area || "Delivery";
+  }
+  function paintDeliver() { $$("[data-oa-deliver] .deliver__t").forEach(function (t) { t.textContent = deliverLabel(); }); }
+  function openDeliver() {
+    var s = S(), areas = (SITE.areas || []).concat(["Other area"]);
+    var node = el('<div class="dl">' +
+      '<div class="sheet__head"><h2>Delivery or pickup</h2><button type="button" class="x" data-close aria-label="Close">' + ICON.close + "</button></div>" +
+      '<fieldset class="seg"><legend class="sr">Delivery or pickup</legend>' +
+        '<label><input type="radio" name="dl-mode" value="delivery"' + (s.mode !== "pickup" ? " checked" : "") + '><span><b>Delivery</b><small>' + shortMoney(SITE.deliveryFee) + " per order</small></span></label>" +
+        '<label><input type="radio" name="dl-mode" value="pickup"' + (s.mode === "pickup" ? " checked" : "") + "><span><b>Pickup</b><small>Free</small></span></label>" +
+      "</fieldset>" +
+      '<fieldset class="dl__areas"' + (s.mode === "pickup" ? " hidden" : "") + '><legend>Area</legend><div class="chips">' +
+        areas.map(function (a) { return '<label class="chip"><input type="radio" name="dl-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(a) + "</span></label>"; }).join("") +
+      "</div></fieldset>" +
+      '<button type="button" class="btn btn--accent dl__done" data-close>Done</button></div>');
+    node.addEventListener("change", function (e) {
+      var t = e.target;
+      if (t.name === "dl-mode") { S().mode = t.value; $(".dl__areas", node).hidden = t.value === "pickup"; commit(); }
+      if (t.name === "dl-area") { S().area = t.value; commit(); }
+      paintDeliver();
+    });
+    openSheet(node, { label: "Delivery or pickup" });
+  }
+
   /* ---------------------------------------------------------------- order (checkout) */
   function orderNode(mode) {
-    var node = el('<div class="oa-order' + (mode === "page" ? " oa-order--page" : "") + '"></div>');
+    var node = el('<div class="order' + (mode === "page" ? " order--page" : "") + '"></div>');
     node._mode = mode;
     renderOrder(node);
     node.addEventListener("click", function (e) {
@@ -480,10 +586,10 @@
       }
       if (e.target.closest("[data-copy]")) {
         if (!validate(node)) return;
-        copyText(buildMessage()).then(function (ok) { toast(ok ? "Order copied. Paste it in WhatsApp and send." : "Copy didn’t work on this browser."); });
+        copyText(buildMessage()).then(function (ok) { toast(ok ? "Copied. Paste it in WhatsApp." : "Copy didn’t work here."); });
         return;
       }
-      if (e.target.closest("[data-new]")) { clearOrder(); toast("Started a new order"); if (node._mode === "sheet") closeSheet(); return; }
+      if (e.target.closest("[data-new]")) { clearOrder(); toast("New order started"); if (node._mode === "sheet") closeSheet(); return; }
       if (e.target.closest("[data-edit]")) { S().sentAt = 0; commit(); return; }
     });
     node.addEventListener("input", function (e) {
@@ -491,16 +597,16 @@
       if (!f) return;
       S()[f] = e.target.value;
       writeStore(S(), true);
-      var field = e.target.closest(".oa-field");
+      var field = e.target.closest(".field");
       if (field && field.classList.contains("is-bad") && e.target.value.trim()) field.classList.remove("is-bad");
       updateSend(node);
-      var pre = $(".oa-ticket pre", node); if (pre) pre.textContent = buildMessage();
+      var pre = $(".ticket pre", node); if (pre) pre.textContent = buildMessage();
       paintBar();
     });
     node.addEventListener("change", function (e) {
       var t = e.target;
       if (t.name === "oa-mode") { S().mode = t.value; commit(); }
-      if (t.name === "oa-area") { S().area = t.value; var fa = t.closest(".oa-field"); if (fa) fa.classList.remove("is-bad"); commit(); }
+      if (t.name === "oa-area") { S().area = t.value; var fa = t.closest(".field"); if (fa) fa.classList.remove("is-bad"); commit(); }
     });
     return node;
   }
@@ -516,12 +622,11 @@
     if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
     if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
     if (!picks.length) return "";
-    return '<section class="oa-sugg" aria-label="Add to your order"><h3 class="oa-sugg__t">' +
-      (!hasDrink && !hasSide ? "Add a side or a cold drink?" : !hasDrink ? "Add a cold drink?" : "Add a side?") + "</h3>" +
-      '<div class="oa-sugg__row">' + picks.map(function (i) {
-        return '<button type="button" class="oa-sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(host + "|" + i.id) + '" aria-label="Add ' + esc(i.name) + " for " + money(i.price) + '">' +
-          '<img src="' + esc(path(i.img)) + '" alt="" loading="lazy" decoding="async"><span class="oa-sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + "</span>" +
-          '<span class="oa-sugg__p">' + money(i.price) + '<i>' + ICON.plus + "</i></span></button>";
+    return '<section class="sugg" aria-label="Add to your order"><h3>' + (!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side") + "</h3>" +
+      '<div class="sugg__row">' + picks.map(function (i) {
+        return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(host + "|" + i.id) + '" aria-label="Add ' + esc(i.name) + ", " + money(i.price) + '">' +
+          '<span class="sugg__img"><img src="' + esc(path(i.img)) + '" alt="" loading="lazy" decoding="async"><i>' + ICON.plus + "</i></span>" +
+          '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
       }).join("") + "</div></section>";
   }
   function renderOrder(node) {
@@ -529,72 +634,71 @@
     var focusId = document.activeElement && node.contains(document.activeElement) ? document.activeElement.id : null;
     var html = "";
     var head = node._mode === "sheet"
-      ? '<div class="oa-order__head"><h2>Your order</h2><button type="button" class="oa-x" data-close aria-label="Close">' + ICON.close + "</button></div>"
+      ? '<div class="sheet__head"><h2>Your order</h2><button type="button" class="x" data-close aria-label="Close">' + ICON.close + "</button></div>"
       : "";
     if (!lines.length) {
-      node.innerHTML = head + '<div class="oa-empty"><p class="oa-empty__t">Your order is empty.</p><p>Pick a restaurant and tap <b>+</b> on any dish. You can mix dishes from every restaurant in one order.</p>' +
-        (PAGE === "brand" && node._mode === "sheet" ? '<button type="button" class="oa-btn oa-btn--brand" data-close>Browse the menu</button>' : '<a class="oa-btn oa-btn--brand" href="' + path("index.html") + '">See the restaurants</a>') + "</div>";
+      node.innerHTML = head + '<div class="empty"><p class="empty__t">Your order is empty</p><p>Tap + on any dish.</p>' +
+        (PAGE === "brand" && node._mode === "sheet" ? '<button type="button" class="btn btn--accent" data-close>Back to the menu</button>' : '<a class="btn btn--accent" href="' + path("index.html") + '">Browse restaurants</a>') + "</div>";
       return;
     }
     if (s.sentAt) {
-      node.innerHTML = head + '<div class="oa-sent"><div class="oa-sent__icon">' + ICON.check + "</div>" +
-        '<h3>Order #' + esc(s.no) + " is ready in WhatsApp</h3>" +
-        "<p>Tap <b>Send</b> in WhatsApp to place it. We reply there to confirm your order and time.</p>" +
-        '<a class="oa-btn oa-btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "Open WhatsApp again</a>" +
-        '<button type="button" class="oa-btn oa-btn--line" data-new>I sent it — start a new order</button>' +
-        '<button type="button" class="oa-link" data-edit>Change this order</button></div>';
+      node.innerHTML = head + '<div class="sent"><div class="sent__icon">' + ICON.check + "</div>" +
+        "<h3>Order #" + esc(s.no) + " is in WhatsApp</h3>" +
+        "<p>Tap <b>Send</b> there. We reply to confirm.</p>" +
+        '<a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "<span>Open WhatsApp again</span></a>" +
+        '<button type="button" class="btn btn--line" data-new>Start a new order</button>' +
+        '<button type="button" class="link" data-edit>Edit this order</button></div>';
       wireSend(node);
       return;
     }
     html += head;
-    if (!st.open) html += '<p class="oa-note oa-note--warn">The kitchen is closed right now. ' + esc(st.label) + ". You can still send your order and we’ll confirm it on WhatsApp when we open.</p>";
+    if (!st.open) html += '<p class="note note--warn">We’re closed. ' + esc(st.label) + ". Order now and we confirm when we open.</p>";
     brands.forEach(function (b) {
-      if (brands.length > 1) html += '<h3 class="oa-lines__brand">' + esc(brandName(b)) + "</h3>";
-      html += '<ul class="oa-lines">' + lines.filter(function (l) { return l.b === b; }).map(function (l) {
+      if (brands.length > 1) html += '<h3 class="lines__brand">' + esc(brandName(b)) + "</h3>";
+      html += '<ul class="lines">' + lines.filter(function (l) { return l.b === b; }).map(function (l) {
         var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
-        return '<li class="oa-line">' +
-          '<div class="oa-line__main"><p class="oa-line__n">' + esc(l.n) + "</p>" +
-          (extra ? '<p class="oa-line__d">' + esc(extra) + "</p>" : "") +
-          (l.soldOut ? '<p class="oa-line__d oa-line__d--warn">Sold out today — please remove</p>' : "") +
-          '<p class="oa-line__u">' + money(l.p) + " each</p></div>" +
-          '<div class="oa-line__side"><p class="oa-line__t">' + money(l.p * l.q) + "</p>" +
-          '<div class="oa-qty"><button type="button" class="oa-qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + (l.q === 1 ? "Remove " : "One less ") + esc(l.n) + '">' + ICON.minus + "</button>" +
-          '<span class="oa-qty__n">' + l.q + "</span>" +
-          '<button type="button" class="oa-qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="One more ' + esc(l.n) + '">' + ICON.plus + "</button></div></div></li>";
+        return '<li class="line">' +
+          '<div class="line__main"><p class="line__n">' + esc(l.n) + "</p>" +
+          (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
+          (l.soldOut ? '<p class="line__d line__d--warn">Sold out today. Please remove.</p>' : "") +
+          '<p class="line__t">' + money(l.p * l.q) + "</p></div>" +
+          '<div class="qty"><button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + (l.q === 1 ? "Remove " : "One less ") + esc(l.n) + '">' + ICON.minus + "</button>" +
+          '<span class="qty__n">' + l.q + "</span>" +
+          '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="One more ' + esc(l.n) + '">' + ICON.plus + "</button></div></li>";
       }).join("") + "</ul>";
     });
     html += suggestions();
     var areas = (SITE.areas || []).concat(["Other area"]);
-    html += '<form class="oa-form" novalidate onsubmit="return false">' +
-      '<fieldset class="oa-seg"><legend>How do you want it?</legend>' +
-        '<label><input type="radio" name="oa-mode" value="delivery"' + (s.mode === "delivery" ? " checked" : "") + '><span><b>Delivery</b><small>' + money(SITE.deliveryFee) + " flat</small></span></label>" +
+    html += '<form class="form" novalidate onsubmit="return false">' +
+      '<fieldset class="seg"><legend class="sr">Delivery or pickup</legend>' +
+        '<label><input type="radio" name="oa-mode" value="delivery"' + (s.mode === "delivery" ? " checked" : "") + "><span><b>Delivery</b><small>" + shortMoney(SITE.deliveryFee) + " per order</small></span></label>" +
         '<label><input type="radio" name="oa-mode" value="pickup"' + (s.mode === "pickup" ? " checked" : "") + "><span><b>Pickup</b><small>Free</small></span></label>" +
       "</fieldset>";
     if (s.mode === "delivery") {
-      html += '<fieldset class="oa-field oa-field--areas" id="oa-f-area"><legend>Your area</legend><div class="oa-opt__chips">' +
+      html += '<fieldset class="field field--areas" id="oa-f-area"><legend>Area</legend><div class="chips">' +
         areas.map(function (a) {
-          return '<label class="oa-chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(a) + "</span></label>";
-        }).join("") + '</div><p class="oa-field__err">Pick your area so we know where to drive.</p></fieldset>' +
-        '<label class="oa-field" id="oa-f-addr"><span class="oa-field__l">Street, house number or landmark</span>' +
-        '<textarea id="oa-addr" data-f="addr" rows="2" maxlength="160" autocomplete="street-address" placeholder="e.g. Palm Beach 12, yellow house next to the bakery">' + esc(s.addr) + "</textarea>" +
-        '<span class="oa-field__err">Add a street, house number or landmark for the driver.</span></label>';
+          return '<label class="chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(a) + "</span></label>";
+        }).join("") + '</div><p class="field__err">Pick your area.</p></fieldset>' +
+        '<label class="field" id="oa-f-addr"><span class="field__l">Address or landmark</span>' +
+        '<textarea id="oa-addr" data-f="addr" rows="2" maxlength="160" autocomplete="street-address" placeholder="Palm Beach 12, yellow house">' + esc(s.addr) + "</textarea>" +
+        '<span class="field__err">Add an address for the driver.</span></label>';
     } else {
-      html += '<p class="oa-note">Pick up at our kitchen. We send the address and a pickup time on WhatsApp.</p>';
+      html += '<p class="note">We send the pickup address and time on WhatsApp.</p>';
     }
-    html += '<label class="oa-field" id="oa-f-name"><span class="oa-field__l">Your name</span>' +
+    html += '<label class="field" id="oa-f-name"><span class="field__l">Name</span>' +
       '<input id="oa-name" data-f="name" type="text" maxlength="40" autocomplete="name" value="' + esc(s.name) + '">' +
-      '<span class="oa-field__err">Add your name so we know whose order it is.</span></label>' +
-      '<label class="oa-field"><span class="oa-field__l">Note for the kitchen <em>optional</em></span>' +
-      '<textarea id="oa-note" data-f="note" rows="2" maxlength="160" placeholder="Allergies, gate code, extra napkins">' + esc(s.note) + "</textarea></label>" +
+      '<span class="field__err">Add your name.</span></label>' +
+      '<label class="field"><span class="field__l">Note <em>optional</em></span>' +
+      '<textarea id="oa-note" data-f="note" rows="2" maxlength="160" placeholder="Allergies, gate code">' + esc(s.note) + "</textarea></label>" +
       "</form>";
-    html += '<dl class="oa-sum"><div><dt>Food</dt><dd>' + money(subtotal()) + "</dd></div>" +
-      "<div><dt>" + (s.mode === "delivery" ? "Delivery" + (brands.length > 1 ? " (once, all restaurants)" : "") : "Pickup") + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : "Free") + "</dd></div>" +
-      '<div class="oa-sum__total"><dt>Total</dt><dd>' + money(total()) + "</dd></div></dl>";
-    html += '<details class="oa-ticket"><summary>See the message we\u2019ll get</summary><pre>' + esc(buildMessage()) + "</pre></details>";
-    html += '<p class="oa-order__hint">WhatsApp opens with your order typed out. Tap <b>Send</b> there and we reply to confirm it and the time.</p>' +
-      '<button type="button" class="oa-link" data-copy>Copy the order text instead</button>' +
-      '<div class="oa-order__send"><a class="oa-btn oa-btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
-      '<span>Send order on WhatsApp</span><span class="oa-btn__total">' + money(total()) + "</span></a></div>";
+    html += '<dl class="sum"><div><dt>Food</dt><dd>' + money(subtotal()) + "</dd></div>" +
+      "<div><dt>" + (s.mode === "delivery" ? "Delivery" : "Pickup") + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : "Free") + "</dd></div>" +
+      '<div class="sum__total"><dt>Total</dt><dd>' + money(total()) + "</dd></div></dl>";
+    html += '<details class="ticket"><summary>Preview the message</summary><pre>' + esc(buildMessage()) + "</pre></details>";
+    html += '<p class="order__hint">Opens WhatsApp with your order. Tap <b>Send</b> there.</p>' +
+      '<button type="button" class="link" data-copy>Copy the order instead</button>' +
+      '<div class="order__send"><a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
+      '<span>Send on WhatsApp</span><span class="btn__total">' + money(total()) + "</span></a></div>";
     node.innerHTML = html;
     wireSend(node);
     if (focusId) { var f = document.getElementById(focusId); if (f) f.focus({ preventScroll: true }); }
@@ -615,7 +719,7 @@
     if (first) {
       first.scrollIntoView({ behavior: "smooth", block: "center" });
       var inp = $("input,textarea", first); if (inp && inp.type !== "radio") inp.focus({ preventScroll: true });
-      toast("A few details are missing");
+      toast("Fill in the missing details");
       return false;
     }
     return true;
@@ -634,7 +738,7 @@
       if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast("Remove the sold-out dish first"); return; }
       var link = checkoutLink();
       a.href = link.url;
-      if (link.short) copyText(link.full).then(function (ok) { toast(ok ? "Your order is long, so it’s copied. Paste it in the chat." : "Tap “Copy order text” and paste it in WhatsApp."); });
+      if (link.short) copyText(link.full).then(function (ok) { toast(ok ? "Long order: it’s copied. Paste it in the chat." : "Tap “Copy the order” and paste it in WhatsApp."); });
       setTimeout(function () { var s = S(); s.sentAt = Date.now(); commit(); }, 400);
     });
   }
@@ -643,7 +747,7 @@
   function ensureBar() {
     var bar = $("#oa-bar");
     if (bar || PAGE === "cart") return bar;
-    bar = el('<div class="oa-bar" id="oa-bar" hidden><button type="button" class="oa-bar__btn"><span class="oa-bar__count"></span><span class="oa-bar__label"></span><span class="oa-bar__total"></span></button></div>');
+    bar = el('<div class="bar" id="oa-bar" hidden><button type="button" class="bar__btn"><span class="bar__count"></span><span class="bar__label"></span><span class="bar__total"></span></button></div>');
     BODY.appendChild(bar);
     $("button", bar).addEventListener("click", openOrder);
     return bar;
@@ -652,14 +756,13 @@
     var n = count(), bar = ensureBar();
     $$("[data-oa-count]").forEach(function (c) { c.textContent = n; c.hidden = n === 0; });
     if (!bar) return;
-    var show = n > 0 && !openSheets.length;
-    bar.hidden = !show;
-    BODY.classList.toggle("oa-has-bar", n > 0);
+    bar.hidden = !(n > 0 && !openSheets.length);
+    BODY.classList.toggle("has-bar", n > 0);
     if (!n) return;
     var stale = Date.now() - (S().updated || 0) > 2 * 3600 * 1000;
-    $(".oa-bar__count", bar).textContent = n;
-    $(".oa-bar__label", bar).textContent = S().sentAt ? "Order sent? Check it" : stale ? "Continue your order" : "View order";
-    $(".oa-bar__total", bar).textContent = money(total());
+    $(".bar__count", bar).textContent = n;
+    $(".bar__label", bar).textContent = S().sentAt ? "Check your order" : stale ? "Continue order" : "View order";
+    $(".bar__total", bar).textContent = money(total());
     $("button", bar).setAttribute("aria-label", "View order: " + plural(n, "item", "items") + ", " + money(total()));
   }
   var orderSheet = null;
@@ -667,32 +770,30 @@
     if (orderSheet) return;
     var node = orderNode("sheet");
     Promise.all(brandsInCart().map(loadMenu)).then(function () { renderOrder(node); }, function () {});
-    orderSheet = openSheet(node, { label: "Your order", cls: "oa-sheet__panel--order", onClose: function () { orderSheet = null; } });
+    orderSheet = openSheet(node, { label: "Your order", cls: "sheet__panel--order", onClose: function () { orderSheet = null; } });
     orderSheet.node = node;
   }
 
-  /* ---------------------------------------------------------------- shared UI bits */
-  function statusPill() {
-    var st = kitchenStatus();
-    return '<span class="oa-status' + (st.open ? (st.soon ? " is-soon" : " is-open") : " is-closed") + '"><i aria-hidden="true"></i>' + esc(st.label) + "</span>";
-  }
+  /* ---------------------------------------------------------------- shared bits */
   function fillCommon() {
-    $$("[data-oa-status]").forEach(function (n) { n.innerHTML = statusPill(); });
     $$("[data-oa-hours]").forEach(function (n) { n.textContent = hoursLabel(); });
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     $$("[data-oa-eta]").forEach(function (n) { n.textContent = SITE.eta || ""; });
+    $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
+    $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I’m in "); });
+    paintSign(false);
   }
   function setupIAB() {
     var ua = navigator.userAgent || "";
     var iab = /(Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|Snapchat|Line\/)/i.test(ua);
     if (!iab) return;
     var app = /Instagram/i.test(ua) ? "Instagram" : /FBAN|FBAV|FB_IAB/i.test(ua) ? "Facebook" : /musical_ly|Bytedance/i.test(ua) ? "TikTok" : /Snapchat/i.test(ua) ? "Snapchat" : "this app";
-    var box = el('<div class="oa-iab"><p><b>Ordering from ' + esc(app) + "?</b> WhatsApp works best from your normal browser. Tap <b>•••</b> at the top and choose <b>Open in browser</b>. Your order comes with you.</p>" +
-      '<button type="button" class="oa-btn oa-btn--line oa-btn--sm">Copy link</button></div>');
+    var box = el('<div class="iab"><p>Opened in ' + esc(app) + "? Tap <b>•••</b> and <b>Open in browser</b> to order on WhatsApp.</p>" +
+      '<button type="button" class="btn btn--line btn--sm">Copy link</button></div>');
     var host = $("main") || BODY;
     host.insertBefore(box, host.firstChild);
     $("button", box).addEventListener("click", function () {
-      copyText(shareUrl()).then(function (ok) { toast(ok ? "Link copied with your order. Paste it in your browser." : "Copy didn’t work. Use ••• → Open in browser."); });
+      copyText(shareUrl()).then(function (ok) { toast(ok ? "Link copied with your order" : "Use ••• then Open in browser"); });
     });
   }
   function shareUrl() {
@@ -714,66 +815,60 @@
       pack.forEach(function (p) { addItem(p[0], p[1], p[3] || {}, p[2]); });
     });
   }
+  function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1]; }
+  function paintSign(first) {
+    var sign = $("[data-oa-sign]");
+    if (!sign) return;
+    var st = kitchenStatus();
+    sign.innerHTML = st.open ? "<b>Open</b><span>" + esc(st.label.replace(/^Open /, "")) + "</span>" : "<b>Closed</b><span>" + esc(st.label) + "</span>";
+    sign.classList.toggle("is-on", st.open);
+    if (first && st.open) sign.classList.add("flick");
+  }
 
   /* ---------------------------------------------------------------- restaurant page */
-  function cardHTML(b, item, menu) {
-    var n = itemCount(b, item.id);
-    var orderable = brandStatus(b) === "open" && !item.soldOut;
-    var style = item.style || (item.kind === "drink" ? "drink" : "row");
-    var tag = style === "signature" ? '<p class="oa-card__tag">' + ICON.flame + "Signature dish</p>"
-      : "";
-    var save = "";
-    if (item.includes) {
-      var sum = item.includes.reduce(function (s, id) { return s + (menu.byId[id] ? menu.byId[id].price : 0); }, 0);
-      if (sum > item.price) save = '<p class="oa-card__save">' + money(sum - item.price) + " less than ordering the three dishes separately</p>";
-    }
-    var inc = item.includes ? '<ul class="oa-card__inc">' + includesNames(menu, item).map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "";
-    var big = style === "signature" || style === "bundle";
-    return '<article class="oa-card oa-card--' + style + (n ? " is-in" : "") + (item.soldOut ? " is-out" : "") + '" data-item="' + esc(item.id) + '">' +
-      '<button type="button" class="oa-card__open" data-open="' + esc(item.id) + '" aria-label="' + esc(item.name) + ", " + money(item.price) + ', see details"></button>' +
-      '<div class="oa-card__media" data-n="' + n + '"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (big ? "eager" : "lazy") + '" decoding="async"></div>' +
-      '<div class="oa-card__body">' + tag +
-        '<h3 class="oa-card__name">' + esc(item.name) + "</h3>" +
-        '<p class="oa-card__desc">' + esc(item.desc) + "</p>" + inc +
-        ((item.flags && item.flags.length) ? '<div class="oa-flags">' + flagChips(item) + "</div>" : "") +
-      "</div>" +
-      '<div class="oa-card__foot"><div class="oa-card__pricewrap"><span class="oa-card__price">' + money(item.price) + "</span>" + save +
-        (n ? '<span class="oa-card__in">' + n + " in your order</span>" : "") + "</div>" +
-        (item.soldOut ? '<span class="oa-card__out">Sold out today</span>'
-          : '<button type="button" class="oa-add" data-quick="' + esc(item.id) + '"' + (orderable ? "" : " disabled") + ' aria-label="Add ' + esc(item.name) + '">' +
-            ICON.plus + "<span>Add</span></button>") +
-      "</div></article>";
-  }
   function renderBrand() {
-    var b = HERE, menu = MENU[b], status = brandStatus(b);
-    document.title = menu.name + " · Order on WhatsApp · Aruba";
+    var b = HERE, menu = MENU[b], status = brandStatus(b), st = kitchenStatus();
+    document.title = menu.name + " · Order Aruba";
+    setAccent(menu.color);
     var main = $("#oa-main");
-    var st = kitchenStatus();
-    var now = st.open
-      ? '<p class="oa-intro__now is-open"><i aria-hidden="true"></i>' + esc(st.label) + ". <span>Delivery " + shortMoney(SITE.deliveryFee) + " for your whole order, usually " + esc(SITE.eta || "") + ". Pickup is free.</span></p>"
-      : '<p class="oa-intro__now"><i aria-hidden="true"></i>Closed right now. ' + esc(st.label) + ". <span>You can order ahead and we confirm when we open. Delivery " + shortMoney(SITE.deliveryFee) + " for your whole order, pickup is free.</span></p>";
-    var html = '<a class="oa-back" href="' + path("index.html") + '">' + ICON.back + "All restaurants</a>" +
-      '<section class="oa-intro">' +
-        '<h1 class="oa-intro__h">' + esc(menu.headline) + "</h1>" +
-        '<p class="oa-intro__p">' + esc(menu.intro) + "</p>" + now +
-      "</section>" +
-      (status === "soon" ? '<p class="oa-note oa-note--warn">' + esc(menu.name) + " opens soon. Have a look around; ordering starts shortly.</p>" : "") +
-      (status === "hidden" ? '<p class="oa-note oa-note--warn">' + esc(menu.name) + " isn\u2019t taking orders right now.</p>" : "");
-    menu.sections.forEach(function (sec) {
-      var items = menu.items.filter(function (i) { return i.section === sec.id; });
-      if (!items.length) return;
-      html += '<section class="oa-sec" id="' + esc(sec.id) + '" aria-labelledby="h-' + esc(sec.id) + '"><h2 class="oa-sec__t" id="h-' + esc(sec.id) + '">' + esc(sec.title) + "</h2>" +
-        '<div class="oa-sec__list' + (sec.id === "drinks" ? " oa-sec__list--drinks" : "") + '">' + items.map(function (i) { return cardHTML(b, i, menu); }).join("") + "</div></section>";
+    var feat = menu.items.filter(function (i) { return i.style === "signature" || i.style === "bundle"; });
+    var featIds = feat.map(function (i) { return i.id; });
+    var secs = menu.sections.map(function (s) {
+      return { id: s.id, title: s.title, items: menu.items.filter(function (i) { return i.section === s.id && featIds.indexOf(i.id) < 0; }) };
+    }).filter(function (s) { return s.items.length; });
+    // cover: a dish that is not already in Featured, real photo first
+    var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && featIds.indexOf(i.id) < 0; });
+    var pick = pool.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || pool[0] || feat[0] || menu.items[0];
+    var cover = pick.img;
+    var html = '<div class="cover"><img src="' + esc(path(cover)) + '" alt="" width="780" height="446" fetchpriority="high" decoding="async"></div>' +
+      '<header class="store">' +
+        '<img class="store__mark" src="' + esc(path(menu.mark)) + '" alt="" width="76" height="76">' +
+        '<h1 class="store__name" id="store-name">' + esc(menu.name) + "</h1>" +
+        '<p class="store__tag">' + esc(menu.tagline) + "</p>" +
+        '<ul class="facts">' +
+          '<li class="facts__status' + (st.open ? " is-open" : "") + '"><i></i>' + esc(st.label) + "</li>" +
+          "<li>" + shortMoney(SITE.deliveryFee) + " delivery</li>" +
+          "<li>" + esc(SITE.eta || "") + "</li>" +
+        "</ul>" +
+        (status === "soon" ? '<p class="note note--warn">Opening soon. Ordering starts shortly.</p>' : "") +
+        (status === "hidden" ? '<p class="note note--warn">Not taking orders right now.</p>' : "") +
+      "</header>";
+    if (feat.length) {
+      html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">Featured</h2>' +
+        '<div class="rail rail--feat">' + feat.map(function (i) { return featHTML(b, i); }).join("") + "</div></section>";
+    }
+    secs.forEach(function (s) {
+      html += '<section class="sec" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' + esc(s.title) + "</h2>" +
+        '<div class="' + (s.id === "drinks" ? "cans" : "rows") + '">' + s.items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
     });
-    html += '<footer class="oa-foot"><img src="' + esc(path(menu.logo)) + '" alt="' + esc(menu.name) + '" loading="lazy">' +
-      "<p>" + esc(menu.imageNote) + "</p>" +
-      "<p>Cooked to order in our kitchen in Aruba. Prices in Aruban florin (ƒ). " + esc(hoursLabel()) + ".</p>" +
-      '<p><a href="' + path("index.html") + '">See our other restaurants</a></p></footer>';
+    html += '<footer class="pfoot"><p>' + esc(menu.imageNote) + " Prices in Aruban florin (ƒ).</p>" +
+      '<a class="pfoot__all" href="' + path("index.html") + '">All restaurants</a></footer>';
     main.innerHTML = html;
+
     var nav = $("#oa-cats");
     if (nav) {
-      nav.innerHTML = menu.sections.filter(function (s) { return menu.items.some(function (i) { return i.section === s.id; }); })
-        .map(function (s, i) { return '<a href="#' + esc(s.id) + '" data-nav="' + esc(s.id) + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(s.title) + "</a>"; }).join("");
+      var tabs = (feat.length ? [{ id: "featured", title: "Featured" }] : []).concat(secs);
+      nav.innerHTML = tabs.map(function (s, i) { return '<a href="#' + esc(s.id) + '" data-nav="' + esc(s.id) + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(s.title) + "</a>"; }).join("");
       if ("IntersectionObserver" in window) {
         var io = new IntersectionObserver(function (es) {
           es.forEach(function (en) {
@@ -785,78 +880,77 @@
               if (on && sc.scrollWidth > sc.clientWidth) sc.scrollTo({ left: Math.max(0, a.offsetLeft - 16), behavior: "smooth" });
             });
           });
-        }, { rootMargin: "-130px 0px -60% 0px" });
-        $$(".oa-sec", main).forEach(function (s) { io.observe(s); });
-        window.addEventListener("scroll", function () {
-          if (window.scrollY < 160) {
-            $$("a", nav).forEach(function (a, i) { a.classList.toggle("on", i === 0); });
-            if (nav.parentNode.scrollLeft) nav.parentNode.scrollTo({ left: 0 });
-          }
-        }, { passive: true });
+        }, { rootMargin: "-140px 0px -60% 0px" });
+        $$(".sec", main).forEach(function (s) { io.observe(s); });
+        var nameIO = new IntersectionObserver(function (es) { BODY.classList.toggle("past-name", !es[0].isIntersecting); }, { rootMargin: "-60px 0px 0px 0px" });
+        nameIO.observe($("#store-name"));
       }
-    }
-    main.addEventListener("click", function (e) {
-      var q = e.target.closest("[data-quick]");
-      if (q) {
-        var id = q.getAttribute("data-quick"), line = addItem(b, id, {}, 1);
-        if (line) {
-          var item = menu.byId[id];
-          toast(item.name + " added");
-          q.classList.remove("pop"); void q.offsetWidth; q.classList.add("pop");
+      window.addEventListener("scroll", function () {
+        if (window.scrollY < 160) {
+          $$("a", nav).forEach(function (a, i) { a.classList.toggle("on", i === 0); });
+          if (nav.parentNode.scrollLeft) nav.parentNode.scrollTo({ left: 0 });
         }
-        return;
-      }
-      var o = e.target.closest("[data-open]");
-      if (o) openDish(b, o.getAttribute("data-open"));
-    });
-  }
-  function repaintCards() {
-    if (PAGE !== "brand" || !MENU[HERE]) return;
-    $$(".oa-card").forEach(function (c) {
-      var id = c.getAttribute("data-item"), n = itemCount(HERE, id);
-      c.classList.toggle("is-in", n > 0);
-      var wrap = $(".oa-card__pricewrap", c), tag = $(".oa-card__in", c), media = $(".oa-card__media", c);
-      if (media) media.setAttribute("data-n", n);
-      if (n && !tag) { tag = el('<span class="oa-card__in"></span>'); wrap.appendChild(tag); }
-      if (tag) { if (n) tag.textContent = n + " in your order"; else tag.remove(); }
-    });
+      }, { passive: true });
+    }
   }
 
   /* ---------------------------------------------------------------- home page */
-  function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1]; }
-  function paintSign(first) {
-    var sign = $("[data-oa-sign]");
-    if (!sign) return;
-    var st = kitchenStatus();
-    var h = SITE.hours[DAYS[arubaNow().getDay()]] || SITE.hours.mon;
-    if (st.open) sign.innerHTML = "<b>Open</b><span>" + esc(st.label.replace(/^Open /, "")) + "</span>";
-    else sign.innerHTML = "<b>Closed</b><span>" + esc(st.label) + "</span>";
-    sign.classList.toggle("is-on", st.open);
-    if (first && st.open) sign.classList.add("flick");
+  function shopHTML(b, idx) {
+    var m = MENU[b];
+    if (!m) return "";
+    var status = brandStatus(b), from = fromPrice(m);
+    var sig = m.items.filter(function (i) { return i.style === "signature"; })[0] || m.items[0];
+    return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
+      '<div class="shop__media"><img src="' + esc(path(m.hero || sig.img)) + '" alt="' + esc(sig.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
+        (status !== "open" ? '<span class="shop__soon">Opening soon</span>' : "") + "</div>" +
+      '<div class="shop__body"><img class="shop__mark" src="' + esc(path(m.mark)) + '" alt="" width="48" height="48" loading="lazy">' +
+        '<div><h3 class="shop__name">' + esc(m.name) + "</h3>" +
+        '<p class="shop__meta"><span>' + esc(m.cuisine) + "</span>" + (from && status === "open" ? "<span>From " + money(from) + "</span>" : "") + "</p></div></div></a>";
+  }
+  function setupSearch(ids) {
+    var input = $("#oa-q"), out = $("#oa-results"), browse = $("#oa-browse");
+    if (!input || !out || !browse) return;
+    function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+    var all = [], seenDrink = {};
+    ids.forEach(function (b) {
+      var m = MENU[b];
+      if (!m || brandStatus(b) !== "open") return;
+      m.items.forEach(function (i) {
+        if (i.kind === "drink") { if (seenDrink[i.id]) return; seenDrink[i.id] = 1; }
+        all.push({ b: b, i: i, hay: norm([i.name, i.desc, m.name, m.cuisine, (i.flags || []).join(" "), i.kind === "drink" ? "drink soda can" : ""].join(" ")) });
+      });
+    });
+    var t;
+    function run() {
+      var raw = input.value.trim(), q = norm(raw);
+      if (!q) { out.hidden = true; browse.hidden = false; return; }
+      var words = q.split(/\s+/);
+      var hits = all.filter(function (x) { return words.every(function (w) { return x.hay.indexOf(w) >= 0; }); });
+      browse.hidden = true; out.hidden = false;
+      out.innerHTML = hits.length
+        ? '<p class="results__n">' + plural(hits.length, "dish", "dishes") + "</p>" + '<div class="rows">' + hits.map(function (x) { return rowHTML(x.b, x.i, { brand: true }); }).join("") + "</div>"
+        : '<p class="results__none">Nothing matches “' + esc(raw) + '”. Try chicken, shrimp or fries.</p>';
+    }
+    input.addEventListener("input", function () { clearTimeout(t); t = setTimeout(run, 90); });
+    input.addEventListener("search", run);
   }
   function renderHub() {
     var ids = brandList(false);
-    $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I\u2019m in "); });
-    $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
     paintSign(true);
-    setInterval(function () { paintSign(false); }, 60000);
+    paintDeliver();
     Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
-      var street = $("#street");
-      if (!street) return;
-      street.innerHTML = ids.map(function (b, idx) {
-        var m = MENU[b];
-        if (!m) return "";
-        var status = brandStatus(b);
-        var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
-        var from = mains.length ? Math.min.apply(null, mains.map(function (i) { return i.price; })) : 0;
-        var sig = m.items.filter(function (i) { return i.style === "signature"; })[0] || m.items[0];
-        return '<a class="shop shop--' + esc(b) + (status !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '">' +
-          '<div class="shop__text"><h2 class="shop__name">' + esc(m.name) + "</h2>" +
-          '<p class="shop__what">' + esc(m.tagline) + "</p>" +
-          '<p class="shop__from">' + (status === "open" ? (from ? "Mains from " + money(from) : "See the menu") : "See the menu") + "</p></div>" +
-          '<img class="shop__img" src="' + esc(path(m.hero || sig.img)) + '" alt="' + esc(sig.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
-          (status !== "open" ? '<span class="shop__soon">Opening soon</span>' : "") + "</a>";
-      }).join("");
+      var rail = $("#oa-rail"), list = $("#oa-list");
+      if (rail) {
+        var picks = [];
+        ids.forEach(function (b) {
+          var m = MENU[b];
+          if (!m || brandStatus(b) !== "open") return;
+          m.items.filter(function (i) { return (i.style === "signature" || i.style === "bundle") && !i.soldOut; }).forEach(function (i) { picks.push(featHTML(b, i, { brand: true })); });
+        });
+        rail.innerHTML = picks.join("");
+      }
+      if (list) list.innerHTML = ids.map(shopHTML).join("");
+      setupSearch(ids);
     });
   }
 
@@ -895,7 +989,7 @@
     }).catch(function (err) {
       console.error(err);
       var main = $("#oa-main") || BODY;
-      main.insertAdjacentHTML("afterbegin", '<p class="oa-note oa-note--warn">The menu didn’t load. Check your connection and refresh the page.</p>');
+      main.insertAdjacentHTML("afterbegin", '<p class="note note--warn">The menu didn\u2019t load. Check your connection and refresh.</p>');
     });
   }
 

@@ -11,7 +11,7 @@
  "logo": "shared/logos/smash-shack.svg",
  "mark": "shared/logos/smash-shack-mark.webp",
  "hero": "smash-shack/assets/dishes/sc-hero.webp",
- "imageNote": "Dish photos show how we plate it. Yours is cooked fresh to order.",
+ "imageNote": "Photos show how we plate it.",
  "sections": [
   {
    "id": "signature",

@@ -11,7 +11,7 @@
  "logo": "shared/logos/dushi-wok.svg",
  "mark": "shared/logos/dushi-wok-mark.webp",
  "hero": "dushi-wok/assets/dishes/fr.webp",
- "imageNote": "Dish photos show how we plate it. Yours is cooked fresh to order.",
+ "imageNote": "Photos show how we plate it.",
  "sections": [
   {
    "id": "family",
