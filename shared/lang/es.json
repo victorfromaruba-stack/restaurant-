@@ -215,5 +215,7 @@
  "Closed today.": "Hoy cerrado.",
  "{fee} delivery per order, however many restaurants you pick from.": "La entrega cuesta {fee} por pedido, sin importar de cuántos restaurantes pidas.",
  "Pickup is free.": "Recoger es gratis.",
- "Last orders at {time}.": "Últimos pedidos a las {time}."
+ "Last orders at {time}.": "Últimos pedidos a las {time}.",
+ "Share this dish": "Comparte este plato",
+ "Link copied": "Enlace copiado"
 }

@@ -138,6 +138,14 @@ async def main():
             ok = bool(r) and r["sub"] == smp["subtotal_cents"] and r["fee"] == smp["fee_cents"] and r["total"] == smp["total_cents"] \
                 and sum(l["p"] for l in r["lines"]) == smp["subtotal_cents"] and r["pay"] == meta.get("pay", "")
             check(ok, f"[{title}] chef app receipt matches the order (lines, totals, payment)")
+        # a shared dish link (restaurant/#d=<id>) opens that dish, for every restaurant's signature dish
+        for bid in brands:
+            sig = next((i for i in menus[bid]["items"] if i.get("style") == "signature"), None)
+            if not sig:
+                continue
+            await pg.goto(BASE + f"{bid}/#d={sig['id']}", wait_until="networkidle")
+            got = await pg.evaluate("(document.querySelector('.dish__name') || {}).textContent || ''")
+            check(got == sig["name"], f"{bid}/#d={sig['id']} opens {sig['name']}" + ("" if got == sig["name"] else f": got {got!r}"))
         await pg.goto(BASE + "index.html", wait_until="networkidle")
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]

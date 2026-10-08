@@ -117,6 +117,7 @@
     flame: '<svg viewBox="0 0 34 50" aria-hidden="true"><path fill="currentColor" d="M17,0 C21.2,11 34,19 34,32 C34,44 26,50 17,50 C8,50 0,44 0,32 C0,23 8,18 11,9 C13,17 15,20 18,22 C20,14 19,6 17,0 Z"/></svg>',
     pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>',
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13l11-6.5z"/></svg>',
+    share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7.5 7.5 12 3l4.5 4.5M8 11H6.5A1.5 1.5 0 0 0 5 12.5v7A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H16"/></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.22 8.22 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.16.04-.31-.02-.43-.06-.13-.56-1.35-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.29Z"/></svg>'
   };
@@ -689,6 +690,7 @@
     var node = el(
       '<div class="dish' + (item.kind === "drink" ? " dish--drink" : "") + '" style="--accent:' + esc(menu.color) + ";--accent-ink:" + inkFor(menu.color) + '">' +
         '<button type="button" class="x x--float" data-close aria-label="' + esc(tr("Close")) + '">' + ICON.close + "</button>" +
+        '<button type="button" class="x x--float x--share" data-share aria-label="' + esc(tr("Share this dish")) + '">' + ICON.share + "</button>" +
         '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' +
         '<div class="dish__body">' +
           (PAGE !== "brand" ? '<p class="dish__brand">' + esc(menu.name) + "</p>" : "") +
@@ -730,6 +732,7 @@
     node.addEventListener("click", function (e) {
       var q = e.target.closest("[data-q]");
       if (q) { qty = Math.max(1, Math.min(MAX_QTY, qty + (+q.getAttribute("data-q")))); paint(); }
+      if (e.target.closest("[data-share]")) shareDish(b, item);
     });
     var rec = openSheet(node, { label: item.name, cls: "sheet__panel--dish" });
     $(".dish__add", node).addEventListener("click", function () {
@@ -1096,6 +1099,23 @@
       copyText(shareUrl()).then(function (ok) { toast(tr(ok ? "Link copied with your order" : "Use ••• then Open in browser")); });
     });
   }
+  /* a link that opens this dish on its restaurant's page (restaurant/#d=<id>), for sending to a friend */
+  function shareDish(b, item) {
+    var url = new URL(path(b + "/"), location.href).href + "#d=" + encodeURIComponent(item.id);
+    var text = item.name + " \u00b7 " + MENU[b].name + " \u00b7 " + money(item.price);
+    if (navigator.share) { navigator.share({ title: item.name, text: text, url: url }).catch(function () { /* closed the share screen */ }); return; }
+    copyText(text + "\n" + url).then(function (ok) {
+      if (ok) toast(tr("Link copied"));
+      else window.open("https://wa.me/?text=" + encodeURIComponent(text + "\n" + url), "_blank", "noopener");
+    });
+  }
+  /* restaurant/#d=<id>: open that dish once the page is drawn, then tidy the address so a refresh doesn't reopen it */
+  function openFromHash() {
+    var m = /[#&]d=([^&]+)/.exec(location.hash), id = m && decodeURIComponent(m[1]);
+    if (!id || !MENU[HERE] || !MENU[HERE].byId[id]) return;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
+    openDish(HERE, id);
+  }
   function shareUrl() {
     var pack = liveLines().map(function (l) { return [l.b, l.id, l.q, l.o]; });
     var u = location.href.split("#")[0];
@@ -1452,7 +1472,7 @@
       return importHash().then(function () {
         fillCommon();
         setInterval(fillCommon, 60000);
-        if (PAGE === "brand") renderBrand();
+        if (PAGE === "brand") { renderBrand(); openFromHash(); window.addEventListener("hashchange", openFromHash); }
         if (PAGE === "hub") renderHub();
         if (PAGE === "cart") renderCartPage();
         $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });

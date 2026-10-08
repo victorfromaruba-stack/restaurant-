@@ -8,7 +8,6 @@ under 25 lines: drop ideas that stopped making sense.
 
 ## Open
 - [ ] H · S · On Victor's VPS copy only: add the 8 Oct allergens (tenders milk; fried rice, lo mein, Family Table sesame; lo mein, pork stir-fry, Family Table shellfish; bitterballen mustard; chips gluten) to the private kitchen-data builder in ops/kitchen/_build/, so a rebuild keeps them (needs Victor's server) · done when: a rebuilt kitchen-data.json still passes qa/check_site.py
-- [ ] M · M · Share a dish: a share button on every dish sheet and links like taco-brava/#d=bt that open that dish (customers hear about us on WhatsApp) · done when: a shared link opens the dish ready to add, in all four languages (idea from a skill test run)
 - [ ] H · S · Smash Shack: the cheeseburger under "Start here" is still a generated shot with a thick patty. Needs a real photo (needs Victor)
 - [ ] H · L · Real photos, signatures first (needs Victor) · done when: the five signature dishes are real photos
 - [ ] M · M · Chef app: send cash sales to Book Keeper at Close up (Book Keeper's /api/intake/sales is live; only orders paid cash, same date the order was placed, never bank transfers) · done when: a test order sent twice shows once in Book Keeper
@@ -16,6 +15,7 @@ under 25 lines: drop ideas that stopped making sense.
 - [ ] M · S · 320px check of the chef app's Menu screens (long dish names, the three status buttons)
 
 ## Shipped
+- [x] 2026-10-08 · M · M · Share a dish: share button on the dish sheet, links like taco-brava/#d=bt open the dish (checked in qa/check_site.py)
 - [x] 2026-10-08 · H · M · Home: "How ordering works" (WhatsApp, we confirm, pay cash or transfer) replaces the three-column basics strip; restaurants as compact rows with dish names (home a fifth shorter)
 - [x] 2026-10-08 · L · M · One shared grade on every generated picture and cover video (build/grade.py); birria paint dust removed
 - [x] 2026-10-08 · M · M · Chef app Receipts: photo straight into Book Keeper's review list, no login (books.js, 72b0161); Book Keeper intake API live
