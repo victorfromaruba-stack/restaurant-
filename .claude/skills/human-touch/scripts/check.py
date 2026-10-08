@@ -263,7 +263,7 @@ def image_findings():
             if len(names) > 1:
                 out.append(("WARN", b["id"], f"one picture for {len(names)} dishes ({', '.join(names)}): each dish should show itself"))
         # Restaurant page: the cover (video poster, or the dish order-app.js picks) against Featured right under it.
-        ids = [f["id"] for f in feat]
+        ids = [f["id"] for f in feat] + [x for f in feat for x in f.get("includes", [])]   # featured dishes and the dishes inside a bundle picture
         pool = [i for i in m["items"] if i.get("kind") not in ("drink", "side") and i["id"] not in ids]
         pick = next((i for i in m["items"] if i["id"] == m.get("cover")), None) or \
             next((i for i in pool if "/art/" not in i["img"] and not i.get("soldOut")), None) or (pool or feat or m["items"])[0]

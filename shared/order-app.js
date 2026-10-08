@@ -464,7 +464,7 @@
     else out.push("*Kitchen order* " + no + " · " + brands.length + " restaurants");
     out.push(s.mode === "delivery" ? "Delivery · " + (s.area ? s.area + (s.area === OTHER ? " (please confirm)" : "") : "area not set") : "Pickup");
     out.push("Time: " + (validWhen() || "As soon as possible"));
-    if (!kitchenStatus().open) out.push("Pre-order — sent while we were closed");
+    if (!kitchenStatus().open) out.push("Pre-order: sent while you were closed");
     out.push("");
     function put(l) {
       out.push(l.q + " × " + l.n + " — " + money(l.q * l.p));
@@ -631,7 +631,7 @@
   function featHTML(b, item, opts) {
     opts = opts || {};
     var m = MENU[b], n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
-    var tag = item.soldOut ? tr("Sold out today") : opts.brand ? m.name : item.style === "bundle" ? tr("Family deal") : item.style === "signature" ? tr("Signature") : "";
+    var tag = item.soldOut ? tr("Sold out today") : opts.brand ? m.name : item.includes ? includesNames(m, item).join(", ") : "";
     return '<article class="feat' + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
       '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
       '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (opts.eager ? "eager" : "lazy") + '"' + (opts.eager ? ' fetchpriority="high"' : "") + ' decoding="async">' + qtyBadge(n) + plusBtn(item, orderable) + "</div>" +
@@ -823,10 +823,11 @@
   }
   /* cheap add-ons from the other restaurants: the whole point of one kitchen is one delivery */
   var CROSS = [["dushi-wok", "er"], ["nonnas-night-in", "gb"], ["taco-brava", "cs"], ["smash-shack", "fs"], ["oranje-snack", "bb"]];
-  function suggItem(b, i) {
+  function suggItem(b, i, opts) {
     return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(b + "|" + i.id) + '" aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price)) + '">' +
       '<span class="sugg__img">' + thumbImg(i, ' loading="lazy" decoding="async"') + "<i>" + ICON.plus + "</i></span>" +
-      '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
+      '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span>" +
+      (opts && opts.brand ? '<span class="sugg__b">' + esc(MENU[b].name) + "</span>" : "") + "</button>";
   }
   function suggestions() {
     var lines = liveLines(), brands = brandsInCart();
@@ -849,7 +850,7 @@
     if (other.length) {
       out += '<section class="sugg sugg--x" aria-label="' + esc(tr("From our other restaurants")) + '"><h3>' + esc(tr("From our other restaurants")) +
         (S().mode === "delivery" ? " <span>" + esc(tr("Still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</span>" : "") + "</h3>" +
-        '<div class="sugg__row">' + other.map(function (c) { return suggItem(c[0], MENU[c[0]].byId[c[1]]); }).join("") + "</div></section>";
+        '<div class="sugg__row">' + other.map(function (c) { return suggItem(c[0], MENU[c[0]].byId[c[1]], { brand: true }); }).join("") + "</div></section>";
     }
     return out;
   }
@@ -956,7 +957,8 @@
       "<div><dt>" + esc(tr(s.mode === "delivery" ? "Delivery" : "Pickup")) + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : esc(tr("Free"))) + "</dd></div>" +
       '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
     html += '<details class="ticket"><summary>' + esc(tr("Preview the message")) + "</summary><pre>" + esc(buildMessage()) + "</pre></details>";
-    html += '<p class="order__hint">' + esc(payLine()) + tr("Opens WhatsApp with your order typed out. Press <b>Send</b> there.") + "</p>" +
+    html += '<p class="order__hint">' + esc(payLine()) + tr("Opens WhatsApp with your order typed out. Press <b>Send</b> there.") +
+      (SITE.whatsapp ? " " + esc(tr("It goes to our kitchen\u2019s WhatsApp, {number}.", { number: waNumber() })) : "") + "</p>" +
       '<button type="button" class="link" data-copy>' + esc(tr("Copy the order instead")) + "</button>" +
       '<div class="order__send"><a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
       '<span class="lg">' + esc(tr("Send on WhatsApp")) + '</span><span class="sm">' + esc(tr("Send order")) + '</span><span class="btn__total">' + money(total()) + "</span></a></div>";
@@ -1067,6 +1069,9 @@
     $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
     $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I’m in "); });
     setHTML("[data-oa-how]", howSteps());
+    var ar = SITE.areas || [];
+    setHTML("[data-oa-facts]", [SITE.eta ? tr("Delivery in {eta}", { eta: SITE.eta }) : "", ar.length > 1 ? tr("{from} to {to}", { from: ar[0], to: ar[ar.length - 1] }) : ar.join(""),
+      ""].filter(Boolean).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join(""));
     setHTML("[data-oa-how-note]", esc(howNote()));
     paintSign(false);
   }
@@ -1090,7 +1095,7 @@
       [tr("Send it on WhatsApp"), tr("WhatsApp opens with your order already written out. Just press send.")],
       [tr("We reply to confirm"), clean((SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
     ];
-    return steps.map(function (s) { return "<li><b>" + esc(s[0]) + "</b><span>" + esc(s[1]) + "</span></li>"; }).join("");
+    return steps.map(function (s) { return "<li><b>" + esc(s[0]) + ".</b> <span>" + esc(s[1]) + "</span></li>"; }).join("");
   }
   function howNote() {
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
@@ -1171,12 +1176,23 @@
     setAccent(menu.color);
     var main = $("#oa-main");
     var feat = menu.items.filter(function (i) { return i.style === "signature" || i.style === "bundle"; });
-    var featIds = feat.map(function (i) { return i.id; });
+    // one dish alone in a sideways rail leaves most of the first screen empty: then it just leads its section
+    var rail = feat.length >= 2 ? feat : [];
+    var railIds = rail.map(function (i) { return i.id; });
     var secs = menu.sections.map(function (s) {
-      return { id: s.id, title: s.title, items: menu.items.filter(function (i) { return i.section === s.id && featIds.indexOf(i.id) < 0; }) };
+      var items = menu.items.filter(function (i) { return i.section === s.id && railIds.indexOf(i.id) < 0; });
+      return { id: s.id, title: s.title, items: items.filter(function (i) { return i.style === "signature"; }).concat(items.filter(function (i) { return i.style !== "signature"; })) };
     }).filter(function (s) { return s.items.length; });
-    // cover: a dish that is not already in "Start here", real photo first
-    var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && featIds.indexOf(i.id) < 0; });
+    // without a rail, a section that only holds the house dish ("Signature") isn't a section: that dish leads the next one
+    secs = secs.reduce(function (out, s, n) {
+      var lead = out.carry || [];
+      if (!rail.length && s.items.every(function (i) { return i.style; }) && n < secs.length - 1) { out.carry = lead.concat(s.items); return out; }
+      out.list.push({ id: s.id, title: s.title, items: lead.concat(s.items) }); out.carry = null; return out;
+    }, { list: [], carry: null }).list;
+    // cover: not a featured dish and not one inside a bundle picture, so no dish shows twice on the first screen; real photo first
+    var featIds = feat.map(function (i) { return i.id; }), inside = [];
+    feat.forEach(function (i) { (i.includes || []).forEach(function (x) { inside.push(x); }); });
+    var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && featIds.indexOf(i.id) < 0 && inside.indexOf(i.id) < 0; });
     var pick = (menu.cover && menu.byId[menu.cover]) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0] || feat[0] || menu.items[0];
     var cover = pick.img;
     var html = '<div class="cover">' + coverMedia(menu, cover) + "</div>" +
@@ -1192,9 +1208,9 @@
         (status === "soon" ? '<p class="note note--warn">' + esc(tr("Opening soon. Ordering starts shortly.")) + "</p>" : "") +
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>";
-    if (feat.length) {
+    if (rail.length) {
       html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Start here")) + "</h2>" +
-        '<div class="rail rail--feat">' + feat.map(function (i) { return featHTML(b, i); }).join("") + "</div></section>";
+        '<div class="rail rail--feat">' + rail.map(function (i) { return featHTML(b, i); }).join("") + "</div></section>";
     }
     secs.forEach(function (s) {
       html += '<section class="sec" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' + esc(tr(s.title)) + "</h2>" +
@@ -1224,7 +1240,7 @@
 
     var nav = $("#oa-cats");
     if (nav) {
-      var tabs = (feat.length ? [{ id: "featured", title: "Start here" }] : []).concat(secs);
+      var tabs = (rail.length ? [{ id: "featured", title: "Start here" }] : []).concat(secs);
       nav.innerHTML = tabs.map(function (s, i) { return '<a href="#' + esc(s.id) + '" data-nav="' + esc(s.id) + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(tr(s.title)) + "</a>"; }).join("");
       if ("IntersectionObserver" in window) {
         var io = new IntersectionObserver(function (es) {
@@ -1293,18 +1309,16 @@
     var alt = others.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || others[0] || pool[0];
     return alt ? alt.img : m.items[0].img;
   }
-  /* one row per restaurant, like the index of a printed menu: a small picture, the name, what's on it, the price */
+  /* one row per restaurant, like the index of a printed menu: a small picture, the name, its own line, the price */
   function shopHTML(b, idx) {
     var m = MENU[b];
     if (!m) return "";
     var status = brandStatus(b), from = fromPrice(m);
     var img = heroImg(m), shown = m.items.filter(function (i) { return i.img === img; })[0] || m.items[0];
-    var dishes = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle" && !i.soldOut; })
-      .map(function (i) { return i.name; });
     return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
       '<span class="shop__media"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="' + esc(shown.name) + '" width="360" height="360" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
       '<span class="shop__txt"><span class="shop__top"><h3 class="shop__name">' + esc(m.name) + '</h3><span class="shop__c">' + esc(tr(m.cuisine)) + "</span></span>" +
-        '<span class="shop__dishes">' + esc(dishes.join(", ")) + "</span>" +
+        '<span class="shop__dishes">' + esc(m.tagline || "") + "</span>" +
         '<span class="shop__meta">' + (status !== "open" ? '<span class="shop__soon">' + esc(tr("Opening soon")) + "</span>"
           : from ? esc(tr("From {price}", { price: money(from) })) : "") + "</span></span></a>";
   }

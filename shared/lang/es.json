@@ -218,5 +218,8 @@
  "Last orders at {time}.": "Últimos pedidos a las {time}.",
  "Share this dish": "Comparte este plato",
  "Link copied": "Enlace copiado",
- "Questions? WhatsApp us on {number}.": "¿Preguntas? Escríbenos por WhatsApp al {number}."
+ "Questions? WhatsApp us on {number}.": "¿Preguntas? Escríbenos por WhatsApp al {number}.",
+ "Delivery in {eta}": "Entrega en {eta}",
+ "{from} to {to}": "De {from} a {to}",
+ "It goes to our kitchen’s WhatsApp, {number}.": "Va al WhatsApp de nuestra cocina, {number}."
 }

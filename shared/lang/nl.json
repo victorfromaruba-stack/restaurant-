@@ -218,5 +218,8 @@
  "Last orders at {time}.": "Laatste bestelling om {time}.",
  "Share this dish": "Deel dit gerecht",
  "Link copied": "Link gekopieerd",
- "Questions? WhatsApp us on {number}.": "Vragen? WhatsApp ons op {number}."
+ "Questions? WhatsApp us on {number}.": "Vragen? WhatsApp ons op {number}.",
+ "Delivery in {eta}": "Bezorging in {eta}",
+ "{from} to {to}": "Van {from} tot {to}",
+ "It goes to our kitchen’s WhatsApp, {number}.": "Het gaat naar de WhatsApp van onze keuken, {number}."
 }

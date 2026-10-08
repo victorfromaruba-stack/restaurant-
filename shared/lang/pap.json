@@ -218,5 +218,8 @@
  "Last orders at {time}.": "Ultimo orden na {time}.",
  "Share this dish": "Comparti e cuminda aki",
  "Link copied": "Link a wordo copia",
- "Questions? WhatsApp us on {number}.": "Pregunta? Manda nos un WhatsApp na {number}."
+ "Questions? WhatsApp us on {number}.": "Pregunta? Manda nos un WhatsApp na {number}.",
+ "Delivery in {eta}": "Entrega den {eta}",
+ "{from} to {to}": "Di {from} te {to}",
+ "It goes to our kitchen’s WhatsApp, {number}.": "E ta bai na e WhatsApp di nos cushina, {number}."
 }

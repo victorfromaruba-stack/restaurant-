@@ -73,7 +73,7 @@ body.past-name .top__title{opacity:1;transform:none}
 .store__tag{margin:8px 0 0;color:var(--haze);font-size:16px}
 .facts{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-wrap:wrap;align-items:center;row-gap:4px;color:var(--haze);font:600 15px/1.3 var(--font)}
 .facts li{display:flex;align-items:center;gap:7px}
-.facts li+li::before{content:"\00b7";margin:0 9px;color:var(--haze)}
+.facts li:not(:last-child)::after{content:"\00b7";margin:0 9px;color:var(--haze)}   /* a dot after, so a wrapped line never starts with one */
 .facts__status{color:var(--cream)}
 .facts__status i{width:8px;height:8px;border-radius:50%;background:var(--bad)}
 .facts__status.is-open i{background:var(--ok)}
@@ -125,7 +125,7 @@ body.past-name .top__title{opacity:1;transform:none}
 .feat.is-out .feat__meta span:last-child{color:var(--bad);font-weight:700}
 
 /* drinks: three cans */
-.cans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-top:8px}
+.cans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-top:8px;align-items:start}
 .cans .row{grid-template-columns:minmax(0,1fr);grid-template-areas:"media" "text";gap:8px;padding:0;border:0}
 .cans .row__text{grid-area:text}
 .cans .row__media{grid-area:media;width:100%;height:auto;aspect-ratio:1}
@@ -185,7 +185,7 @@ body.past-name .top__title{opacity:1;transform:none}
   .plus.pop,.bag.bump,.bar__btn.bump{animation:none}
 }
 .sheet__head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;margin:0 -20px;padding:16px 16px 12px 20px;background:var(--night-2)}
-.sheet__head h2{font-size:28px;font-weight:900;font-stretch:68%;text-transform:uppercase}
+.sheet__head h2{font-size:24px;font-weight:900;font-stretch:75%}
 .x{width:42px;height:42px;border:0;border-radius:50%;background:var(--night-3);color:var(--cream);display:grid;place-items:center;flex:none}
 .x svg{width:20px;height:20px}
 .x--float{position:absolute;top:12px;right:12px;z-index:3;background:rgba(11,29,58,.82)}
@@ -240,7 +240,8 @@ body.past-name .top__title{opacity:1;transform:none}
 .sugg{margin:20px 0 4px}
 .sugg h3{font-size:16px;font-weight:800;margin-bottom:10px}
 .sugg--x h3 span{display:block;margin-top:3px;font:600 13.5px/1.3 var(--font);color:var(--haze)}
-.sugg__row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.sugg__row{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:0 16px 6px;scroll-padding-inline:16px;scrollbar-width:none}
+.oa-sheet .sugg__row{margin:0 -20px;padding:0 20px 6px;scroll-padding-inline:20px}
 .sugg__row::-webkit-scrollbar{display:none}
 .sugg__i{flex:none;width:112px;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:0;border:0;background:none;text-align:left}
 .sugg__img{position:relative;display:block}
@@ -250,6 +251,7 @@ body.past-name .top__title{opacity:1;transform:none}
 .sugg__img svg{width:16px;height:16px}
 .sugg__n{font:700 13.5px/1.25 var(--font)}
 .sugg__p{font:600 13.5px/1 var(--font);color:var(--haze)}
+.sugg__b{font-size:12.5px;line-height:1.2;color:var(--haze);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .form{margin-top:20px;display:flex;flex-direction:column;gap:18px}
 .seg{border:0;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .seg label{position:relative}
@@ -288,7 +290,7 @@ body.past-name .top__title{opacity:1;transform:none}
 .order--page .order__send{margin:12px -16px 0;padding:12px 16px calc(12px + var(--safe-b));background:linear-gradient(to top,var(--night) 78%,transparent)}
 .order__send .btn{justify-content:flex-start}
 .order__send .sm{display:none}
-@media (max-width:359px){.order__send .lg{display:none}.order__send .sm{display:inline}}
+@media (max-width:359px){.order__send .btn{font-size:15.5px;gap:8px;padding-left:14px;padding-right:14px}}
 .empty{padding:28px 4px 12px;text-align:center}
 .empty p{margin:0 auto 18px;color:var(--haze)}
 .empty .empty__t{font:900 26px/1.1 var(--font);font-stretch:70%;text-transform:uppercase;color:var(--cream);margin-bottom:6px}
@@ -306,7 +308,7 @@ body.past-name .top__title{opacity:1;transform:none}
 .dl__areas legend{font:800 15px/1.2 var(--font);margin-bottom:10px;padding:0}
 
 /* toast, in-app browser note, loading */
-.oa-toast{position:fixed;left:50%;top:calc(68px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:80;max-width:calc(100% - 32px);padding:12px 16px;border-radius:12px;background:var(--cream);color:var(--night);font:700 14.5px/1.35 var(--font);box-shadow:0 10px 24px rgba(0,0,0,.4);text-align:center}
+.oa-toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:80;max-width:calc(100% - 32px);padding:12px 16px;border-radius:12px;background:var(--cream);color:var(--night);font:700 14.5px/1.35 var(--font);box-shadow:0 10px 24px rgba(0,0,0,.4);text-align:center}
 .iab{display:flex;align-items:center;gap:12px;margin:12px 16px 0;padding:6px 6px 6px 14px;border-radius:var(--r-sm);background:var(--warn-bg);color:var(--warn-ink);font-size:14px;line-height:1.4}
 .iab p{flex:1;min-width:0;margin:0}
 .iab .link{flex:none;margin:0;min-height:44px;padding:0 10px;color:var(--warn-ink)}
@@ -356,11 +358,9 @@ body[data-page="brand"] .top__in{max-width:720px}
 
 /* how ordering works: three steps, then the plain facts */
 .how{margin-top:10px}
-.how__steps{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:14px;counter-reset:how}
-.how__steps li{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:12px;counter-increment:how}
-.how__steps li::before{content:counter(how);grid-row:span 2;width:40px;height:40px;border-radius:50%;background:var(--night-3);color:var(--cream);display:grid;place-items:center;font:900 22px/1 var(--font);font-stretch:70%}
-.how__steps b{font-size:17px;line-height:1.25;padding-top:2px}
-.how__steps span{color:var(--haze);font-size:15px;line-height:1.4}
+.how__steps{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
+.how__steps li{font-size:15.5px;line-height:1.45;color:var(--haze)}
+.how__steps b{color:var(--cream);font-weight:700}
 .how__note{margin:20px 0 0;color:var(--haze);font-size:14.5px;line-height:1.5}
 .how .areas{margin:10px 0 0}
 .how__note,.how .areas{max-width:68ch}
@@ -369,5 +369,4 @@ body[data-page="brand"] .top__in{max-width:720px}
 .areas a::after{content:"";position:absolute;inset:-15px -8px}
 @media (min-width:760px){
   .shops{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px}
-  .how__steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
 }

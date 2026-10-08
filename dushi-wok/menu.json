@@ -329,5 +329,6 @@
  "video": {
   "src": "dushi-wok/video/cover.mp4",
   "poster": "dushi-wok/video/cover.webp"
- }
+ },
+ "cover": "pk"
 }

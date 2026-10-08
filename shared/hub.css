@@ -5,6 +5,10 @@
 .hero h1{font-size:44px;line-height:.95;font-weight:900;font-stretch:62%;text-transform:uppercase;letter-spacing:-.005em;white-space:nowrap}
 .hero__sub{margin:0;font-size:17px;line-height:1.35;color:var(--haze)}
 .hero__sub b{color:var(--cream)}
+.hero__facts{margin:-4px 0 0;font-size:14.5px}
+.hero{grid-template-columns:minmax(0,1fr)}
+/* smallest phones while closed: "Opens tonight 10 PM" goes on two lines instead of pushing the page sideways */
+@media (max-width:359px){.hero h1{font-size:38px}.sign span{white-space:normal;text-align:center;max-width:104px}}
 
 /* the OPEN sign: the one glowing thing on the page */
 .sign{flex:none;display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px 7px;border:2px solid #40557A;border-radius:9px;color:#8FA0BF;text-transform:uppercase}
@@ -30,7 +34,7 @@
 .results__n{margin:8px 0 0;color:var(--haze);font:700 14px/1 var(--font)}
 .results__none{margin:20px 0 0;color:var(--haze);font-size:16px}
 .chips--suggest{margin-top:12px}
-.chip--btn{min-height:44px;padding:0 16px;border:0;border-radius:999px;background:var(--night-3);color:var(--cream);font:600 15px/1.1 var(--font)}
+.chip--btn{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:var(--night-3);color:var(--cream);font:600 15px/1.1 var(--font)}
 .chip--btn:hover{background:var(--rule)}
 
 /* the five restaurants in one row, right under the search */

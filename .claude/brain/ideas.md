@@ -7,12 +7,14 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
+- [ ] M · S · Plainer dish names ("Smash burger combo (burger + fries)", "Fries (side)", "Penne arrabbiata (vegetarian)" read like a till export). Names feed the WhatsApp ticket and the chef app's matching (kitchen-data.json, and Victor's private builder), so ask Victor first (needs Victor) · done when: new names on site, tickets and chef app agree and qa passes
 - [ ] H · S · On Victor's VPS copy only: add the 8 Oct allergens (tenders milk; fried rice, lo mein, Family Table sesame; lo mein, pork stir-fry, Family Table shellfish; bitterballen mustard; chips gluten) to the private kitchen-data builder in ops/kitchen/_build/, so a rebuild keeps them (needs Victor's server) · done when: a rebuilt kitchen-data.json still passes qa/check_site.py
 - [ ] H · S · Smash Shack: the cheeseburger under "Start here" is still a generated shot with a thick patty. Needs a real photo (needs Victor)
 - [ ] H · L · Real photos, signatures first (needs Victor) · done when: the five signature dishes are real photos
 - [ ] M · M · Chef app: send cash sales to Book Keeper at Close up (Book Keeper's /api/intake/sales is live; only orders paid cash, same date the order was placed, never bank transfers) · done when: a test order sent twice shows once in Book Keeper
 
 ## Shipped
+- [x] 2026-10-08 · H · M · From a fresh-eyes review: restaurant pages open on the menu (no one-card rail), Dushi cover pk (no dish twice), home facts line, rows show the tagline, cart says where the order goes, plain steps, no rail stickers, sentence-case sheet titles, toast at the bottom, stray dots, chip centring, add-ons name their restaurant, pre-order line in the customer's voice
 - [x] 2026-10-08 · M · S · Unused menu.json fields kicker/headline removed (intro stays: it's Google's description); chef app Menu screens fixed at 320px (long names wrap)
 - [x] 2026-10-08 · M · M · Share a dish: share button on the dish sheet, links like taco-brava/#d=bt open the dish (checked in qa/check_site.py)
 - [x] 2026-10-08 · H · M · Home: "How ordering works" (WhatsApp, we confirm, pay cash or transfer) replaces the three-column basics strip; restaurants as compact rows with dish names (home a fifth shorter)
