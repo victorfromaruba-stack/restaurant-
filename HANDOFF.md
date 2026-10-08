@@ -46,8 +46,7 @@ One commit per step on `audit-fixes`; `qa/check_site.py` reports 0 problems. Vic
 | 9 | Google listing | Done: `build/seo.py` writes the JSON-LD, `sitemap.xml`, `robots.txt`. robots.txt only works once there's an own domain. A Google Business Profile is the way onto Maps. |
 
 ## Still waiting on Victor
-- How customers pay → `"payment"` in site.json (shown above Send). Don't guess.
-- Last-orders time → `"lastOrder"` in site.json (e.g. `"01:30"`). Don't guess.
+- Answered 8 Oct: payment "cash or bank transfer" and last orders 1:30 AM are set in site.json; frikandel has pork (flag stays); videos approved at top quality (Veo 3.1 standard).
 - Papiamento corrections → `shared/lang/pap.json`.
 - Videos: go-ahead on the cost (below).
 - Merge `audit-fixes` into `main` only when he says so.

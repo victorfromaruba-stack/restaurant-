@@ -490,7 +490,7 @@
     return out.join("\n");
   }
   /* how to pay: site.json "payment", e.g. "Pay the driver in cash (florin or US$) or by card." Empty = say nothing. */
-  function payLine() { return SITE.payment ? clean(SITE.payment) + " " : ""; }
+  function payLine() { return SITE.payment ? clean(tr(SITE.payment)) + " " : ""; }
   function waLink(text) { return "https://wa.me/" + SITE.whatsapp + "?text=" + encodeURIComponent(text); }
   function checkoutLink() {
     var full = buildMessage(), u = waLink(full);
@@ -1043,7 +1043,7 @@
     $$("[data-oa-hours]").forEach(function (n) { n.textContent = hoursLabel(); });
     $$("[data-oa-hours-t]").forEach(function (n) { n.textContent = hs.t; });
     $$("[data-oa-hours-d]").forEach(function (n) { n.textContent = hs.d + (SITE.lastOrder ? " · " + tr("last orders {time}", { time: clock(mins(SITE.lastOrder)) }) : ""); });
-    $$("[data-oa-pay]").forEach(function (n) { n.textContent = clean(SITE.payment || ""); n.hidden = !SITE.payment; });
+    $$("[data-oa-pay]").forEach(function (n) { n.textContent = SITE.payment ? clean(tr(SITE.payment)) : ""; n.hidden = !SITE.payment; });
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     $$("[data-oa-fee-t]").forEach(function (n) { n.textContent = tr(n.getAttribute("data-oa-fee-t"), { fee: shortMoney(SITE.deliveryFee) }); });
     setHTML("[data-oa-hero]", esc(tr("Five restaurants. One kitchen.")) + " <b>" + esc(tr("One {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");

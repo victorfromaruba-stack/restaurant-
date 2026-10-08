@@ -41,6 +41,7 @@ def keys():
     for one, many in re.findall(r'plural\([^,]+,\s*"([^"]+)",\s*"([^"]+)"\)', js): add(one); add(many)
     # menu words shown through tr(): section titles, cuisines, picture note
     site = json.load(open(os.path.join(ROOT, "shared/site.json"), encoding="utf-8"))
+    add(site.get("payment"))
     for b in site["brands"]:
         m = json.load(open(os.path.join(ROOT, b["id"], "menu.json"), encoding="utf-8"))
         add(m["cuisine"]); add(m.get("imageNote"))

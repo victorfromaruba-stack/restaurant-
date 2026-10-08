@@ -3,21 +3,21 @@
  "samples": [
   {
    "case": "single brand, delivery, modifiers",
-   "message": "*Dushi Wok order* #0427-MG\nDelivery · Noord\nTime: 10:30 PM\nPre-order — sent while we were closed\n\n2 × Chicken fried rice — ƒ25.90\n   No onion · No egg\n1 × Sweet & sour crunch chicken with rice — ƒ16.00\n   Sauce: On the side\n1 × Coca-Cola (can) — ƒ3.00\n\nSubtotal ƒ44.90\nDelivery ƒ5.00\n*Total ƒ49.90*\n\nName: Ana\nAddress: Palm Beach 12, blue gate\nNote: no peanuts please",
+   "message": "*Dushi Wok order* #0433-GL\nDelivery · Noord\nTime: 10:30 PM\nPre-order — sent while we were closed\n\n2 × Chicken fried rice — ƒ25.90\n   No onion · No egg\n1 × Sweet & sour crunch chicken with rice — ƒ16.00\n   Sauce: On the side\n1 × Coca-Cola (can) — ƒ3.00\n\nSubtotal ƒ44.90\nDelivery ƒ5.00\n*Total ƒ49.90*\n\nName: Ana\nAddress: Palm Beach 12, blue gate\nNote: no peanuts please",
    "subtotal_cents": 4490,
    "fee_cents": 500,
    "total_cents": 4990
   },
   {
    "case": "three restaurants, delivery, all three cans",
-   "message": "*Kitchen order* #0427-DJ · 3 restaurants\nDelivery · Oranjestad\nTime: 10:30 PM\nPre-order — sent while we were closed\n\n*Dushi Wok*\n1 × Family Table — ƒ42.50\n   Includes: Chicken fried rice, Sweet & sour crunch chicken with rice, Chicken lo mein\n*Taco Brava*\n1 × Birria tacos (3) with consommé — ƒ27.00\n*Oranje Snack*\n2 × Bitterballen (8) — ƒ25.90\n   Dip: Mustard\n*Drinks*\n1 × Coca-Cola (can) — ƒ3.00\n1 × Coca-Cola Zero (can) — ƒ3.00\n2 × Sprite (can) — ƒ6.00\n\nSubtotal ƒ107.40\nDelivery ƒ5.00\n*Total ƒ112.40*\n\nName: Ben\nAddress: Caya G.F. Betico Croes 10",
+   "message": "*Kitchen order* #0433-E4 · 3 restaurants\nDelivery · Oranjestad\nTime: 10:30 PM\nPre-order — sent while we were closed\n\n*Dushi Wok*\n1 × Family Table — ƒ42.50\n   Includes: Chicken fried rice, Sweet & sour crunch chicken with rice, Chicken lo mein\n*Taco Brava*\n1 × Birria tacos (3) with consommé — ƒ27.00\n*Oranje Snack*\n2 × Bitterballen (8) — ƒ25.90\n   Dip: Mustard\n*Drinks*\n1 × Coca-Cola (can) — ƒ3.00\n1 × Coca-Cola Zero (can) — ƒ3.00\n2 × Sprite (can) — ƒ6.00\n\nSubtotal ƒ107.40\nDelivery ƒ5.00\n*Total ƒ112.40*\n\nName: Ben\nAddress: Caya G.F. Betico Croes 10",
    "subtotal_cents": 10740,
    "fee_cents": 500,
    "total_cents": 11240
   },
   {
    "case": "pickup, burgers + Italian",
-   "message": "*Kitchen order* #0427-LH · 2 restaurants\nPickup\nTime: 10:30 PM\nPre-order — sent while we were closed\n\n*Smash Shack*\n1 × Smash cheeseburger — ƒ16.95\n   No onion · No pickles\n2 × Fries (side) — ƒ5.00\n*Nonna’s Night In*\n1 × Penne arrabbiata (vegetarian) — ƒ16.95\n   Heat: Extra spicy\n\nSubtotal ƒ38.90\nPickup ƒ0.00\n*Total ƒ38.90*\n\nName: Carla\nNote: extra napkins",
+   "message": "*Kitchen order* #0433-DM · 2 restaurants\nPickup\nTime: 10:30 PM\nPre-order — sent while we were closed\n\n*Smash Shack*\n1 × Smash cheeseburger — ƒ16.95\n   No onion · No pickles\n2 × Fries (side) — ƒ5.00\n*Nonna’s Night In*\n1 × Penne arrabbiata (vegetarian) — ƒ16.95\n   Heat: Extra spicy\n\nSubtotal ƒ38.90\nPickup ƒ0.00\n*Total ƒ38.90*\n\nName: Carla\nNote: extra napkins",
    "subtotal_cents": 3890,
    "fee_cents": 0,
    "total_cents": 3890

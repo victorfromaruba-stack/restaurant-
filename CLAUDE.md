@@ -45,6 +45,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - Open every night 10 PM to 2 AM (hours cross midnight; site.json uses `["22:00","02:00"]`).
 - Delivery area: Santa Cruz to Noord (Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera, Santa Cruz). Other areas: customer asks on WhatsApp.
 - Usual delivery time 35–50 min.
+- Last orders 1:30 AM (`"lastOrder": "01:30"`). Customers pay in cash or by bank transfer (`payment`). Frikandel contains pork (keep the flag).
 
 ## Rules (keep these)
 - Delivery is a flat ƒ5, charged once per order even across restaurants. Pickup is free.
@@ -60,7 +61,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 ## Still open
 - Real kitchen photos one day: every dish picture is an illustration for now (menus say "Pictures are illustrations."). Keep the same file path or update `img` in menu.json, then run `build/thumbs.py`.
 - The three cans are still drawings: photograph the real cans (don't generate brand logos).
-- Victor still has to give: how customers pay (`payment`), the last-orders time (`lastOrder`), and his check of the Papiamento.
+- Victor still has to check the Papiamento (`shared/lang/pap.json`).
 - Own domain (e.g. a .com pointed at GitHub Pages) when Victor wants one.
 
 ## Run locally
