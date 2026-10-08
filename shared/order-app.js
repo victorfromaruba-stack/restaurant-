@@ -10,6 +10,7 @@
   var PAGE = BODY.getAttribute("data-page") || "hub";
   var HERE = BODY.getAttribute("data-brand") || null;
   var KEY = "orderaruba.cart.v2";
+  var LAST_KEY = "orderaruba.last.v1";
   var OLD_KEY = "brandhub.crosscart.v1";
   var OLD_NAMES = { "Dushi Wok": "dushi-wok", "Taco Brava": "taco-brava", "Smash Shack": "smash-shack",
     "Nonna's Night In": "nonnas-night-in", "Nonna’s Night In": "nonnas-night-in", "Oranje Snack": "oranje-snack" };
@@ -289,6 +290,31 @@
     commit();
   }
 
+  /* ---------------------------------------------------------------- order time: as soon as possible, or a slot tonight */
+  function timeSlots() {
+    var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
+    var st = kitchenStatus(), win = null, prefix = "";
+    var y = windowFor(d - 1);
+    if (y && y.c > 1440 && now < y.c - 1440) win = { o: now, c: y.c - 1440 };
+    else {
+      var w = windowFor(d);
+      if (w && now < w.c) win = w;
+      else { var n = windowFor(d + 1); if (n) { win = { o: n.o + 1440, c: n.c + 1440 }; prefix = "Tomorrow "; } }
+    }
+    var slots = [];
+    if (win) {
+      var start = Math.max(win.o + 30, now + 45);
+      start = Math.ceil(start / 15) * 15;
+      for (var m = start; m <= win.c; m += 15) slots.push(prefix + fmtTime(m % 1440));
+    }
+    return { asap: st.open, slots: slots };
+  }
+  function validWhen() {
+    var s = S(), ts = timeSlots();
+    if (s.when && ts.slots.indexOf(s.when) >= 0) return s.when;
+    return ts.asap ? "" : (ts.slots[0] || "");
+  }
+
   /* ---------------------------------------------------------------- WhatsApp ticket */
   function buildMessage() {
     var s = S(), lines = liveLines(), brands = brandsInCart(), out = [];
@@ -296,6 +322,7 @@
     if (brands.length === 1) out.push("*" + brandName(brands[0]) + " order* " + no);
     else out.push("*Kitchen order* " + no + " · " + brands.length + " restaurants");
     out.push(s.mode === "delivery" ? "Delivery · " + (s.area || "area not set") : "Pickup");
+    out.push("Time: " + (validWhen() || "As soon as possible"));
     if (!kitchenStatus().open) out.push("Pre-order — sent while we were closed");
     out.push("");
     brands.forEach(function (b) {
@@ -448,6 +475,7 @@
       '<p class="feat__meta"><span>' + money(item.price) + "</span>" + (tag ? "<span>" + esc(tag) + "</span>" : "") + "</p></article>";
   }
   function repaintCards() {
+    if (PAGE === "hub" && typeof paintAgain === "function" && MENU && Object.keys(MENU).length) paintAgain();
     $$("[data-b][data-id]").forEach(function (c) {
       var n = itemCount(c.getAttribute("data-b"), c.getAttribute("data-id"));
       var badge = $(".qtybadge", c);
@@ -487,6 +515,12 @@
             "<span>" + esc(c.label) + (c.price ? " +" + shortMoney(c.price) : "") + "</span></label>";
         }).join("") + "</div></fieldset>";
     }).join("");
+    var pairs = (item.kind === "side" || item.kind === "drink") ? [] :
+      menu.items.filter(function (i) { return (i.kind === "side" || i.kind === "drink") && !i.soldOut; }).slice(0, 5);
+    var pairHTML = pairs.length && orderable ? '<fieldset class="opt"><legend>Goes well with <span>optional</span></legend><div class="chips">' +
+      pairs.map(function (i) {
+        return '<label class="chip"><input type="checkbox" name="pair" value="' + esc(i.id) + '"><span>' + esc(i.name.replace(/ \(can\)$/, "")) + " +" + shortMoney(i.price) + "</span></label>";
+      }).join("") + "</div></fieldset>" : "";
     var inc = item.includes ? '<ul class="dish__inc">' + includesNames(menu, item).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "";
     var node = el(
       '<div class="dish' + (item.kind === "drink" ? " dish--drink" : "") + '" style="--accent:' + esc(menu.color) + ";--accent-ink:" + inkFor(menu.color) + '">' +
@@ -499,13 +533,16 @@
           '<p class="dish__desc">' + esc(item.desc) + "</p>" + inc +
           (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
           (allergenLine(item) ? '<p class="dish__allergens">' + esc(allergenLine(item)) + " Allergies? Add a note at checkout.</p>" : "") +
-          groups +
+          groups + pairHTML +
         "</div>" +
         '<div class="dish__foot">' +
           '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="One less">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="One more">' + ICON.plus + "</button></div>" +
           '<button type="button" class="btn btn--accent dish__add" data-autofocus' + (orderable ? "" : " disabled") + "></button>" +
         "</div>" +
       "</div>");
+    function pickedPairs() {
+      return $$('input[name="pair"]', node).filter(function (i) { return i.checked; }).map(function (i) { return menu.byId[i.value]; }).filter(Boolean);
+    }
     function readOpts() {
       var out = {};
       (item.options || []).forEach(function (g) {
@@ -520,7 +557,7 @@
       $(".qty__n", node).textContent = qty;
       var btn = $(".dish__add", node);
       if (!orderable) btn.textContent = item.soldOut ? "Sold out today" : "Opening soon";
-      else btn.innerHTML = "<span>Add " + qty + "</span><span>" + money(unitPrice(item, o) * qty) + "</span>";
+      else btn.innerHTML = "<span>Add " + qty + "</span><span>" + money(unitPrice(item, o) * qty + pickedPairs().reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
     }
     node.addEventListener("change", paint);
     node.addEventListener("click", function (e) {
@@ -530,9 +567,11 @@
     var rec = openSheet(node, { label: item.name, cls: "sheet__panel--dish" });
     $(".dish__add", node).addEventListener("click", function () {
       if (!orderable) return;
+      var extra = pickedPairs();
       addItem(b, id, readOpts(), qty);
+      extra.forEach(function (i) { addItem(b, i.id, {}, 1); });
       closeSheet(rec);
-      toast(qty + " × " + item.name + " added");
+      toast(qty + " × " + item.name + (extra.length ? " + " + plural(extra.length, "extra", "extras") : "") + " added");
     });
     paint();
   }
@@ -674,6 +713,10 @@
         '<label><input type="radio" name="oa-mode" value="delivery"' + (s.mode === "delivery" ? " checked" : "") + "><span><b>Delivery</b><small>" + shortMoney(SITE.deliveryFee) + " per order</small></span></label>" +
         '<label><input type="radio" name="oa-mode" value="pickup"' + (s.mode === "pickup" ? " checked" : "") + "><span><b>Pickup</b><small>Free</small></span></label>" +
       "</fieldset>";
+    var ts = timeSlots(), when = validWhen();
+    var whenOpts = (ts.asap ? ['<option value=""' + (when === "" ? " selected" : "") + ">As soon as possible (" + esc(SITE.eta || "") + ")</option>"] : [])
+      .concat(ts.slots.map(function (x) { return '<option value="' + esc(x) + '"' + (x === when ? " selected" : "") + ">" + esc(x) + "</option>"; }));
+    html += '<label class="field"><span class="field__l">' + (ts.asap ? "When" : "Tonight at") + '</span><span class="select"><select id="oa-when" data-f="when">' + whenOpts.join("") + "</select></span></label>";
     if (s.mode === "delivery") {
       html += '<fieldset class="field field--areas" id="oa-f-area"><legend>Area</legend><div class="chips">' +
         areas.map(function (a) {
@@ -739,6 +782,9 @@
       var link = checkoutLink();
       a.href = link.url;
       if (link.short) copyText(link.full).then(function (ok) { toast(ok ? "Long order: it’s copied. Paste it in the chat." : "Tap “Copy the order” and paste it in WhatsApp."); });
+      if (!S().sentAt) {
+        try { localStorage.setItem(LAST_KEY, JSON.stringify({ at: Date.now(), lines: liveLines().map(function (l) { return { b: l.b, id: l.id, q: l.q, o: l.o }; }) })); } catch (err) { /* private mode */ }
+      }
       setTimeout(function () { var s = S(); s.sentAt = Date.now(); commit(); }, 400);
     });
   }
@@ -934,6 +980,32 @@
     input.addEventListener("input", function () { clearTimeout(t); t = setTimeout(run, 90); });
     input.addEventListener("search", run);
   }
+  function lastOrder() {
+    try {
+      var l = JSON.parse(localStorage.getItem(LAST_KEY));
+      if (!l || !Array.isArray(l.lines) || Date.now() - l.at > 60 * 864e5) return null;
+      var lines = l.lines.filter(function (x) { var m = MENU[x.b], i = m && m.byId[x.id]; return i && !i.soldOut && brandStatus(x.b) === "open"; });
+      return lines.length ? lines : null;
+    } catch (e) { return null; }
+  }
+  function paintAgain() {
+    var box = $("#oa-again");
+    if (!box) return;
+    var lines = liveLines().length ? null : lastOrder();
+    if (!lines) { box.hidden = true; return; }
+    var sum = lines.reduce(function (t, x) { var i = MENU[x.b].byId[x.id]; return t + unitPrice(i, normOpts(i, x.o || {})) * x.q; }, 0);
+    var names = lines.map(function (x) { return x.q + " \u00d7 " + MENU[x.b].byId[x.id].name; });
+    var pic = MENU[lines[0].b].byId[lines[0].id].img;
+    box.innerHTML = '<div class="again__card"><img src="' + esc(path(pic)) + '" alt="" width="780" height="446" loading="lazy">' +
+      '<div class="again__body"><h2 class="again__t">Order again</h2><p class="again__items">' + esc(names.join(", ")) + "</p>" +
+      '<button type="button" class="btn btn--accent again__btn" data-again><span>Add all</span><span>' + money(sum) + "</span></button></div></div>";
+    box.hidden = false;
+    $("[data-again]", box).addEventListener("click", function () {
+      lines.forEach(function (x) { addItem(x.b, x.id, x.o || {}, x.q); });
+      toast("Your last order is in the bag");
+      box.hidden = true;
+    });
+  }
   function renderHub() {
     var ids = brandList(false);
     paintSign(true);
@@ -951,6 +1023,7 @@
       }
       if (list) list.innerHTML = ids.map(shopHTML).join("");
       setupSearch(ids);
+      paintAgain();
     });
   }
 

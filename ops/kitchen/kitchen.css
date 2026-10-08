@@ -169,6 +169,8 @@ h2 { font-size: 26px; line-height: 1.1; margin: 28px 0 10px; font-weight: 900; f
 /* ---------- the order ticket ---------- */
 .ohead { background: var(--paper); color: var(--ink); padding: 16px 18px 18px; border-bottom: 3px dashed #C9C2B2; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
 .ohead .mode { font-size: 34px; font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: .01em; }
+.ohead .when { margin-top: 8px; font-size: 22px; font-weight: 900; }
+.ohead .when--set { display: inline-block; background: var(--sodium); color: var(--ink); padding: 4px 10px; }
 .ohead .who { font-size: 21px; font-weight: 800; margin-top: 8px; }
 .ohead .addr { font-size: 18px; color: #4A4A4A; margin-top: 2px; }
 .badge { display: inline-block; font-size: 15px; font-weight: 900; padding: 5px 10px; border-radius: 4px; background: var(--sodium); color: var(--ink); text-transform: uppercase; letter-spacing: .04em; margin: 8px 6px 0 0; }
@@ -191,6 +193,12 @@ h2 { font-size: 26px; line-height: 1.1; margin: 28px 0 10px; font-weight: 900; f
 .item.drink .box { flex: 0 0 auto; }
 .item.unknown { border-bottom-style: dashed; border-bottom-color: var(--orange); }
 .other-lines { margin-top: 18px; padding: 12px 14px; background: var(--paper); color: var(--ink); font: 15px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre-wrap; }
+
+/* ---------- quick replies ---------- */
+.replies { display: grid; gap: 10px; }
+.reply { display: block; padding: 14px 16px; border-radius: 12px; background: var(--night-2); border-left: 6px solid var(--go); }
+.reply b { display: block; font-size: 20px; font-weight: 900; font-stretch: 75%; text-transform: uppercase; letter-spacing: .02em; }
+.reply span { display: block; margin-top: 4px; font-size: 16px; color: var(--haze); line-height: 1.4; }
 
 /* ---------- step cards ---------- */
 .banner { border-radius: 4px; padding: 10px 14px; margin-bottom: 10px; font-weight: 900; font-size: 22px; line-height: 1.2; }

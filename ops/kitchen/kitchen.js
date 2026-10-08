@@ -172,9 +172,10 @@
       if (!line) { last = null; return; }
       var bare = stripMarks(line), m;
       if (!bare) return;
-      if ((m = /^(name|customer|address|addr|note|notes|comment|phone|tel|mobile)\s*:\s*(.*)$/i.exec(bare))) {
+      if ((m = /^(name|customer|address|addr|note|notes|comment|phone|tel|mobile|time|when)\s*:\s*(.*)$/i.exec(bare))) {
         var f = m[1].toLowerCase(), v = m[2].trim();
-        if (/^(name|customer)$/.test(f)) o.name = v;
+        if (/^(time|when)$/.test(f)) o.time = v;
+        else if (/^(name|customer)$/.test(f)) o.name = v;
         else if (/^addr/.test(f)) o.address = v;
         else if (/^(note|notes|comment)$/.test(f)) o.note = v;
         else o.phone = v;
@@ -194,6 +195,7 @@
       }
       var br = matchBrand(bare);
       if (br) { cur = br.id; last = null; if (!o.title) o.title = br.name; return; }
+      if (/^total\b/i.test(bare)) { var tm = /ƒ\s*([\d.,]+)/.exec(bare); if (tm) o.total = tm[1]; }
       if (/^(sub\s*-?\s*total|total|delivery fee|service|tip|discount|fee)\b/i.test(bare)) {
         if (/^delivery fee/i.test(bare)) sawFee = true;
         last = null; return;
@@ -745,6 +747,7 @@
       unknown.forEach(function (idx) { h += itemRow(o, idx); });
     }
     if (o.other && o.other.length) h += '<div class="other-lines"><b>Other lines in the message:</b>\n' + esc(o.other.join('\n')) + '</div>';
+    h += replyBlock(o);
     h += '<div class="row-btns" style="margin-top:26px"><button class="btn warn" data-act="delorder" data-id="' + o.id + '">Delete this order</button></div>';
     h += '</div></div>';
     main.innerHTML = h;
@@ -752,8 +755,38 @@
       ? '<button class="navbtn done" data-act="goready" data-id="' + o.id + '">Order ready ›</button>'
       : '';
   }
+  /* Ready-made WhatsApp replies for the customer. Tap one: it is copied and WhatsApp opens to pick the chat. */
+  function replyTexts(o) {
+    var no = o.no ? 'Order #' + o.no : 'Your order';
+    var hi = 'Danki' + (o.name ? ', ' + o.name : '') + '! ';
+    var timed = o.time && !/possible|asap/i.test(o.time);
+    var pickup = o.mode === 'Pickup';
+    var total = o.total ? ' Total \u0192' + o.total + '.' : '';
+    return [
+      { k: 'Confirm', t: hi + no + (timed ? ' is booked for ' + o.time + '.' : ' is confirmed.') +
+          (pickup ? ' We\u2019ll message you when it\u2019s ready for pickup.' : timed ? '' : ' It\u2019s with you in about 35\u201350 min.') + total },
+      { k: pickup ? 'Ready for pickup' : 'On the way', t: pickup ? no + ' is ready for pickup. See you soon!' : no + ' is on the way. See you in a few minutes!' },
+      { k: 'Sold out', t: 'Sorry, one dish in ' + no.toLowerCase().replace('your order', 'your order') + ' is sold out tonight. Can we swap it for something else?' }
+    ];
+  }
+  function replyBlock(o) {
+    return '<h2>Reply to the customer</h2><div class="replies">' + replyTexts(o).map(function (r, i) {
+      return '<a class="reply" href="https://wa.me/?text=' + encodeURIComponent(r.t) + '" target="_blank" rel="noopener" data-reply="' + i + '" data-id="' + o.id + '">' +
+        '<b>' + esc(r.k) + '</b><span>' + esc(r.t) + '</span></a>';
+    }).join('') + '</div>';
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-reply]');
+    if (!a) return;
+    var o = loadOrders().filter(function (x) { return x.id === a.getAttribute('data-id'); })[0];
+    if (!o) return;
+    var t = replyTexts(o)[+a.getAttribute('data-reply')].t;
+    try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t); } catch (err) { /* ignore */ }
+    toast('Copied. Pick the customer\u2019s chat in WhatsApp and send.');
+  });
   function orderHead(o, noMode) {
     var h = '<div class="ohead">' + (noMode ? '' : '<div class="mode">' + esc(o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery or pickup: not in message') + '</div>');
+    if (o.time) h += '<div class="when' + (/possible|asap/i.test(o.time) ? '' : ' when--set') + '">' + (/possible|asap/i.test(o.time) ? 'As soon as possible' : 'Ready for ' + esc(o.time)) + '</div>';
     if (o.preorder) h += '<span class="badge">PRE-ORDER · sent while closed</span>';
     if (o.name) h += '<div class="who">' + esc(o.name) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div>';
     if (o.address) h += '<div class="addr">' + esc(o.address) + '</div>';

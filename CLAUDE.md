@@ -19,11 +19,19 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - `shared/site.json`: WhatsApp number, opening hours, delivery fee, delivery areas, delivery time text, and which restaurants are `open` / `soon` / `hidden`. Most day-to-day changes happen here.
 - `<restaurant>/menu.json`: the menu. Names, prices in cents (1295 = ƒ12.95), descriptions, pictures, allergens, flags (shrimp, pork, peanut, spicy, vegetarian), tap options, `"soldOut": true`.
 - `shared/order-app.js`: the one ordering engine for every page. Shared cart in localStorage `orderaruba.cart.v2`.
-- `shared/order.css` (layout), `<restaurant>/theme.css` (colours + fonts), `shared/hub.css` (home + cart look).
+- `shared/order.css` (the whole look: one font, Archivo, in `shared/fonts/`; night palette), `shared/hub.css` (home + cart extras). Each restaurant's accent colour comes from `color` in its menu.json. There are no per-restaurant stylesheets or fonts any more.
 - `index.html` home, `cart.html` full-page order, `<restaurant>/index.html` thin shell.
 - `ops/kitchen/`: the chef app (Prep / Cook an order / Close up). Its data builder and the cost/buyer screens are private (see `.gitignore`) and live only on Victor's VPS copy.
 - `qa/check_site.py`: checks every image and page and writes real WhatsApp samples to `qa/wa-samples.json`. Run it after every change.
 - `build/art/`: scripts + SVG sources for the drawn pictures (Oranje Snack dishes, taco `gt`, the three cans).
+- `shared/og/*.jpg`: link preview cards (home + one per restaurant) used by `og:image` tags. The tags use the full address `https://victorfromaruba-stack.github.io/restaurant-/`; change them if the site moves to its own domain.
+- `manifest.webmanifest` + `shared/icons/`: "Add to home screen" app icon for Order Aruba.
+
+## Features (Oct 2026)
+- Home: OPEN sign (lights up during hours), search across all menus, delivery/pickup + area picker in the top bar, "Order again" (last sent order, one tap), signature dish rail, restaurant cards.
+- Restaurant page: cover photo, logo, open status, Featured rail, menu rows with + on each photo, "Goes well with" add-ons in the dish sheet.
+- Checkout: "When": as soon as possible (while open) or a 15-minute slot tonight. WhatsApp ticket carries `Time: …`; the chef app shows it on the ticket.
+- Chef app: paste the WhatsApp order, cook step by step, ready-made customer replies (confirm, on the way / ready for pickup, sold out).
 
 ## Settings Victor confirmed (8 Oct 2026)
 - WhatsApp `2977477794` is correct.

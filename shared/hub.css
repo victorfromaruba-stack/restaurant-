@@ -69,3 +69,11 @@
   .results{padding:10px 24px 0}
 }
 @media (min-width:1040px){.shops{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* order again */
+.again{padding-top:26px}
+.again__card{display:grid;grid-template-columns:104px minmax(0,1fr);gap:14px;align-items:center;padding:12px;border-radius:var(--r);background:var(--night-2)}
+.again__card img{width:104px;height:104px;object-fit:cover;border-radius:10px}
+.again__t{font-size:22px;font-weight:900;font-stretch:68%;text-transform:uppercase}
+.again__items{margin:4px 0 10px;color:var(--haze);font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.again__btn{min-height:44px;font-size:15px;justify-content:space-between;border-radius:12px}
