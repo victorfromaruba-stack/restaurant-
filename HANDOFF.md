@@ -30,52 +30,27 @@ An independent review was run on 8 Oct 2026. Every fix below is in `shared/order
 | — | Payment method never stated | **Done in code.** Optional `"payment"` in site.json shows above Send. **Ask Victor how customers pay (cash ƒ / US$ / card?). Don't guess.** |
 | — | Video covers | **Done in code.** Add `"video": {"src": "...mp4", "poster": "...webp"}` to a menu.json and the cover plays as a silent loop with a pause button. It is skipped when the phone has reduce-motion or data saver on. |
 
-## Next steps, in order
-1. **Add CSS for the new pieces** in `shared/order.css` and `shared/hub.css`:
+## Session 2 (8 Oct 2026): all nine next steps are done
+One commit per step on `audit-fixes`; `qa/check_site.py` reports 0 problems. Victor got phone screenshots after each step.
 
-   | Selector | What it is |
-   |---|---|
-   | `.railnav` | Prev/next arrows. Show them only at 760px and wider, and flip the "next" icon. |
-   | `.minis`, `.mini`, `.mini__n`, `.mini__c` | The "Also tonight" cards |
-   | `.also__sub` | The line under "Also tonight" |
-   | `.sugg--x h3 span` | The small "Still one ƒ5 delivery" note |
-   | `.field__help` | The help line under the address field |
-   | `.sent__k` | The order number on the sent screen |
-   | `.cover__v`, `.cover__pp` | The video and its pause button, at least 44px |
-   | `.feat.is-out` | Greyed sold-out Featured card |
-   | `.bag.bump`, `.bar__btn.bump` | A small scale bounce when something is added. Respect reduced motion. |
-   | `.order__send .sm` / `.lg` | Show "Send order" below 360px and "Send on WhatsApp" above |
-   | `.chips--suggest`, `.chip--btn` | Search suggestions |
-   | `.qk`, `.qk__c`, `.qk__n` | The home quick-row of 5 restaurants. Also add `<div class="quick" id="oa-quick"></div>` under the search on index.html. |
-   | `.shop--fail` | A restaurant card whose menu didn't load |
-   | `.sign.is-last` | The sign during last orders |
-   | `.iab` | One compact line with a text link |
+| # | Step | Result |
+|---|---|---|
+| 1 | CSS for the new pieces | Done, plus the quick row of 5 restaurants under the search on index.html. |
+| 2 | Contrast and 44px taps | Done. Field outlines are `#5574A6` (the suggested `#3A5585` only reached 2.3:1; this is 3:1). Hit areas measured in a browser. |
+| 3 | First screen | Done. One-line BON NOCHI., small sign, quick row and first dish above the fold, 180px covers, lo mein on the Dushi Wok card, rail shows one signature per restaurant before family deals. |
+| 4 | Copy | Done. Share cards rebuilt with `build/og/make_og.py`. |
+| 5 | Menu data | Done. `fried` also on loaded fries, burger combo and Family Table (they contain fried items). Pork flag on frikandel special and mixed box: **Victor to confirm his frikandel has pork.** |
+| 6 | Small phones | Done. Toast is at the top on every screen size. |
+| 7 | Speed | Done: parallel loading, `build/thumbs.py` thumbnails, `sw.js`. Tested offline with the server switched off. |
+| 8 | Languages | Done: `shared/lang/*.json`, `build/lang_keys.py`. **Papiamento is a draft: Victor was sent a numbered list to correct.** |
+| 9 | Google listing | Done: `build/seo.py` writes the JSON-LD, `sitemap.xml`, `robots.txt`. robots.txt only works once there's an own domain. A Google Business Profile is the way onto Maps. |
 
-2. **Contrast and tap sizes (review items 11 and 12):**
-   - Colours: WhatsApp green `#1C9E50` → about `#0F7A3D`. Taco Brava `color` in menu.json `#E6246E` → about `#D01C60`. Closed sign text `#5A6E92` → `#8FA0BF`. Field borders → about `#3A5585`.
-   - Every tap target needs to be at least 44px. Grow the hit area with a `::after`, not the visible size, on: menu `+` (38px), can `+` (34px), cart −/+ (36px), area chips (40px), "Preview the message" (31px), "Copy the order instead" (33px) and the footer "All restaurants" link (15px).
-3. **First screen (review item 8):**
-   - Shrink "BON NOCHI." to one line, about 44px.
-   - Keep the sign small beside it, and put the 5-restaurant quick-row above the fold.
-   - Cut the restaurant cover to about 180px tall on phones.
-   - Use a different picture for the Dushi Wok restaurant card. Fried rice currently shows up three times near the top.
-4. **Copy:**
-   - Hero: "Five restaurants. One kitchen. One ƒ5 delivery."
-   - Footer: replace "Some dishes are drawings…" with "Pictures are illustrations."
-   - Every menu.json `imageNote`: "Pictures are illustrations." (instead of "Photos show how we plate it").
-   - cart.html: don't stack "YOUR ORDER" over the empty state.
-5. **Menu data:**
-   - Set `"fried": true` on: fries, chips & salsa, egg rolls, wings, sweet & sour chicken, crispy shrimp tacos, nachos, tenders, crispy chicken sandwich, and all Oranje Snack items except saté.
-   - Add the `pork` flag to Frikandel special and Mixed snack box. Standard frikandel contains pork; Victor can remove the flag if his brand doesn't.
-6. **Small phones (320px):**
-   - Hide the "Order Aruba" logo text below 360px so the area chip fits.
-   - Move the toast to the top so it doesn't cover Send.
-7. **Speed:**
-   - Fetch site.json and menu.json in parallel on restaurant pages.
-   - Make about 360px thumbnails for menu rows; keep 780px for the dish popup.
-   - Add a small service worker: network-first for HTML, JS, CSS and JSON; stale-while-revalidate for images and fonts. Pictures get replaced at the same paths, so don't cache-first them forever.
-8. **Languages:** add an EN / PAP / NL / ES switch for screen text only, picked from the phone's language. The WhatsApp ticket stays in English for the kitchen. Victor must review the Papiamento.
-9. **Google listing:** add JSON-LD (FoodEstablishment, hours from site.json, area served), plus `robots.txt` and `sitemap.xml`.
+## Still waiting on Victor
+- How customers pay → `"payment"` in site.json (shown above Send). Don't guess.
+- Last-orders time → `"lastOrder"` in site.json (e.g. `"01:30"`). Don't guess.
+- Papiamento corrections → `shared/lang/pap.json`.
+- Videos: go-ahead on the cost (below).
+- Merge `audit-fixes` into `main` only when he says so.
 
 ## Pictures and videos with Google Gemini
 Victor wants Gemini to make the dish pictures and the restaurant videos.
@@ -85,12 +60,8 @@ Victor wants Gemini to make the dish pictures and the restaurant videos.
 
 **The rule that matters most** (CLAUDE.md): every picture must show exactly what its menu text says. Before using any picture, check it against the menu.json `desc`: count, fillings, sauce, bread and portion.
 
-**Pictures to replace first (known wrong):**
-- `smash-shack/assets/dishes/sc-hero.webp` (single Smash cheeseburger) shows **two** patties. The new one needs **one** smashed patty, cheddar, lettuce, tomato, onion, pickles, ketchup and mayo on a bun, with no fries.
-- `smash-shack/assets/dishes/co.webp` (combo) also shows two patties. The new one needs one patty plus a side of fries.
-- `taco-brava/assets/art/gt.webp` reads as flat tostadas. The new one needs three **soft folded** tacos with ground beef, onion, cilantro and salsa.
-- The 6 Oranje Snack drawings (`oranje-snack/assets/art/*.webp`).
-- The 7 Dushi Wok pictures are all the same top-down black-slate bowl. Vary the angle and dish while keeping one style.
+**Pictures: done (8 Oct).** All 18 known-wrong or placeholder pictures were remade with `gemini-3-pro-image` and checked against the menu text: Smash cheeseburger and combo (one patty), soft ground-beef tacos, flour-tortilla shrimp tacos, all 6 Oranje Snack dishes, and 7 Dushi Wok dishes with varied angles. The Dushi Wok Family Table is still the earlier composite. 23 tries in total at $0.134 each (about $3). The account ran out of prepaid credit once mid-way (HTTP 402) and worked again later.
+To redo one: `python3 build/gemini/make_picture.py make <restaurant> <id>`, look at it, then `... use <file> <restaurant> <id>`, then `python3 build/thumbs.py`, `python3 build/og/make_og.py` and the site check.
 
 **Don't generate:**
 - Coke, Coke Zero or Sprite cans. Those are brand logos; photograph the real cans instead.
@@ -115,6 +86,7 @@ Victor wants Gemini to make the dish pictures and the restaurant videos.
   - Fork twirling spaghetti and meatballs
   - Bitterballen lifted out of the fryer
 - Tell Victor how many clips and the rough cost before making them, because video costs much more than pictures.
+- Prices on 8 Oct 2026 (ai.google.dev pricing page), per second at 720p: `veo-3.1-generate-preview` $0.40, `veo-3.1-fast-generate-preview` $0.10, `veo-3.1-lite-generate-preview` $0.05. 5 clips × 8 s on Fast is about $4, or about $8 with one retry each. Use the restaurant's dish picture as both the first and the last frame, so the clip loops cleanly.
 
 **Label honestly:** until real kitchen photos exist, menus say "Pictures are illustrations."
 
