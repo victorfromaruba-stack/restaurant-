@@ -221,5 +221,6 @@
  "Delivery in {eta}": "Entrega en {eta}",
  "{from} to {to}": "De {from} a {to}",
  "It goes to our kitchen’s WhatsApp, {number}.": "Va al WhatsApp de nuestra cocina, {number}.",
- "We take cash in florins or US dollars, or a bank transfer.": "Aceptamos efectivo en florines o dólares estadounidenses, o una transferencia bancaria."
+ "We take cash in florins or US dollars, or a bank transfer.": "Aceptamos efectivo en florines o dólares estadounidenses, o una transferencia bancaria.",
+ "There’s no dine-in.": "No se puede comer en el local."
 }

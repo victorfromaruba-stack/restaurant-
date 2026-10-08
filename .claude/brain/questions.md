@@ -13,3 +13,4 @@ When answered: record the decision in victor.md (dated) and delete it here.
 - Each phone that changes the menu needs its own GitHub key (steps on the chef app's Menu screen). Has he and the chef set it up?
 - Google Business Profile: Victor said he'll open it (8 Oct; steps sent). Once it exists, ask for its review link and put it in the chef app's after-delivery reply.
 - US dollars: what rate does the driver use (1.75? 1.80?), and is change given in florins? Then the site can say it. Card machine for the driver (CMB wireless Afl. 100/month + fees) or a Sentoo link (Aruba Bank business account) stay his call.
+- Pickup: does it stay (customer collects at the kitchen, address sent on WhatsApp), or is it delivery only? He wrote 'it's all take out aka delivery' (8 Oct). If delivery only: remove pickup from the site and the Google listing's Takeout option.

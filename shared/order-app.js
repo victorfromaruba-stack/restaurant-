@@ -1104,7 +1104,7 @@
     var hours = same ? tr("Open every night from {open} to {close}.", { open: clock(mins(h[0])), close: clock(mins(h[1])) })
       : today ? tr("Open today {hours}.", { hours: clock(mins(today[0])) + "–" + clock(mins(today[1])) }) : tr("Closed today.");
     return [tr("{fee} delivery per order, however many restaurants you pick from.", { fee: shortMoney(SITE.deliveryFee) }),
-      tr("Pickup is free."), tr("We send the pickup address and time on WhatsApp."), hours,
+      tr("Pickup is free."), tr("We send the pickup address and time on WhatsApp."), tr("There\u2019s no dine-in."), hours,
       SITE.lastOrder ? tr("Last orders at {time}.", { time: clock(mins(SITE.lastOrder)) }) : ""].join(" ").trim();
   }
   function setupIAB() {

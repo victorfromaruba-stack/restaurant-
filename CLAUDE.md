@@ -16,7 +16,7 @@ Skills in `.claude/skills/`:
 
 ## What it is
 One licensed kitchen in Aruba, five delivery-only restaurants, one order website.
-Customers pick dishes from any restaurant (one shared order), choose delivery or pickup, and send the order on WhatsApp.
+Customers pick dishes from any restaurant (one shared order), choose delivery or pickup, and send the order on WhatsApp. No dine-in (Victor, 8 Oct): the site says so in How ordering works.
 Static site, no framework, no build step. Hosted on GitHub Pages from this repo (`main` branch, root folder).
 
 ## Restaurants (folder: what it is)
