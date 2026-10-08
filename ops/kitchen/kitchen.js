@@ -172,9 +172,10 @@
       if (!line) { last = null; return; }
       var bare = stripMarks(line), m;
       if (!bare) return;
-      if ((m = /^(name|customer|address|addr|note|notes|comment|phone|tel|mobile|time|when)\s*:\s*(.*)$/i.exec(bare))) {
+      if ((m = /^(name|customer|address|addr|note|notes|comment|phone|tel|mobile|time|when|pay|payment)\s*:\s*(.*)$/i.exec(bare))) {
         var f = m[1].toLowerCase(), v = m[2].trim();
         if (/^(time|when)$/.test(f)) o.time = v;
+        else if (/^pay/.test(f)) o.pay = v;
         else if (/^(name|customer)$/.test(f)) o.name = v;
         else if (/^addr/.test(f)) o.address = v;
         else if (/^(note|notes|comment)$/.test(f)) o.note = v;
@@ -789,6 +790,11 @@
     var h = '<div class="ohead">' + (noMode ? '' : '<div class="mode">' + esc(o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery or pickup: not in message') + '</div>');
     if (o.time) h += '<div class="when' + (/possible|asap/i.test(o.time) ? '' : ' when--set') + '">' + (/possible|asap/i.test(o.time) ? 'As soon as possible' : 'Ready for ' + esc(o.time)) + '</div>';
     if (o.preorder) h += '<span class="badge">PRE-ORDER · sent while closed</span>';
+    if (o.pay && o.pay !== '-') {   // the website ticket says "Pay: Cash" or "Pay: Bank transfer"
+      var bank = /bank|transfer/i.test(o.pay);
+      h += '<div class="pay' + (bank ? ' pay--bank' : '') + '">' + (bank ? 'Pays by bank transfer · check it came in'
+        : /cash/i.test(o.pay) ? 'Pays cash ' + (o.mode === 'Pickup' ? 'at pickup' : 'to the driver') + (o.total ? ' · \u0192' + esc(o.total) : '') : 'Pays: ' + esc(o.pay)) + '</div>';
+    }
     if (o.name) h += '<div class="who">' + esc(o.name) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div>';
     if (o.address) h += '<div class="addr">' + esc(o.address) + '</div>';
     if (o.note) h += '<div class="notebox' + (isAllergyNote(o.note) ? ' allergy' : '') + '"><small>' + (isAllergyNote(o.note) ? 'Allergy / diet note' : 'Customer note') + '</small>' + esc(o.note) + '</div>';

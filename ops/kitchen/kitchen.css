@@ -171,6 +171,8 @@ h2 { font-size: 26px; line-height: 1.1; margin: 28px 0 10px; font-weight: 900; f
 .ohead .mode { font-size: 34px; font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: .01em; }
 .ohead .when { margin-top: 8px; font-size: 22px; font-weight: 900; }
 .ohead .when--set { display: inline-block; background: var(--sodium); color: var(--ink); padding: 4px 10px; }
+.ohead .pay { display: inline-block; margin-top: 10px; padding: 5px 10px; background: #17733E; color: #fff; font-size: 19px; font-weight: 900; text-transform: uppercase; letter-spacing: .02em; }
+.ohead .pay--bank { background: #2456A6; }
 .ohead .who { font-size: 21px; font-weight: 800; margin-top: 8px; }
 .ohead .addr { font-size: 18px; color: #4A4A4A; margin-top: 2px; }
 .badge { display: inline-block; font-size: 15px; font-weight: 900; padding: 5px 10px; border-radius: 4px; background: var(--sodium); color: var(--ink); text-transform: uppercase; letter-spacing: .04em; margin: 8px 6px 0 0; }

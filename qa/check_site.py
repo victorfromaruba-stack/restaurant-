@@ -56,12 +56,12 @@ check(lang.returncode == 0, "every screen phrase has a Papiamento, Dutch and Spa
 
 SAMPLES = [
   ("single brand, delivery, modifiers", [("dushi-wok", "fr", {"leave": ["onion", "egg"]}, 2), ("dushi-wok", "ss", {"sauce": "on-the-side"}, 1), ("dushi-wok", "ck", {}, 1)],
-   {"mode": "delivery", "area": "Noord", "addr": "Palm Beach 12, blue gate", "name": "Ana", "note": "no peanuts please"}),
+   {"mode": "delivery", "area": "Noord", "addr": "Palm Beach 12, blue gate", "name": "Ana", "note": "no peanuts please", "pay": "Cash"}),
   ("three restaurants, delivery, all three cans", [("dushi-wok", "ft", {}, 1), ("taco-brava", "bt", {}, 1), ("oranje-snack", "bb", {"dip": "mustard"}, 2),
      ("taco-brava", "ck", {}, 1), ("taco-brava", "cz", {}, 1), ("taco-brava", "sp", {}, 2)],
-   {"mode": "delivery", "area": "Oranjestad", "addr": "Caya G.F. Betico Croes 10", "name": "Ben", "note": ""}),
+   {"mode": "delivery", "area": "Oranjestad", "addr": "Caya G.F. Betico Croes 10", "name": "Ben", "note": "", "pay": "Bank transfer"}),
   ("pickup, burgers + Italian", [("smash-shack", "sc", {"leave": ["onion", "pickles"]}, 1), ("smash-shack", "fs", {}, 2), ("nonnas-night-in", "pa", {"heat": "extra-spicy"}, 1)],
-   {"mode": "pickup", "area": "", "addr": "", "name": "Carla", "note": "extra napkins"}),
+   {"mode": "pickup", "area": "", "addr": "", "name": "Carla", "note": "extra napkins", "pay": "Cash"}),
 ]
 
 async def main():
@@ -105,6 +105,8 @@ async def main():
             first = msg.split("\n")[0]
             nb = len({l[0] for l in lines})
             check(first.startswith("*Kitchen order*") if nb > 1 else first.endswith(re.sub(r"^.*?(#\d+)$", r"\1", first)) and "order*" in first, f"[{title}] header names the restaurant / kitchen order")
+            if site.get("payWith"):
+                check(re.search(r"^Pay: " + re.escape(meta["pay"]) + "$", msg, re.M) is not None, f"[{title}] ticket says how the customer pays")
             check("DW-" not in msg and "TB-" not in msg and "OS-" not in msg, f"[{title}] no internal codes")
         await pg.evaluate("OrderAruba.clear()")
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen

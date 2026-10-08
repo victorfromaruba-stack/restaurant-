@@ -198,5 +198,9 @@
  "Back to all restaurants": "Volver a todos los restaurantes",
  "Skip to the menu": "Ir al menú",
  "Menu sections": "Secciones del menú",
- "Pay in cash or by bank transfer.": "Paga en efectivo o por transferencia bancaria."
+ "Pay in cash or by bank transfer.": "Paga en efectivo o por transferencia bancaria.",
+ "How will you pay?": "¿Cómo vas a pagar?",
+ "Pick how you’ll pay.": "Elige cómo vas a pagar.",
+ "Cash": "Efectivo",
+ "Bank transfer": "Transferencia bancaria"
 }

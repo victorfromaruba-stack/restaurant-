@@ -42,6 +42,7 @@ def keys():
     # menu words shown through tr(): section titles, cuisines, picture note
     site = json.load(open(os.path.join(ROOT, "shared/site.json"), encoding="utf-8"))
     add(site.get("payment"))
+    for v in site.get("payWith", []): add(v)
     for b in site["brands"]:
         m = json.load(open(os.path.join(ROOT, b["id"], "menu.json"), encoding="utf-8"))
         add(m["cuisine"]); add(m.get("imageNote"))

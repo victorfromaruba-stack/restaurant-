@@ -229,7 +229,7 @@
 
   /* ---------------------------------------------------------------- cart store */
   var memState = null;
-  function blank() { return { v: 2, lines: [], mode: "delivery", area: "", addr: "", name: "", note: "", no: "", sentAt: 0, updated: 0 }; }
+  function blank() { return { v: 2, lines: [], mode: "delivery", area: "", addr: "", name: "", note: "", pay: "", no: "", sentAt: 0, updated: 0 }; }
   function readStore() {
     try {
       var s = JSON.parse(localStorage.getItem(KEY));
@@ -483,6 +483,7 @@
     out.push("Subtotal " + money(subtotal()));
     out.push(s.mode === "delivery" ? "Delivery " + money(fee()) : "Pickup " + money(0));
     out.push("*Total " + money(total()) + "*");
+    if (payOptions().length) out.push("Pay: " + (payOptions().indexOf(s.pay) >= 0 ? s.pay : "-"));
     out.push("");
     out.push("Name: " + (clean(s.name) || "-"));
     if (s.mode === "delivery") out.push("Address: " + (clean(s.addr) || "-"));
@@ -490,7 +491,10 @@
     return out.join("\n");
   }
   /* how to pay: site.json "payment", e.g. "Pay the driver in cash (florin or US$) or by card." Empty = say nothing. */
-  function payLine() { return SITE.payment ? clean(tr(SITE.payment)) + " " : ""; }
+  /* site.json "payWith": the ways to pay the customer taps at checkout (it goes on the ticket as "Pay: Cash").
+     Without it, the "payment" sentence is shown above Send instead. */
+  function payOptions() { return Array.isArray(SITE.payWith) ? SITE.payWith : []; }
+  function payLine() { return SITE.payment && !payOptions().length ? clean(tr(SITE.payment)) + " " : ""; }
   function waLink(text) { return "https://wa.me/" + SITE.whatsapp + "?text=" + encodeURIComponent(text); }
   function checkoutLink() {
     var full = buildMessage(), u = waLink(full);
@@ -810,6 +814,7 @@
       var t = e.target;
       if (t.name === "oa-mode") { S().mode = t.value; commit(); }
       if (t.name === "oa-area") { S().area = t.value; var fa = t.closest(".field"); if (fa) fa.classList.remove("is-bad"); commit(); }
+      if (t.name === "oa-pay") { S().pay = t.value; var fp = t.closest(".field"); if (fp) fp.classList.remove("is-bad"); commit(); }
     });
     return node;
   }
@@ -938,6 +943,10 @@
       '<span class="field__err">' + esc(tr("Add your name.")) + "</span></label>" +
       '<label class="field"><span class="field__l">' + esc(tr("Note")) + " <em>" + esc(tr("optional")) + "</em></span>" +
       '<textarea id="oa-note" data-f="note" rows="2" maxlength="160" placeholder="' + esc(tr("Allergies, gate code")) + '">' + esc(s.note) + "</textarea></label>" +
+      (payOptions().length ? '<fieldset class="field field--areas" id="oa-f-pay"><legend>' + esc(tr("How will you pay?")) + '</legend><div class="chips">' +
+        payOptions().map(function (p) {
+          return '<label class="chip"><input type="radio" name="oa-pay" value="' + esc(p) + '"' + (s.pay === p ? " checked" : "") + "><span>" + esc(tr(p)) + "</span></label>";
+        }).join("") + '</div><p class="field__err">' + esc(tr("Pick how you\u2019ll pay.")) + "</p></fieldset>" : "") +
       "</form>";
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + esc(tr(s.mode === "delivery" ? "Delivery" : "Pickup")) + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : esc(tr("Free"))) + "</dd></div>" +
@@ -964,6 +973,7 @@
       mark("oa-f-addr", !clean(s.addr));
     }
     mark("oa-f-name", !clean(s.name));
+    if (payOptions().length) mark("oa-f-pay", payOptions().indexOf(s.pay) < 0);
     if (first) {
       first.scrollIntoView({ behavior: "smooth", block: "center" });
       var inp = $("input,textarea", first); if (inp && inp.type !== "radio") inp.focus({ preventScroll: true });

@@ -6,6 +6,10 @@
  "deliveryFee": 500,
  "eta": "35–50 min",
  "payment": "Pay in cash or by bank transfer.",
+ "payWith": [
+  "Cash",
+  "Bank transfer"
+ ],
  "utcOffset": -4,
  "hours": {
   "mon": [
@@ -70,5 +74,6 @@
  ],
  "_status_help": "status can be open, soon (shows 'Opening soon', can't order) or hidden (not shown on the home page).",
  "_hours_help": "Each day is [opens, closes] in Aruba time. A closing time earlier than the opening time means after midnight (22:00 to 02:00 = 10 PM until 2 AM the next morning).",
- "_lastOrder_help": "lastOrder: new orders stop at this time (Aruba time); the sign shows Last orders in the final 30 minutes. Remove the line for no cut-off."
+ "_lastOrder_help": "lastOrder: new orders stop at this time (Aruba time); the sign shows Last orders in the final 30 minutes. Remove the line for no cut-off.",
+ "_payWith_help": "payWith: the ways to pay that customers tap at checkout; the choice goes on the WhatsApp ticket as \"Pay: ...\". Remove it to show only the payment sentence."
 }

@@ -198,5 +198,9 @@
  "Back to all restaurants": "Bolbe na tur restaurant",
  "Skip to the menu": "Bai na e menu",
  "Menu sections": "Partinan di e menu",
- "Pay in cash or by bank transfer.": "Paga cash of via transferencia di banco."
+ "Pay in cash or by bank transfer.": "Paga cash of via transferencia di banco.",
+ "How will you pay?": "Con bo ta paga?",
+ "Pick how you’ll pay.": "Scoge con bo ta paga.",
+ "Cash": "Cash",
+ "Bank transfer": "Transferencia di banco"
 }
