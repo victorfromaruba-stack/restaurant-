@@ -4,9 +4,17 @@ Checks every menu image exists, every page loads with no errors, and builds the 
 messages in qa/wa-samples.json from the real ordering code, testing the owner's rules."""
 import asyncio, json, os, re, sys
 from playwright.async_api import async_playwright
+from PIL import Image, ImageChops, ImageStat
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE = os.environ.get("QA_BASE", "http://127.0.0.1:8462/")
 fails = []
+def square_sample(path):
+    im = Image.open(path).convert("L"); s = min(im.size); l, t = (im.width - s) // 2, (im.height - s) // 2
+    return im.crop((l, t, l + s, t + s)).resize((24, 24), Image.LANCZOS)
+def thumb_ok(img):
+    d, f = os.path.split(os.path.join(ROOT, img)); th = os.path.join(d, "thumbs", os.path.splitext(f)[0] + ".webp")
+    if not os.path.exists(th): return False
+    return ImageStat.Stat(ImageChops.difference(square_sample(os.path.join(ROOT, img)), square_sample(th))).mean[0] < 8
 def check(ok, msg):
     print(("PASS " if ok else "FAIL ") + msg)
     if not ok: fails.append(msg)
@@ -22,6 +30,8 @@ for b, m in menus.items():
     secs = {s["id"] for s in m["sections"]}
     for it in m["items"]:
         check(os.path.exists(os.path.join(ROOT, it["img"])), f"{b}/{it['id']} image exists ({it['img']})")
+        if it.get("kind") != "drink" and os.path.exists(os.path.join(ROOT, it["img"])):
+            check(thumb_ok(it["img"]), f"{b}/{it['id']} row thumbnail is there and up to date (else run: python3 build/thumbs.py)")
         check(it["section"] in secs, f"{b}/{it['id']} is in a real section")
         check(isinstance(it["price"], int) and it["price"] > 0, f"{b}/{it['id']} has a price in cents")
         for inc in it.get("includes", []):

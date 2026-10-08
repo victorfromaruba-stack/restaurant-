@@ -35,6 +35,17 @@
   function money(c) { return "ƒ" + (Math.round(c) / 100).toFixed(2); }
   function shortMoney(c) { return "ƒ" + (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2)); }
   function path(p) { return ROOT + p; }
+  /* small square pictures for menu rows (build/thumbs.py makes them); drinks are small already */
+  function thumb(img) { return String(img).replace(/([^/]+)\.(webp|jpe?g|png)$/i, "thumbs/$1.webp"); }
+  function thumbImg(item, attrs) {
+    if (item.kind === "drink") return '<img src="' + esc(path(item.img)) + '" alt="" width="360" height="360"' + attrs + ">";
+    return '<img src="' + esc(path(thumb(item.img))) + '" data-full="' + esc(path(item.img)) + '" alt="" width="360" height="360"' + attrs + ">";
+  }
+  // a missing thumbnail falls back to the full picture instead of a broken image
+  document.addEventListener("error", function (e) {
+    var t = e.target, full = t && t.tagName === "IMG" && t.getAttribute("data-full");
+    if (full) { t.removeAttribute("data-full"); t.src = full; }
+  }, true);
   function el(html) { var t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
   function clean(s) { return String(s || "").trim().replace(/\s+/g, " "); }
   function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
@@ -546,7 +557,7 @@
         (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + esc(item.desc) + "</p>" : "") +
         (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
       "</div>" +
-      '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' +
+      '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '">' + thumbImg(item, ' loading="lazy" decoding="async"') +
         qtyBadge(n) + plusBtn(item, orderable) + "</div></article>";
   }
   /* a big picture card for featured dishes */
@@ -744,7 +755,7 @@
   var CROSS = [["dushi-wok", "er"], ["nonnas-night-in", "gb"], ["taco-brava", "cs"], ["smash-shack", "fs"], ["oranje-snack", "bb"]];
   function suggItem(b, i) {
     return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(b + "|" + i.id) + '" aria-label="Add ' + esc(i.name) + ", " + money(i.price) + '">' +
-      '<span class="sugg__img"><img src="' + esc(path(i.img)) + '" alt="" loading="lazy" decoding="async"><i>' + ICON.plus + "</i></span>" +
+      '<span class="sugg__img">' + thumbImg(i, ' loading="lazy" decoding="async"') + "<i>" + ICON.plus + "</i></span>" +
       '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
   }
   function suggestions() {
@@ -1128,6 +1139,11 @@
       });
     });
   }
+  /* offline cache + faster repeat visits (sw.js at the site root) */
+  function registerSW() {
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+    navigator.serviceWorker.register(path("sw.js")).catch(function () { /* not supported here: the site works without it */ });
+  }
   function later(fn) { if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 2500 }); else setTimeout(fn, 600); }
   function miniShop(b) {
     var m = MENU[b];
@@ -1238,8 +1254,8 @@
     if (!lines) { box.hidden = true; return; }
     var sum = lines.reduce(function (t, x) { var i = MENU[x.b].byId[x.id]; return t + unitPrice(i, normOpts(i, x.o || {})) * x.q; }, 0);
     var names = lines.map(function (x) { return x.q + " \u00d7 " + MENU[x.b].byId[x.id].name; });
-    var pic = MENU[lines[0].b].byId[lines[0].id].img;
-    box.innerHTML = '<div class="again__card"><img src="' + esc(path(pic)) + '" alt="" width="780" height="446" loading="lazy">' +
+    var pic = MENU[lines[0].b].byId[lines[0].id];
+    box.innerHTML = '<div class="again__card">' + thumbImg(pic, ' loading="lazy"') +
       '<div class="again__body"><h2 class="again__t">Order again</h2><p class="again__items">' + esc(names.join(", ")) + "</p>" +
       '<button type="button" class="btn btn--accent again__btn" data-again><span>Add all</span><span>' + money(sum) + "</span></button></div></div>";
     box.hidden = false;
@@ -1324,10 +1340,12 @@
 
   /* ---------------------------------------------------------------- boot */
   function boot() {
-    loadSite().then(function () {
+    // settings, this restaurant's menu and the menus already in the bag all load at the same time
+    var first = PAGE === "brand" ? loadMenu(HERE) : Promise.resolve();
+    menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });
+    Promise.all([loadSite(), first]).then(function () {
       state = readStore();
-      var first = PAGE === "brand" ? loadMenu(HERE) : Promise.resolve();
-      return first.then(importHash).then(function () {
+      return importHash().then(function () {
         fillCommon();
         setInterval(fillCommon, 60000);
         if (PAGE === "brand") renderBrand();
@@ -1344,6 +1362,7 @@
         menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { state = readStore(); emit(); } });
         BODY.classList.add("oa-ready");
+        later(registerSW);
       });
     }).catch(function (err) {
       console.error(err);
