@@ -20,13 +20,13 @@
 <link rel="stylesheet" href="shared/hub.css">
 </head>
 <body data-page="hub" data-root="">
-<a class="oa-skip" href="#oa-main">Skip to the menus</a>
+<a class="oa-skip" href="#oa-main" data-t>Skip to the menus</a>
 <header class="top">
   <div class="top__in">
-    <a class="logo" href="index.html" aria-label="Order Aruba home"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l6.5 21.5L60 32l-21.5 6.5L32 60l-6.5-21.5L4 32l21.5-6.5z" fill="currentColor"/></svg><span class="logo__t">Order Aruba</span></a>
+    <a class="logo" href="index.html" aria-label="Order Aruba home" data-t-attr="aria-label"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4l6.5 21.5L60 32l-21.5 6.5L32 60l-6.5-21.5L4 32l21.5-6.5z" fill="currentColor"/></svg><span class="logo__t">Order Aruba</span></a>
     <span class="top__spacer"></span>
-    <button type="button" class="deliver" data-oa-deliver aria-label="Delivery or pickup"><span class="deliver__t">Delivery</span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg></button>
-    <button type="button" class="bag" data-oa-open-order aria-label="View your order"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 8Zm4 0V6.5a3 3 0 0 1 6 0V8"/></svg><span class="bag__n" data-oa-count hidden>0</span></button>
+    <button type="button" class="deliver" data-oa-deliver aria-label="Delivery or pickup" data-t-attr="aria-label"><span class="deliver__t">Delivery</span><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg></button>
+    <button type="button" class="bag" data-oa-open-order aria-label="View your order" data-t-attr="aria-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 8Zm4 0V6.5a3 3 0 0 1 6 0V8"/></svg><span class="bag__n" data-oa-count hidden>0</span></button>
   </div>
 </header>
 
@@ -36,32 +36,32 @@
       <h1 id="hero-h">Bon nochi.</h1>
       <div class="sign" data-oa-sign role="status"><b>Open</b><span>10 PM to 2 AM</span></div>
     </div>
-    <p class="hero__sub">Five restaurants. One kitchen. <b>One <span data-oa-fee>ƒ5</span> delivery.</b></p>
-    <label class="search"><span class="sr">Search all menus</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><input id="oa-q" type="search" placeholder="Search tacos, fried rice, bitterballen" autocomplete="off" enterkeyhint="search"></label>
-    <nav class="quick" id="oa-quick" aria-label="Restaurants"></nav>
+    <p class="hero__sub" data-oa-hero>Five restaurants. One kitchen. <b>One <span data-oa-fee>ƒ5</span> delivery.</b></p>
+    <label class="search"><span class="sr" data-t>Search all menus</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><input id="oa-q" type="search" placeholder="Search tacos, fried rice, bitterballen" data-t-attr="placeholder" autocomplete="off" enterkeyhint="search"></label>
+    <nav class="quick" id="oa-quick" aria-label="Restaurants" data-t-attr="aria-label"></nav>
   </section>
 
   <section class="results" id="oa-results" aria-live="polite" hidden></section>
 
   <div id="oa-browse">
-    <section class="hsec again" id="oa-again" aria-label="Order again" hidden></section>
+    <section class="hsec again" id="oa-again" aria-label="Order again" data-t-attr="aria-label" hidden></section>
     <section class="hsec" aria-labelledby="sig-h">
-      <h2 class="hsec__t" id="sig-h">Signature dishes</h2>
+      <h2 class="hsec__t" id="sig-h" data-t>Signature dishes</h2>
       <div class="rail" id="oa-rail"></div>
     </section>
     <section class="hsec" aria-labelledby="rest-h">
-      <h2 class="hsec__t" id="rest-h">Restaurants</h2>
+      <h2 class="hsec__t" id="rest-h" data-t>Restaurants</h2>
       <div class="shops" id="oa-list"></div>
     </section>
   </div>
 
-  <section class="basics" aria-label="Delivery, pickup and hours">
-    <div><b><span data-oa-fee>ƒ5</span> delivery</b><span>Once per order</span></div>
-    <div><b>Free pickup</b><span>From our kitchen</span></div>
-    <div><b>10 PM–2 AM</b><span>Every night</span></div>
+  <section class="basics" aria-label="Delivery, pickup and hours" data-t-attr="aria-label">
+    <div><b data-oa-fee-t="{fee} delivery">ƒ5 delivery</b><span data-t>Once per order</span></div>
+    <div><b data-t>Free pickup</b><span data-t>From our kitchen</span></div>
+    <div><b data-oa-hours-t>10 PM–2 AM</b><span data-oa-hours-d>Every night</span></div>
   </section>
-  <p class="areas">We deliver to <span data-oa-areas>Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera and Santa Cruz</span>. Elsewhere? <a data-oa-ask href="#" target="_blank" rel="noopener">Ask us</a>.</p>
-  <footer class="hfoot">Cooked to order in Aruba. Prices in Aruban florin (ƒ). Pictures are illustrations.</footer>
+  <p class="areas" data-oa-deliver-to>We deliver to <span data-oa-areas>Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera and Santa Cruz</span>. Elsewhere? <a data-oa-ask href="#" target="_blank" rel="noopener">Ask us</a>.</p>
+  <footer class="hfoot"><p data-t>Cooked to order in Aruba. Prices in Aruban florin (ƒ). Pictures are illustrations.</p><div data-oa-langs></div></footer>
 </main>
 
 <script src="shared/order-app.js" defer></script>

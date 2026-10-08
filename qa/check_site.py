@@ -2,7 +2,7 @@
   cd brand-hub && python3 -m http.server 8462 --bind 127.0.0.1 &   then   python3 qa/check_site.py
 Checks every menu image exists, every page loads with no errors, and builds the WhatsApp sample
 messages in qa/wa-samples.json from the real ordering code, testing the owner's rules."""
-import asyncio, json, os, re, sys
+import asyncio, json, os, re, subprocess, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops, ImageStat
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -44,6 +44,8 @@ for b, m in menus.items():
 tb = {i["id"]: i for i in menus["taco-brava"]["items"]}
 check(tb["bt"]["price"] == 2700, "Birria tacos stay at ƒ27.00")
 check(site["deliveryFee"] == 500, "Delivery fee is ƒ5.00")
+lang = subprocess.run([sys.executable, os.path.join(ROOT, "build/lang_keys.py"), "--check"], capture_output=True, text=True)
+check(lang.returncode == 0, "every screen phrase has a Papiamento, Dutch and Spanish translation" + ("" if lang.returncode == 0 else ":\n" + lang.stdout[-1500:]))
 
 SAMPLES = [
   ("single brand, delivery, modifiers", [("dushi-wok", "fr", {"leave": ["onion", "egg"]}, 2), ("dushi-wok", "ss", {"sauce": "on-the-side"}, 1), ("dushi-wok", "ck", {}, 1)],
@@ -98,6 +100,25 @@ async def main():
             check(first.startswith("*Kitchen order*") if nb > 1 else first.endswith(re.sub(r"^.*?(#\d+)$", r"\1", first)) and "order*" in first, f"[{title}] header names the restaurant / kitchen order")
             check("DW-" not in msg and "TB-" not in msg and "OS-" not in msg, f"[{title}] no internal codes")
         await pg.evaluate("OrderAruba.clear()")
+        # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
+        en_msg = out[0]["message"]
+        for code in ("pap", "nl", "es"):
+            await pg.evaluate("c => localStorage.setItem('orderaruba.lang.v1', c)", code)
+            for url in ["index.html", "dushi-wok/index.html", "cart.html"]:
+                errs.clear()
+                await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
+                check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))
+            await pg.evaluate("OrderAruba.clear()")
+            title, lines, meta = SAMPLES[0]
+            for (br, iid, opts, q) in lines:
+                await pg.evaluate("([b,i,o,q]) => OrderAruba.loadMenu(b).then(() => OrderAruba.addItem(b,i,o,q))", [br, iid, opts, q])
+            await pg.evaluate("m => OrderAruba._set(m)", meta)
+            msg = await pg.evaluate("OrderAruba.buildMessage()")
+            time_ok = re.search(r"^Time: (As soon as possible|(Tomorrow )?(Midnight|\d{1,2}(:\d\d)?\s(AM|PM)))$", msg, re.M) is not None
+            norm = lambda t: re.sub(r"^Time: .*$", "Time:", re.sub(r"#\S+", "#", t), flags=re.M)
+            check(time_ok and norm(msg) == norm(en_msg), f"[{code}] WhatsApp ticket is the same English text")
+            await pg.evaluate("OrderAruba.clear()")
+        await pg.evaluate("localStorage.removeItem('orderaruba.lang.v1')")
         json.dump({"_about": "Real WhatsApp messages produced by shared/order-app.js. Regenerate with python3 qa/check_site.py.",
                    "samples": out}, open(os.path.join(ROOT, "qa/wa-samples.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         await b.close()

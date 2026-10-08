@@ -38,7 +38,7 @@
 .quick:empty{display:none}
 .qk{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-decoration:none;text-align:center}
 .qk img{width:100%;max-width:64px;aspect-ratio:1;height:auto;border-radius:16px;object-fit:cover;background:var(--night-2);box-shadow:0 0 0 2px var(--night),0 0 0 4px var(--shop)}
-.qk__c{max-width:100%;font:700 13px/1.15 var(--font);color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qk__c{max-width:100%;font:700 13px/1.15 var(--font);font-stretch:84%;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qk__n{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .qk:hover img{transform:translateY(-2px)}
 @media (prefers-reduced-motion:no-preference){.qk img{transition:transform .2s}}
@@ -79,12 +79,13 @@
 /* the few facts that matter */
 .basics{margin:40px 16px 0;padding:20px 0 0;border-top:1px solid var(--rule);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .basics div{display:flex;flex-direction:column;gap:2px}
-.basics b{font:900 22px/1 var(--font);font-stretch:66%;text-transform:uppercase;white-space:nowrap}
+.basics b{font:900 22px/1 var(--font);font-stretch:66%;text-transform:uppercase;overflow-wrap:anywhere}
 .basics div>span{font-size:13.5px;line-height:1.35;color:var(--haze)}
 .areas{margin:18px 16px 0;color:var(--haze);font-size:14.5px;line-height:1.5}
 .areas a{position:relative;color:var(--sodium);font-weight:700;white-space:nowrap}
 .areas a::after{content:"";position:absolute;inset:-15px -8px}
 .hfoot{margin:28px 16px 0;color:#7F8DA6;font-size:12.5px;line-height:1.5}
+.hfoot p{margin:0}
 
 .cart{max-width:600px;margin:0 auto;padding:0 16px calc(120px + var(--safe-b))}
 .cart h1{font-size:clamp(46px,13vw,72px);line-height:.9;font-weight:900;font-stretch:62%;text-transform:uppercase;margin:18px 0 10px}

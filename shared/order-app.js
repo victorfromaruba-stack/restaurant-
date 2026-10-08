@@ -20,6 +20,7 @@
   var WA_URL_LIMIT = 1900;
   var DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   var DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  var DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   var ALLERGEN_NAMES = { gluten: "gluten", egg: "egg", soy: "soy", dairy: "milk", shellfish: "shellfish", sesame: "sesame",
     peanut: "peanuts", mustard: "mustard", fish: "fish", nuts: "tree nuts", celery: "celery" };
   var FLAG_NAMES = { shrimp: "Contains shrimp", pork: "Contains pork", peanut: "Contains peanuts", spicy: "Spicy", vegetarian: "Vegetarian" };
@@ -48,7 +49,64 @@
   }, true);
   function el(html) { var t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
   function clean(s) { return String(s || "").trim().replace(/\s+/g, " "); }
-  function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
+  function plural(n, one, many) { return n + " " + tr(n === 1 ? one : many); }
+
+  /* ---------------------------------------------------------------- languages
+     Screen text in English, Papiamento, Dutch or Spanish, picked from the phone's language or the switch
+     at the bottom of each page. Translations live in shared/lang/<code>.json ({"English text": "translation"});
+     anything missing shows in English. The WhatsApp ticket, menu names and descriptions stay in English. */
+  var LANGS = ["en", "pap", "nl", "es"];
+  var LANG_KEY = "orderaruba.lang.v1";
+  var WORDS = {};
+  function pickLang() {
+    try { var saved = localStorage.getItem(LANG_KEY); if (LANGS.indexOf(saved) >= 0) return saved; } catch (e) { /* private mode */ }
+    var list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
+    for (var i = 0; i < list.length; i++) {
+      var code = String(list[i]).toLowerCase().split("-")[0];
+      if (code === "pa" && /aw|cw|bq/i.test(list[i])) code = "pap";
+      if (LANGS.indexOf(code) >= 0) return code;
+    }
+    return "en";
+  }
+  var LANG = pickLang();
+  function loadLang() {
+    if (LANG === "en") return Promise.resolve();
+    return getJSON("shared/lang/" + LANG + ".json").then(function (w) { WORDS = w || {}; }, function () { WORDS = {}; });
+  }
+  /* tr("Open until {time}", {time: "2 AM"}): the translation if there is one, else the English */
+  function tr(text, vars) {
+    var out = (LANG !== "en" && WORDS[text]) || text;
+    if (vars) out = out.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
+    return out;
+  }
+  /* times on screen: 10 PM in English, 22:00 in the other languages (the ticket always uses 10 PM) */
+  function clock(m) {
+    if (LANG === "en") return fmtTime(m);
+    return String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  }
+  /* the fixed words in the HTML files: data-t on an element (its text), data-t-attr="placeholder,aria-label" */
+  function translatePage() {
+    document.documentElement.lang = LANG;
+    if (LANG === "en") return;
+    $$("[data-t]").forEach(function (n) {
+      if (!n.hasAttribute("data-t-en")) n.setAttribute("data-t-en", n.getAttribute("data-t") || n.textContent);
+      n.textContent = tr(n.getAttribute("data-t-en"));
+    });
+    $$("[data-t-attr]").forEach(function (n) {
+      n.getAttribute("data-t-attr").split(",").forEach(function (a) { if (n.hasAttribute(a)) n.setAttribute(a, tr(n.getAttribute(a))); });
+    });
+  }
+  function langSwitch() {
+    return '<div class="langs" role="group" aria-label="' + esc(tr("Language")) + '">' + LANGS.map(function (c) {
+      return '<button type="button" lang="' + c + '" data-lang="' + c + '" aria-pressed="' + (c === LANG) + '">' + { en: "EN", pap: "PAP", nl: "NL", es: "ES" }[c] + "</button>";
+    }).join("") + "</div>";
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-lang]");
+    if (!b || b.getAttribute("data-lang") === LANG) return;
+    try { localStorage.setItem(LANG_KEY, b.getAttribute("data-lang")); } catch (err) { /* private mode */ }
+    location.reload();
+  });
 
   var ICON = {
     bag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 8h14l-1.2 11.1a2 2 0 0 1-2 1.9H8.2a2 2 0 0 1-2-1.9L5 8Zm4 0V6.5a3 3 0 0 1 6 0V8"/></svg>',
@@ -135,21 +193,23 @@
       var x = wins[k];
       if (now >= x.o && now < x.cut) {
         var left = x.cut - now, hasCut = x.cut < x.c;
-        return { open: true, soon: left <= 30, lastOrder: hasCut ? fmtTime(x.cut) : "",
-          label: left <= 30 && hasCut ? "Last orders " + fmtTime(x.cut) : "Open until " + fmtTime(x.c) };
+        var last = left <= 30 && hasCut;
+        return { open: true, soon: left <= 30, lastOrder: hasCut ? clock(x.cut) : "",
+          label: last ? tr("Last orders {time}", { time: clock(x.cut) }) : tr("Open until {time}", { time: clock(x.c) }),
+          sub: last ? tr("Last orders {time}", { time: clock(x.cut) }) : tr("until {time}", { time: clock(x.c) }) };
       }
     }
     var finishing = wins.some(function (x) { return now >= x.cut && now < x.c; });
     var res = null;
-    if (w && now < w.o) res = { label: "Opens " + (w.o >= 18 * 60 ? "tonight " : "today ") + fmtTime(w.o), opens: fmtTime(w.o) };
+    if (w && now < w.o) res = { label: tr(w.o >= 18 * 60 ? "Opens tonight {time}" : "Opens today {time}", { time: clock(w.o) }) };
     for (var i = 1; i <= 7 && !res; i++) {
       var n = windowFor(d + i);
       if (n) {
-        var when = (i === 1 ? (n.o >= 18 * 60 ? "tomorrow night " : "tomorrow ") : DAY_NAMES[(d + i) % 7] + " ") + fmtTime(n.o);
-        res = { label: "Opens " + when, opens: when };
+        res = { label: i === 1 ? tr(n.o >= 18 * 60 ? "Opens tomorrow night {time}" : "Opens tomorrow {time}", { time: clock(n.o) })
+          : tr("Opens {day} {time}", { day: tr(DAY_NAMES[(d + i) % 7]), time: clock(n.o) }) };
       }
     }
-    res = res || { label: "Closed", opens: "" };
+    res = res || { label: tr("Closed") };
     res.open = false;
     res.finishing = finishing;
     return res;
@@ -159,11 +219,11 @@
     var first = SITE.hours.mon;
     if (vals.every(function (v) { return v === vals[0]; }) && first) {
       var night = mins(first[1]) <= mins(first[0]) || mins(first[0]) >= 18 * 60;
-      return (night ? "Every night, " : "Every day, ") + fmtTime(mins(first[0])) + "\u2013" + fmtTime(mins(first[1]));
+      return tr(night ? "Every night" : "Every day") + ", " + clock(mins(first[0])) + "\u2013" + clock(mins(first[1]));
     }
     return DAYS.map(function (d, i) {
       var h = SITE.hours[d];
-      return DAY_NAMES[i].slice(0, 3) + " " + (h ? fmtTime(mins(h[0])) + "\u2013" + fmtTime(mins(h[1])) : "closed");
+      return tr(DAY_SHORT[i]) + " " + (h ? clock(mins(h[0])) + "\u2013" + clock(mins(h[1])) : tr("closed"));
     }).join(", ");
   }
 
@@ -303,7 +363,7 @@
   function addedMsg(text) {
     if (!freshStart) return text;
     freshStart = false;
-    return "New order started. " + text;
+    return tr("New order started.") + " " + text;
   }
   function setLineQty(k, q) {
     var s = S();
@@ -372,6 +432,7 @@
 
   /* ---------------------------------------------------------------- order time: as soon as possible, or a slot tonight */
   function slotLabel(m) { m = m % 1440; return m === 0 ? "Midnight" : fmtTime(m); }
+  function slotText(m) { m = m % 1440; return m === 0 ? tr("Midnight") : clock(m); }
   /* Time choices run from 30 min after opening (or 45 min from now) until last orders, never the closing minute itself. */
   function timeSlots() {
     var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
@@ -384,14 +445,14 @@
     var slots = [];
     if (win) {
       var start = Math.ceil(Math.max(win.o + 30, now + 45) / 15) * 15;
-      for (var m = start; m <= win.end; m += 15) slots.push(prefix + slotLabel(m));
+      for (var m = start; m <= win.end; m += 15) slots.push({ v: prefix + slotLabel(m), d: (prefix ? tr("Tomorrow") + " " : "") + slotText(m) });
     }
     return { asap: st.open, slots: slots };
   }
   function validWhen() {
     var s = S(), ts = timeSlots();
-    if (s.when && ts.slots.indexOf(s.when) >= 0) return s.when;
-    return ts.asap ? "" : (ts.slots[0] || "");
+    if (s.when && ts.slots.some(function (x) { return x.v === s.when; })) return s.when;
+    return ts.asap ? "" : (ts.slots[0] ? ts.slots[0].v : "");
   }
 
   /* ---------------------------------------------------------------- WhatsApp ticket */
@@ -510,15 +571,16 @@
 
   /* ---------------------------------------------------------------- small UI helpers */
   function flagText(item) {
-    return (item.flags || []).map(function (f) { return '<span class="fl fl--' + esc(f) + '">' + esc(FLAG_NAMES[f] || f) + "</span>"; }).join("");
+    return (item.flags || []).map(function (f) { return '<span class="fl fl--' + esc(f) + '">' + esc(tr(FLAG_NAMES[f] || f)) + "</span>"; }).join("");
   }
   /* What the recipe contains, plus the honest part: one kitchen cooks everything, so traces are possible. */
   function allergenLine(item) {
     if (item.kind === "drink") return "";
-    var base = !item.allergens || !item.allergens.length ? "No major allergens in the recipe." :
-      "Contains " + item.allergens.map(function (a) { return ALLERGEN_NAMES[a] || a; }).join(", ") + ".";
-    return base + " Everything is cooked in one kitchen" + (item.fried ? " and fried in shared oil" : "") +
-      ", so traces of gluten, egg, milk, soy, sesame, peanuts or shellfish are possible.";
+    var base = !item.allergens || !item.allergens.length ? tr("No major allergens in the recipe.") :
+      tr("Contains {list}.", { list: item.allergens.map(function (a) { return tr(ALLERGEN_NAMES[a] || a); }).join(", ") });
+    return base + " " + tr(item.fried
+      ? "Everything is cooked in one kitchen and fried in shared oil, so traces of gluten, egg, milk, soy, sesame, peanuts or shellfish are possible."
+      : "Everything is cooked in one kitchen, so traces of gluten, egg, milk, soy, sesame, peanuts or shellfish are possible.");
   }
   function fromPrice(m) {
     var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
@@ -540,7 +602,7 @@
     return host ? { b: host.getAttribute("data-b"), id: host.getAttribute("data-id") } : null;
   }
   function plusBtn(item, orderable) {
-    return orderable ? '<button type="button" class="plus" data-quick aria-label="Add ' + esc(item.name) + '">' + ICON.plus + "</button>" : "";
+    return orderable ? '<button type="button" class="plus" data-quick aria-label="' + esc(tr("Add {name}", { name: item.name })) + '">' + ICON.plus + "</button>" : "";
   }
   function qtyBadge(n) { return '<span class="qtybadge"' + (n ? "" : " hidden") + ">" + n + "</span>"; }
 
@@ -553,7 +615,7 @@
       '<div class="row__text">' +
         (opts.brand ? '<p class="row__brand">' + esc(m.name) + "</p>" : "") +
         '<h3 class="row__name">' + esc(item.name) + "</h3>" +
-        '<p class="row__price">' + money(item.price) + (item.soldOut ? ' <span class="row__out">Sold out today</span>' : "") + "</p>" +
+        '<p class="row__price">' + money(item.price) + (item.soldOut ? ' <span class="row__out">' + esc(tr("Sold out today")) + "</span>" : "") + "</p>" +
         (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + esc(item.desc) + "</p>" : "") +
         (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
       "</div>" +
@@ -564,9 +626,9 @@
   function featHTML(b, item, opts) {
     opts = opts || {};
     var m = MENU[b], n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
-    var tag = item.soldOut ? "Sold out today" : opts.brand ? m.name : item.style === "bundle" ? "Family deal" : item.style === "signature" ? "Signature" : "";
+    var tag = item.soldOut ? tr("Sold out today") : opts.brand ? m.name : item.style === "bundle" ? tr("Family deal") : item.style === "signature" ? tr("Signature") : "";
     return '<article class="feat' + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
-      '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", sold out today" : "") + '"></button>' +
+      '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
       '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (opts.eager ? "eager" : "lazy") + '"' + (opts.eager ? ' fetchpriority="high"' : "") + ' decoding="async">' + qtyBadge(n) + plusBtn(item, orderable) + "</div>" +
       '<h3 class="feat__name">' + esc(item.name) + "</h3>" +
       '<p class="feat__meta"><span>' + money(item.price) + "</span>" + (tag ? "<span>" + esc(tag) + "</span>" : "") + "</p></article>";
@@ -585,7 +647,7 @@
     if (!it) return;
     var line = addItem(it.b, it.id, {}, 1);
     if (line) {
-      toast(addedMsg(line.n + " added"));
+      toast(addedMsg(tr("{name} added", { name: line.n })));
       bump();
       btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop");
     }
@@ -606,7 +668,7 @@
     var o = normOpts(item, {}), qty = 1;
     var groups = (item.options || []).map(function (g) {
       var type = g.type === "one" ? "radio" : "checkbox";
-      return '<fieldset class="opt"><legend>' + esc(g.label) + (g.type === "one" ? "" : " <span>optional</span>") + '</legend><div class="chips">' +
+      return '<fieldset class="opt"><legend>' + esc(g.label) + (g.type === "one" ? "" : " <span>" + esc(tr("optional")) + "</span>") + '</legend><div class="chips">' +
         g.choices.map(function (c) {
           var on = g.type === "one" ? o[g.id] === c.id : false;
           return '<label class="chip"><input type="' + type + '" name="g-' + esc(g.id) + '" value="' + esc(c.id) + '"' + (on ? " checked" : "") + ">" +
@@ -615,14 +677,14 @@
     }).join("");
     var pairs = (item.kind === "side" || item.kind === "drink") ? [] :
       menu.items.filter(function (i) { return (i.kind === "side" || i.kind === "drink") && !i.soldOut; }).slice(0, 5);
-    var pairHTML = pairs.length && orderable ? '<fieldset class="opt"><legend>Goes well with <span>optional</span></legend><div class="chips">' +
+    var pairHTML = pairs.length && orderable ? '<fieldset class="opt"><legend>' + esc(tr("Goes well with")) + " <span>" + esc(tr("optional")) + '</span></legend><div class="chips">' +
       pairs.map(function (i) {
         return '<label class="chip"><input type="checkbox" name="pair" value="' + esc(i.id) + '"><span>' + esc(i.name.replace(/ \(can\)$/, "")) + " +" + shortMoney(i.price) + "</span></label>";
       }).join("") + "</div></fieldset>" : "";
     var inc = item.includes ? '<ul class="dish__inc">' + includesNames(menu, item).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "";
     var node = el(
       '<div class="dish' + (item.kind === "drink" ? " dish--drink" : "") + '" style="--accent:' + esc(menu.color) + ";--accent-ink:" + inkFor(menu.color) + '">' +
-        '<button type="button" class="x x--float" data-close aria-label="Close">' + ICON.close + "</button>" +
+        '<button type="button" class="x x--float" data-close aria-label="' + esc(tr("Close")) + '">' + ICON.close + "</button>" +
         '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' +
         '<div class="dish__body">' +
           (PAGE !== "brand" ? '<p class="dish__brand">' + esc(menu.name) + "</p>" : "") +
@@ -630,11 +692,11 @@
           '<p class="dish__price">' + money(item.price) + "</p>" +
           '<p class="dish__desc">' + esc(item.desc) + "</p>" + inc +
           (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
-          (allergenLine(item) ? '<p class="dish__allergens">' + esc(allergenLine(item)) + " Allergies? Add a note at checkout.</p>" : "") +
+          (allergenLine(item) ? '<p class="dish__allergens">' + esc(allergenLine(item) + " " + tr("Allergies? Add a note at checkout.")) + "</p>" : "") +
           groups + pairHTML +
         "</div>" +
         '<div class="dish__foot">' +
-          '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="One less">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="One more">' + ICON.plus + "</button></div>" +
+          '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="' + esc(tr("One less")) + '">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="' + esc(tr("One more")) + '">' + ICON.plus + "</button></div>" +
           '<button type="button" class="btn btn--accent dish__add"' + (orderable ? "" : " disabled") + "></button>" +
         "</div>" +
       "</div>");
@@ -654,10 +716,10 @@
       o = readOpts();
       $(".qty__n", node).textContent = qty;
       var btn = $(".dish__add", node);
-      if (!orderable) btn.textContent = item.soldOut ? "Sold out today" : "Opening soon";
+      if (!orderable) btn.textContent = tr(item.soldOut ? "Sold out today" : "Opening soon");
       else {
         var extra = pickedPairs(), n = qty + extra.length;
-        btn.innerHTML = "<span>Add" + (n > 1 ? " " + n + " items" : "") + "</span><span>" + money(unitPrice(item, o) * qty + extra.reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
+        btn.innerHTML = "<span>" + esc(n > 1 ? tr("Add {n} items", { n: n }) : tr("Add")) + "</span><span>" + money(unitPrice(item, o) * qty + extra.reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
       }
     }
     node.addEventListener("change", paint);
@@ -672,7 +734,7 @@
       addItem(b, id, readOpts(), qty);
       extra.forEach(function (i) { addItem(b, i.id, {}, 1); });
       closeSheet(rec);
-      toast(addedMsg(qty + " × " + item.name + (extra.length ? " + " + plural(extra.length, "extra", "extras") : "") + " added"));
+      toast(addedMsg(tr("{name} added", { name: qty + " × " + item.name + (extra.length ? " + " + plural(extra.length, "extra", "extras") : "") })));
       bump();
     });
     paint();
@@ -681,29 +743,29 @@
   /* ---------------------------------------------------------------- delivery or pickup, chosen up front */
   function deliverLabel() {
     var s = S();
-    if (s.mode === "pickup") return "Pickup";
-    return s.area || "Delivery";
+    if (s.mode === "pickup") return tr("Pickup");
+    return s.area === OTHER ? tr(OTHER) : s.area || tr("Delivery");
   }
   function paintDeliver() { $$("[data-oa-deliver] .deliver__t").forEach(function (t) { t.textContent = deliverLabel(); }); }
   function openDeliver() {
     var s = S(), areas = (SITE.areas || []).concat([OTHER]);
     var node = el('<div class="dl">' +
-      '<div class="sheet__head"><h2>Delivery or pickup</h2><button type="button" class="x" data-close aria-label="Close">' + ICON.close + "</button></div>" +
-      '<fieldset class="seg"><legend class="sr">Delivery or pickup</legend>' +
-        '<label><input type="radio" name="dl-mode" value="delivery"' + (s.mode !== "pickup" ? " checked" : "") + '><span><b>Delivery</b><small>' + shortMoney(SITE.deliveryFee) + " per order</small></span></label>" +
-        '<label><input type="radio" name="dl-mode" value="pickup"' + (s.mode === "pickup" ? " checked" : "") + "><span><b>Pickup</b><small>Free</small></span></label>" +
+      '<div class="sheet__head"><h2>' + esc(tr("Delivery or pickup")) + '</h2><button type="button" class="x" data-close aria-label="' + esc(tr("Close")) + '">' + ICON.close + "</button></div>" +
+      '<fieldset class="seg"><legend class="sr">' + esc(tr("Delivery or pickup")) + "</legend>" +
+        '<label><input type="radio" name="dl-mode" value="delivery"' + (s.mode !== "pickup" ? " checked" : "") + "><span><b>" + esc(tr("Delivery")) + "</b><small>" + esc(tr("{fee} per order", { fee: shortMoney(SITE.deliveryFee) })) + "</small></span></label>" +
+        '<label><input type="radio" name="dl-mode" value="pickup"' + (s.mode === "pickup" ? " checked" : "") + "><span><b>" + esc(tr("Pickup")) + "</b><small>" + esc(tr("Free")) + "</small></span></label>" +
       "</fieldset>" +
-      '<fieldset class="dl__areas"' + (s.mode === "pickup" ? " hidden" : "") + '><legend>Area</legend><div class="chips">' +
-        areas.map(function (a) { return '<label class="chip"><input type="radio" name="dl-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(a) + "</span></label>"; }).join("") +
-      '</div><p class="note note--warn dl__other"' + (s.area === OTHER && s.mode !== "pickup" ? "" : " hidden") + ">" + OTHER_NOTE + "</p></fieldset>" +
-      '<button type="button" class="btn btn--accent dl__done" data-close>Done</button></div>');
+      '<fieldset class="dl__areas"' + (s.mode === "pickup" ? " hidden" : "") + "><legend>" + esc(tr("Area")) + '</legend><div class="chips">' +
+        areas.map(function (a) { return '<label class="chip"><input type="radio" name="dl-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(tr(a)) + "</span></label>"; }).join("") +
+      '</div><p class="note note--warn dl__other"' + (s.area === OTHER && s.mode !== "pickup" ? "" : " hidden") + ">" + esc(tr(OTHER_NOTE)) + "</p></fieldset>" +
+      '<button type="button" class="btn btn--accent dl__done" data-close>' + esc(tr("Done")) + "</button></div>");
     node.addEventListener("change", function (e) {
       var t = e.target;
       if (t.name === "dl-mode") { S().mode = t.value; $(".dl__areas", node).hidden = t.value === "pickup"; commit(); }
       if (t.name === "dl-area") { S().area = t.value; $(".dl__other", node).hidden = t.value !== OTHER; commit(); }
       paintDeliver();
     });
-    openSheet(node, { label: "Delivery or pickup" });
+    openSheet(node, { label: tr("Delivery or pickup") });
   }
 
   /* ---------------------------------------------------------------- order (checkout) */
@@ -722,15 +784,15 @@
       if (a) {
         var p = a.getAttribute("data-add").split("|");
         var line = addItem(p[0], p[1], {}, 1);
-        if (line) { toast(addedMsg(line.n + " added")); bump(); }
+        if (line) { toast(addedMsg(tr("{name} added", { name: line.n }))); bump(); }
         return;
       }
       if (e.target.closest("[data-copy]")) {
         if (!validate(node)) return;
-        copyText(buildMessage()).then(function (ok) { toast(ok ? "Copied. Paste it in WhatsApp." : "Copy didn’t work here."); });
+        copyText(buildMessage()).then(function (ok) { toast(tr(ok ? "Copied. Paste it in WhatsApp." : "Copy didn’t work here.")); });
         return;
       }
-      if (e.target.closest("[data-new]")) { clearOrder(); toast("New order started"); if (node._mode === "sheet") closeSheet(); return; }
+      if (e.target.closest("[data-new]")) { clearOrder(); toast(tr("New order started")); if (node._mode === "sheet") closeSheet(); return; }
       if (e.target.closest("[data-edit]")) { S().sentAt = 0; commit(); return; }
     });
     node.addEventListener("input", function (e) {
@@ -754,7 +816,7 @@
   /* cheap add-ons from the other restaurants: the whole point of one kitchen is one delivery */
   var CROSS = [["dushi-wok", "er"], ["nonnas-night-in", "gb"], ["taco-brava", "cs"], ["smash-shack", "fs"], ["oranje-snack", "bb"]];
   function suggItem(b, i) {
-    return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(b + "|" + i.id) + '" aria-label="Add ' + esc(i.name) + ", " + money(i.price) + '">' +
+    return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(b + "|" + i.id) + '" aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price)) + '">' +
       '<span class="sugg__img">' + thumbImg(i, ' loading="lazy" decoding="async"') + "<i>" + ICON.plus + "</i></span>" +
       '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
   }
@@ -769,7 +831,7 @@
       var picks = [];
       if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
       if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
-      if (picks.length) out += '<section class="sugg" aria-label="Add to your order"><h3>' + (!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side") + "</h3>" +
+      if (picks.length) out += '<section class="sugg" aria-label="' + esc(tr("Add to your order")) + '"><h3>' + esc(tr(!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side")) + "</h3>" +
         '<div class="sugg__row">' + picks.map(function (i) { return suggItem(host, i); }).join("") + "</div></section>";
     }
     var other = CROSS.filter(function (c) {
@@ -777,8 +839,8 @@
       return i && !i.soldOut && brandStatus(c[0]) === "open" && brands.indexOf(c[0]) < 0;
     }).slice(0, 4);
     if (other.length) {
-      out += '<section class="sugg sugg--x" aria-label="Add from our other restaurants"><h3>From our other restaurants' +
-        (S().mode === "delivery" ? " <span>Still one " + shortMoney(SITE.deliveryFee) + " delivery</span>" : "") + "</h3>" +
+      out += '<section class="sugg sugg--x" aria-label="' + esc(tr("From our other restaurants")) + '"><h3>' + esc(tr("From our other restaurants")) +
+        (S().mode === "delivery" ? " <span>" + esc(tr("Still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</span>" : "") + "</h3>" +
         '<div class="sugg__row">' + other.map(function (c) { return suggItem(c[0], MENU[c[0]].byId[c[1]]); }).join("") + "</div></section>";
     }
     return out;
@@ -805,34 +867,34 @@
     var fKey = had ? focusKey(document.activeElement) : null;
     var html = "";
     var head = node._mode === "sheet"
-      ? '<div class="sheet__head"><h2>Your order</h2><button type="button" class="x" data-close aria-label="Close">' + ICON.close + "</button></div>"
+      ? '<div class="sheet__head"><h2>' + esc(tr("Your order")) + '</h2><button type="button" class="x" data-close aria-label="' + esc(tr("Close")) + '">' + ICON.close + "</button></div>"
       : "";
     // the cart page has its own "Your order" title: hide it while the order is empty, so the two don't stack
     var pageTitle = node._mode === "page" ? $(".cart > h1") : null;
     if (pageTitle) pageTitle.hidden = !lines.length;
     if (!lines.length) {
-      node.innerHTML = head + '<div class="empty"><p class="empty__t">Your order is empty</p><p>Tap + on any dish.</p>' +
-        (PAGE === "brand" && node._mode === "sheet" ? '<button type="button" class="btn btn--accent" data-close>Back to the menu</button>' : '<a class="btn btn--accent" href="' + path("index.html") + '">Browse restaurants</a>') + "</div>";
+      node.innerHTML = head + '<div class="empty"><p class="empty__t">' + esc(tr("Your order is empty")) + "</p><p>" + esc(tr("Tap + on any dish.")) + "</p>" +
+        (PAGE === "brand" && node._mode === "sheet" ? '<button type="button" class="btn btn--accent" data-close>' + esc(tr("Back to the menu")) + "</button>" : '<a class="btn btn--accent" href="' + path("index.html") + '">' + esc(tr("Browse restaurants")) + "</a>") + "</div>";
       if (had) restoreFocus(node, null, ".x, .btn");
       return;
     }
     if (s.sentAt) {
       node.innerHTML = head + '<div class="sent"><div class="sent__icon">' + ICON.wa + "</div>" +
-        '<p class="sent__k">Order #' + esc(s.no) + "</p>" +
-        "<h3>One more step: press Send in WhatsApp</h3>" +
-        "<p>Your order is typed out in the chat. Once you press <b>Send</b>, we reply on WhatsApp to confirm it.</p>" +
-        '<a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "<span>Open WhatsApp again</span></a>" +
-        '<button type="button" class="btn btn--line" data-new>Start a new order</button>' +
-        '<button type="button" class="link" data-edit>Edit this order</button></div>';
+        '<p class="sent__k">' + esc(tr("Order #{no}", { no: s.no })) + "</p>" +
+        "<h3>" + esc(tr("One more step: press Send in WhatsApp")) + "</h3>" +
+        "<p>" + tr("Your order is typed out in the chat. Once you press <b>Send</b>, we reply on WhatsApp to confirm it.") + "</p>" +
+        '<a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "<span>" + esc(tr("Open WhatsApp again")) + "</span></a>" +
+        '<button type="button" class="btn btn--line" data-new>' + esc(tr("Start a new order")) + "</button>" +
+        '<button type="button" class="link" data-edit>' + esc(tr("Edit this order")) + "</button></div>";
       wireSend(node);
       if (had) restoreFocus(node, null, "[data-send]");
       return;
     }
     html += head;
-    if (!st.open) html += '<p class="note note--warn">' + (st.finishing ? "Last orders have passed for tonight. " : "We\u2019re closed. ") + esc(st.label) + ". Order now for later and we confirm when we open.</p>";
+    if (!st.open) html += '<p class="note note--warn">' + esc(tr(st.finishing ? "Last orders have passed for tonight." : "We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
     var drinks = drinkLines(), groups = [];
     brands.forEach(function (b) { var f = foodLines(b); if (f.length) groups.push({ t: brandName(b), lines: f }); });
-    if (drinks.length) groups.push({ t: "Drinks", lines: drinks });
+    if (drinks.length) groups.push({ t: tr("Drinks"), lines: drinks });
     groups.forEach(function (g) {
       if (groups.length > 1) html += '<h3 class="lines__brand">' + esc(g.t) + "</h3>";
       html += '<ul class="lines">' + g.lines.map(function (l) {
@@ -840,51 +902,51 @@
         return '<li class="line">' +
           '<div class="line__main"><p class="line__n">' + esc(l.n) + "</p>" +
           (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
-          (l.soldOut ? '<p class="line__d line__d--warn">Sold out today. Please remove.</p>' : "") +
+          (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
           '<p class="line__t">' + money(l.p * l.q) + "</p></div>" +
-          '<div class="qty"><button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + (l.q === 1 ? "Remove " : "One less ") + esc(l.n) + '">' + ICON.minus + "</button>" +
+          '<div class="qty"><button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + esc(tr(l.q === 1 ? "Remove {name}" : "One less {name}", { name: l.n })) + '">' + ICON.minus + "</button>" +
           '<span class="qty__n">' + l.q + "</span>" +
-          '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="One more ' + esc(l.n) + '">' + ICON.plus + "</button></div></li>";
+          '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="' + esc(tr("One more {name}", { name: l.n })) + '">' + ICON.plus + "</button></div></li>";
       }).join("") + "</ul>";
     });
     html += suggestions();
     var areas = (SITE.areas || []).concat([OTHER]);
     html += '<form class="form" novalidate onsubmit="return false">' +
-      '<fieldset class="seg"><legend class="sr">Delivery or pickup</legend>' +
-        '<label><input type="radio" name="oa-mode" value="delivery"' + (s.mode === "delivery" ? " checked" : "") + "><span><b>Delivery</b><small>" + shortMoney(SITE.deliveryFee) + " per order</small></span></label>" +
-        '<label><input type="radio" name="oa-mode" value="pickup"' + (s.mode === "pickup" ? " checked" : "") + "><span><b>Pickup</b><small>Free</small></span></label>" +
+      '<fieldset class="seg"><legend class="sr">' + esc(tr("Delivery or pickup")) + "</legend>" +
+        '<label><input type="radio" name="oa-mode" value="delivery"' + (s.mode === "delivery" ? " checked" : "") + "><span><b>" + esc(tr("Delivery")) + "</b><small>" + esc(tr("{fee} per order", { fee: shortMoney(SITE.deliveryFee) })) + "</small></span></label>" +
+        '<label><input type="radio" name="oa-mode" value="pickup"' + (s.mode === "pickup" ? " checked" : "") + "><span><b>" + esc(tr("Pickup")) + "</b><small>" + esc(tr("Free")) + "</small></span></label>" +
       "</fieldset>";
     var ts = timeSlots(), when = validWhen();
-    var whenOpts = (ts.asap ? ['<option value=""' + (when === "" ? " selected" : "") + ">As soon as possible (" + esc(SITE.eta || "") + ")</option>"] : [])
-      .concat(ts.slots.map(function (x) { return '<option value="' + esc(x) + '"' + (x === when ? " selected" : "") + ">" + esc(x) + "</option>"; }));
-    html += '<label class="field"><span class="field__l">' + (ts.asap ? "When" : "Tonight at") + '</span><span class="select"><select id="oa-when" data-f="when">' + whenOpts.join("") + "</select></span></label>";
+    var whenOpts = (ts.asap ? ['<option value=""' + (when === "" ? " selected" : "") + ">" + esc(tr("As soon as possible ({eta})", { eta: SITE.eta || "" })) + "</option>"] : [])
+      .concat(ts.slots.map(function (x) { return '<option value="' + esc(x.v) + '"' + (x.v === when ? " selected" : "") + ">" + esc(x.d) + "</option>"; }));
+    html += '<label class="field"><span class="field__l">' + esc(tr(ts.asap ? "When" : "Tonight at")) + '</span><span class="select"><select id="oa-when" data-f="when">' + whenOpts.join("") + "</select></span></label>";
     if (s.mode === "delivery") {
-      html += '<fieldset class="field field--areas" id="oa-f-area"><legend>Area</legend><div class="chips">' +
+      html += '<fieldset class="field field--areas" id="oa-f-area"><legend>' + esc(tr("Area")) + '</legend><div class="chips">' +
         areas.map(function (a) {
-          return '<label class="chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(a) + "</span></label>";
-        }).join("") + '</div><p class="field__err">Pick your area.</p>' +
-        (s.area === OTHER ? '<p class="note note--warn">' + OTHER_NOTE + "</p>" : "") + "</fieldset>" +
-        '<label class="field" id="oa-f-addr"><span class="field__l">Address or landmark</span>' +
+          return '<label class="chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(tr(a)) + "</span></label>";
+        }).join("") + '</div><p class="field__err">' + esc(tr("Pick your area.")) + "</p>" +
+        (s.area === OTHER ? '<p class="note note--warn">' + esc(tr(OTHER_NOTE)) + "</p>" : "") + "</fieldset>" +
+        '<label class="field" id="oa-f-addr"><span class="field__l">' + esc(tr("Address or landmark")) + "</span>" +
         '<textarea id="oa-addr" data-f="addr" rows="2" maxlength="160" autocomplete="street-address" aria-describedby="oa-addr-help">' + esc(s.addr) + "</textarea>" +
-        '<span class="field__help" id="oa-addr-help">Street and house number, or a landmark. House colour helps the driver.</span>' +
-        '<span class="field__err">Add an address for the driver.</span></label>';
+        '<span class="field__help" id="oa-addr-help">' + esc(tr("Street and house number, or a landmark. House colour helps the driver.")) + "</span>" +
+        '<span class="field__err">' + esc(tr("Add an address for the driver.")) + "</span></label>";
     } else {
-      html += '<p class="note">We send the pickup address and time on WhatsApp.</p>';
+      html += '<p class="note">' + esc(tr("We send the pickup address and time on WhatsApp.")) + "</p>";
     }
-    html += '<label class="field" id="oa-f-name"><span class="field__l">Name</span>' +
+    html += '<label class="field" id="oa-f-name"><span class="field__l">' + esc(tr("Name")) + "</span>" +
       '<input id="oa-name" data-f="name" type="text" maxlength="40" autocomplete="name" value="' + esc(s.name) + '">' +
-      '<span class="field__err">Add your name.</span></label>' +
-      '<label class="field"><span class="field__l">Note <em>optional</em></span>' +
-      '<textarea id="oa-note" data-f="note" rows="2" maxlength="160" placeholder="Allergies, gate code">' + esc(s.note) + "</textarea></label>" +
+      '<span class="field__err">' + esc(tr("Add your name.")) + "</span></label>" +
+      '<label class="field"><span class="field__l">' + esc(tr("Note")) + " <em>" + esc(tr("optional")) + "</em></span>" +
+      '<textarea id="oa-note" data-f="note" rows="2" maxlength="160" placeholder="' + esc(tr("Allergies, gate code")) + '">' + esc(s.note) + "</textarea></label>" +
       "</form>";
-    html += '<dl class="sum"><div><dt>Food</dt><dd>' + money(subtotal()) + "</dd></div>" +
-      "<div><dt>" + (s.mode === "delivery" ? "Delivery" : "Pickup") + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : "Free") + "</dd></div>" +
-      '<div class="sum__total"><dt>Total</dt><dd>' + money(total()) + "</dd></div></dl>";
-    html += '<details class="ticket"><summary>Preview the message</summary><pre>' + esc(buildMessage()) + "</pre></details>";
-    html += '<p class="order__hint">' + esc(payLine()) + "Opens WhatsApp with your order typed out. Press <b>Send</b> there.</p>" +
-      '<button type="button" class="link" data-copy>Copy the order instead</button>' +
+    html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
+      "<div><dt>" + esc(tr(s.mode === "delivery" ? "Delivery" : "Pickup")) + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : esc(tr("Free"))) + "</dd></div>" +
+      '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
+    html += '<details class="ticket"><summary>' + esc(tr("Preview the message")) + "</summary><pre>" + esc(buildMessage()) + "</pre></details>";
+    html += '<p class="order__hint">' + esc(payLine()) + tr("Opens WhatsApp with your order typed out. Press <b>Send</b> there.") + "</p>" +
+      '<button type="button" class="link" data-copy>' + esc(tr("Copy the order instead")) + "</button>" +
       '<div class="order__send"><a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
-      '<span class="lg">Send on WhatsApp</span><span class="sm">Send order</span><span class="btn__total">' + money(total()) + "</span></a></div>";
+      '<span class="lg">' + esc(tr("Send on WhatsApp")) + '</span><span class="sm">' + esc(tr("Send order")) + '</span><span class="btn__total">' + money(total()) + "</span></a></div>";
     node.innerHTML = html;
     wireSend(node);
     if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-send]");
@@ -905,7 +967,7 @@
     if (first) {
       first.scrollIntoView({ behavior: "smooth", block: "center" });
       var inp = $("input,textarea", first); if (inp && inp.type !== "radio") inp.focus({ preventScroll: true });
-      toast("Fill in the missing details");
+      toast(tr("Fill in the missing details"));
       return false;
     }
     return true;
@@ -921,11 +983,11 @@
     a.addEventListener("click", function (e) {
       if (!liveLines().length) { e.preventDefault(); return; }
       if (!S().sentAt && !validate(node)) { e.preventDefault(); return; }
-      if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast("Remove the sold-out dish first"); return; }
+      if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast(tr("Remove the sold-out dish first")); return; }
       if (!S().sentAt) { S().no = newOrderNo(); writeStore(S(), true); }   // number = the minute it's sent
       var link = checkoutLink();
       a.href = link.url;
-      if (link.short) copyText(link.full).then(function (ok) { toast(ok ? "Long order: it’s copied. Paste it in the chat." : "Tap “Copy the order” and paste it in WhatsApp."); });
+      if (link.short) copyText(link.full).then(function (ok) { toast(tr(ok ? "Long order: it’s copied. Paste it in the chat." : "Tap “Copy the order instead” and paste it in WhatsApp.")); });
       if (!S().sentAt) {
         try { localStorage.setItem(LAST_KEY, JSON.stringify({ at: Date.now(), lines: liveLines().map(function (l) { return { b: l.b, id: l.id, q: l.q, o: l.o }; }) })); } catch (err) { /* private mode */ }
       }
@@ -951,17 +1013,17 @@
     if (!n) return;
     var stale = Date.now() - (S().updated || 0) > 2 * 3600 * 1000;
     $(".bar__count", bar).textContent = n;
-    $(".bar__label", bar).textContent = S().sentAt ? "Sent: see order" : stale ? "Continue order" : "View order";
+    $(".bar__label", bar).textContent = tr(S().sentAt ? "Sent: see order" : stale ? "Continue order" : "View order");
     // food only here; delivery is added at checkout, once the customer has picked delivery or pickup
     $(".bar__total", bar).textContent = money(subtotal());
-    $("button", bar).setAttribute("aria-label", "View order: " + plural(n, "item", "items") + ", " + money(subtotal()) + " before delivery");
+    $("button", bar).setAttribute("aria-label", tr("View order: {items}, {total} before delivery", { items: plural(n, "item", "items"), total: money(subtotal()) }));
   }
   var orderSheet = null;
   function openOrder() {
     if (orderSheet) return;
     var node = orderNode("sheet");
     Promise.all(menusInCart().concat(crossMenus()).map(function (b) { return loadMenu(b).catch(function () {}); })).then(function () { renderOrder(node); });
-    orderSheet = openSheet(node, { label: "Your order", cls: "sheet__panel--order", onClose: function () { orderSheet = null; } });
+    orderSheet = openSheet(node, { label: tr("Your order"), cls: "sheet__panel--order", onClose: function () { orderSheet = null; } });
     orderSheet.node = node;
   }
 
@@ -971,17 +1033,22 @@
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
     var same = vals.every(function (v) { return v === vals[0]; }) && SITE.hours.mon;
     var h = same ? SITE.hours.mon : SITE.hours[DAYS[arubaNow().getDay()]];
-    if (!h) return { t: "Closed", d: "Today" };
+    if (!h) return { t: tr("Closed"), d: tr("Today") };
     var night = mins(h[1]) <= mins(h[0]) || mins(h[0]) >= 18 * 60;
-    return { t: fmtTime(mins(h[0])) + "–" + fmtTime(mins(h[1])), d: same ? (night ? "Every night" : "Every day") : "Today" };
+    return { t: clock(mins(h[0])) + "–" + clock(mins(h[1])), d: tr(same ? (night ? "Every night" : "Every day") : "Today") };
   }
+  function setHTML(sel, html) { $$(sel).forEach(function (n) { if (n._html !== html) { n._html = html; n.innerHTML = html; } }); }
   function fillCommon() {
     var hs = hoursShort();
     $$("[data-oa-hours]").forEach(function (n) { n.textContent = hoursLabel(); });
     $$("[data-oa-hours-t]").forEach(function (n) { n.textContent = hs.t; });
-    $$("[data-oa-hours-d]").forEach(function (n) { n.textContent = hs.d + (SITE.lastOrder ? " · last orders " + fmtTime(mins(SITE.lastOrder)) : ""); });
+    $$("[data-oa-hours-d]").forEach(function (n) { n.textContent = hs.d + (SITE.lastOrder ? " · " + tr("last orders {time}", { time: clock(mins(SITE.lastOrder)) }) : ""); });
     $$("[data-oa-pay]").forEach(function (n) { n.textContent = clean(SITE.payment || ""); n.hidden = !SITE.payment; });
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
+    $$("[data-oa-fee-t]").forEach(function (n) { n.textContent = tr(n.getAttribute("data-oa-fee-t"), { fee: shortMoney(SITE.deliveryFee) }); });
+    setHTML("[data-oa-hero]", esc(tr("Five restaurants. One kitchen.")) + " <b>" + esc(tr("One {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
+    setHTML("[data-oa-deliver-to]", esc(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + esc(tr("Elsewhere?")) +
+      ' <a data-oa-ask href="#" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.");
     $$("[data-oa-eta]").forEach(function (n) { n.textContent = SITE.eta || ""; });
     $$("[data-oa-areas]").forEach(function (n) { n.textContent = listAnd(SITE.areas || []); });
     $$("[data-oa-ask]").forEach(function (a) { a.href = waLink("Hi! Do you deliver to my area? I’m in "); });
@@ -992,12 +1059,12 @@
     var iab = /(Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|Snapchat|Line\/)/i.test(ua);
     if (!iab) return;
     var app = /Instagram/i.test(ua) ? "Instagram" : /FBAN|FBAV|FB_IAB/i.test(ua) ? "Facebook" : /musical_ly|Bytedance/i.test(ua) ? "TikTok" : /Snapchat/i.test(ua) ? "Snapchat" : "this app";
-    var box = el('<div class="iab"><p>In ' + esc(app) + "? If WhatsApp doesn’t open, tap <b>•••</b> → <b>Open in browser</b>.</p>" +
-      '<button type="button" class="link">Copy link</button></div>');
+    var box = el('<div class="iab"><p>' + tr("In {app}? If WhatsApp doesn’t open, tap <b>•••</b> → <b>Open in browser</b>.", { app: esc(app === "this app" ? tr("this app") : app) }) + "</p>" +
+      '<button type="button" class="link">' + esc(tr("Copy link")) + "</button></div>");
     var host = $("main") || BODY;
     host.insertBefore(box, host.firstChild);
     $("button", box).addEventListener("click", function () {
-      copyText(shareUrl()).then(function (ok) { toast(ok ? "Link copied with your order" : "Use ••• then Open in browser"); });
+      copyText(shareUrl()).then(function (ok) { toast(tr(ok ? "Link copied with your order" : "Use ••• then Open in browser")); });
     });
   }
   function shareUrl() {
@@ -1019,12 +1086,12 @@
       pack.forEach(function (p) { addItem(p[0], p[1], p[3] || {}, p[2]); });
     });
   }
-  function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1]; }
+  function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " " + tr("and") + " " + arr[arr.length - 1]; }
   function paintSign(first) {
     var sign = $("[data-oa-sign]");
     if (!sign) return;
     var st = kitchenStatus();
-    var html = st.open ? "<b>Open</b><span>" + esc(st.label.replace(/^Open /, "")) + "</span>" : "<b>Closed</b><span>" + esc(st.label) + "</span>";
+    var html = st.open ? "<b>" + esc(tr("Open")) + "</b><span>" + esc(st.sub) + "</span>" : "<b>" + esc(tr("Closed")) + "</b><span>" + esc(st.label) + "</span>";
     if (sign._html === html) return;   // only touch it when it changes, so screen readers don't repeat it every minute
     sign._html = html;
     sign.innerHTML = html;
@@ -1055,23 +1122,23 @@
         '<p class="store__tag">' + esc(menu.tagline) + "</p>" +
         '<ul class="facts">' +
           '<li class="facts__status' + (st.open ? " is-open" : "") + '"><i></i>' + esc(st.label) + "</li>" +
-          "<li>" + shortMoney(SITE.deliveryFee) + " delivery</li>" +
+          "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
           "<li>" + esc(SITE.eta || "") + "</li>" +
         "</ul>" +
-        (status === "soon" ? '<p class="note note--warn">Opening soon. Ordering starts shortly.</p>' : "") +
-        (status === "hidden" ? '<p class="note note--warn">Not taking orders right now.</p>' : "") +
+        (status === "soon" ? '<p class="note note--warn">' + esc(tr("Opening soon. Ordering starts shortly.")) + "</p>" : "") +
+        (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>";
     if (feat.length) {
-      html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">Featured</h2>' +
+      html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Featured")) + "</h2>" +
         '<div class="rail rail--feat">' + feat.map(function (i) { return featHTML(b, i); }).join("") + "</div></section>";
     }
     secs.forEach(function (s) {
-      html += '<section class="sec" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' + esc(s.title) + "</h2>" +
+      html += '<section class="sec" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' + esc(tr(s.title)) + "</h2>" +
         '<div class="' + (s.id === "drinks" ? "cans" : "rows") + '">' + s.items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
     });
     html += '<section class="sec also" id="oa-also" aria-labelledby="h-also" hidden></section>';
-    html += '<footer class="pfoot"><p>' + esc(menu.imageNote) + " Prices in Aruban florin (ƒ).</p>" +
-      '<a class="pfoot__all" href="' + path("index.html") + '">All restaurants</a></footer>';
+    html += '<footer class="pfoot"><p>' + esc(tr(menu.imageNote) + " " + tr("Prices in Aruban florin (ƒ).")) + "</p>" +
+      '<a class="pfoot__all" href="' + path("index.html") + '">' + esc(tr("All restaurants")) + "</a>" + langSwitch() + "</footer>";
     main.innerHTML = html;
     wireVideo(main);
     later(function () {
@@ -1080,8 +1147,8 @@
         var box = $("#oa-also");
         var cards = others.filter(function (x) { return MENU[x]; }).map(function (x) { return miniShop(x); }).join("");
         if (!box || !cards) return;
-        box.innerHTML = '<h2 class="sec__t" id="h-also">Also tonight from our kitchen</h2>' +
-          '<p class="also__sub">Mix dishes from any of them. Still one ' + shortMoney(SITE.deliveryFee) + " delivery.</p>" +
+        box.innerHTML = '<h2 class="sec__t" id="h-also">' + esc(tr("Also tonight from our kitchen")) + "</h2>" +
+          '<p class="also__sub">' + esc(tr("Mix dishes from any of them.") + " " + tr("Still one {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</p>" +
           '<div class="minis">' + cards + "</div>";
         box.hidden = false;
       });
@@ -1090,7 +1157,7 @@
     var nav = $("#oa-cats");
     if (nav) {
       var tabs = (feat.length ? [{ id: "featured", title: "Featured" }] : []).concat(secs);
-      nav.innerHTML = tabs.map(function (s, i) { return '<a href="#' + esc(s.id) + '" data-nav="' + esc(s.id) + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(s.title) + "</a>"; }).join("");
+      nav.innerHTML = tabs.map(function (s, i) { return '<a href="#' + esc(s.id) + '" data-nav="' + esc(s.id) + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(tr(s.title)) + "</a>"; }).join("");
       if ("IntersectionObserver" in window) {
         var io = new IntersectionObserver(function (es) {
           es.forEach(function (en) {
@@ -1127,15 +1194,15 @@
     if (!menu.video || quietMode()) return pic;
     return '<video class="cover__v" muted loop playsinline autoplay preload="none" poster="' + esc(path(menu.video.poster || img)) + '" aria-hidden="true">' +
       '<source src="' + esc(path(menu.video.src)) + '" type="video/mp4"></video>' +
-      '<button type="button" class="cover__pp" aria-label="Pause video" data-pp>' + ICON.pause + "</button>";
+      '<button type="button" class="cover__pp" aria-label="' + esc(tr("Pause video")) + '" data-pp>' + ICON.pause + "</button>";
   }
   function wireVideo(root) {
     $$("video.cover__v", root).forEach(function (v) {
       var btn = v.parentNode.querySelector("[data-pp]");
       var p = v.play && v.play(); if (p && p.catch) p.catch(function () { /* autoplay blocked: poster stays */ });
       if (btn) btn.addEventListener("click", function () {
-        if (v.paused) { v.play(); btn.innerHTML = ICON.pause; btn.setAttribute("aria-label", "Pause video"); }
-        else { v.pause(); btn.innerHTML = ICON.play; btn.setAttribute("aria-label", "Play video"); }
+        if (v.paused) { v.play(); btn.innerHTML = ICON.pause; btn.setAttribute("aria-label", tr("Pause video")); }
+        else { v.pause(); btn.innerHTML = ICON.play; btn.setAttribute("aria-label", tr("Play video")); }
       });
     });
   }
@@ -1149,7 +1216,7 @@
     var m = MENU[b];
     return '<a class="mini" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
       '<img src="' + esc(path(heroImg(m))) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' +
-      '<span class="mini__n">' + esc(m.name) + '</span><span class="mini__c">' + esc(m.cuisine) + "</span></a>";
+      '<span class="mini__n">' + esc(m.name) + '</span><span class="mini__c">' + esc(tr(m.cuisine)) + "</span></a>";
   }
 
   /* ---------------------------------------------------------------- home page */
@@ -1167,18 +1234,18 @@
     var img = heroImg(m), shown = m.items.filter(function (i) { return i.img === img; })[0] || m.items[0];
     return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
       '<div class="shop__media"><img src="' + esc(path(img)) + '" alt="' + esc(shown.name) + '" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' +
-        (status !== "open" ? '<span class="shop__soon">Opening soon</span>' : "") + "</div>" +
+        (status !== "open" ? '<span class="shop__soon">' + esc(tr("Opening soon")) + "</span>" : "") + "</div>" +
       '<div class="shop__body"><img class="shop__mark" src="' + esc(path(m.mark)) + '" alt="" width="48" height="48" loading="lazy">' +
         '<div><h3 class="shop__name">' + esc(m.name) + "</h3>" +
-        '<p class="shop__meta"><span>' + esc(m.cuisine) + "</span>" + (from && status === "open" ? "<span>From " + money(from) + "</span>" : "") + "</p></div></div></a>";
+        '<p class="shop__meta"><span>' + esc(tr(m.cuisine)) + "</span>" + (from && status === "open" ? "<span>" + esc(tr("From {price}", { price: money(from) })) + "</span>" : "") + "</p></div></div></a>";
   }
   /* words people type for the same food: English, Papiamento, Dutch, Spanish */
   var SYNONYMS = {
-    chicken: "kip pollo galina", shrimp: "kamaron camaron garnalen prawn", fries: "papita papitas patat friet frietjes french",
+    chicken: "kip pollo galina", shrimp: "kamaron camaron garnalen prawn", fries: "papita papitas patat friet frietjes french papas fritas",
     rice: "aros arroz rijst", noodles: "noodle mie bami fideos", beef: "karni carne rund rundvlees", pork: "porko cerdo varken",
     burger: "hamburger hamburguesa", cheeseburger: "hamburger burger", penne: "pasta", spaghetti: "pasta", "lo mein": "pasta noodles",
     tacos: "taco", taco: "tacos", burrito: "wrap", quesadilla: "kesadilla", nachos: "chips", "coca-cola": "coke cola soda frisdrank refresco",
-    sprite: "soda frisdrank refresco lemon", kroket: "croquette croqueta", bitterballen: "bitterbal", "sate": "satay sateh",
+    sprite: "soda frisdrank refresco lemon limonada", kroket: "croquette croqueta", bitterballen: "bitterbal", "sate": "satay sateh",
     "saté": "sate satay sateh", wings: "wing alitas vleugels", "garlic bread": "pan bread", "egg rolls": "loempia springroll spring",
     "sweet & sour": "sweet sour zoetzuur agridulce", "fried rice": "nasi bami", "frikandel": "frikadel", vegetarian: "veggie vega vegetariano"
   };
@@ -1219,7 +1286,7 @@
     }
     var t;
     function chips() {
-      return '<div class="chips chips--suggest">' + SUGGEST.map(function (w) { return '<button type="button" class="chip chip--btn" data-q="' + esc(w) + '">' + esc(w) + "</button>"; }).join("") + "</div>";
+      return '<div class="chips chips--suggest">' + SUGGEST.map(function (w) { w = tr(w); return '<button type="button" class="chip chip--btn" data-q="' + esc(w) + '">' + esc(w) + "</button>"; }).join("") + "</div>";
     }
     function run() {
       var raw = input.value.trim(), q = norm(raw);
@@ -1229,8 +1296,8 @@
         .sort(function (a, b) { return b.s - a.s; }).map(function (h) { return h.x; });
       browse.hidden = true; out.hidden = false;
       out.innerHTML = hits.length
-        ? '<p class="results__n">' + plural(hits.length, "dish", "dishes") + "</p>" + '<div class="rows">' + hits.map(function (x) { return rowHTML(x.b, x.i, { brand: true }); }).join("") + "</div>"
-        : '<p class="results__none">Nothing matches \u201c' + esc(raw) + '\u201d. Try one of these:</p>' + chips();
+        ? '<p class="results__n">' + esc(plural(hits.length, "dish", "dishes")) + "</p>" + '<div class="rows">' + hits.map(function (x) { return rowHTML(x.b, x.i, { brand: true }); }).join("") + "</div>"
+        : '<p class="results__none">' + esc(tr("Nothing matches \u201c{q}\u201d. Try one of these:", { q: raw })) + "</p>" + chips();
     }
     out.addEventListener("click", function (e) {
       var c = e.target.closest("[data-q]");
@@ -1256,12 +1323,12 @@
     var names = lines.map(function (x) { return x.q + " \u00d7 " + MENU[x.b].byId[x.id].name; });
     var pic = MENU[lines[0].b].byId[lines[0].id];
     box.innerHTML = '<div class="again__card">' + thumbImg(pic, ' loading="lazy"') +
-      '<div class="again__body"><h2 class="again__t">Order again</h2><p class="again__items">' + esc(names.join(", ")) + "</p>" +
-      '<button type="button" class="btn btn--accent again__btn" data-again><span>Add all</span><span>' + money(sum) + "</span></button></div></div>";
+      '<div class="again__body"><h2 class="again__t">' + esc(tr("Order again")) + '</h2><p class="again__items">' + esc(names.join(", ")) + "</p>" +
+      '<button type="button" class="btn btn--accent again__btn" data-again><span>' + esc(tr("Add all")) + "</span><span>" + money(sum) + "</span></button></div></div>";
     box.hidden = false;
     $("[data-again]", box).addEventListener("click", function () {
       lines.forEach(function (x) { addItem(x.b, x.id, x.o || {}, x.q); });
-      toast("Your last order is in the bag");
+      toast(tr("Your last order is in the bag"));
       box.hidden = true;
     });
   }
@@ -1272,7 +1339,7 @@
       var m = MENU[b];
       return '<a class="qk" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
         '<img src="' + esc(path(m.mark)) + '" alt="" width="64" height="64" decoding="async">' +
-        '<span class="qk__c">' + esc(m.cuisine) + '</span><span class="qk__n">' + esc(m.name) + "</span></a>";
+        '<span class="qk__c">' + esc(tr(m.cuisine)) + '</span><span class="qk__n">' + esc(m.name) + "</span></a>";
     }).join("");
   }
   function renderHub() {
@@ -1298,7 +1365,7 @@
       if (list) {
         list.innerHTML = ids.map(function (b, i) {
           return MENU[b] ? shopHTML(b, i) :
-            '<div class="shop shop--fail"><p>One menu didn\u2019t load.</p><button type="button" class="btn btn--line btn--sm" data-retry>Try again</button></div>';
+            '<div class="shop shop--fail"><p>' + esc(tr("One menu didn\u2019t load.")) + '</p><button type="button" class="btn btn--line btn--sm" data-retry>' + esc(tr("Try again")) + "</button></div>";
         }).join("");
         $$("[data-retry]", list).forEach(function (r) { r.addEventListener("click", function () { location.reload(); }); });
       }
@@ -1343,14 +1410,16 @@
     // settings, this restaurant's menu and the menus already in the bag all load at the same time
     var first = PAGE === "brand" ? loadMenu(HERE) : Promise.resolve();
     menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });
-    Promise.all([loadSite(), first]).then(function () {
+    Promise.all([loadSite(), first, loadLang()]).then(function () {
       state = readStore();
+      translatePage();
       return importHash().then(function () {
         fillCommon();
         setInterval(fillCommon, 60000);
         if (PAGE === "brand") renderBrand();
         if (PAGE === "hub") renderHub();
         if (PAGE === "cart") renderCartPage();
+        $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });
         $$("[data-oa-open-order]").forEach(function (b) { b.addEventListener("click", function (e) { e.preventDefault(); openOrder(); }); });
         setupIAB();
         paintBar();
@@ -1367,7 +1436,7 @@
     }).catch(function (err) {
       console.error(err);
       var main = $("#oa-main") || BODY;
-      main.insertAdjacentHTML("afterbegin", '<p class="note note--warn">The menu didn\u2019t load. Check your connection and refresh.</p>');
+      main.insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
     });
   }
 
