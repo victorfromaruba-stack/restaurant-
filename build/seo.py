@@ -33,7 +33,8 @@ def common():
     return {
         "telephone": phone(),
         "priceRange": "ƒ%s–ƒ%s" % (money(min(prices)), money(max(prices))),
-        "currenciesAccepted": "AWG",
+        "currenciesAccepted": "AWG, USD",
+        "paymentAccepted": ", ".join(site.get("payWith") or ["Cash"]),
         "acceptsReservations": False,
         "address": {"@type": "PostalAddress", "addressCountry": "AW"},
         "areaServed": [{"@type": "Place", "name": a + ", Aruba"} for a in site["areas"]],

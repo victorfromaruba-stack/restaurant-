@@ -194,7 +194,6 @@
  "Back to all restaurants": "Volver a todos los restaurantes",
  "Skip to the menu": "Ir al menú",
  "Menu sections": "Secciones del menú",
- "Pay in cash or by bank transfer.": "Paga en efectivo o por transferencia bancaria.",
  "How will you pay?": "¿Cómo vas a pagar?",
  "Pick how you’ll pay.": "Elige cómo vas a pagar.",
  "Cash": "Efectivo",
@@ -221,5 +220,6 @@
  "Questions? WhatsApp us on {number}.": "¿Preguntas? Escríbenos por WhatsApp al {number}.",
  "Delivery in {eta}": "Entrega en {eta}",
  "{from} to {to}": "De {from} a {to}",
- "It goes to our kitchen’s WhatsApp, {number}.": "Va al WhatsApp de nuestra cocina, {number}."
+ "It goes to our kitchen’s WhatsApp, {number}.": "Va al WhatsApp de nuestra cocina, {number}.",
+ "We take cash in florins or US dollars, or a bank transfer.": "Aceptamos efectivo en florines o dólares estadounidenses, o una transferencia bancaria."
 }

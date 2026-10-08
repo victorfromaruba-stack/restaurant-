@@ -194,7 +194,6 @@
  "Back to all restaurants": "Terug naar alle restaurants",
  "Skip to the menu": "Naar het menu",
  "Menu sections": "Menuonderdelen",
- "Pay in cash or by bank transfer.": "Betalen met contant geld of via bankoverschrijving.",
  "How will you pay?": "Hoe betaal je?",
  "Pick how you’ll pay.": "Kies hoe je betaalt.",
  "Cash": "Contant",
@@ -221,5 +220,6 @@
  "Questions? WhatsApp us on {number}.": "Vragen? WhatsApp ons op {number}.",
  "Delivery in {eta}": "Bezorging in {eta}",
  "{from} to {to}": "Van {from} tot {to}",
- "It goes to our kitchen’s WhatsApp, {number}.": "Het gaat naar de WhatsApp van onze keuken, {number}."
+ "It goes to our kitchen’s WhatsApp, {number}.": "Het gaat naar de WhatsApp van onze keuken, {number}.",
+ "We take cash in florins or US dollars, or a bank transfer.": "We nemen contant geld aan in florin of Amerikaanse dollars, of een bankoverschrijving."
 }

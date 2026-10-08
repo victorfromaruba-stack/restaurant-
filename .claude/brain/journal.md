@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-08 · claude (cloud) · US dollars on the site: checkout (under How will you pay?) and How ordering works say cash in florins or US dollars, or bank transfer; Google data lists AWG and USD · waiting: Victor's dollar rate and change; his Google Business Profile
 - 2026-10-08 · claude (cloud) · Worldwide competitor study done (8 research tracks; report sent to Victor, kept outside the repo). Top free moves added to ideas.md for the daily runs; Google profile and card/USD questions added
 - 2026-10-08 · claude (cloud) · Manual daily run: restaurant page facts line (open status, fee, time) no longer wraps with a stray dot; separators replaced by spacing (1d685d4) · waiting: every open idea needs Victor (names, photos, VPS builder)
 - 2026-10-08 · claude (cloud) · First scheduled daily run (17:48Z) failed: no repo in the fresh routine session, add_repo not loaded, nothing changed. Fixed: new routine trig_01Pdk9aemxeYjPhZN8zAxnzk fires into the 'Order Aruba daily worker' session (repo attached, access tested ok); old routine switched off · waiting: tomorrow's run 1:48 PM Aruba

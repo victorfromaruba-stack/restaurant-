@@ -492,8 +492,8 @@
     return out.join("\n");
   }
   /* how to pay: site.json "payment", e.g. "Pay the driver in cash (florin or US$) or by card." Empty = say nothing. */
-  /* site.json "payWith": the ways to pay the customer taps at checkout (it goes on the ticket as "Pay: Cash").
-     Without it, the "payment" sentence is shown above Send instead. */
+  /* site.json "payWith": the ways to pay the customer taps at checkout (it goes on the ticket as "Pay: Cash"),
+     with the "payment" sentence under them. Without it, the sentence is shown above Send instead. */
   function payOptions() { return Array.isArray(SITE.payWith) ? SITE.payWith : []; }
   function payLine() { return SITE.payment && !payOptions().length ? clean(tr(SITE.payment)) + " " : ""; }
   function waLink(text) { return "https://wa.me/" + SITE.whatsapp + "?text=" + encodeURIComponent(text); }
@@ -951,7 +951,8 @@
       (payOptions().length ? '<fieldset class="field field--areas" id="oa-f-pay"><legend>' + esc(tr("How will you pay?")) + '</legend><div class="chips">' +
         payOptions().map(function (p) {
           return '<label class="chip"><input type="radio" name="oa-pay" value="' + esc(p) + '"' + (s.pay === p ? " checked" : "") + "><span>" + esc(tr(p)) + "</span></label>";
-        }).join("") + '</div><p class="field__err">' + esc(tr("Pick how you\u2019ll pay.")) + "</p></fieldset>" : "") +
+        }).join("") + "</div>" + (SITE.payment ? '<p class="field__help">' + esc(clean(tr(SITE.payment))) + "</p>" : "") +
+        '<p class="field__err">' + esc(tr("Pick how you\u2019ll pay.")) + "</p></fieldset>" : "") +
       "</form>";
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + esc(tr(s.mode === "delivery" ? "Delivery" : "Pickup")) + "</dt><dd>" + (s.mode === "delivery" ? money(fee()) : esc(tr("Free"))) + "</dd></div>" +

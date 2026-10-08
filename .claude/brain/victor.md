@@ -11,6 +11,8 @@ Public repo: nothing private here (no costs, margins, buyer prices, plans, conta
 - Money is tight (8 Oct 2026: "Don't have the money now use what you can"). No paid APIs, no Gemini spend, no paid tools without asking.
 
 ## Decisions (dated)
+- 2026-10-08: 'On Aruba of course we take usd': cash in florins or US dollars, or bank transfer (site.json `payment`; the Cash tap stays one choice). Rate and change not given yet, so the site names no rate.
+- 2026-10-08: Google Business Profile: 'Yes I will'. He opens it himself; Claude sent the steps.
 - 2026-10-08: 'Generate images if you have to' — OK to spend Gemini credit on pictures that are wrong (not on more generated pictures for their own sake). Credit was empty that day.
 - 2026-10-08: His own Book Keeper business ("Victor") made a paid account at his request ('make it into a subscription account'): subscription_status set to active by hand, no Stripe customer, nothing is charged. Stripe webhooks can't overwrite it (they match on the Stripe customer). Billing's 'Manage billing' has no card behind it.
 - 2026-10-08: Book Keeper connection switched on ('Yes, switch it on'): migration 026 applied, PR #3 merged. He wants the chef never to log in to Book Keeper: receipts go from the chef app with a key per phone.

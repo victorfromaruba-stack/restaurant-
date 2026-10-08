@@ -194,7 +194,6 @@
  "Back to all restaurants": "Bolbe na tur restaurant",
  "Skip to the menu": "Bai na e menu",
  "Menu sections": "Partinan di e menu",
- "Pay in cash or by bank transfer.": "Paga cash of via transferencia di banco.",
  "How will you pay?": "Con bo ta paga?",
  "Pick how you’ll pay.": "Scoge con bo ta paga.",
  "Cash": "Cash",
@@ -221,5 +220,6 @@
  "Questions? WhatsApp us on {number}.": "Pregunta? Manda nos un WhatsApp na {number}.",
  "Delivery in {eta}": "Entrega den {eta}",
  "{from} to {to}": "Di {from} te {to}",
- "It goes to our kitchen’s WhatsApp, {number}.": "E ta bai na e WhatsApp di nos cushina, {number}."
+ "It goes to our kitchen’s WhatsApp, {number}.": "E ta bai na e WhatsApp di nos cushina, {number}.",
+ "We take cash in florins or US dollars, or a bank transfer.": "Nos ta aceptá cash den florin of dollar merikano, of un transferencia di banco."
 }
