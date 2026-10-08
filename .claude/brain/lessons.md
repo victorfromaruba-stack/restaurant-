@@ -5,6 +5,7 @@ session doesn't pay for them again. One entry: date, what happens, what to do.
 Newest on top. When a lesson turns into a rule everyone must follow, move it into
 CLAUDE.md and delete it here.
 
+- 2026-10-08 · Book Keeper's database (Supabase, free plan) pauses after about a week with no use. Then logged-in pages hang and the chef app's Receipts tile opens a black page; /api/health shows supabaseReachable:false and get_project says INACTIVE. Fix: Victor taps Restore at supabase.com/dashboard/project/orxpuikpgshcajwripxy (Claude's restore_project call was refused as a shared-resource change). Daily use keeps it awake.
 - 2026-10-08 · Nobody but the account owner can make a GitHub personal key: there is no API, and Claude's own GitHub access can't be handed to a phone. The template link (?name=&description=&target_name=&expires_in=&contents=write) pre-fills everything except which repository; that one tap stays with Victor.
 - 2026-10-08 · A strong model already avoids most slop when the request says 'not AI'; skills earn their keep on consistency, tools and rules for proof and messages. Testing a skill against a no-skill run shows where it makes things worse (the first anti-slop draft made emails longer).
 - 2026-10-08 · qa/check_site.py rewrites qa/wa-samples.json with new order numbers on every run. Commit it only when a ticket's content changed.
