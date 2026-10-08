@@ -296,5 +296,9 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ]
+ ],
+ "video": {
+  "src": "smash-shack/video/cover.mp4",
+  "poster": "smash-shack/video/cover.webp"
+ }
 }

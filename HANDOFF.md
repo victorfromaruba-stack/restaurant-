@@ -48,7 +48,7 @@ One commit per step on `audit-fixes`; `qa/check_site.py` reports 0 problems. Vic
 ## Still waiting on Victor
 - Answered 8 Oct: payment "cash or bank transfer" and last orders 1:30 AM are set in site.json; frikandel has pork (flag stays); videos approved at top quality (Veo 3.1 standard).
 - Papiamento corrections → `shared/lang/pap.json`.
-- Videos: approved at top quality, but **blocked**: the Gemini prepaid credit ran out (HTTP 402) before any video was made. Victor tops up in Google AI Studio → Billing (about $35 covers 5 clips with retries, plus start frames). Then run the steps under Videos.
+- Videos: the Gemini credit ran out and Victor has no budget for it now (8 Oct), so each restaurant got a free cover loop instead: an 8-second slow push-in on its cover photo (`make_video.py still`, then `use`). Real Veo cooking clips can replace them later when there is credit (steps under Videos).
 - Merge `audit-fixes` into `main` only when he says so.
 
 ## Pictures and videos with Google Gemini

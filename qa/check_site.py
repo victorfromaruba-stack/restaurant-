@@ -25,6 +25,11 @@ menus = {b: json.load(open(os.path.join(ROOT, b, "menu.json"), encoding="utf-8")
 for b, m in menus.items():
     for key in ("logo", "mark", "hero"):
         check(os.path.exists(os.path.join(ROOT, m[key])), f"{b} {key} file exists ({m[key]})")
+    if m.get("video"):
+        for k in ("src", "poster"):
+            check(os.path.exists(os.path.join(ROOT, m["video"][k])), f"{b} cover video {k} exists ({m['video'][k]})")
+        src = os.path.join(ROOT, m["video"]["src"])
+        check(not os.path.exists(src) or os.path.getsize(src) <= 1.5 * 1024 * 1024, f"{b} cover video is under 1.5 MB")
     ids = [i["id"] for i in m["items"]]
     check(len(ids) == len(set(ids)), f"{b} item ids are unique")
     secs = {s["id"] for s in m["sections"]}

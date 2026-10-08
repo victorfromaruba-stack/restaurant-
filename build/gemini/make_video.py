@@ -2,6 +2,8 @@
   python3 build/gemini/make_video.py frame <restaurant>     still start frame (gemini-3-pro-image) -> build/gemini/out/<restaurant>-frame-<n>.<ext>
   python3 build/gemini/make_video.py clip <restaurant> <frame file> [--model veo-3.1-generate-preview]
       Veo clip that begins and ends on that frame -> build/gemini/out/<restaurant>-clip-<n>.mp4 (with sound, not committed)
+  python3 build/gemini/make_video.py still <restaurant> <picture>
+      free, no Gemini: an 8-second slow push-in and back out on one picture (same first and last frame), then "use" it
   python3 build/gemini/make_video.py use <restaurant> <clip file>
       silent H.264 MP4 (under 1.5 MB) + WebP poster at <restaurant>/video/cover.mp4 / cover.webp, and the "video" field in menu.json
 Prompts: build/gemini/videos/<restaurant>.txt ("frame: ..." and "motion: ..."). Look at every frame and clip before "use".
@@ -65,6 +67,17 @@ def clip(rest, frame_file, model):
     open(path, "wb").write(call(samples[0]["video"]["uri"]).read())
     print("made", os.path.relpath(path, ROOT))
 
+def still(rest, picture):
+    """A gentle 8 s zoom loop (1.00 -> 1.06 -> 1.00) on one picture. Scaled up first so the zoom doesn't jitter."""
+    n = 200   # 8 s at 25 fps
+    path = next_path(rest + "-still", ".mp4")
+    vf = (f"scale=3840:2160:force_original_aspect_ratio=increase,crop=3840:2160,"
+          f"zoompan=z='1+0.03*(1-cos(2*PI*on/{n}))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={n}:s=1280x720:fps=25")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", picture, "-vf", vf, "-frames:v", str(n), "-c:v", "libx264",
+                    "-crf", "16", "-preset", "slow", "-pix_fmt", "yuv420p", path], check=True)
+    print("made", os.path.relpath(path, ROOT))
+    return path
+
 def use(rest, src):
     d = os.path.join(ROOT, rest, "video"); os.makedirs(d, exist_ok=True)
     mp4, poster = os.path.join(d, "cover.mp4"), os.path.join(d, "cover.webp")
@@ -72,7 +85,7 @@ def use(rest, src):
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-an", "-vf", f"scale={w}:-2", "-c:v", "libx264", "-preset", "slow",
                         "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4], check=True)
         if os.path.getsize(mp4) <= 1.5 * 1024 * 1024: break
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", mp4, "-frames:v", "1", "-vf", "scale=1280:-2", "-q:v", "78", poster], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", mp4, "-frames:v", "1", "-vf", "scale=960:-2", "-q:v", "72", poster], check=True)
     p = os.path.join(ROOT, rest, "menu.json"); m = json.load(open(p, encoding="utf-8"))
     m["video"] = {"src": f"{rest}/video/cover.mp4", "poster": f"{rest}/video/cover.webp"}
     open(p, "w", encoding="utf-8").write(json.dumps(m, indent=1, ensure_ascii=False))
@@ -83,5 +96,6 @@ if __name__ == "__main__":
     model = a[a.index("--model") + 1] if "--model" in a else "veo-3.1-generate-preview"
     if a[:1] == ["frame"]: frame(a[1])
     elif a[:1] == ["clip"]: clip(a[1], a[2], model)
+    elif a[:1] == ["still"]: still(a[1], a[2])
     elif a[:1] == ["use"]: use(a[1], a[2])
     else: print(__doc__)

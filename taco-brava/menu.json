@@ -328,5 +328,9 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ]
+ ],
+ "video": {
+  "src": "taco-brava/video/cover.mp4",
+  "poster": "taco-brava/video/cover.webp"
+ }
 }

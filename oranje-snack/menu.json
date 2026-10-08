@@ -262,5 +262,9 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ]
+ ],
+ "video": {
+  "src": "oranje-snack/video/cover.mp4",
+  "poster": "oranje-snack/video/cover.webp"
+ }
 }
