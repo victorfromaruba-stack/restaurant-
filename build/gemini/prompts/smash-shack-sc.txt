@@ -1,9 +1,8 @@
-ref: smash-shack/assets/dishes/cc.webp
-Professional realistic food photograph for a delivery restaurant menu. Match the surface and style of the reference image (black-and-white checkered greaseproof paper, burger fills most of the frame), with warm evening light: golden key light, soft dark vignette. Show ONLY the burger described below; do not copy the chicken from the reference.
+ref: smash-shack/assets/dishes/ds.webp
+Professional realistic food photograph for a delivery restaurant menu. Match the reference image: the same black-and-white checkered greaseproof paper, the same kind of thin lacy smashed patties with crispy browned edges, the same warm light. But show ONE WHOLE burger, not cut, not stacked halves. Camera close, about 25 degrees above the table, front three-quarter view, burger fills most of the frame.
 
-A classic SINGLE cheeseburger (one patty only). Camera close, about 30 degrees above the table, front three-quarter view.
-- Exactly one beef patty: thin, wide, smashed flat on the griddle, a single 1 cm layer of browned beef with crispy browned edges. Directly on top of it ONE slice of melted cheddar that drapes down over the patty edge on all sides. There is no second patty, no second cheese slice, and no extra layer of meat or crust below the patty: under the patty is directly the bottom bun.
-- Above the cheese: a few green pickle slices, thin white onion rings, two red tomato slices, a crisp green lettuce leaf, ketchup and mayo.
-- Soft shiny golden plain burger bun, top and bottom, no sesame seeds.
+A smash cheeseburger with exactly TWO thin smashed beef patties:
+- From bottom to top: plain golden toasted bottom bun; first thin wide smashed beef patty (about 6 mm, flat, with crispy lacy browned edges sticking out past the bun); a slice of melted cheddar draping over it; second thin smashed patty of the same kind; a second slice of melted cheddar draping over it; then a few green pickle slices, thin white onion, two red tomato slices, a crisp green lettuce leaf, ketchup and mayo; plain shiny golden top bun, no sesame seeds.
+- The two patties are clearly two separate thin layers, each with its own cheese. Never one thick patty, never three or four patties.
 
-Nothing else in the frame: no fries, no drinks, no sauce cups, no side salad, no garnish, no toothpick. No text, letters, logos or labels. No people, no hands. Realistic size for a cheap delivery burger, juicy and premium looking. 16:9 landscape.
+Nothing else in the frame: no fries, no drinks, no sauce cups, no salad, no garnish, no toothpick, no knife. No text, letters, logos or labels. No people, no hands. Realistic size for a delivery burger. 16:9 landscape.

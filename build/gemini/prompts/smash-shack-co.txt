@@ -1,8 +1,8 @@
 ref: smash-shack/assets/dishes/sc-hero.webp
-Professional realistic food photograph for a delivery restaurant menu. Use the reference image: the SAME single cheeseburger on the same black-and-white checkered greaseproof paper, same lighting, but with warm evening light and a soft dark vignette. Camera pulled back just a little so there is room for the fries.
+Professional realistic food photograph for a delivery restaurant menu. Use the reference image: the SAME smash cheeseburger (two thin smashed patties, each with melted cheddar, pickles, white onion, tomato, lettuce, ketchup, mayo, plain golden bun) on the same black-and-white checkered greaseproof paper, same warm light. Camera pulled back a little so there is room for the fries.
 
 The dish (a burger combo), exactly two things:
-1. The single cheeseburger from the reference, whole, not cut: exactly ONE beef patty with ONE slice of melted cheddar draped over it, pickles, white onion, tomato, lettuce, ketchup, mayo, plain golden bun. One patty only, never a double.
+1. That cheeseburger, whole, not cut: exactly TWO thin patties, each with its own slice of cheddar. Never one thick patty.
 2. Right next to it on the same checkered paper: one side portion of golden crispy French fries in a loose pile (a normal small side portion).
 
 Nothing else: no drink, no can, no sauce cups, no ketchup dip, no second burger, no salad, no garnish. No text, letters, logos or labels. No people, no hands. Burger and fries together fill most of the frame. 16:9 landscape.
