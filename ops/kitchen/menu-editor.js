@@ -320,6 +320,8 @@
             if (firstDrink < 0) m.items.push(it); else m.items.splice(firstDrink, 0, it);
           }
           apply(it, f);
+          // An iPhone photo lands at a new path (.jpg): the home page card ("hero") follows it to the new picture.
+          if (imgPath && m.hero && m.hero === it.img) m.hero = imgPath;
           if (imgPath) it.img = imgPath;
         }, msg);
       }), function () { UI.go('#/menu/' + brand); });

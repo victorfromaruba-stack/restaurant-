@@ -30,8 +30,8 @@ believe a real kitchen is behind this?**
    fake it: write a one-line ask in `.claude/brain/questions.md` (real photos, his
    words, a fact to confirm).
 5. **Prove it.** Shoot again with `--out /tmp/after`, put before and after side by
-   side, run `python3 qa/check_site.py` (0 problems, with the local server on 8462),
-   and send Victor the before/after pair with three plain lines on what changed.
+   side, run `python3 qa/check_site.py` (0 problems; it serves the repo itself), and
+   send Victor the before/after pair with three plain lines on what changed.
 
 ## Yours to change, Victor's to decide
 
@@ -52,7 +52,12 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
 2. **True specifics beat adjectives.** "Open till 2 AM", "ƒ5 delivery, Santa Cruz to
    Noord", "House colour helps the driver", "Pay cash or by bank transfer". A generator
    writes "delicious", "fresh", "bold" because it knows nothing. We know the details,
-   so we say them.
+   so we say them. The best source is the kitchen itself: `ops/kitchen/kitchen-data.json`
+   holds every dish's recipe card (what goes in, how it's cooked, how it's packed: burger
+   box with a deli liner, fries upright in a cup, tenders brined overnight in buttermilk).
+   Read the card before rewriting a dish, and when the website and the card disagree
+   (a patty count, a sauce, an allergen), that's a finding: allergens get fixed to match
+   the card at once, anything else goes to Victor in `questions.md`.
 3. **One picture, one place.** The same photo twice on one screen (cover and the
    Featured card under it, or a restaurant card and the dish rail above it) is the
    stock-template look. check.py catches exact repeats; you catch "two different

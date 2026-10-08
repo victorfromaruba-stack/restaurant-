@@ -79,4 +79,4 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - Own domain (e.g. a .com pointed at GitHub Pages) when Victor wants one.
 
 ## Run locally
-`python3 -m http.server 8462 --bind 127.0.0.1` in the repo folder, open http://127.0.0.1:8462/, then `python3 qa/check_site.py` (needs Python Playwright).
+`python3 qa/check_site.py` in the repo folder (needs Python Playwright 1.56.0 and Pillow). It serves the repo itself for the run (`qa/local_server.py`), so there's no server to start or keep alive; `QA_BASE=<url>` checks another server instead. To click around yourself: `python3 qa/local_server.py` or `python3 -m http.server 8462 --bind 127.0.0.1`. The check also compares every dish's allergens with its recipe card in `ops/kitchen/kitchen-data.json`.

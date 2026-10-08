@@ -19,10 +19,11 @@ Victor, not less.
    already loaded through CLAUDE.md), then `python3 .claude/skills/brain/scripts/brain.py recent`.
    Look at `git log --oneline -15`: if a person changed something since the last journal
    line, read it before touching anything near it.
-2. **Health first.** Start the server if needed (`python3 -m http.server 8462 --bind 127.0.0.1`
-   in the repo, in the background), then `python3 qa/check_site.py`. If anything fails,
-   fixing that *is* today's improvement. Also open the live site's home page and one
-   restaurant page and make sure they load.
+2. **Health first.** In a fresh cloud container first run `python3 -m pip install -q
+   playwright==1.56.0 pillow` (the plain `pip` can belong to another Python). Then
+   `python3 qa/check_site.py`; it serves the repo itself, no server to start. If anything
+   fails, fixing that *is* today's improvement. Also open the live site's home page and
+   one restaurant page and make sure they load.
 3. **Pick one thing.** Take the open idea in `ideas.md` with the best impact for its
    effort that you're allowed to do alone (rules below). No good idea left? Run the
    human-touch audit (`shoot.py` + `check.py`, then look), add what you find to
@@ -38,8 +39,12 @@ Victor, not less.
      better ships.
    - Re-read your own diff as a reviewer who wants to reject it.
 6. **Ship it.** Commit to `main` with a message that says what a customer would notice.
-   Push (`git push -u origin main`). Wait for GitHub Pages (about a minute) and check
-   the change is on https://victorfromaruba-stack.github.io/restaurant-/.
+   `git pull --rebase origin main` (someone may have pushed while you worked), run QA
+   again if anything came in, then `git push -u origin main`. Wait for GitHub Pages
+   (about a minute) and check the change is on https://victorfromaruba-stack.github.io/restaurant-/.
+   If the push is refused (403, "not in this session's authorized repository set"), the
+   work is lost when the session ends: say so plainly in the three lines, and put the
+   finished change in the journal line so the next run can redo it quickly.
 7. **Remember it.** Tick the idea `[x]` with date and commit, move it under Shipped,
    add the journal line, add any lesson you learned, and add new ideas you spotted.
    Run `brain.py check`. Commit and push the brain update.

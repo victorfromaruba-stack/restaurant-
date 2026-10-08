@@ -1,9 +1,11 @@
 """App icon: "OA" in a neon frame like the OPEN sign on the home page (replaced the sparkle star, which reads as an AI-product icon).
-Needs the local server on :8462 for the Archivo font.   python3 build/icons/make_icon.py"""
-import asyncio, os
+Serves the repo itself for the Archivo font (qa/local_server.py).   python3 build/icons/make_icon.py"""
+import asyncio, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(ROOT, "qa"))
+from local_server import start
 from playwright.async_api import async_playwright
-BASE = "http://127.0.0.1:8462/"
+BASE = start()
 HTML = """<!doctype html><html><head><style>
 @font-face{font-family:Archivo;src:url(%sshared/fonts/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62%% 125%%}
 html,body{margin:0;width:512px;height:512px;background:#0B1D3A;display:grid;place-items:center;overflow:hidden}

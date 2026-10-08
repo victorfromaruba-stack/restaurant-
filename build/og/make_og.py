@@ -1,12 +1,13 @@
 """Link preview cards (shared/og/*.jpg, 1200x630) from the live menus and pictures.
-Run from the repo folder with the local server on :8462:
-  python3 -m http.server 8462 --bind 127.0.0.1 &   then   python3 build/og/make_og.py
+Run from the repo folder: python3 build/og/make_og.py (it serves the repo itself, see qa/local_server.py).
 Uses each menu.json's name, tagline, color, mark and hero, and the hours in shared/site.json."""
-import asyncio, json, os
+import asyncio, json, os, sys
 from playwright.async_api import async_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-BASE = os.environ.get("QA_BASE", "http://127.0.0.1:8462/")
+sys.path.insert(0, os.path.join(ROOT, "qa"))
+from local_server import start
+BASE = start()
 site = json.load(open(os.path.join(ROOT, "shared/site.json"), encoding="utf-8"))
 ids = [b["id"] for b in site["brands"] if b.get("status") != "hidden"]
 menus = {b: json.load(open(os.path.join(ROOT, b, "menu.json"), encoding="utf-8")) for b in ids}

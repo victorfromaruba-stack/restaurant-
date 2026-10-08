@@ -1230,11 +1230,15 @@
   }
 
   /* ---------------------------------------------------------------- home page */
-  /* the restaurant's showcase picture, skipping a dish that is sold out tonight */
+  /* the restaurant card's picture ("hero" in menu.json), only while a dish on the menu has that picture and
+     isn't sold out, so the card never shows a dish you can't order under another dish's name. Otherwise not the
+     signature dish (it's already in the dish rail above) and a photo before a drawing. */
   function heroImg(m) {
     var hero = m.hero && m.items.filter(function (i) { return i.img === m.hero; })[0];
-    if (m.hero && (!hero || !hero.soldOut)) return m.hero;
-    var alt = m.items.filter(function (i) { return !i.soldOut && i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; })[0];
+    if (hero && !hero.soldOut) return hero.img;
+    var pool = m.items.filter(function (i) { return !i.soldOut && i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
+    var others = pool.filter(function (i) { return i.style !== "signature"; });
+    var alt = others.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || others[0] || pool[0];
     return alt ? alt.img : m.items[0].img;
   }
   function shopHTML(b, idx) {
