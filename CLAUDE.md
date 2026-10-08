@@ -9,6 +9,7 @@ What earlier sessions learned and what Victor decided, loaded into every session
 @.claude/brain/questions.md
 
 Skills in `.claude/skills/`:
+- `anti-ai-slop`: the general version for anything people see, in any project (pages, app screens, emails, posts). `human-touch` adds this site's specifics on top.
 - `human-touch`: for anything a customer sees. The site must look and read like a real kitchen made it, not a generator (Victor, 8 Oct: "it still feels a bit AI made").
 - `brain`: before your final reply, write down what the next session should know (journal, lessons, decisions, ideas, questions).
 - `daily-improvement`: one finished, proven improvement a day, picked from `.claude/brain/ideas.md`.
