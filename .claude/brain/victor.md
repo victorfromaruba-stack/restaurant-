@@ -11,6 +11,7 @@ Public repo: nothing private here (no costs, margins, buyer prices, plans, conta
 - Money is tight (8 Oct 2026: "Don't have the money now use what you can"). No paid APIs, no Gemini spend, no paid tools without asking.
 
 ## Decisions (dated)
+- 2026-10-08: His own Book Keeper business ("Victor") made a paid account at his request ('make it into a subscription account'): subscription_status set to active by hand, no Stripe customer, nothing is charged. Stripe webhooks can't overwrite it (they match on the Stripe customer). Billing's 'Manage billing' has no card behind it.
 - 2026-10-08: Book Keeper connection switched on ('Yes, switch it on'): migration 026 applied, PR #3 merged. He wants the chef never to log in to Book Keeper: receipts go from the chef app with a key per phone.
 - 2026-10-08: Smash Shack patties: he let Claude choose ('The AI made it see which one is the best'). The website now follows the recipe cards: Smash cheeseburger 2 thin patties, Double 4. Tortilla chips: 'They can pick' (either may be used), so the 'contains gluten' label stays. Builder allergens: 'Oke'.
 - 2026-10-08: Wants Claude to keep improving the site every day, remember things between sessions, and come up with improvements itself. Site "still feels a bit AI made": that's the main thing to fix.
