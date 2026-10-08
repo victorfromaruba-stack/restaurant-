@@ -42,7 +42,8 @@
    "allergens": [
     "gluten",
     "dairy",
-    "egg"
+    "egg",
+    "mustard"
    ],
    "fried": true,
    "options": [

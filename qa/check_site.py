@@ -1,12 +1,14 @@
-"""Site check: run with the local server on :8462.
-  cd brand-hub && python3 -m http.server 8462 --bind 127.0.0.1 &   then   python3 qa/check_site.py
+"""Site check: python3 qa/check_site.py from the repo folder. It serves the repo itself for the run
+(qa/local_server.py), so there is no server to start first. QA_BASE=<url> checks another server instead.
 Checks every menu image exists, every page loads with no errors, and builds the WhatsApp sample
 messages in qa/wa-samples.json from the real ordering code, testing the owner's rules."""
 import asyncio, json, os, re, subprocess, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops, ImageStat
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE = os.environ.get("QA_BASE", "http://127.0.0.1:8462/")
+sys.path.insert(0, os.path.join(ROOT, "qa"))
+from local_server import start
+BASE = start()
 fails = []
 def square_sample(path):
     im = Image.open(path).convert("L"); s = min(im.size); l, t = (im.width - s) // 2, (im.height - s) // 2
@@ -46,6 +48,26 @@ for b, m in menus.items():
           f"{b} sells Coke, Coke Zero and Sprite as separate ƒ3 items")
     mains = [i for i in m["items"] if i.get("kind") not in ("drink",)]
     check(6 <= len(mains) <= 9, f"{b} has a tight menu ({len(mains)} food items)")
+# Allergens on the site must cover what the kitchen's own recipe cards put in the dish (ops/kitchen/kitchen-data.json).
+# Found 8 Oct 2026: tenders in buttermilk brine, sesame garnish and oyster sauce were missing from the site.
+ALLERGEN_WORDS = {
+    "dairy": r"buttermilk|\bmilk\b|cream|cheese|cheddar|mozzarella|parmesan|(?<!peanut )\bbutter\b(?!-sheen)",
+    "gluten": r"flour|\bbuns?\b|bread|panko|noodle|pasta|penne|spaghetti|wrapper|tortilla",
+    "egg": r"\beggs?\b|mayo", "soy": r"\bsoy\b|ketjap", "shellfish": r"shrimp|prawn|oyster",
+    "sesame": r"sesame", "peanut": r"peanut", "mustard": r"mustard", "fish": r"fish sauce|anchov",
+}
+kdata = os.path.join(ROOT, "ops/kitchen/kitchen-data.json")
+if os.path.exists(kdata):
+    kdishes = json.load(open(kdata, encoding="utf-8"))["dishes"]
+    for b, m in menus.items():
+        for it in m["items"]:
+            card = kdishes.get(f"{b}/{it['id']}")
+            if it.get("kind") == "drink" or not card:
+                continue
+            recipe = json.dumps({k: card.get(k) for k in ("ahead", "before", "steps", "plating", "ingredients", "options")}, ensure_ascii=False).lower()
+            need = {a for a, pat in ALLERGEN_WORDS.items() if re.search(pat, recipe)} | set(card.get("allergens", []))
+            missing = sorted(need - set(it.get("allergens", [])))
+            check(not missing, f"{b}/{it['id']} lists every allergen its recipe card uses" + (f": missing {missing}" if missing else ""))
 tb = {i["id"]: i for i in menus["taco-brava"]["items"]}
 check(tb["bt"]["price"] == 2700, "Birria tacos stay at ƒ27.00")
 check(site["deliveryFee"] == 500, "Delivery fee is ƒ5.00")

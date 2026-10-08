@@ -51,7 +51,9 @@
    "allergens": [
     "gluten",
     "egg",
-    "soy"
+    "soy",
+    "sesame",
+    "shellfish"
    ],
    "fried": true
   },
@@ -66,7 +68,8 @@
    "allergens": [
     "egg",
     "soy",
-    "gluten"
+    "gluten",
+    "sesame"
    ],
    "options": [
     {
@@ -147,7 +150,9 @@
    "allergens": [
     "gluten",
     "egg",
-    "soy"
+    "soy",
+    "sesame",
+    "shellfish"
    ],
    "options": [
     {
@@ -176,7 +181,8 @@
    "img": "dushi-wok/assets/dishes/pk.webp",
    "allergens": [
     "soy",
-    "gluten"
+    "gluten",
+    "shellfish"
    ],
    "flags": [
     "pork"

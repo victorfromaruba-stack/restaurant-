@@ -207,7 +207,8 @@
    "img": "smash-shack/assets/dishes/ct.webp",
    "allergens": [
     "gluten",
-    "egg"
+    "egg",
+    "dairy"
    ],
    "fried": true,
    "options": [
@@ -238,7 +239,7 @@
    "section": "mains",
    "name": "Loaded fries (cheddar sauce, beef, scallion)",
    "price": 1195,
-   "desc": "Fries topped with cheddar sauce, ground beef and scallion.",
+   "desc": "Fries layered with melted cheddar and ground beef, finished with sour cream and scallion.",
    "img": "smash-shack/assets/dishes/lf.webp",
    "allergens": [
     "dairy"

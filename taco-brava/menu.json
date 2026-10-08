@@ -298,7 +298,9 @@
    "kind": "side",
    "desc": "Crispy fried tortilla chips with house salsa.",
    "img": "taco-brava/assets/dishes/cs.webp",
-   "allergens": [],
+   "allergens": [
+    "gluten"
+   ],
    "fried": true
   },
   {

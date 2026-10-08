@@ -95,7 +95,9 @@
    "allergens": [
     "gluten",
     "egg",
-    "soy"
+    "soy",
+    "sesame",
+    "shellfish"
    ],
    "flags": [],
    "options": [],
@@ -167,7 +169,8 @@
    "allergens": [
     "egg",
     "soy",
-    "gluten"
+    "gluten",
+    "sesame"
    ],
    "flags": [],
    "options": [
@@ -541,7 +544,9 @@
    "allergens": [
     "gluten",
     "egg",
-    "soy"
+    "soy",
+    "sesame",
+    "shellfish"
    ],
    "flags": [],
    "options": [
@@ -697,7 +702,8 @@
    "price": 1450,
    "allergens": [
     "soy",
-    "gluten"
+    "gluten",
+    "shellfish"
    ],
    "flags": [
     "pork"
@@ -2304,7 +2310,9 @@
    "img": "../../taco-brava/assets/dishes/cs.webp",
    "kind": "side",
    "price": 550,
-   "allergens": [],
+   "allergens": [
+    "gluten"
+   ],
    "flags": [],
    "options": [],
    "aliases": [
@@ -3076,7 +3084,8 @@
    "price": 1550,
    "allergens": [
     "gluten",
-    "egg"
+    "egg",
+    "dairy"
    ],
    "flags": [],
    "options": [
@@ -4232,7 +4241,8 @@
    "allergens": [
     "gluten",
     "dairy",
-    "egg"
+    "egg",
+    "mustard"
    ],
    "flags": [],
    "options": [
