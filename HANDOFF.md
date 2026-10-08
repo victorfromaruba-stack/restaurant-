@@ -48,7 +48,7 @@ One commit per step on `audit-fixes`; `qa/check_site.py` reports 0 problems. Vic
 ## Still waiting on Victor
 - Answered 8 Oct: payment "cash or bank transfer" and last orders 1:30 AM are set in site.json; frikandel has pork (flag stays); videos approved at top quality (Veo 3.1 standard).
 - Papiamento corrections → `shared/lang/pap.json`.
-- Videos: go-ahead on the cost (below).
+- Videos: approved at top quality, but **blocked**: the Gemini prepaid credit ran out (HTTP 402) before any video was made. Victor tops up in Google AI Studio → Billing (about $35 covers 5 clips with retries, plus start frames). Then run the steps under Videos.
 - Merge `audit-fixes` into `main` only when he says so.
 
 ## Pictures and videos with Google Gemini
@@ -78,6 +78,11 @@ To redo one: `python3 build/gemini/make_picture.py make <restaurant> <id>`, look
 - 1280×720 or 960×540, H.264 MP4 with no audio, under 1.5 MB. Use ffmpeg: `-an -movflags +faststart -crf 28`.
 - Poster: the first frame as WebP.
 - Save as `<restaurant>/video/cover.mp4` and `cover.webp`, then add the `video` field to that menu.json.
+- Ready to run (`build/gemini/make_video.py`, prompts in `build/gemini/videos/`), per restaurant:
+  1. `python3 build/gemini/make_video.py frame <restaurant>`: a still start frame. Check it (one patty, right dish, no faces, no text).
+  2. `python3 build/gemini/make_video.py clip <restaurant> build/gemini/out/<restaurant>-frame-1.jpg`: Veo 3.1 standard, 8 s, starts and ends on that frame ($3.20 per try). Check frames from it (e.g. `ffmpeg -i clip.mp4 -vf fps=1 f%d.png`).
+  3. `python3 build/gemini/make_video.py use <restaurant> <clip>`: silent MP4 under 1.5 MB + poster + menu.json `video` field. Then the site check and phone screenshots.
+  If the image field is refused (HTTP 400), the older REST shape is `{"bytesBase64Encoded": ..., "mimeType": ...}` instead of `inlineData`.
 - Ideas:
   - Wok tossing chicken fried rice over flame
   - Birria taco dipped in consommé
