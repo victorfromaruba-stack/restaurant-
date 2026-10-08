@@ -11,7 +11,7 @@
  "logo": "shared/logos/taco-brava.svg",
  "mark": "shared/logos/taco-brava-mark.webp",
  "hero": "taco-brava/assets/dishes/bt-hero.webp",
- "imageNote": "Photos show how we plate it.",
+ "imageNote": "Pictures are illustrations.",
  "sections": [
   {
    "id": "signature",

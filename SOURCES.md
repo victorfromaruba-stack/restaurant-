@@ -1,3 +1,6 @@
+## 8 Oct 2026 update
+- Made with Google Gemini (gemini-3-pro-image), checked against each menu `desc`, saved at the same paths as before: Smash cheeseburger (`smash-shack/assets/dishes/sc-hero.webp`, `sc.webp`), Smash burger combo (`co.webp`), Ground beef street tacos (`taco-brava/assets/art/gt.webp`, a photo-style picture despite the folder name), Crispy shrimp tacos (`taco-brava/assets/dishes/st.webp`), Bitterballen (`oranje-snack/assets/art/bb.webp`). Illustrations, not kitchen photos: every menu says "Pictures are illustrations."
+
 ## 7 Oct 2026 update
 - Oranje Snack dish pictures, Taco Brava `gt` and the three cans (`shared/drinks/`) are original drawings made for this site (sources + scripts in `build/art/`). No brand logos on the cans.
 - Dushi Wok Family Table picture (`dushi-wok/assets/dishes/ft.webp`) is a composite of the fried rice, sweet & sour and lo mein photos (master in `build/photo-masters/dushi-wok/`).

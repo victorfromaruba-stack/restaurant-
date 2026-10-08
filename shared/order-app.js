@@ -796,8 +796,11 @@
     var head = node._mode === "sheet"
       ? '<div class="sheet__head"><h2>Your order</h2><button type="button" class="x" data-close aria-label="Close">' + ICON.close + "</button></div>"
       : "";
+    // the cart page has its own "Your order" title: hide it while the order is empty, so the two don't stack
+    var pageTitle = node._mode === "page" ? $(".cart > h1") : null;
+    if (pageTitle) pageTitle.hidden = !lines.length;
     if (!lines.length) {
-      node.innerHTML = head + '<div class="empty"><p class="empty__t">' + (node._mode === "page" ? "Nothing in it yet" : "Your order is empty") + "</p><p>Tap + on any dish.</p>" +
+      node.innerHTML = head + '<div class="empty"><p class="empty__t">Your order is empty</p><p>Tap + on any dish.</p>' +
         (PAGE === "brand" && node._mode === "sheet" ? '<button type="button" class="btn btn--accent" data-close>Back to the menu</button>' : '<a class="btn btn--accent" href="' + path("index.html") + '">Browse restaurants</a>') + "</div>";
       if (had) restoreFocus(node, null, ".x, .btn");
       return;
