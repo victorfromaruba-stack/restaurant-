@@ -7,7 +7,7 @@
 .hero__sub b{color:var(--cream)}
 
 /* the OPEN sign: the one glowing thing on the page */
-.sign{flex:none;display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:10px 14px 11px;border:2.5px solid #40557A;border-radius:10px;color:#5A6E92;text-transform:uppercase}
+.sign{flex:none;display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:10px 14px 11px;border:2.5px solid #40557A;border-radius:10px;color:#8FA0BF;text-transform:uppercase}
 .sign b{font:900 30px/.9 var(--font);font-stretch:62%;letter-spacing:.05em}
 .sign span{font:800 11.5px/1.1 var(--font);font-stretch:75%;letter-spacing:.08em;white-space:nowrap}
 .sign.is-on{border-color:var(--sodium);color:var(--sodium);box-shadow:0 0 22px rgba(255,201,60,.28),inset 0 0 14px rgba(255,201,60,.12)}
@@ -81,7 +81,8 @@
 .basics b{font:900 22px/1 var(--font);font-stretch:66%;text-transform:uppercase;white-space:nowrap}
 .basics div>span{font-size:13.5px;line-height:1.35;color:var(--haze)}
 .areas{margin:18px 16px 0;color:var(--haze);font-size:14.5px;line-height:1.5}
-.areas a{color:var(--sodium);font-weight:700}
+.areas a{position:relative;color:var(--sodium);font-weight:700;white-space:nowrap}
+.areas a::after{content:"";position:absolute;inset:-15px -8px}
 .hfoot{margin:28px 16px 0;color:#7F8DA6;font-size:12.5px;line-height:1.5}
 
 .cart{max-width:600px;margin:0 auto;padding:0 16px calc(120px + var(--safe-b))}
