@@ -14,14 +14,16 @@ There is no service role key, no Edge Function, and no signing key. Do not go lo
 
 ```sql
 insert into public.pidi_settings (key, value)
-values ('admin_pin_hash', extensions.crypt('PUT_ADMIN_PIN', extensions.gen_salt('bf', 8)))
+values ('admin_pin_hash', extensions.crypt('PUT_8_DIGIT_ADMIN_PIN', extensions.gen_salt('bf', 8)))
 on conflict (key) do nothing;
 
-select public.pidi_admin_set_kitchen_pin('PUT_ADMIN_PIN', 'PUT_KITCHEN_PIN');
-select public.pidi_admin_add_driver('PUT_ADMIN_PIN', 'Ari', '2975550000', 'PUT_DRIVER_PIN');
+select public.pidi_admin_set_kitchen_pin('PUT_8_DIGIT_ADMIN_PIN', 'PUT_KITCHEN_PIN');
+select public.pidi_admin_add_driver('PUT_8_DIGIT_ADMIN_PIN', 'Ari', '2975550000', 'PUT_DRIVER_PIN');
 ```
 
-PINs are 4 to 8 digits. The driver signs in with their name (`Ari`) and their PIN. Add each driver with another `pidi_admin_add_driver` line. Do not commit these PINs.
+The admin PIN is exactly 8 digits. Kitchen and driver PINs are 4 to 8 digits. The driver signs in with their name (`Ari`) and their PIN. Add each driver with another `pidi_admin_add_driver` line. Do not commit these PINs.
+
+Five wrong admin PINs lock admin checks for 5 minutes. Until that ends, the right PIN is refused too: "Too many tries. Wait 5 minutes." There is one admin, so the lock is global.
 
 **3. Then config.js.** Put the anon key in `driver/v2/config.js` and commit it. The URL is already there. The URL and the anon key are public. Never commit a service role key or a signing JWK (this setup does not use them).
 

@@ -839,23 +839,43 @@ begin
 end
 $$;
 
+-- Returns null when the PIN is good. A wrong PIN is returned as text, not raised:
+-- a raised error would roll the failure count back, and the lock would never stick.
 create or replace function public.pidi_admin_ok(admin_pin text)
-returns void
+returns text
 language plpgsql
 security definer
 set search_path = public, extensions
 as $$
 declare
   hash text;
+  failures integer;
+  locked timestamptz;
 begin
   hash := public.pidi_setting('admin_pin_hash');
   if hash is null or hash = '' then
-    raise exception 'Set the admin PIN in the SQL editor first. The seed is at the bottom of PIDI_SETUP.sql.';
+    return 'Set the admin PIN in the SQL editor first. The seed is at the bottom of PIDI_SETUP.sql.';
   end if;
-  if admin_pin is null or admin_pin !~ '^[0-9]{4,8}$'
+  locked := nullif(public.pidi_setting('admin_pin_locked_until'), '')::timestamptz;
+  if locked is not null and locked > now() then
+    return 'Too many tries. Wait 5 minutes.';
+  end if;
+  if admin_pin is null or admin_pin !~ '^[0-9]{8}$'
      or extensions.crypt(admin_pin, hash) is distinct from hash then
-    raise exception 'Admin PIN does not match.';
+    failures := coalesce(public.pidi_setting('admin_pin_failures')::integer, 0) + 1;
+    insert into public.pidi_settings (key, value) values ('admin_pin_failures', failures::text)
+    on conflict (key) do update set value = excluded.value;
+    if failures >= 5 then
+      insert into public.pidi_settings (key, value)
+      values ('admin_pin_locked_until', (now() + interval '5 minutes')::text)
+      on conflict (key) do update set value = excluded.value;
+    end if;
+    return 'Admin PIN does not match.';
   end if;
+  insert into public.pidi_settings (key, value) values ('admin_pin_failures', '0')
+  on conflict (key) do update set value = '0';
+  delete from public.pidi_settings where key = 'admin_pin_locked_until';
+  return null;
 end
 $$;
 
@@ -865,8 +885,13 @@ language plpgsql
 security definer
 set search_path = public, extensions
 as $$
+declare
+  admin_msg text;
 begin
-  perform public.pidi_admin_ok(admin_pin);
+  admin_msg := public.pidi_admin_ok(admin_pin);
+  if admin_msg is not null then
+    return jsonb_build_object('ok', false, 'error', admin_msg);
+  end if;
   if new_pin is null or new_pin !~ '^[0-9]{4,8}$' then
     raise exception 'Kitchen PIN must be 4 to 8 digits.';
   end if;
@@ -890,8 +915,12 @@ as $$
 declare
   driver uuid;
   driver_code text;
+  admin_msg text;
 begin
-  perform public.pidi_admin_ok(admin_pin);
+  admin_msg := public.pidi_admin_ok(admin_pin);
+  if admin_msg is not null then
+    return jsonb_build_object('ok', false, 'error', admin_msg);
+  end if;
   if name is null or length(trim(name)) < 2 then
     raise exception 'Enter the driver''s name.';
   end if;
@@ -1375,13 +1404,15 @@ $pidi_pub$;
 -- ---------------------------------------------------------------------------
 -- Seed, run by hand after the paste. Edit the PINs. Do not commit real PINs.
 -- The dashboard runs this as the database owner, not as a customer.
+-- The admin PIN is exactly 8 digits. Kitchen and driver PINs are 4 to 8 digits.
+-- Five wrong admin PINs lock admin checks for 5 minutes.
 --
 -- insert into public.pidi_settings (key, value)
--- values ('admin_pin_hash', extensions.crypt('PUT_ADMIN_PIN', extensions.gen_salt('bf', 8)))
+-- values ('admin_pin_hash', extensions.crypt('PUT_8_DIGIT_ADMIN_PIN', extensions.gen_salt('bf', 8)))
 -- on conflict (key) do nothing;
 --
--- select public.pidi_admin_set_kitchen_pin('PUT_ADMIN_PIN', 'PUT_KITCHEN_PIN');
--- select public.pidi_admin_add_driver('PUT_ADMIN_PIN', 'Ari', '2975550000', 'PUT_DRIVER_PIN');
+-- select public.pidi_admin_set_kitchen_pin('PUT_8_DIGIT_ADMIN_PIN', 'PUT_KITCHEN_PIN');
+-- select public.pidi_admin_add_driver('PUT_8_DIGIT_ADMIN_PIN', 'Ari', '2975550000', 'PUT_DRIVER_PIN');
 --
 -- A daytime test, until you set it back to reject:
 -- update public.pidi_settings set value = 'flag' where key = 'hours_mode';

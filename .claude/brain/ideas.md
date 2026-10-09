@@ -7,6 +7,7 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
+- [ ] H · S · Kitchen and driver PIN lockouts still raise after counting, so five wrong tries do not lock. Return the wait sentence the way the admin check does, and show it on the sign-in screen · done when: 6 wrong kitchen PINs and 6 wrong driver PINs refuse the right PIN until the lock ends
 - [ ] NOTE 2026-10-09 · A big redesign is in progress in another session (Victor: 'the website looks a lot like AI build it, redesign 100 times better'). Until it lands on main, the daily run must not change shared/*.css, page layout or markup in order-app.js: pick a chef-app or data idea instead, or only fix a broken check.
 - [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
 - [ ] M · S · Chef app replies name the dish ("Your birria is on the stove now") and go out at the same moments every order (seeing the work raised food ratings 22%, Buell 2017) · done when: confirm/cooking/on-the-way replies use the ticket's first dish

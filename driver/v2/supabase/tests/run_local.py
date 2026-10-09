@@ -248,7 +248,7 @@ def main():
     conn.autocommit = False
     q(conn, """
         insert into public.pidi_settings (key, value)
-        values ('admin_pin_hash', extensions.crypt('424242', extensions.gen_salt('bf', 8)))
+        values ('admin_pin_hash', extensions.crypt('42424242', extensions.gen_salt('bf', 8)))
     """)
     q(conn, "update public.pidi_settings set value = 'flag' where key = 'hours_mode'")
     conn.commit()
@@ -299,13 +299,13 @@ def main():
     ok, detail = explodes(conn, "select public.pidi_order_status(%s)", ["nope"], "can't find")
     check("wrong token is refused", ok, detail)
 
-    ok, detail = explodes(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["0000", "Ari", "2975550001", "2468"], "does not match")
-    check("wrong admin PIN is refused", ok, detail)
-    q(conn, "select public.pidi_admin_set_kitchen_pin(%s, %s)", ["424242", "9999"])
+    refused = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["0000", "Ari", "2975550001", "2468"])
+    check("wrong admin PIN is refused", refused.get("ok") is False and "does not match" in refused.get("error", "").lower(), str(refused))
+    q(conn, "select public.pidi_admin_set_kitchen_pin(%s, %s)", ["42424242", "9999"])
     ok, detail = explodes(conn, "select public.pidi_kitchen_login(%s)", ["0000"], "does not match")
     check("wrong kitchen PIN is refused", ok, detail)
-    ari = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["424242", "Ari", "2975550001", "2468"])
-    bea = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["424242", "Bea", "2975550002", "1357"])
+    ari = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["42424242", "Ari", "2975550001", "2468"])
+    bea = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["42424242", "Bea", "2975550002", "1357"])
     conn.commit()
     kitchen = scalar(conn, "select public.pidi_kitchen_login(%s)", ["9999"])
     check("kitchen login returns a token and a topic", bool(kitchen["token"]) and kitchen["topic"].startswith("pidi:k:"))
@@ -428,6 +428,32 @@ def main():
     check("broadcast topics are pidi topics", all(row[2].startswith("pidi:") for row in logs))
     check("bookkeeping row still untouched", scalar(conn, "select note from public.bookkeeping_dummy") == "do not touch")
     check("bookkeeping policy still the only one", scalar(conn, "select polname from pg_policy p join pg_class c on c.oid = p.polrelid where c.relname = 'bookkeeping_dummy'") == "bookkeeping_dummy_keep")
+
+    q(conn, "set role anon")
+    conn.commit()
+    sixth = ""
+    for n in range(1, 7):
+        row = scalar(
+            conn,
+            "select public.pidi_admin_add_driver(%s, %s, %s, %s)",
+            ["00000000", "Nope", "2975550099", "2468"],
+        )
+        conn.commit()
+        detail = (row or {}).get("error", "")
+        if n < 6:
+            check("wrong admin PIN %s" % n, row.get("ok") is False and "does not match" in detail.lower(), detail)
+        else:
+            check("six wrong admin PINs lock it", row.get("ok") is False and "too many tries" in detail.lower(), detail)
+        sixth = detail
+    row = scalar(
+        conn,
+        "select public.pidi_admin_add_driver(%s, %s, %s, %s)",
+        ["42424242", "Nope", "2975550099", "2468"],
+    )
+    conn.commit()
+    detail = (row or {}).get("error", "")
+    check("right admin PIN refused during lockout", row.get("ok") is False and "too many tries" in detail.lower(), detail)
+    check("lockout message is the five minute wait", "wait 5 minutes" in sixth.lower() and "wait 5 minutes" in detail.lower(), sixth + " / " + detail)
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
