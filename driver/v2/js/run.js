@@ -13,6 +13,12 @@ function toTop() {
   window.scrollTo(0, 0);
 }
 
+function deliveryNote(cents) {
+  if (cents == null) return "Includes delivery";
+  if (cents % 100 === 0) return "Includes ƒ" + (cents / 100) + " delivery";
+  return "Includes " + money(cents) + " delivery";
+}
+
 function cashBox(stop) {
   const box = el("div", { class: "money" });
   if (stop.pay === "transfer") {
@@ -27,7 +33,7 @@ function cashBox(stop) {
     const change = stop.change_due_cents;
     box.appendChild(el("p", { class: "line", text: change >= 0 ? "Give " + money(change) + " change" : "Short " + money(-change) }));
   }
-  box.appendChild(el("p", { class: "small", text: "Includes ƒ5 delivery" }));
+  box.appendChild(el("p", { class: "small", text: deliveryNote(stop.fee_cents) }));
   return box;
 }
 
@@ -76,9 +82,12 @@ function paint() {
     const pickup = run.pickup || {};
     if (pickup.name) main.appendChild(el("p", { class: "place", text: pickup.name }));
     stops.forEach((stop) => {
-      main.appendChild(el("p", { class: "kicker", text: stop.restaurant }));
-      (stop.items || []).forEach((item) => {
-        main.appendChild(el("p", { text: item.qty + " × " + item.name }));
+      const bags = stop.bags && stop.bags.length ? stop.bags : [{ restaurant: stop.restaurant, items: stop.items || [] }];
+      bags.forEach((bag) => {
+        main.appendChild(el("p", { class: "kicker", text: bag.restaurant }));
+        (bag.items || []).forEach((item) => {
+          main.appendChild(el("p", { text: item.qty + " × " + item.name }));
+        });
       });
     });
     if (pickup.address || pickup.lat) main.appendChild(actions(pickup, false));

@@ -8,26 +8,15 @@ There is no service role key, no Edge Function, and no signing key. Do not go lo
 
 ## Apply in this order
 
-**1. SQL first.** In the Supabase SQL editor, paste `driver/v2/supabase/PIDI_SETUP.sql` and run it. It is one file. Running it twice is safe. If `extensions.crypt` is missing it stops and does not turn anything on.
+**1. One line, then paste.** In `driver/v2/supabase/PIDI_SETUP.sql`, replace `PUT_8_DIGIT_ADMIN_PIN` with an 8-digit admin PIN. That is the only edit. Paste the file into the Supabase SQL editor and run it. Running it twice is safe. If you leave the placeholder, or the PIN is not 8 digits, the paste still finishes and the editor shows a notice. A PIN already stored is not replaced. If `extensions.crypt` is missing the file stops and does not turn anything on.
 
-**2. Then the PINs, in the same SQL editor.** Edit the numbers, then run this. It is not in the paste, so a blind paste cannot leave a known PIN in the database. Only the hash is stored.
+**2. Then the anon key.** Put it in `driver/v2/config.js` and commit it. The URL is already there. The URL and the anon key are public. Never commit a service role key or a signing JWK (this setup does not use them).
 
-```sql
-insert into public.pidi_settings (key, value)
-values ('admin_pin_hash', extensions.crypt('PUT_8_DIGIT_ADMIN_PIN', extensions.gen_salt('bf', 8)))
-on conflict (key) do nothing;
+v2 stays on "Not connected yet" until that key is set and `pidi_ping()` answers. Opening `/driver/v2/` or `/driver/admin/` before that does not call the database.
 
-select public.pidi_admin_set_kitchen_pin('PUT_8_DIGIT_ADMIN_PIN', 'PUT_KITCHEN_PIN');
-select public.pidi_admin_add_driver('PUT_8_DIGIT_ADMIN_PIN', 'Ari', '2975550000', 'PUT_DRIVER_PIN');
-```
-
-The admin PIN is exactly 8 digits. Kitchen and driver PINs are 4 to 8 digits. The driver signs in with their name (`Ari`) and their PIN. Add each driver with another `pidi_admin_add_driver` line. Do not commit these PINs.
+**3. Then the admin screen.** Open `/driver/admin/` on your phone. Enter the admin PIN (it stays on that screen only, it is not saved on the phone). Set the kitchen PIN. Add each driver: name, phone, PIN. Remove a driver who is not out on a run. Kitchen and driver PINs are 4 to 8 digits. The driver signs in with their name (`Ari`) and their PIN. Do not commit these PINs.
 
 Five wrong admin PINs lock admin checks for 5 minutes. There is one admin, so the lock is global. Five wrong kitchen PINs lock the kitchen the same way. Five wrong tries lock that driver only. The other drivers can still sign in. Until a lock ends, the right PIN is refused too: "Too many tries. Wait 5 minutes."
-
-**3. Then config.js.** Put the anon key in `driver/v2/config.js` and commit it. The URL is already there. The URL and the anon key are public. Never commit a service role key or a signing JWK (this setup does not use them).
-
-v2 stays on the "not connected" screen until that key is set and `pidi_ping()` answers. Opening `/driver/v2/` before that does not call the database.
 
 ## What you still give the other tool
 
@@ -43,9 +32,9 @@ update public.pidi_settings set value = 'flag' where key = 'hours_mode';
 
 Set it back to `reject` when the test is over. `flag` keeps the order and marks it outside hours.
 
-Kitchen: sign in with the kitchen PIN, Accept, Cooking, Ready. An online driver gets the offer for 45 seconds. The first Accept wins. A second order joins that run when it is ready, or due within 10 minutes, and the drop is under 3 km from the first. A run holds at most 2 orders. Offers refresh when a driver opens the offer list, so no cron job is required.
+Kitchen: sign in with the kitchen PIN, Accept, Cooking, then Ready on each restaurant's bag. The order goes to a driver when every bag is ready. An online driver gets the offer for 45 seconds. The first Accept wins. A second order joins that run when it is ready, or due within 10 minutes, and the drop is under 3 km from the first. A run holds at most 2 orders. Pickup lists the bags per restaurant. Offers refresh when a driver opens the offer list, so no cron job is required.
 
-Each order has its own ƒ5 delivery and its own ƒ24 food minimum. Say if a mixed cart should stay one ƒ5.
+One order can include several restaurants. The ƒ24 minimum is the food in the whole cart. Delivery is one fee: ƒ5 when every dish is from Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In, or Oranje Snack. ƒ10 when any dish is from a partner restaurant. Those amounts are `fee_own` (500) and `fee_partner` (1000) in `pidi_settings`.
 
 The customer link is `/driver/v2/status/#t=` plus the public token from `pidi_place_order`. A second order can be `&u=`.
 

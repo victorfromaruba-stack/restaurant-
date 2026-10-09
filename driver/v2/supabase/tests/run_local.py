@@ -162,6 +162,10 @@ def static_sql():
     # The publication name is a format string in PL/pgSQL, so also accept the guarded DO block.
     guarded = "alter publication supabase_realtime add table public.%I" in text
     check("publication change is only pidi_ tables", guarded and "supabase_realtime" in text)
+    check(
+        "placeholder line is PUT_8_DIGIT_ADMIN_PIN",
+        "pin text := 'PUT_8_DIGIT_ADMIN_PIN';" in text,
+    )
 
 
 def apply_sql(conn):
@@ -229,6 +233,7 @@ def main():
     check("new relations are public.pidi_ only", not bad_names, str(bad_names))
     check("five restaurants", scalar(conn, "select count(*) from public.pidi_restaurants") == 5)
     check("no admin PIN stored by the paste", scalar(conn, "select value from public.pidi_settings where key = 'admin_pin_hash'") is None)
+    check("unset admin PIN raises a notice", any("Admin PIN was not set" in note for note in conn.notices), " ".join(conn.notices)[-400:])
 
     # Broadcast stub. Created after the safety diff so the diff stays about the paste.
     q(conn, """
@@ -251,7 +256,16 @@ def main():
         values ('admin_pin_hash', extensions.crypt('42424242', extensions.gen_salt('bf', 8)))
     """)
     q(conn, "update public.pidi_settings set value = 'flag' where key = 'hours_mode'")
+    q(conn, """
+        insert into public.pidi_restaurants (slug, name, partner)
+        values ('partner-test', 'Partner Test', true)
+    """)
     conn.commit()
+    check(
+        "fee amounts are stored",
+        scalar(conn, "select value from public.pidi_settings where key = 'fee_own'") == "500"
+        and scalar(conn, "select value from public.pidi_settings where key = 'fee_partner'") == "1000",
+    )
 
     q(conn, "set role anon")
     ok, detail = explodes(conn, "select public.pidi_dispatch()", None, "permission denied")
@@ -294,6 +308,70 @@ def main():
     check("cash total is ƒ33.95", first["total_cents"] == 3395 and first["fee_cents"] == 500)
     check("change due is ƒ16.05", first["change_due_cents"] == 1605)
     check("transfer has no change", second["change_due_cents"] is None and second["fee_cents"] == 500)
+
+    def place_items(items, pay="cash", pays=8000, name="Mix TEST", phone="2975990099"):
+        body = {
+            "name": name,
+            "phone": phone,
+            "area": "Noord",
+            "address": "TEST, Mixweg 1",
+            "lat": "12.6000",
+            "lng": "-70.0500",
+            "pay": pay,
+            "items": items,
+            "test": True,
+        }
+        if pay == "cash":
+            body["pays_with_cents"] = pays
+        return scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
+
+    ok, detail = explodes(
+        conn,
+        "select public.pidi_place_order(%s::jsonb)",
+        [json.dumps({
+            "name": "Low TEST",
+            "phone": "2975990098",
+            "area": "Noord",
+            "address": "TEST",
+            "pay": "cash",
+            "pays_with_cents": 5000,
+            "items": [
+                {"restaurant": "dushi-wok", "name": "Rice", "qty": 1, "price_cents": 1500},
+                {"restaurant": "taco-brava", "name": "Taco", "qty": 1, "price_cents": 800},
+            ],
+        })],
+        "minimum",
+    )
+    check("mixed cart of ƒ15 + ƒ8 is refused", ok, detail)
+    own_mix = place_items([
+        {"restaurant": "dushi-wok", "name": "Rice", "qty": 1, "price_cents": 1500},
+        {"restaurant": "taco-brava", "name": "Tacos", "qty": 1, "price_cents": 1200},
+    ])
+    own_subs = {row["slug"]: row["food_cents"] for row in own_mix["restaurants"]}
+    check(
+        "own-only mixed cart pays ƒ5",
+        own_mix["food_cents"] == 2700 and own_mix["fee_cents"] == 500 and own_mix["total_cents"] == 3200,
+        str(own_mix),
+    )
+    check(
+        "per-restaurant subtotals are right",
+        own_subs.get("dushi-wok") == 1500 and own_subs.get("taco-brava") == 1200,
+        str(own_subs),
+    )
+    both = place_items([
+        {"restaurant": "dushi-wok", "name": "Rice", "qty": 1, "price_cents": 1500},
+        {"restaurant": "partner-test", "name": "Grill", "qty": 1, "price_cents": 1200},
+    ], phone="2975990097")
+    both_subs = {row["slug"]: row["food_cents"] for row in both["restaurants"]}
+    check(
+        "own plus partner pays ƒ10",
+        both["fee_cents"] == 1000 and both["food_cents"] == 2700 and both_subs.get("partner-test") == 1200,
+        str(both),
+    )
+    partner_only = place_items([
+        {"restaurant": "partner-test", "name": "Grill", "qty": 1, "price_cents": 2500},
+    ], phone="2975990096")
+    check("partner-only pays ƒ10", partner_only["fee_cents"] == 1000 and partner_only["food_cents"] == 2500, str(partner_only))
     status = scalar(conn, "select public.pidi_order_status(%s)", [first["public_token"]])
     check("new order reads Received", status["label"] == "Received" and status["restaurant"] == "Dushi Wok")
     ok, detail = explodes(conn, "select public.pidi_order_status(%s)", ["nope"], "can't find")
@@ -407,6 +485,11 @@ def main():
     won = run_ari or run_bea
     check("the other driver cannot read the run", (run_ari is None) != (run_bea is None))
     check("the run has two stops", won is not None and len(won["stops"]) == 2)
+    check(
+        "pickup lists a bag per restaurant",
+        all(len(stop.get("bags") or []) == 1 and stop.get("fee_cents") == 500 for stop in won["stops"]),
+        str(won["stops"]),
+    )
     q(conn, "select public.pidi_driver_picked_up(%s, %s)", [winner["token"], won["run_id"]])
     for stop in won["stops"]:
         q(conn, "select public.pidi_driver_delivered(%s, %s)", [winner["token"], stop["order_id"]])
@@ -421,6 +504,7 @@ def main():
     done = scalar(conn, "select public.pidi_order_status(%s)", [first["public_token"]])
     done2 = scalar(conn, "select public.pidi_order_status(%s)", [second["public_token"]])
     check("status page reads Delivered", done["label"] == "Delivered" and done2["label"] == "Delivered")
+    check("status page uses the computed fee", done["fee_cents"] == 500 and done2["fee_cents"] == 500)
     q(conn, "reset role")
     picked = scalar(conn, "select count(*) from public.pidi_order_events where status = 'picked_up'")
     check("picked up was logged", picked == 2)
@@ -433,6 +517,67 @@ def main():
     check("bookkeeping row still untouched", scalar(conn, "select note from public.bookkeeping_dummy") == "do not touch")
     check("bookkeeping policy still the only one", scalar(conn, "select polname from pg_policy p join pg_class c on c.oid = p.polrelid where c.relname = 'bookkeeping_dummy'") == "bookkeeping_dummy_keep")
 
+    q(conn, "set role anon")
+    bag = place_items([
+        {"restaurant": "smash-shack", "name": "Burger", "qty": 1, "price_cents": 1600},
+        {"restaurant": "oranje-snack", "name": "Bitterballen", "qty": 1, "price_cents": 1100},
+    ], phone="2975990095", name="Bags TEST")
+    q(conn, "select public.pidi_kitchen_accept(%s, %s)", [kitchen["token"], bag["order_id"]])
+    q(conn, "select public.pidi_kitchen_set_status(%s, %s, 'cooking')", [kitchen["token"], bag["order_id"]])
+    one_bag = scalar(conn, "select public.pidi_kitchen_mark_ready(%s, %s, %s)", [kitchen["token"], bag["order_id"], "smash-shack"])
+    conn.commit()
+    q(conn, "reset role")
+    still = scalar(conn, "select status::text from public.pidi_orders where id = %s", [bag["order_id"]])
+    bag_runs = scalar(conn, "select count(*) from public.pidi_run_orders where order_id = %s", [bag["order_id"]])
+    check(
+        "one bag ready does not dispatch",
+        one_bag.get("status") == "cooking" and still == "cooking" and bag_runs == 0,
+        str(one_bag) + " " + str(still),
+    )
+    q(conn, "set role anon")
+    both_bags = scalar(conn, "select public.pidi_kitchen_mark_ready(%s, %s, %s)", [kitchen["token"], bag["order_id"], "oranje-snack"])
+    conn.commit()
+    q(conn, "reset role")
+    ready_now = scalar(conn, "select status::text from public.pidi_orders where id = %s", [bag["order_id"]])
+    bag_runs = scalar(conn, "select count(*) from public.pidi_run_orders where order_id = %s", [bag["order_id"]])
+    check(
+        "all bags ready sends the order",
+        both_bags.get("status") == "ready" and ready_now == "ready" and bag_runs == 1,
+        str(both_bags),
+    )
+    q(conn, "set role anon")
+    feed = scalar(conn, "select public.pidi_kitchen_feed(%s)", [kitchen["token"]])
+    grouped = next((order for order in feed["orders"] if str(order["id"]) == str(bag["order_id"])), None)
+    names = sorted(group["restaurant"] for group in (grouped or {}).get("restaurants") or [])
+    check("kitchen feed groups by restaurant", names == ["Oranje Snack", "Smash Shack"], str(names))
+    listed = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
+    blob = json.dumps(listed)
+    check("driver list has no PIN hash", listed.get("ok") is True and "pin_hash" not in blob and "$2" not in blob, blob[:240])
+    check("driver list names Ari and Bea", {row["name"] for row in listed["drivers"]} >= {"Ari", "Bea"}, blob)
+    cara = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["42424242", "Cara", "2975550003", "1212"])
+    conn.commit()
+    q(conn, "reset role")
+    q(conn, "insert into public.pidi_runs (status, driver_id) values ('active', %s)", [cara["driver_id"]])
+    conn.commit()
+    q(conn, "set role anon")
+    blocked = scalar(conn, "select public.pidi_admin_remove_driver(%s, %s)", ["42424242", cara["driver_id"]])
+    check("a driver on a run is not removed", blocked.get("ok") is False and "on a run" in blocked.get("error", "").lower(), str(blocked))
+    q(conn, "reset role")
+    q(conn, "update public.pidi_runs set status = 'done' where driver_id = %s and status = 'active'", [cara["driver_id"]])
+    conn.commit()
+    q(conn, "set role anon")
+    gone = scalar(conn, "select public.pidi_admin_remove_driver(%s, %s)", ["42424242", cara["driver_id"]])
+    conn.commit()
+    q(conn, "reset role")
+    still_active = scalar(conn, "select active from public.pidi_drivers where id = %s", [cara["driver_id"]])
+    sessions = scalar(conn, "select count(*) from public.pidi_driver_sessions where driver_id = %s", [cara["driver_id"]])
+    check("removed driver is deactivated", gone.get("ok") is True and still_active is False and sessions == 0, str(gone))
+    q(conn, "set role anon")
+    listed = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
+    listed_names = {row["name"] for row in listed["drivers"]}
+    check("removed driver is off the list", "Cara" not in listed_names and "Ari" in listed_names, str(listed_names))
+
+    q(conn, "reset role")
     q(conn, "set role anon")
     conn.commit()
     sixth = ""
@@ -457,6 +602,13 @@ def main():
     conn.commit()
     detail = (row or {}).get("error", "")
     check("right admin PIN refused during lockout", row.get("ok") is False and "too many tries" in detail.lower(), detail)
+    listed_locked = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
+    conn.commit()
+    check(
+        "admin list is refused during lockout",
+        listed_locked.get("ok") is False and "too many tries" in listed_locked.get("error", "").lower(),
+        str(listed_locked),
+    )
     check("lockout message is the five minute wait", "wait 5 minutes" in sixth.lower() and "wait 5 minutes" in detail.lower(), sixth + " / " + detail)
 
     def pin_lock(label, sql, wrong, right):

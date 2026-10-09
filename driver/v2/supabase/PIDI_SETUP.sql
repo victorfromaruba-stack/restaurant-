@@ -20,8 +20,9 @@
 -- No policy is added to realtime.messages. If send is missing or refused,
 -- the order still saves. The apps poll every 8 seconds either way.
 --
--- Safe to run twice. Pins are not in this file. After it succeeds, run the
--- commented seed at the bottom yourself, with PINs you choose.
+-- Safe to run twice. The only line to fill in is PUT_8_DIGIT_ADMIN_PIN at the
+-- bottom. If that line is still the placeholder, or it is not 8 digits, the
+-- paste still finishes and a notice says the admin PIN was not stored.
 
 do $pidi_need$
 begin
@@ -93,7 +94,6 @@ create table if not exists public.pidi_drivers (
 
 create table if not exists public.pidi_orders (
   id uuid primary key default gen_random_uuid(),
-  restaurant_id uuid not null references public.pidi_restaurants (id),
   public_token text not null,
   client_token text,
   status public.pidi_status not null default 'new',
@@ -131,11 +131,36 @@ create table if not exists public.pidi_orders (
 create table if not exists public.pidi_order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.pidi_orders (id),
+  restaurant_id uuid not null references public.pidi_restaurants (id),
   name text not null,
   qty integer not null,
   price_cents integer not null,
   constraint pidi_order_items_qty check (qty > 0 and price_cents >= 0)
 );
+
+-- One row per restaurant on an order. ready flips per bag. The order is ready
+-- for a driver when every row is ready.
+create table if not exists public.pidi_order_restaurants (
+  order_id uuid not null references public.pidi_orders (id),
+  restaurant_id uuid not null references public.pidi_restaurants (id),
+  food_cents integer not null,
+  ready boolean not null default false,
+  constraint pidi_order_restaurants_pk primary key (order_id, restaurant_id),
+  constraint pidi_order_restaurants_food check (food_cents >= 0)
+);
+
+alter table public.pidi_order_items add column if not exists restaurant_id uuid references public.pidi_restaurants (id);
+
+do $pidi_order_shape$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pidi_orders' and column_name = 'restaurant_id'
+  ) then
+    execute 'alter table public.pidi_orders alter column restaurant_id drop not null';
+  end if;
+end
+$pidi_order_shape$;
 
 create table if not exists public.pidi_order_events (
   id uuid primary key default gen_random_uuid(),
@@ -206,7 +231,8 @@ insert into public.pidi_settings (key, value) values
   ('offer_seconds', '45'),
   ('pair_minutes', '10'),
   ('pair_km', '3'),
-  ('fee_cents', '500'),
+  ('fee_own', '500'),
+  ('fee_partner', '1000'),
   ('min_food_cents', '2400'),
   ('hours_mode', 'reject'),
   ('location_seconds', '8'),
@@ -456,6 +482,67 @@ as $$
   select '{"ok":true}'::jsonb
 $$;
 
+-- fee_own when every dish is from the five restaurants. fee_partner when any dish
+-- is from a restaurant with partner = true. Amounts live in pidi_settings.
+create or replace function public.pidi_delivery_fee(any_partner boolean)
+returns integer
+language plpgsql
+stable
+security definer
+set search_path = public, extensions
+as $$
+declare
+  own_fee integer;
+  partner_fee integer;
+begin
+  own_fee := public.pidi_setting('fee_own')::integer;
+  partner_fee := public.pidi_setting('fee_partner')::integer;
+  if own_fee is null or partner_fee is null then
+    raise exception 'Delivery fee is not set.';
+  end if;
+  if any_partner then
+    return partner_fee;
+  end if;
+  return own_fee;
+end
+$$;
+
+create or replace function public.pidi_order_public(p_order uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, extensions
+as $$
+  select jsonb_build_object(
+    'order_id', o.id,
+    'public_token', o.public_token,
+    'food_cents', o.food_cents,
+    'fee_cents', o.fee_cents,
+    'total_cents', o.food_cents + o.fee_cents,
+    'change_due_cents', o.change_due_cents,
+    'restaurant', (
+      select string_agg(r.name, ', ' order by r.name)
+      from public.pidi_order_restaurants orr
+      join public.pidi_restaurants r on r.id = orr.restaurant_id
+      where orr.order_id = o.id
+    ),
+    'restaurants', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'slug', r.slug,
+        'name', r.name,
+        'food_cents', orr.food_cents,
+        'ready', orr.ready
+      ) order by r.name), '[]'::jsonb)
+      from public.pidi_order_restaurants orr
+      join public.pidi_restaurants r on r.id = orr.restaurant_id
+      where orr.order_id = o.id
+    )
+  )
+  from public.pidi_orders o
+  where o.id = p_order
+$$;
+
 create or replace function public.pidi_place_order(payload jsonb)
 returns jsonb
 language plpgsql
@@ -464,11 +551,11 @@ set search_path = public, extensions
 as $$
 declare
   rest_id uuid;
-  rest_name text;
+  rest_partner boolean;
   food integer := 0;
   fee integer;
   minimum integer;
-  item jsonb;
+  dish jsonb;
   qty integer;
   price integer;
   pay text;
@@ -482,21 +569,17 @@ declare
   token text;
   client_token text;
   existing jsonb;
-  order_id uuid;
+  new_id uuid;
   uname text;
+  dish_slug text;
+  lines jsonb := '[]'::jsonb;
+  any_partner boolean := false;
 begin
   if payload is null or jsonb_typeof(payload) <> 'object' then
     raise exception 'Send the order as one object.';
   end if;
   if lower(coalesce(payload->>'pickup', '')) in ('true', '1', 'yes') then
     raise exception 'Delivery only.';
-  end if;
-
-  select id, name into rest_id, rest_name
-  from public.pidi_restaurants
-  where slug = lower(trim(coalesce(payload->>'restaurant', ''))) and active;
-  if not found then
-    raise exception 'That restaurant is not open for orders.';
   end if;
 
   uname := trim(coalesce(payload->>'name', ''));
@@ -512,28 +595,44 @@ begin
   if jsonb_typeof(payload->'items') <> 'array' or jsonb_array_length(payload->'items') < 1 then
     raise exception 'Add at least one dish.';
   end if;
-  for item in select value from jsonb_array_elements(payload->'items')
+  for dish in select value from jsonb_array_elements(payload->'items')
   loop
-    qty := (item->>'qty')::integer;
-    price := (item->>'price_cents')::integer;
+    qty := (dish->>'qty')::integer;
+    price := (dish->>'price_cents')::integer;
     if qty is null or qty < 1 or qty > 20 or price is null or price < 0 or price > 100000
-       or length(trim(coalesce(item->>'name', ''))) < 1 then
+       or length(trim(coalesce(dish->>'name', ''))) < 1 then
       raise exception 'Check the dishes and try again.';
     end if;
+    dish_slug := lower(trim(coalesce(dish->>'restaurant', payload->>'restaurant', '')));
+    select r.id, r.partner into rest_id, rest_partner
+    from public.pidi_restaurants r
+    where r.slug = dish_slug and r.active;
+    if not found then
+      raise exception 'That restaurant is not open for orders.';
+    end if;
+    if rest_partner then
+      any_partner := true;
+    end if;
     food := food + qty * price;
+    lines := lines || jsonb_build_array(jsonb_build_object(
+      'restaurant_id', rest_id,
+      'name', trim(dish->>'name'),
+      'qty', qty,
+      'price_cents', price
+    ));
   end loop;
 
   minimum := coalesce(public.pidi_setting('min_food_cents')::integer, 2400);
-  fee := coalesce(public.pidi_setting('fee_cents')::integer, 500);
   if food < minimum then
     raise exception 'Food minimum is ƒ24 before delivery.';
   end if;
+  fee := public.pidi_delivery_fee(any_partner);
 
   pay := lower(trim(coalesce(payload->>'pay', '')));
   if pay = 'cash' then
     pays := (payload->>'pays_with_cents')::integer;
     if pays is null or pays < food + fee then
-      raise exception 'Cash paid must cover the food and the ƒ5 delivery.';
+      raise exception 'Cash paid must cover the food and the ƒ% delivery.', fee / 100;
     end if;
   elsif pay = 'transfer' then
     pays := null;
@@ -567,15 +666,7 @@ begin
 
   client_token := nullif(trim(coalesce(payload->>'client_token', '')), '');
   if client_token is not null then
-    select jsonb_build_object(
-      'order_id', o.id,
-      'public_token', o.public_token,
-      'food_cents', o.food_cents,
-      'fee_cents', o.fee_cents,
-      'total_cents', o.food_cents + o.fee_cents,
-      'change_due_cents', o.change_due_cents,
-      'restaurant', rest_name
-    ) into existing
+    select public.pidi_order_public(o.id) into existing
     from public.pidi_orders o
     where o.client_token = client_token;
     if existing is not null then
@@ -585,32 +676,34 @@ begin
 
   token := public.pidi_new_token();
   insert into public.pidi_orders (
-    restaurant_id, public_token, client_token, customer_name, phone, area, address,
+    public_token, client_token, customer_name, phone, area, address,
     lat, lng, note, pay, food_cents, fee_cents, pays_with_cents, transfer_status,
     due_at, outside_hours, test
   ) values (
-    rest_id, token, client_token, uname, trim(payload->>'phone'), trim(payload->>'area'),
+    token, client_token, uname, trim(payload->>'phone'), trim(payload->>'area'),
     trim(payload->>'address'), v_lat, v_lng, nullif(trim(coalesce(payload->>'note', '')), ''),
     pay::public.pidi_pay_method, food, fee, pays,
     case when pay = 'transfer' then 'awaiting'::public.pidi_transfer_status else null end,
     v_due, outside, coalesce(lower(payload->>'test') in ('true', '1', 'yes'), false)
-  ) returning id into order_id;
+  ) returning id into new_id;
 
-  insert into public.pidi_order_items (order_id, name, qty, price_cents)
-  select order_id, trim(dish->>'name'), (dish->>'qty')::integer, (dish->>'price_cents')::integer
-  from jsonb_array_elements(payload->'items') dish;
+  insert into public.pidi_order_items (order_id, restaurant_id, name, qty, price_cents)
+  select new_id,
+         (dish_line->>'restaurant_id')::uuid,
+         dish_line->>'name',
+         (dish_line->>'qty')::integer,
+         (dish_line->>'price_cents')::integer
+  from jsonb_array_elements(lines) dish_line;
 
-  perform public.pidi_log(order_id, 'new');
+  insert into public.pidi_order_restaurants (order_id, restaurant_id, food_cents)
+  select new_id,
+         (dish_line->>'restaurant_id')::uuid,
+         sum((dish_line->>'qty')::integer * (dish_line->>'price_cents')::integer)
+  from jsonb_array_elements(lines) dish_line
+  group by (dish_line->>'restaurant_id')::uuid;
 
-  return jsonb_build_object(
-    'order_id', order_id,
-    'public_token', token,
-    'food_cents', food,
-    'fee_cents', fee,
-    'total_cents', food + fee,
-    'change_due_cents', case when pay = 'cash' then pays - (food + fee) else null end,
-    'restaurant', rest_name
-  );
+  perform public.pidi_log(new_id, 'new');
+  return public.pidi_order_public(new_id);
 end
 $$;
 
@@ -624,7 +717,7 @@ as $$
 declare
   result jsonb;
 begin
-  select jsonb_build_object(
+  select public.pidi_order_public(o.id) || jsonb_build_object(
     'status', o.status,
     'label', case o.status
       when 'new' then 'Received'
@@ -636,11 +729,9 @@ begin
       when 'delivered' then 'Delivered'
       when 'cancelled' then 'Cancelled'
       else 'Received' end,
-    'restaurant', r.name,
     'topic', 'pidi:order:' || o.public_token
   ) into result
   from public.pidi_orders o
-  join public.pidi_restaurants r on r.id = o.restaurant_id
   where o.public_token = token;
   if result is null then
     raise exception 'We can''t find that order.';
@@ -738,16 +829,35 @@ begin
     'orders', coalesce((
       select jsonb_agg(row_to_json(x) order by x.created_at)
       from (
-        select o.id, o.status, r.name as restaurant, o.customer_name as name, o.phone,
+        select o.id, o.status, o.customer_name as name, o.phone,
                o.area, o.address, o.note, o.pay, o.food_cents, o.fee_cents,
                o.food_cents + o.fee_cents as total_cents, o.pays_with_cents, o.change_due_cents,
                o.transfer_status, o.outside_hours, o.test, o.created_at,
                (
-                 select coalesce(jsonb_agg(jsonb_build_object('name', i.name, 'qty', i.qty, 'price_cents', i.price_cents)), '[]'::jsonb)
-                 from public.pidi_order_items i where i.order_id = o.id
-               ) as items
+                 select string_agg(r.name, ', ' order by r.name)
+                 from public.pidi_order_restaurants orr
+                 join public.pidi_restaurants r on r.id = orr.restaurant_id
+                 where orr.order_id = o.id
+               ) as restaurant,
+               (
+                 select coalesce(jsonb_agg(jsonb_build_object(
+                   'restaurant', r.name,
+                   'slug', r.slug,
+                   'food_cents', orr.food_cents,
+                   'ready', orr.ready,
+                   'items', (
+                     select coalesce(jsonb_agg(jsonb_build_object(
+                       'name', i.name, 'qty', i.qty, 'price_cents', i.price_cents
+                     )), '[]'::jsonb)
+                     from public.pidi_order_items i
+                     where i.order_id = o.id and i.restaurant_id = r.id
+                   )
+                 ) order by r.name), '[]'::jsonb)
+                 from public.pidi_order_restaurants orr
+                 join public.pidi_restaurants r on r.id = orr.restaurant_id
+                 where orr.order_id = o.id
+               ) as restaurants
         from public.pidi_orders o
-        join public.pidi_restaurants r on r.id = o.restaurant_id
         where o.status not in ('delivered', 'cancelled')
       ) x
     ), '[]'::jsonb)
@@ -782,6 +892,14 @@ begin
   ) then
     raise exception 'Move one step at a time.';
   end if;
+  if next_status = 'ready' then
+    if (select count(*) from public.pidi_order_restaurants orr where orr.order_id = pidi_kitchen_move.order_id) > 1 then
+      raise exception 'Mark each restaurant ready.';
+    end if;
+    update public.pidi_order_restaurants orr
+      set ready = true
+      where orr.order_id = pidi_kitchen_move.order_id;
+  end if;
   update public.pidi_orders set status = next_status::public.pidi_status where id = order_id;
   perform public.pidi_log(order_id, next_status);
   when_status := coalesce(public.pidi_setting('dispatch_when'), 'ready');
@@ -812,6 +930,61 @@ set search_path = public, extensions
 as $$
 begin
   return public.pidi_kitchen_move(session, order_id, status);
+end
+$$;
+
+-- One restaurant's bag. When every bag on the order is ready, the order is ready
+-- and dispatch can run.
+create or replace function public.pidi_kitchen_mark_ready(session text, order_id uuid, restaurant text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  cur text;
+  rest_id uuid;
+  all_ready boolean;
+  when_status text;
+begin
+  if not public.pidi_kitchen_ok(session) then
+    raise exception 'Sign in again.';
+  end if;
+  select o.status::text into cur
+  from public.pidi_orders o
+  where o.id = pidi_kitchen_mark_ready.order_id
+  for update;
+  if not found then
+    raise exception 'No such order.';
+  end if;
+  if cur <> 'cooking' then
+    raise exception 'Move one step at a time.';
+  end if;
+  select r.id into rest_id
+  from public.pidi_restaurants r
+  join public.pidi_order_restaurants orr on orr.restaurant_id = r.id
+  where orr.order_id = pidi_kitchen_mark_ready.order_id
+    and (r.slug = lower(trim(coalesce(restaurant, ''))) or r.id::text = trim(coalesce(restaurant, '')));
+  if rest_id is null then
+    raise exception 'That restaurant is not on this order.';
+  end if;
+  update public.pidi_order_restaurants orr
+    set ready = true
+    where orr.order_id = pidi_kitchen_mark_ready.order_id
+      and orr.restaurant_id = rest_id;
+  select bool_and(orr.ready) into all_ready
+  from public.pidi_order_restaurants orr
+  where orr.order_id = pidi_kitchen_mark_ready.order_id;
+  if all_ready then
+    update public.pidi_orders set status = 'ready' where id = pidi_kitchen_mark_ready.order_id;
+    perform public.pidi_log(pidi_kitchen_mark_ready.order_id, 'ready');
+    when_status := coalesce(public.pidi_setting('dispatch_when'), 'ready');
+    if when_status = 'ready' then
+      perform public.pidi_dispatch();
+    end if;
+    return jsonb_build_object('ok', true, 'status', 'ready');
+  end if;
+  return jsonb_build_object('ok', true, 'status', 'cooking');
 end
 $$;
 
@@ -936,6 +1109,72 @@ begin
 end
 $$;
 
+create or replace function public.pidi_admin_list_drivers(admin_pin text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  admin_msg text;
+begin
+  admin_msg := public.pidi_admin_ok(admin_pin);
+  if admin_msg is not null then
+    return jsonb_build_object('ok', false, 'error', admin_msg);
+  end if;
+  return jsonb_build_object(
+    'ok', true,
+    'drivers', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'driver_id', d.id,
+        'name', d.name,
+        'phone', d.phone,
+        'active', d.active,
+        'online', d.online
+      ) order by d.name)
+      from public.pidi_drivers d
+      where d.active
+    ), '[]'::jsonb)
+  );
+end
+$$;
+
+create or replace function public.pidi_admin_remove_driver(admin_pin text, driver_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  admin_msg text;
+begin
+  admin_msg := public.pidi_admin_ok(admin_pin);
+  if admin_msg is not null then
+    return jsonb_build_object('ok', false, 'error', admin_msg);
+  end if;
+  if not exists (select 1 from public.pidi_drivers d where d.id = pidi_admin_remove_driver.driver_id) then
+    return jsonb_build_object('ok', false, 'error', 'No such driver.');
+  end if;
+  if exists (
+    select 1 from public.pidi_runs r
+    where r.driver_id = pidi_admin_remove_driver.driver_id
+      and r.status = 'active'
+  ) then
+    return jsonb_build_object('ok', false, 'error', 'That driver is on a run.');
+  end if;
+  update public.pidi_drivers d
+    set active = false, online = false
+    where d.id = pidi_admin_remove_driver.driver_id;
+  delete from public.pidi_driver_sessions s
+    where s.driver_id = pidi_admin_remove_driver.driver_id;
+  update public.pidi_offers f
+    set status = 'lost'
+    where f.driver_id = pidi_admin_remove_driver.driver_id
+      and f.status = 'pending';
+  return jsonb_build_object('ok', true);
+end
+$$;
+
 create or replace function public.pidi_driver_login(driver_name_or_id text, pin text)
 returns jsonb
 language plpgsql
@@ -1028,15 +1267,20 @@ begin
         'stops', (
           select coalesce(jsonb_agg(jsonb_build_object(
             'stop_index', ro.stop_index,
-            'restaurant', r.name,
+            'restaurant', (
+              select string_agg(r.name, ', ' order by r.name)
+              from public.pidi_order_restaurants orr
+              join public.pidi_restaurants r on r.id = orr.restaurant_id
+              where orr.order_id = o.id
+            ),
             'name', o.customer_name,
             'area', o.area,
             'pay', o.pay,
+            'fee_cents', o.fee_cents,
             'total_cents', o.food_cents + o.fee_cents
           ) order by ro.stop_index), '[]'::jsonb)
           from public.pidi_run_orders ro
           join public.pidi_orders o on o.id = ro.order_id
-          join public.pidi_restaurants r on r.id = o.restaurant_id
           where ro.run_id = f.run_id
         )
       ) as offer
@@ -1148,7 +1392,12 @@ begin
         'order_id', o.id,
         'stop_index', ro.stop_index,
         'status', o.status,
-        'restaurant', rest.name,
+        'restaurant', (
+          select string_agg(r.name, ', ' order by r.name)
+          from public.pidi_order_restaurants orr
+          join public.pidi_restaurants r on r.id = orr.restaurant_id
+          where orr.order_id = o.id
+        ),
         'name', o.customer_name,
         'phone', o.phone,
         'area', o.area,
@@ -1157,10 +1406,24 @@ begin
         'lng', o.lng,
         'note', o.note,
         'pay', o.pay,
+        'fee_cents', o.fee_cents,
         'total_cents', o.food_cents + o.fee_cents,
         'pays_with_cents', o.pays_with_cents,
         'change_due_cents', o.change_due_cents,
         'transfer_status', o.transfer_status,
+        'bags', (
+          select coalesce(jsonb_agg(jsonb_build_object(
+            'restaurant', r.name,
+            'items', (
+              select coalesce(jsonb_agg(jsonb_build_object('name', i.name, 'qty', i.qty)), '[]'::jsonb)
+              from public.pidi_order_items i
+              where i.order_id = o.id and i.restaurant_id = r.id
+            )
+          ) order by r.name), '[]'::jsonb)
+          from public.pidi_order_restaurants orr
+          join public.pidi_restaurants r on r.id = orr.restaurant_id
+          where orr.order_id = o.id
+        ),
         'items', (
           select coalesce(jsonb_agg(jsonb_build_object('name', i.name, 'qty', i.qty)), '[]'::jsonb)
           from public.pidi_order_items i where i.order_id = o.id
@@ -1168,7 +1431,6 @@ begin
       ) order by ro.stop_index), '[]'::jsonb)
       from public.pidi_run_orders ro
       join public.pidi_orders o on o.id = ro.order_id
-      join public.pidi_restaurants rest on rest.id = o.restaurant_id
       where ro.run_id = r.id
     )
   ) into result
@@ -1319,6 +1581,7 @@ alter table public.pidi_drivers enable row level security;
 alter table public.pidi_orders enable row level security;
 alter table public.pidi_order_items enable row level security;
 alter table public.pidi_order_events enable row level security;
+alter table public.pidi_order_restaurants enable row level security;
 alter table public.pidi_runs enable row level security;
 alter table public.pidi_run_orders enable row level security;
 alter table public.pidi_offers enable row level security;
@@ -1337,7 +1600,7 @@ declare
 begin
   foreach t in array array[
     'pidi_restaurants', 'pidi_settings', 'pidi_drivers', 'pidi_orders', 'pidi_order_items',
-    'pidi_order_events', 'pidi_runs', 'pidi_run_orders', 'pidi_offers',
+    'pidi_order_events', 'pidi_order_restaurants', 'pidi_runs', 'pidi_run_orders', 'pidi_offers',
     'pidi_driver_locations', 'pidi_kitchen_sessions', 'pidi_driver_sessions'
   ]
   loop
@@ -1372,6 +1635,7 @@ grant execute on function public.pidi_kitchen_login(text) to anon;
 grant execute on function public.pidi_kitchen_feed(text) to anon;
 grant execute on function public.pidi_kitchen_accept(text, uuid) to anon;
 grant execute on function public.pidi_kitchen_set_status(text, uuid, text) to anon;
+grant execute on function public.pidi_kitchen_mark_ready(text, uuid, text) to anon;
 grant execute on function public.pidi_driver_login(text, text) to anon;
 grant execute on function public.pidi_driver_set_online(text, boolean) to anon;
 grant execute on function public.pidi_driver_offers(text) to anon;
@@ -1383,6 +1647,8 @@ grant execute on function public.pidi_driver_delivered(text, uuid) to anon;
 grant execute on function public.pidi_driver_location(text, numeric, numeric) to anon;
 grant execute on function public.pidi_admin_add_driver(text, text, text, text) to anon;
 grant execute on function public.pidi_admin_set_kitchen_pin(text, text) to anon;
+grant execute on function public.pidi_admin_list_drivers(text) to anon;
+grant execute on function public.pidi_admin_remove_driver(text, uuid) to anon;
 
 do $pidi_pub$
 declare
@@ -1404,21 +1670,25 @@ begin
 end
 $pidi_pub$;
 
--- ---------------------------------------------------------------------------
--- Seed, run by hand after the paste. Edit the PINs. Do not commit real PINs.
--- The dashboard runs this as the database owner, not as a customer.
--- The admin PIN is exactly 8 digits. Kitchen and driver PINs are 4 to 8 digits.
--- Five wrong admin PINs lock admin checks for 5 minutes.
--- Five wrong kitchen PINs lock the kitchen for 5 minutes.
--- Five wrong tries lock that driver only. The others can still sign in.
---
--- insert into public.pidi_settings (key, value)
--- values ('admin_pin_hash', extensions.crypt('PUT_8_DIGIT_ADMIN_PIN', extensions.gen_salt('bf', 8)))
--- on conflict (key) do nothing;
---
--- select public.pidi_admin_set_kitchen_pin('PUT_8_DIGIT_ADMIN_PIN', 'PUT_KITCHEN_PIN');
--- select public.pidi_admin_add_driver('PUT_8_DIGIT_ADMIN_PIN', 'Ari', '2975550000', 'PUT_DRIVER_PIN');
---
--- A daytime test, until you set it back to reject:
--- update public.pidi_settings set value = 'flag' where key = 'hours_mode';
--- ---------------------------------------------------------------------------
+-- The one line to fill in before pasting. Replace PUT_8_DIGIT_ADMIN_PIN with
+-- exactly 8 digits. Kitchen and driver PINs are set on the admin screen.
+-- If this line is unchanged, or it is not 8 digits, seeding is skipped and a
+-- notice is raised. The rest of the file still commits. A PIN already stored
+-- is not overwritten.
+
+do $pidi_admin_seed$
+declare
+  pin text := 'PUT_8_DIGIT_ADMIN_PIN';
+begin
+  if pin = 'PUT_8_DIGIT_ADMIN_PIN' or pin !~ '^[0-9]{8}$' then
+    raise notice 'Admin PIN was not set. Replace PUT_8_DIGIT_ADMIN_PIN near the bottom of PIDI_SETUP.sql with exactly 8 digits, then run this file again. Setup finished. A PIN already stored was left as it is.';
+    return;
+  end if;
+  insert into public.pidi_settings (key, value)
+  values ('admin_pin_hash', extensions.crypt(pin, extensions.gen_salt('bf', 8)))
+  on conflict (key) do nothing;
+  if not found then
+    raise notice 'Admin PIN already stored. It was not changed.';
+  end if;
+end
+$pidi_admin_seed$;

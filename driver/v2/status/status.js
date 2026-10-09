@@ -19,16 +19,37 @@ function showProblem(text) {
   main.appendChild(p);
 }
 
+function florin(cents) {
+  if (cents == null) return "";
+  if (cents % 100 === 0) return "ƒ" + (cents / 100);
+  const n = Math.abs(cents);
+  return "ƒ" + Math.floor(n / 100) + "." + String(n % 100).padStart(2, "0");
+}
+
 function paintOrders(orders) {
   main.textContent = "";
   orders.forEach((order) => {
     const block = document.createElement("section");
     const title = document.createElement("h1");
     title.textContent = order.label;
-    const where = document.createElement("p");
-    where.textContent = order.restaurant || "";
     block.appendChild(title);
-    block.appendChild(where);
+    const groups = order.restaurants || [];
+    if (groups.length) {
+      groups.forEach((row) => {
+        const line = document.createElement("p");
+        line.textContent = row.name + " " + florin(row.food_cents);
+        block.appendChild(line);
+      });
+    } else if (order.restaurant) {
+      const where = document.createElement("p");
+      where.textContent = order.restaurant;
+      block.appendChild(where);
+    }
+    if (order.fee_cents != null) {
+      const fee = document.createElement("p");
+      fee.textContent = "Delivery " + florin(order.fee_cents);
+      block.appendChild(fee);
+    }
     main.appendChild(block);
   });
 }

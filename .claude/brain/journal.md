@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-09 · cursor · Pidi v2 mixed cart is one order, one fee (ƒ5 own, ƒ10 if any partner), and the paste needs only the admin PIN line (97 local tests) · waiting: Victor replaces PUT_8_DIGIT_ADMIN_PIN and pastes. PR #4 stays unmerged
 - 2026-10-09 · cursor · Kitchen and driver PIN misses return {ok:false} so the 5-minute lock commits (78 local tests). One kitchen lock, one lock per driver · waiting: Victor pastes PIDI_SETUP.sql. PR #4 stays unmerged
 - 2026-10-09 · cursor · Admin PIN is exactly 8 digits and locks for 5 minutes after five misses (61 local tests) · waiting: Victor pastes PIDI_SETUP.sql. PR #4 stays unmerged
 - 2026-10-09 · cursor · Pidi v2 rewritten for the live bookkeeping database: one `pidi_` SQL paste, no Edge Functions, driver app stays off until the anon key is in config.js · waiting: Victor pastes PIDI_SETUP.sql, sets PINs in the SQL editor, commits the anon key. PR #4 stays unmerged
