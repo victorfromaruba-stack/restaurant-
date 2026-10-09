@@ -25,8 +25,6 @@ body[data-brand="smash-shack"]{
 /* section titles: big mustard Anton, the way the sign is painted */
 [data-brand="smash-shack"] .sec{padding-top:28px}
 [data-brand="smash-shack"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-bottom:10px;font:400 30px/1 var(--display);text-transform:uppercase;letter-spacing:.01em;color:var(--mustard)}
-[data-brand="smash-shack"] .sec__k{display:inline;font:inherit;color:var(--mustard)}
-[data-brand="smash-shack"] .sec__k~.sec__n{font:500 14px/1.2 var(--type);text-transform:none;color:var(--muted)}
 
 /* the menu is an order ticket: paper, typewriter words, dashed lines, the price on the name's line, a box to tick */
 [data-brand="smash-shack"] .rows{

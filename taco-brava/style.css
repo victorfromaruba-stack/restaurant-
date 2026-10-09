@@ -22,8 +22,6 @@ body[data-brand="taco-brava"]{
 [data-brand="taco-brava"] .sec{padding-top:30px}
 [data-brand="taco-brava"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-bottom:6px;font:400 22px/1.1 var(--display);color:var(--cream)}
 [data-brand="taco-brava"] .sec__t::after{content:"";flex-basis:100%;height:4px;margin-top:9px;background:var(--pink)}
-[data-brand="taco-brava"] .sec__k{display:inline;font:400 22px/1.1 var(--display);color:var(--cream)}
-[data-brand="taco-brava"] .sec__k~.sec__n{font:600 14px/1.2 var(--font);color:var(--muted)}
 
 /* rows: pictures pinned up in a cream border, the price painted in pink on the name's line */
 [data-brand="taco-brava"] .row{--ph:84px}

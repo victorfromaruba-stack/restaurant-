@@ -17,27 +17,19 @@
  "sections": [
   {
    "id": "snacks",
-   "title": "Snacks",
-   "kicker": "Uit de frituur",
-   "lang": "nl"
+   "title": "Snacks"
   },
   {
    "id": "mains",
-   "title": "Mains",
-   "kicker": "Van de grill",
-   "lang": "nl"
+   "title": "Mains"
   },
   {
    "id": "sides",
-   "title": "Sides",
-   "kicker": "Patat",
-   "lang": "nl"
+   "title": "Sides"
   },
   {
    "id": "drinks",
-   "title": "Drinks",
-   "kicker": "Fris",
-   "lang": "nl"
+   "title": "Drinks"
   }
  ],
  "items": [

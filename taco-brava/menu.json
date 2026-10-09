@@ -22,21 +22,15 @@
   },
   {
    "id": "mains",
-   "title": "Mains",
-   "kicker": "Platos",
-   "lang": "es"
+   "title": "Mains"
   },
   {
    "id": "sides",
-   "title": "Sides",
-   "kicker": "Para picar",
-   "lang": "es"
+   "title": "Sides"
   },
   {
    "id": "drinks",
-   "title": "Drinks",
-   "kicker": "Bebidas",
-   "lang": "es"
+   "title": "Drinks"
   }
  ],
  "items": [

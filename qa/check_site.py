@@ -38,6 +38,8 @@ for b, m in menus.items():
             check(os.path.exists(os.path.join(ROOT, m["video"][k])), f"{b} cover video {k} exists ({m['video'][k]})")
         src = os.path.join(ROOT, m["video"]["src"])
         check(not os.path.exists(src) or os.path.getsize(src) <= 1.5 * 1024 * 1024, f"{b} cover video is under 1.5 MB")
+    # section names are only ever shown in the visitor's language (Victor, 9 Oct 2026: no small translations beside them)
+    check(all(set(sec) <= {"id", "title"} for sec in m["sections"]), f"{b} sections carry only id and title (no second-language names)")
     ids = [i["id"] for i in m["items"]]
     check(len(ids) == len(set(ids)), f"{b} item ids are unique")
     secs = {s["id"] for s in m["sections"]}

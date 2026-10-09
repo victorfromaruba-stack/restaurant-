@@ -128,7 +128,6 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 
 .sec{padding-top:26px}
 .sec__t{margin:0 0 4px;font:700 20px/1.15 var(--display);color:var(--ink)}
-.sec__k{display:block;font:600 13.5px/1.3 var(--body);color:var(--muted)}
 
 /* ---------- menu rows, set like a printed menu. The words: the name, then the price on its own line under it on a
    phone; where the words' column is wide enough, the price on the name's line across a dotted line (never wider than

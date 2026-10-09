@@ -1196,13 +1196,13 @@
     var leadIds = lead.map(function (i) { return i.id; });
     var secs = menu.sections.map(function (s) {
       var items = menu.items.filter(function (i) { return i.section === s.id && leadIds.indexOf(i.id) < 0; });
-      return { id: s.id, title: s.title, kicker: s.kicker, klang: s.lang, items: items.filter(function (i) { return i.style === "signature"; }).concat(items.filter(function (i) { return i.style !== "signature"; })) };
+      return { id: s.id, title: s.title, items: items.filter(function (i) { return i.style === "signature"; }).concat(items.filter(function (i) { return i.style !== "signature"; })) };
     }).filter(function (s) { return s.items.length; });
     // without "Start here", a section that only holds the house dish ("Signature") isn't a section: that dish leads the next one
     secs = secs.reduce(function (out, s, n) {
       var carry = out.carry || [];
       if (!lead.length && s.items.every(function (i) { return i.style; }) && n < secs.length - 1) { out.carry = carry.concat(s.items); return out; }
-      out.list.push({ id: s.id, title: s.title, kicker: s.kicker, klang: s.klang, items: carry.concat(s.items) }); out.carry = null; return out;
+      out.list.push({ id: s.id, title: s.title, items: carry.concat(s.items) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
     var cover = coverPick(menu, feat);
     // the app's delivery line, said as the app's ("Order Aruba delivers until 2 AM"), then the restaurant's own sign: its
@@ -1224,13 +1224,14 @@
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>" +
       '<section class="again" id="oa-again" hidden></section>';
-    function section(id, label, items, kicker, klang) {
+    // section names are in the visitor's language only (Victor, 9 Oct 2026: no small translations beside them)
+    function section(id, label, items) {
       return '<section class="sec sec--' + esc(id) + '" id="' + esc(id) + '" aria-labelledby="h-' + esc(id) + '"><h2 class="sec__t" id="h-' + esc(id) + '">' +
-        (kicker ? '<span class="sec__k"' + (klang ? ' lang="' + esc(klang) + '"' : "") + ">" + esc(kicker) + "</span> " : "") + '<span class="sec__n">' + esc(label) + "</span></h2>" +
+        '<span class="sec__n">' + esc(label) + "</span></h2>" +
         '<div class="rows' + (id === "drinks" ? " rows--drinks" : "") + '">' + items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
     }
     if (lead.length) html += section("featured", tr("Start here"), lead);
-    secs.forEach(function (s) { html += section(s.id, tr(s.title), s.items, s.kicker, s.klang); });
+    secs.forEach(function (s) { html += section(s.id, tr(s.title), s.items); });
     html += '<section class="sec also" id="oa-also" aria-labelledby="h-also" hidden></section>';
     // people arriving from a shared dish link land here too, so the page ends with how ordering works, in one paragraph
     // (the three steps are on the home page)
