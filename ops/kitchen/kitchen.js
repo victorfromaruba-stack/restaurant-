@@ -778,10 +778,15 @@
     var timed = o.time && !/possible|asap/i.test(o.time);
     var pickup = o.mode === 'Pickup';
     var total = o.total ? ' Total \u0192' + o.total + '.' : '';
+    // the first real dish (not a drink), so the customer sees we are on their food
+    var food = (o.items || []).filter(function (i) { return !i.drink && !i.unknown; });
+    var dish = food.length ? food[0].name + (food.length > 1 ? ' and ' + (food.length - 1) + ' more' : '') : '';
+    var named = dish ? no + ' (' + dish + ')' : no;
     return [
       { k: 'Confirm', t: hi + no + (timed ? ' is booked for ' + o.time + '.' : ' is confirmed.') +
           (pickup ? ' We\u2019ll message you when it\u2019s ready for pickup.' : timed ? '' : ' It\u2019s with you in about 35\u201350 min.') + total },
-      { k: pickup ? 'Ready for pickup' : 'On the way', t: pickup ? no + ' is ready for pickup. See you soon!' : no + ' is on the way. See you in a few minutes!' },
+      { k: 'Cooking', t: no + ' is on the stove now' + (dish ? ': ' + dish + '.' : '.') },
+      { k: pickup ? 'Ready for pickup' : 'On the way', t: pickup ? named + ' is ready for pickup. See you soon!' : named + ' is on the way. See you in a few minutes!' },
       { k: 'Sold out', t: 'Sorry, one dish in ' + no.toLowerCase().replace('your order', 'your order') + ' is sold out tonight. Can we swap it for something else?' }
     ];
   }

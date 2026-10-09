@@ -1,0 +1,32 @@
+{
+  "name": "Pidi Driver",
+  "short_name": "Pidi",
+  "description": "Deliveries for Pidi. Cash or bank transfer.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12143A",
+  "theme_color": "#12143A",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "brand/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "brand/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "brand/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
