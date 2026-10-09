@@ -106,7 +106,7 @@ def site_copy():
     """Every piece of customer-facing copy, as (where, text)."""
     items = []
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
-    for page in [b["id"] + "/index.html" for b in site["brands"]]:
+    for page in ["index.html"] + [b["id"] + "/index.html" for b in site["brands"]]:
         p = ROOT / page
         if p.exists():
             items += [(page, t) for t in html_text(p.read_text(encoding="utf-8"))]
@@ -271,13 +271,18 @@ def image_findings():
         for f in feat:
             if near(cover, f["img"]) or near(f["img"], cover):
                 out.append(("FAIL", b["id"] + "/index.html", f"the cover ({cover.split('/')[-1]}) is the same picture as Featured “{f['name']}” right under it: the same photo twice on one screen is a stock-site tell"))
+        # Home page: the restaurant card (menu "hero") against the same restaurant's dishes in the Signature rail.
+        hero = m.get("hero")
+        for f in feat:
+            if hero and (hero == f["img"] or near(hero, f["img"])):
+                out.append(("WARN", "index.html", f"{m['name']}'s restaurant card shows the same photo as “{f['name']}” in the dish rail above it: give the card a different dish (menu.json \"hero\")"))
     return out
 
 
 def css_findings():
     out = []
     pills = 0
-    for css in [ROOT / "shared/order.css"]:
+    for css in [ROOT / "shared/order.css", ROOT / "shared/hub.css"]:
         if not css.exists():
             continue
         src = css.read_text(encoding="utf-8")
@@ -296,13 +301,14 @@ def css_findings():
     return out
 
 
-LEAKS = ("order aruba", "one kitchen", "shared kitchen", "same kitchen", "other restaurant", "five restaurants", "all five",
-         "sister restaurant", "kitchen order")
+# Order Aruba is the delivery app (like Uber Eats) and may be named; a shared kitchen or owner may not
+LEAKS = ("one kitchen", "shared kitchen", "same kitchen", "from our kitchen", "our other restaurant", "sister restaurant",
+         "all five", "one delivery", "kitchen order", "mix dishes")
 
 
 def leak_findings(items):
-    """Victor, 9 Oct 2026: customers must believe each restaurant is its own business. Copy that names
-    the restaurants together, a shared kitchen, or another restaurant on one's own menu is a FAIL."""
+    """Victor, 9 Oct 2026: Order Aruba is a delivery app like Uber, and customers must believe each restaurant
+    is its own business. Copy that hints at a shared kitchen, or names another restaurant in one's own menu, is a FAIL."""
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
     names = {}
     for b in site["brands"]:
@@ -312,7 +318,7 @@ def leak_findings(items):
         low = text.lower()
         for w in LEAKS:
             if w in low:
-                out.append(("FAIL", where, f"“{text[:70]}” says “{w}”: each restaurant has to read as its own business"))
+                out.append(("FAIL", where, f"“{text[:70]}” says “{w}”: each restaurant has to read as its own business, never a shared kitchen"))
         here = where.split("/")[0]
         if here in names:   # a restaurant's own page or menu: no other restaurant's name
             for b, n in names.items():

@@ -1,6 +1,6 @@
-# Restaurant pages
+# Order Aruba
 
-Five restaurant ordering pages: Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In and Oranje Snack. Each page has its own menu and its own order, sent on WhatsApp.
+A late-night delivery app for Aruba: Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In and Oranje Snack. Each restaurant has its own page and its own order, sent on WhatsApp. Delivery ƒ5, every night 10 PM to 2 AM.
 
 **Quick changes**
 - Hours, WhatsApp number, delivery areas, delivery fee, which restaurants are open: `shared/site.json`

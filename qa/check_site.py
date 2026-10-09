@@ -2,9 +2,10 @@
 (qa/local_server.py), so there is no server to start first. QA_BASE=<url> checks another server instead.
 Checks every menu image exists, every page loads with no errors, and builds the WhatsApp sample
 messages in qa/wa-samples.json from the real ordering code, testing the owner's rules.
-Each restaurant must stand on its own (Victor, 9 Oct 2026: customers must believe each one is its own
-business): no page, order, ticket, link card or language file may name or link to another restaurant
-or a shared kitchen, and an order never carries over from one restaurant to another."""
+Order Aruba is a delivery app, like Uber Eats (Victor, 9 Oct 2026): the home page lists the restaurants,
+and customers must believe each one is its own business. Nothing may say or hint that they share a
+kitchen, one order never mixes restaurants, and a restaurant's order, ticket and receipt never name
+another restaurant."""
 import asyncio, json, os, re, subprocess, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops, ImageStat
@@ -93,24 +94,25 @@ SAMPLES = [
    {"area": "Eagle Beach", "addr": "Hotel lobby, room 214", "name": "Eva", "note": "", "pay": "Bank transfer"}),
 ]
 names = {b: menus[b]["name"] for b in brands}
-def leaks(text, here):
-    """what on a restaurant's page gives away the others: their names, the shared name, a shared kitchen"""
-    out = [n for b, n in names.items() if b != here and (n in text or n.replace("’", "'") in text)]
-    out += [w for w in ("Order Aruba", "one kitchen", "shared kitchen", "same kitchen", "our other restaurant", "five restaurants", "all five", "Kitchen order")
-            if w.lower() in text.lower()]
-    return out
-# public files that every restaurant page loads: nothing in them may point at the others or a shared kitchen
-for f in ["shared/lang/pap.json", "shared/lang/nl.json", "shared/lang/es.json", "shared/site.json", "sw.js", "404.html"]:
-    text = open(os.path.join(ROOT, f), encoding="utf-8").read()
-    bad = [w for w in ("Order Aruba", "one kitchen", "shared kitchen", "same kitchen", "other restaurants", "five restaurants", "all five") if w.lower() in text.lower()]
+is_open = {b["id"]: b.get("status", "open") == "open" for b in site["brands"]}
+# words that say or hint the restaurants share a kitchen or an owner (Order Aruba itself is fine: it's the app)
+KITCHEN_TALK = ("one kitchen", "shared kitchen", "same kitchen", "from our kitchen", "our other restaurant", "sister restaurant",
+                "all five", "one delivery", "kitchen order", "mix dishes")
+def talk(text):
+    return [w for w in KITCHEN_TALK if w in text.lower()]
+def others_in(text, here):
+    return [n for b, n in names.items() if b != here and (n in text or n.replace("’", "'") in text)]
+# public files the pages load: nothing in them may hint at a shared kitchen
+pub = ["index.html", "404.html", "sw.js", "shared/site.json", "shared/order.css", "shared/hub.css", "shared/order-app.js",
+       "shared/lang/pap.json", "shared/lang/nl.json", "shared/lang/es.json"] + [f"{b}/index.html" for b in brands] + [f"{b}/menu.json" for b in brands]
+for f in pub:
+    bad = talk(open(os.path.join(ROOT, f), encoding="utf-8").read())
     check(not bad, f"{f} says nothing about a shared kitchen" + (f": {bad}" if bad else ""))
 for b in brands:
     html = open(os.path.join(ROOT, b, "index.html"), encoding="utf-8").read()
     others = [x for x in brands if x != b and (x + "/" in html or names[x] in html)]
-    check(not others and "Order Aruba" not in html and "../index.html" not in html and "parentOrganization" not in html,
-          f"{b}/index.html (title, Google data, links) stands on its own" + (f": mentions {others}" if others else ""))
-check(not os.path.exists(os.path.join(ROOT, "index.html")) and not os.path.exists(os.path.join(ROOT, "cart.html")),
-      "no shared home or cart page listing the restaurants together")
+    check(not others and "parentOrganization" not in html, f"{b}/index.html (title, Google data) stands on its own" + (f": mentions {others}" if others else ""))
+check(not os.path.exists(os.path.join(ROOT, "cart.html")), "no shared cart page: each restaurant is its own order")
 
 async def main():
     async with async_playwright() as p:
@@ -122,7 +124,7 @@ async def main():
         pg.on("console", lambda m: errs.append(f"console: {m.text}") if m.type == "error" and "404" not in m.text else None)
         # ops/chef.html is private (not on the public site); the chef app checks for it on purpose
         pg.on("response", lambda r: errs.append(f"HTTP {r.status} {r.url}") if r.status >= 400 and not r.url.endswith("ops/chef.html") else None)
-        for url in ["404.html", "ops/kitchen/index.html"] + [f"{x}/index.html" for x in brands]:
+        for url in ["index.html", "404.html", "ops/kitchen/index.html"] + [f"{x}/index.html" for x in brands]:
             errs.clear()
             await pg.goto(BASE + url, wait_until="networkidle")
             h = await pg.evaluate("document.body.scrollHeight")
@@ -132,7 +134,7 @@ async def main():
             broken = await pg.evaluate("Array.from(document.images).filter(i => i.complete && i.naturalWidth === 0).map(i => i.src)")
             check(not errs and not broken, f"{url} loads with no errors or broken images" + (f": {errs + broken}" if errs or broken else ""))
         out = []
-        for title, br, lines, meta in SAMPLES:
+        for title, br, lines, meta in [x for x in SAMPLES if is_open.get(x[1])]:
             await pg.goto(BASE + br + "/index.html", wait_until="networkidle")
             await pg.evaluate("OrderApp.clear()")
             for (iid, opts, q) in lines:
@@ -152,24 +154,42 @@ async def main():
             check(item_sum == sub and tot == sub + fee, f"[{title}] line prices add up to the total")
             first = msg.split("\n")[0]
             check(re.match(r"^\*" + re.escape(names[br]) + r" order\* #\d{4}-[A-Z0-9]{2}$", first) is not None, f"[{title}] header names this restaurant: {first}")
-            bad = leaks(msg, br)
-            check(not bad, f"[{title}] ticket names no other restaurant or shared kitchen" + (f": {bad}" if bad else ""))
+            bad = others_in(msg, br) + talk(msg)
+            check(not bad and "Pickup" not in msg, f"[{title}] ticket names no other restaurant or shared kitchen" + (f": {bad}" if bad else ""))
             if site.get("payWith"):
                 check(re.search(r"^Pay: " + re.escape(meta["pay"]) + "$", msg, re.M) is not None, f"[{title}] ticket says how the customer pays")
             check("DW-" not in msg and "TB-" not in msg and "OS-" not in msg, f"[{title}] no internal codes")
-        # the customer's screens on each restaurant page: menu, a dish, the order sheet. Nothing about the others.
+        # each restaurant page: no kitchen talk anywhere, and its order sheet never offers another restaurant
         for bid in brands:
             await pg.goto(BASE + f"{bid}/index.html", wait_until="networkidle")
+            await pg.evaluate("window.scrollTo(0, document.body.scrollHeight)"); await pg.wait_for_timeout(1200)
+            bad = talk(await pg.evaluate("document.body.innerText"))
+            check(not bad, f"{bid} page says nothing about a shared kitchen" + (f": {bad}" if bad else ""))
+            if not is_open.get(bid):
+                continue
             await pg.evaluate("OrderApp.clear()")
             first = next(i for i in menus[bid]["items"] if i.get("kind") != "drink" and not i.get("soldOut"))
             await pg.evaluate("([b,i]) => OrderApp.addItem(b,i,{},1)", [bid, first["id"]])
             await pg.click(".bar__btn"); await pg.wait_for_timeout(400)
-            text = await pg.evaluate("document.body.innerText")
-            hrefs = await pg.evaluate("Array.from(document.querySelectorAll('a[href]')).map(a => a.getAttribute('href'))")
-            away = [h for h in hrefs if not h.startswith(("#", "https://wa.me/", "http")) or any(x + "/" in h for x in brands if x != bid)]
-            bad = leaks(text, bid)
-            check(not bad and not away, f"{bid} page and order sheet name and link no other restaurant" + (f": {bad + away}" if bad or away else ""))
+            sheet = await pg.evaluate("(document.querySelector('.oa-sheet__panel') || {}).innerText || ''")
+            hrefs = await pg.evaluate("Array.from(document.querySelectorAll('.oa-sheet__panel a[href]')).map(a => a.getAttribute('href'))")
+            away = [h for h in hrefs if not h.startswith(("#", "https://wa.me/"))]
+            bad = others_in(sheet, bid) + talk(sheet)
+            check(bool(sheet) and not bad and not away, f"{bid} order sheet offers and links no other restaurant" + (f": {bad + away}" if bad or away else ""))
             await pg.evaluate("OrderApp.clear()")
+        # the home page: every restaurant listed, and every card opens the dish on its own restaurant's page
+        await pg.goto(BASE + "index.html", wait_until="networkidle"); await pg.wait_for_timeout(500)
+        listed = await pg.evaluate("Array.from(document.querySelectorAll('#oa-list .shop')).map(a => a.getAttribute('href'))")
+        shown = [b for b in site["brands"] if b.get("status") != "hidden"]
+        check(len(listed) == len(shown) and all(f"{b['id']}/" in h for b, h in zip(shown, listed)), f"home lists every restaurant ({len(listed)}/{len(shown)})")
+        rail = await pg.evaluate("Array.from(document.querySelectorAll('#oa-rail a')).map(a => a.getAttribute('href'))")
+        check(bool(rail) and all(re.search(r"^[a-z-]+/#d=\w+$", h) for h in rail), f"home dish cards open the dish on its restaurant's page ({len(rail)} cards)")
+        check(await pg.evaluate("!document.querySelector('[data-quick], .bag, #oa-bar')"), "home has no shared bag: ordering happens on each restaurant's page")
+        bad = talk(await pg.evaluate("document.body.innerText"))
+        check(not bad, "home says nothing about a shared kitchen" + (f": {bad}" if bad else ""))
+        if rail:
+            await pg.goto(BASE + rail[0], wait_until="networkidle"); await pg.wait_for_timeout(400)
+            check(await pg.evaluate("!!document.querySelector('.dish__name')"), f"tapping a home dish card opens it on {rail[0].split('/')[0]}'s page")
         # an order on one restaurant never shows up on another one
         await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
         await pg.evaluate("OrderApp.addItem('dushi-wok','fr',{},1)")
@@ -181,12 +201,13 @@ async def main():
         await pg.evaluate("OrderApp.clear()")
         # the chef app reads each ticket back: same lines, prices, totals and payment for the customer receipt
         await pg.goto(BASE + "ops/kitchen/index.html", wait_until="networkidle")
-        for smp, (title, br, lines, meta) in zip(out, SAMPLES):
+        for smp, (title, br, lines, meta) in zip(out, [x for x in SAMPLES if is_open.get(x[1])]):
             r = await pg.evaluate("t => window.__kitchen.receipt(window.__kitchen.parse(t))", smp["message"])
             ok = bool(r) and r["sub"] == smp["subtotal_cents"] and r["fee"] == smp["fee_cents"] and r["total"] == smp["total_cents"] \
                 and sum(l["p"] for l in r["lines"]) == smp["subtotal_cents"] and r["pay"] == meta.get("pay", "")
             check(ok, f"[{title}] chef app receipt matches the order (lines, totals, payment)")
-            check(bool(r) and r.get("biz") == names[br], f"[{title}] the customer's receipt carries {names[br]}'s name, not a shared one" + ("" if r and r.get("biz") == names[br] else f": {r and r.get('biz')}"))
+            ok = bool(r) and r.get("brands") == [names[br]] and r.get("biz") == site.get("name")
+            check(ok, f"[{title}] the receipt is from {site.get('name')} for {names[br]} only" + ("" if ok else f": {r and (r.get('biz'), r.get('brands'))}"))
         # a shared dish link (restaurant/#d=<id>) opens that dish, for every restaurant's signature dish
         for bid in brands:
             sig = next((i for i in menus[bid]["items"] if i.get("style") == "signature"), None)
@@ -199,8 +220,8 @@ async def main():
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]
         for code in ("pap", "nl", "es"):
-            await pg.evaluate("c => localStorage.setItem('lang.v1', c)", code)
-            for url in [f"{x}/index.html" for x in brands]:
+            await pg.evaluate("c => localStorage.setItem('orderaruba.lang.v1', c)", code)
+            for url in ["index.html"] + [f"{x}/index.html" for x in brands]:
                 errs.clear()
                 await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
                 check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))
@@ -215,7 +236,7 @@ async def main():
             norm = lambda t: re.sub(r"^Time: .*$", "Time:", re.sub(r"#\S+", "#", t), flags=re.M)
             check(time_ok and norm(msg) == norm(en_msg), f"[{code}] WhatsApp ticket is the same English text")
             await pg.evaluate("OrderApp.clear()")
-        await pg.evaluate("localStorage.removeItem('lang.v1')")
+        await pg.evaluate("localStorage.removeItem('orderaruba.lang.v1')")
         json.dump({"_about": "Real WhatsApp messages produced by shared/order-app.js. Regenerate with python3 qa/check_site.py.",
                    "samples": out}, open(os.path.join(ROOT, "qa/wa-samples.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         await b.close()

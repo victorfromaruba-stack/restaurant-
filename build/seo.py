@@ -1,6 +1,7 @@
 """Google listing data, built from shared/site.json and the menus:
-- a JSON-LD block (schema.org FoodEstablishment: hours, cuisine, delivery area, menu with prices)
-  in every restaurant page. Each restaurant stands on its own: no shared parent, no links between them
+- a JSON-LD block in every restaurant page (schema.org FoodEstablishment: hours, cuisine, delivery area,
+  menu with prices), each restaurant on its own with no shared parent, and on the home page the delivery
+  app itself (WebSite + Organization "Order Aruba"), never a kitchen
 - sitemap.xml and robots.txt
 Run after changing hours, areas, menus or the site address:   python3 build/seo.py
 qa/check_site.py runs  python3 build/seo.py --check  and fails if the pages are out of date."""
@@ -41,6 +42,14 @@ def common(b):
         "openingHoursSpecification": hours(),
     }
 
+def home_ld():
+    org = {"@type": "Organization", "@id": BASE + "#app", "name": site.get("name", "Order Aruba"), "url": BASE,
+           "image": BASE + "shared/og/home.jpg", "telephone": phone(None),
+           "description": "Late-night food delivery in Aruba, 10 PM to 2 AM, ordered on WhatsApp.",
+           "areaServed": [{"@type": "Place", "name": a + ", Aruba"} for a in site["areas"]]}
+    return {"@context": "https://schema.org", "@graph": [
+        {"@type": "WebSite", "@id": BASE + "#site", "name": site.get("name", "Order Aruba"), "url": BASE, "publisher": {"@id": BASE + "#app"}}, org]}
+
 def brand_ld(b):
     m = menus[b]
     secs = []
@@ -65,9 +74,9 @@ def with_ld(html, data):
     return html.replace("</head>", block + "\n</head>", 1)
 
 def outputs():
-    out = {}
+    out = {"index.html": with_ld(read("index.html"), home_ld())}
     for b in brands: out[b + "/index.html"] = with_ld(read(b + "/index.html"), brand_ld(b))
-    urls = [BASE + b + "/" for b in brands]
+    urls = [BASE] + [BASE + b + "/" for b in brands]
     out["sitemap.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
         "".join("  <url><loc>%s</loc></url>\n" % u for u in urls) + "</urlset>\n"
     out["robots.txt"] = "# Note: search engines only read robots.txt at the root of a domain. This file starts working\n" \

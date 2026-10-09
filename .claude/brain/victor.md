@@ -11,6 +11,7 @@ Public repo: nothing private here (no costs, margins, buyer prices, plans, conta
 - Money is tight (8 Oct 2026: "Don't have the money now use what you can"). No paid APIs, no Gemini spend, no paid tools without asking.
 
 ## Decisions (dated)
+- 2026-10-09 (later): 'Keep in mind we need to still use all kitchen on website like Uber'. So Order Aruba is a delivery app like Uber Eats: the home page lists all restaurants again, restaurant pages show 'More on Order Aruba', the app name is on the receipt and the WhatsApp. Kept from the morning: one order per restaurant, delivery only, never a word about a shared kitchen.
 - 2026-10-09: 'Its delivery only and people also cannot know its all the same kitchen they really need to believe each restaurant is their own business'. Done the same day: no home page, no shared order, no links or add-ons between restaurants, delivery only (pickup gone), receipts and tickets carry the one restaurant's name, "Order Aruba" kept as an internal name only. Rule in CLAUDE.md; qa and check.py enforce it. This replaces the 8 Oct study idea of telling customers it's one kitchen.
 - 2026-10-08: 'you can't dine in it's all take out aka delivery': no dine-in, ever. (9 Oct: no pickup either.)
 - 2026-10-08: 'On Aruba of course we take usd': cash in florins or US dollars, or bank transfer (site.json `payment`; the Cash tap stays one choice). Rate and change not given yet, so the site names no rate.

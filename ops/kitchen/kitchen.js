@@ -918,11 +918,12 @@
     lines.forEach(function (l) { var b = l.brandId && BRAND[l.brandId]; if (b && !/drink/i.test(l.raw) && brands.indexOf(b.name) < 0) brands.push(b.name); });
     var sub = o.subtotalC != null ? o.subtotalC : lines.reduce(function (t, l) { return t + l.price; }, 0);
     var fee = o.feeC != null ? o.feeC : 0;
-    // the customer ordered from one restaurant: the receipt carries that restaurant's name and WhatsApp, never a shared one
+    // like a delivery app's receipt: Order Aruba on top, the restaurant under it, and that restaurant's WhatsApp number
     var one = o.brandId && BRAND[o.brandId] ? o.brandId : null;
     if (!one) lines.forEach(function (l) { if (!one && l.brandId && BRAND[l.brandId] && !/drink/i.test(l.raw)) one = l.brandId; });
     var conf = one && (SITE.brands || []).filter(function (b) { return b.id === one; })[0];
-    return { no: o.no || '', when: o.created, brands: brands, biz: brands.length === 1 ? brands[0] : one ? BRAND[one].name : 'Receipt',
+    if (!brands.length && one) brands = [BRAND[one].name];
+    return { no: o.no || '', when: o.created, brands: brands, biz: SITE.name || 'Order Aruba',
       wa: (conf && conf.whatsapp) || SITE.whatsapp || '', mode: o.mode ? o.mode + (o.mode === 'Delivery' && o.area ? ' \u00b7 ' + o.area.replace(/\s*\(please confirm\)/i, '') : '') : '',
       name: o.name || '', lines: lines.map(function (l) { return { q: l.qty, n: l.raw, p: l.price, d: (l.includes || []).concat(l.mods || []) }; }),
       sub: sub, fee: fee, feeLabel: o.mode === 'Pickup' ? 'Pickup' : 'Delivery', total: o.totalC != null ? o.totalC : sub + fee,
@@ -934,7 +935,7 @@
   }
   function receiptText(r) {
     var biz = r.biz, out = ['*' + biz + ' \u00b7 Receipt*'];
-    if (r.brands.length > 1) out.push(r.brands.join(' \u00b7 '));
+    if (r.brands.length) out.push(r.brands.join(' \u00b7 '));
     out.push((r.no ? 'Order #' + r.no + ' \u00b7 ' : '') + receiptDate(r.when));
     if (r.mode) out.push(r.mode);
     out.push('');
@@ -960,7 +961,7 @@
     function rule() { y += 6; ops.push({ k: 'r', y: y }); y += 16; }
     function pair(l, r, w, px, color) { ops.push({ k: 'p', l: l, r: r, w: w, px: px, c: color || INK, y: y + px }); y += px + 8; }
     text(biz.toUpperCase(), '900', 34, INK, 'left', 6);
-    if (r.brands.length > 1) wrap(r.brands.join(' \u00b7 '), '600', 17, W - 2 * P).forEach(function (row) { text(row, '600', 17, GREY, 'left', 4); });
+    if (r.brands.length) wrap(r.brands.join(' \u00b7 '), '600', 17, W - 2 * P).forEach(function (row) { text(row, '600', 17, GREY, 'left', 4); });
     [R.legalName, R.address, R.kvk ? 'KvK ' + R.kvk : ''].filter(Boolean).forEach(function (t) { text(t, '500', 15, GREY, 'left', 3); });
     y += 10;
     text('RECEIPT' + (r.no ? '  #' + r.no : ''), '800', 22, INK, 'left', 4);

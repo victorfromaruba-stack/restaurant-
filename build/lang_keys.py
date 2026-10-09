@@ -33,7 +33,7 @@ def keys():
             elif c in ")}]": depth -= 1
             i += 1
     # word lists that go through tr() as variables
-    for name in ("DAY_NAMES",):
+    for name in ("DAY_NAMES", "SUGGEST"):
         arr = re.search(name + r" = \[([^\]]*)\]", js).group(1)
         for lit in re.findall(r'"((?:[^"\\]|\\.)*)"', arr): add(js_string(lit))
     for name in ("ALLERGEN_NAMES", "FLAG_NAMES"):
@@ -51,7 +51,7 @@ def keys():
         add(m["cuisine"]); add(m.get("imageNote"))
         for sec in m["sections"]: add(sec["title"])
     # fixed words in the HTML files
-    for p in sorted(glob.glob(os.path.join(ROOT, "*/index.html"))):
+    for p in ["index.html"] + sorted(glob.glob(os.path.join(ROOT, "*/index.html"))):
         h = open(os.path.join(ROOT, p), encoding="utf-8").read()
         for m in re.finditer(r'<(\w+)([^>]*)\bdata-t(?:="([^"]*)")?([^>]*)>([^<]*)<', h):
             add(m.group(3) or m.group(5))

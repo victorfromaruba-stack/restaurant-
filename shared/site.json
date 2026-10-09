@@ -1,5 +1,6 @@
 {
- "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95). Customers' phones can read this file.",
+ "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95). Order Aruba is the delivery app; customers' phones read this file.",
+ "name": "Order Aruba",
  "whatsapp": "2977477794",
  "whatsappConfirmed": true,
  "deliveryFee": 500,
@@ -71,7 +72,7 @@
    "status": "open"
   }
  ],
- "_status_help": "status can be open, soon (its page shows 'Opening soon', can't order) or hidden (its page says it isn't taking orders, and it leaves Google's list).",
+ "_status_help": "status can be open, soon (shows 'Opening soon', can't order) or hidden (not on the home page; its own page says it isn't taking orders).",
  "_hours_help": "Each day is [opens, closes] in Aruba time. A closing time earlier than the opening time means after midnight (22:00 to 02:00 = 10 PM until 2 AM the next morning).",
  "_lastOrder_help": "lastOrder: new orders stop at this time (Aruba time); the sign shows Last orders in the final 30 minutes. Remove the line for no cut-off.",
  "_payWith_help": "payWith: the ways to pay that customers tap at checkout; the choice goes on the WhatsApp ticket as \"Pay: ...\". Remove it to show only the payment sentence.",

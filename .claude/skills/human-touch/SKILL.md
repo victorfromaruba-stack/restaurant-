@@ -66,8 +66,9 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    a real photo of the real box in 30 seconds. A slightly messy real photo earns more
    trust than a perfect generated one. Ask for real photos every time it fits, and
    never put up a generated picture that adds things the description doesn't list.
-5. **Keep the identity, drop the template.** Ours: the night palette, Archivo, each
-   restaurant's own colour, logo and voice, the honest "Pictures are illustrations." The
+5. **Keep the identity, drop the template.** Ours: the night palette, Archivo, the
+   app's OPEN neon sign and "Bon nochi.", each restaurant's own colour, logo and voice,
+   the honest "Pictures are illustrations." The
    template: sparkle icons, every heading in giant capitals, pills on everything,
    identical cards, generic section names like "Featured" and "Popular". Change the
    template, keep the identity. A full restyle needs Victor's yes first.
@@ -77,13 +78,13 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    `shared/lang/pap.json`, `nl.json`, `es.json`; `python3 build/lang_keys.py` lists
    what's missing. Dish names, descriptions, taglines and the WhatsApp ticket stay
    English. Victor checks Papiamento, so keep new Papiamento short and simple.
-8. **Each restaurant is its own business** (Victor, 9 Oct 2026: "people also cannot
-   know it's all the same kitchen, they really need to believe each restaurant is their
-   own business"). On anything a customer sees (pages, tickets, receipts, link cards,
-   Google data, `shared/lang/*.json`, `shared/site.json`): never another restaurant's
-   name or link, no cross-selling, no "Order Aruba", no shared or "one" kitchen, no shared
-   order. Delivery only. check.py and `qa/check_site.py` fail on these. Honest stays
-   honest: the allergen line still says the kitchen handles the big allergens.
+8. **Order Aruba is a delivery app, like Uber Eats; each restaurant is its own
+   business** (Victor, 9 Oct 2026). The app may list them together (home page, "More on
+   Order Aruba"), but nothing a customer can see or load may say or hint that they share
+   a kitchen or an owner, and one order is always one restaurant. Delivery only.
+   check.py and `qa/check_site.py` fail on it. Honest stays honest: the allergen line
+   still says the restaurant's kitchen handles the big allergens, and we never claim
+   the restaurants are independent or "local partners" either. We just don't say more.
 9. **Ordering keeps working.** After any change: `qa/check_site.py` = 0 problems. If you
    changed taglines or menus, also run `python3 build/seo.py` and
    `python3 build/og/make_og.py` so Google and the link previews match.
