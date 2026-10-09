@@ -210,6 +210,10 @@
     return m < 1 ? 'just now' : m === 1 ? '1 min ago' : m + ' min ago';
   }
   function money(c) { return '<span class="fl">' + esc(P.money(c)) + '</span>'; }
+  function arubaTime(ts) {
+    try { return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Aruba' }); }
+    catch (e) { return UI.clock(Date.parse(ts)); }
+  }
   function phoneLink(p) {
     var d = String(p || '').replace(/\D/g, '');
     if (d.length === 7) d = '297' + d;
@@ -222,7 +226,11 @@
     h += '<div class="ohead">';
     if (o.test) h += '<span class="badge">TEST</span>';
     h += '<div class="mode">' + esc(o.area || 'Delivery') + '</div>';
-    h += '<div class="lv-when">' + ago(o.created_at) + '</div>';
+    // a pre-order for later tonight says when it must be at the door
+    if (o.due_at && Date.parse(o.due_at) - Date.parse(o.created_at) > 20 * 60000) {
+      h += '<div class="when when--set">Deliver at ' + esc(arubaTime(o.due_at)) + '</div>';
+    }
+    h += '<div class="lv-when">Sent ' + ago(o.created_at) + '</div>';
     h += o.pay === 'cash'
       ? '<div class="pay">Pays cash ' + money(o.pays_with_cents) + (o.change_due_cents > 0 ? ' · bring ' + money(o.change_due_cents) + ' change' : ' · no change needed') + '</div>'
       : '<div class="pay pay--bank">' + (o.transfer_status === 'paid' ? 'Bank transfer · came in' : 'Bank transfer · not in yet') + '</div>';
