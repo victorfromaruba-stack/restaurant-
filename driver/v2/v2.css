@@ -1,2 +1,3 @@
 /* Extra bits for the v2 driver screens. The night look stays in ../css/app.css. */
 .stack { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; }
+button.text-link { background: none; border: 0; padding: 0; cursor: pointer; }

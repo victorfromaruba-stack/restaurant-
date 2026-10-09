@@ -7,6 +7,46 @@ let cfg = null;
 let db = null;
 let timer = null;
 let channel = null;
+let online = sessionStorage.getItem("pidi.v2.online") === "1";
+const seenOffers = new Set();
+let notice = "";
+let audio = null;
+let wake = null;
+
+/* A new offer rings and buzzes. Phones only allow sound after a tap, so the Sign in and Go online taps unlock it. */
+function unlockSound() {
+  try {
+    if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === "suspended") audio.resume();
+  } catch (e) { audio = null; }
+}
+function ring() {
+  try {
+    if (audio) {
+      [0, 0.25, 0.5].forEach((t) => {
+        const o = audio.createOscillator();
+        const g = audio.createGain();
+        o.frequency.value = 988;
+        g.gain.setValueAtTime(0.0001, audio.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.5, audio.currentTime + t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + t + 0.2);
+        o.connect(g);
+        g.connect(audio.destination);
+        o.start(audio.currentTime + t);
+        o.stop(audio.currentTime + t + 0.22);
+      });
+    }
+  } catch (e) { /* no sound */ }
+  try { if (navigator.vibrate) navigator.vibrate([300, 120, 300]); } catch (e) { /* no vibrate */ }
+}
+/* Keep the screen on while online, so an offer is seen. */
+function keepAwake(on) {
+  try {
+    if (on && !wake && navigator.wakeLock) navigator.wakeLock.request("screen").then((l) => { wake = l; l.addEventListener("release", () => { wake = null; }); }, () => {});
+    if (!on && wake) { wake.release(); wake = null; }
+  } catch (e) { /* not supported */ }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && online) keepAwake(true); });
 
 function banner(text) {
   return el("p", { class: "test-flag", text });
@@ -25,7 +65,7 @@ function showSignIn(note) {
   main.appendChild(el("label", { class: "field" }, [el("span", { text: "PIN" }), pin]));
   const button = el("button", { class: "btn", type: "button", text: "Sign in" });
   button.disabled = !cfg;
-  button.addEventListener("click", signIn);
+  button.addEventListener("click", () => { unlockSound(); signIn(); });
   dock.appendChild(button);
 }
 
@@ -46,16 +86,13 @@ function showHome() {
   clear(dock);
   const driver = savedDriver();
   main.appendChild(el("h1", { text: driver && driver.name ? driver.name : "Pidi" }));
-  main.appendChild(el("p", { class: "quiet", id: "state", text: "Offline" }));
+  main.appendChild(el("p", { class: "quiet", id: "state", text: online ? "Online. Waiting for a run." : "Offline" }));
   main.appendChild(el("div", { id: "offers" }));
-  const online = el("button", { class: "btn", type: "button", text: "Go online" });
-  online.addEventListener("click", () => setOnline(true));
-  const offline = el("button", { class: "btn secondary", type: "button", text: "Go offline" });
-  offline.addEventListener("click", () => setOnline(false));
-  dock.appendChild(online);
-  dock.appendChild(offline);
+  paintToggle();
   const out = el("button", { class: "text-link", type: "button", text: "Sign out" });
-  out.addEventListener("click", () => {
+  out.addEventListener("click", async () => {
+    if (online) await db.rpc("pidi_driver_set_online", { session: savedToken(), online: false });
+    sessionStorage.removeItem("pidi.v2.online");
     clearSession();
     if (channel) db.removeChannel(channel);
     location.reload();
@@ -70,6 +107,15 @@ function showHome() {
   }
 }
 
+/* One button: the one that changes your state. */
+function paintToggle() {
+  clear(dock);
+  const b = el("button", { class: online ? "btn secondary" : "btn", type: "button", text: online ? "Go offline" : "Go online" });
+  b.addEventListener("click", () => { unlockSound(); setOnline(!online); });
+  dock.appendChild(b);
+  keepAwake(online);
+}
+
 async function setOnline(on) {
   const { error } = await db.rpc("pidi_driver_set_online", { session: savedToken(), online: on });
   const state = document.getElementById("state");
@@ -77,7 +123,10 @@ async function setOnline(on) {
     if (state) state.textContent = message(error);
     return;
   }
+  online = on;
+  sessionStorage.setItem("pidi.v2.online", on ? "1" : "0");
   if (state) state.textContent = on ? "Online. Waiting for a run." : "Offline";
+  paintToggle();
   refresh();
 }
 
@@ -97,10 +146,13 @@ async function refresh() {
     return;
   }
   const offers = data || [];
+  if (notice) { box.appendChild(el("p", { class: "err", text: notice })); notice = ""; }
   if (!offers.length) {
-    box.appendChild(el("p", { text: "No offer right now." }));
+    box.appendChild(el("p", { text: online ? "No offer right now." : "Go online to get runs." }));
     return;
   }
+  if (offers.some((o) => !seenOffers.has(o.offer_id))) ring();
+  offers.forEach((o) => seenOffers.add(o.offer_id));
   const state = document.getElementById("state");
   if (state) state.textContent = "Online";
   offers.forEach((offer) => box.appendChild(offerCard(offer)));
@@ -128,6 +180,9 @@ function offerCard(offer) {
 async function take(offer) {
   const { data, error } = await db.rpc("pidi_driver_accept", { session: savedToken(), offer_id: offer.offer_id });
   if (error || !data || !data.ok) {
+    // Most often a second order joined the run, so the offer was renewed. Say so, show the new one.
+    const why = message(error) || "";
+    notice = /took this run/i.test(why) ? "Another driver took that run." : "That run changed. Check it again and tap Accept.";
     refresh();
     return;
   }

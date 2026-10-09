@@ -658,6 +658,7 @@ def main():
     grouped = next((order for order in feed["orders"] if str(order["id"]) == str(bag["order_id"])), None)
     names = sorted(group["restaurant"] for group in (grouped or {}).get("restaurants") or [])
     check("kitchen feed groups by restaurant", names == ["Oranje Snack", "Smash Shack"], str(names))
+    check("kitchen feed says when the order is due", bool((grouped or {}).get("due_at")), str(grouped)[:200])
 
     same_a = place_items([{"restaurant": "dushi-wok", "name": "Rice", "qty": 2, "price_cents": 1500}],
                          phone="2975990094", name="Twice TEST")

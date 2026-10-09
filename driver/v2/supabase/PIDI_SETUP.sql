@@ -894,7 +894,7 @@ begin
         select o.id, o.status, o.customer_name as name, o.phone,
                o.area, o.address, o.note, o.pay, o.food_cents, o.fee_cents,
                o.food_cents + o.fee_cents as total_cents, o.pays_with_cents, o.change_due_cents,
-               o.transfer_status, o.outside_hours, o.test, o.created_at,
+               o.transfer_status, o.outside_hours, o.test, o.created_at, o.due_at,
                (
                  select string_agg(r.name, ', ' order by r.name)
                  from public.pidi_order_restaurants orr
