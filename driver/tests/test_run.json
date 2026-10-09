@@ -1,0 +1,50 @@
+{
+  "v": 1,
+  "id": "TEST-2",
+  "test": true,
+  "pickup": {
+    "name": "TEST pickup",
+    "address": "TEST, Caya G. F. Croes, Oranjestad",
+    "lat": "12.5190",
+    "lng": "-70.0370"
+  },
+  "drops": [
+    {
+      "name": "Maria TEST",
+      "phone": "2975990001",
+      "area": "Noord",
+      "address": "TEST, Weg naar Westpunt 12, Noord",
+      "lat": "12.5696",
+      "lng": "-70.0310",
+      "note": "TEST order. Green house.",
+      "restaurant": "dushi-wok",
+      "items": [
+        {"name": "Chicken fried rice", "qty": 1},
+        {"name": "Sweet & sour crunch chicken with rice", "qty": 1}
+      ],
+      "pay": "cash",
+      "food": 2895,
+      "fee": 500,
+      "total": 3395,
+      "paysWith": 5000
+    },
+    {
+      "name": "Carlos TEST",
+      "phone": "2975990002",
+      "area": "Oranjestad",
+      "address": "TEST, Wilhelminastraat 8, Oranjestad",
+      "lat": "12.5092",
+      "lng": "-70.0086",
+      "note": "TEST order.",
+      "restaurant": "taco-brava",
+      "items": [
+        {"name": "Birria tacos (3) with consommé", "qty": 1}
+      ],
+      "pay": "transfer",
+      "food": 2700,
+      "fee": 500,
+      "total": 3200,
+      "transfer": "awaiting"
+    }
+  ]
+}
