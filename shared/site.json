@@ -1,6 +1,5 @@
 {
- "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95).",
- "name": "Order Aruba",
+ "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95). Customers' phones can read this file.",
  "whatsapp": "2977477794",
  "whatsappConfirmed": true,
  "deliveryFee": 500,
@@ -72,9 +71,10 @@
    "status": "open"
   }
  ],
- "_status_help": "status can be open, soon (shows 'Opening soon', can't order) or hidden (not shown on the home page).",
+ "_status_help": "status can be open, soon (its page shows 'Opening soon', can't order) or hidden (its page says it isn't taking orders, and it leaves Google's list).",
  "_hours_help": "Each day is [opens, closes] in Aruba time. A closing time earlier than the opening time means after midnight (22:00 to 02:00 = 10 PM until 2 AM the next morning).",
  "_lastOrder_help": "lastOrder: new orders stop at this time (Aruba time); the sign shows Last orders in the final 30 minutes. Remove the line for no cut-off.",
  "_payWith_help": "payWith: the ways to pay that customers tap at checkout; the choice goes on the WhatsApp ticket as \"Pay: ...\". Remove it to show only the payment sentence.",
- "_payment_help": "payment: one sentence on how to pay. With payWith it shows under the pay choices at checkout and in How ordering works."
+ "_payment_help": "payment: one sentence on how to pay. With payWith it shows under the pay choices at checkout and in How ordering works.",
+ "_whatsapp_help": "whatsapp: the number orders go to. A restaurant can have its own: add \"whatsapp\": \"297...\" to its line under brands."
 }

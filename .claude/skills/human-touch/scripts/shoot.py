@@ -11,7 +11,7 @@ first; --base shoots another server instead (e.g. the live site). Clock is pinne
 night (11:10 PM Aruba) unless --closed. Scrolls every page so lazy pictures load before
 the full-page shot (an unscrolled full-page shot shows empty boxes that aren't real).
 
-Writes <page>-top.png (first screen) and <page>-full.png, plus a dish sheet and a cart
+Writes <restaurant>-top.png (first screen) and <restaurant>-full.png, plus a dish sheet and an order sheet
 with two dishes in it. Prints what it can measure: broken pictures, sideways scroll, the
 same picture twice on the first screen. Then look at every -top.png yourself.
 """
@@ -58,7 +58,7 @@ async def main(a):
         os.environ["QA_BASE"] = a.base
     a.base = start()
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
-    pages = [("home", "")] + [(b["id"], b["id"] + "/") for b in site["brands"] if b.get("status") != "hidden"]
+    pages = [(b["id"], b["id"] + "/") for b in site["brands"] if b.get("status") != "hidden"]
     notes = []
     async with async_playwright() as p:
         br = await p.chromium.launch()
@@ -82,8 +82,8 @@ async def main(a):
                 notes.append(f"{name}: the same picture twice on the first screen: {m['dup']}")
             if m2["sideways"]:
                 notes.append(f"{name}: the page scrolls sideways at {a.width}px")
-        # one dish sheet and a cart with something in it
-        brand = pages[1][1] if len(pages) > 1 else ""
+        # one dish sheet and an order with something in it (each restaurant has its own order)
+        brand = pages[0][1] if pages else ""
         await page.goto(a.base + brand)
         await page.wait_for_timeout(800)
         rows = page.locator(".row")
@@ -95,10 +95,11 @@ async def main(a):
             if await add.count():
                 await add.click()
                 await page.wait_for_timeout(400)
-        await page.goto(a.base + "cart.html")
-        await page.wait_for_timeout(900)
-        await page.screenshot(path=str(out / "cart-top.png"))
-        await page.screenshot(path=str(out / "cart-full.png"), full_page=True)
+        bar = page.locator("#oa-bar button")
+        if await bar.count() and await bar.is_visible():
+            await bar.click()
+            await page.wait_for_timeout(700)
+            await page.screenshot(path=str(out / "order-sheet.png"))
         if errors:
             notes.append(f"script errors: {errors[:3]}")
         await br.close()

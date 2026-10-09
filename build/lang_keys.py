@@ -1,6 +1,9 @@
 """Every English phrase the site shows, in page order: the keys for shared/lang/<code>.json.
   python3 build/lang_keys.py            prints the list
-  python3 build/lang_keys.py --check    lists phrases missing from pap/nl/es (qa/check_site.py runs this too)"""
+  python3 build/lang_keys.py --check    lists phrases missing from pap/nl/es, and old ones the site no longer shows
+                                        (qa/check_site.py runs this too)
+  python3 build/lang_keys.py --prune    removes those old phrases from the language files (they are public, so a
+                                        phrase from an old version of the site shouldn't stay readable there)"""
 import json, os, re, sys, glob
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,7 +33,7 @@ def keys():
             elif c in ")}]": depth -= 1
             i += 1
     # word lists that go through tr() as variables
-    for name in ("DAY_NAMES", "DAY_SHORT", "SUGGEST"):
+    for name in ("DAY_NAMES",):
         arr = re.search(name + r" = \[([^\]]*)\]", js).group(1)
         for lit in re.findall(r'"((?:[^"\\]|\\.)*)"', arr): add(js_string(lit))
     for name in ("ALLERGEN_NAMES", "FLAG_NAMES"):
@@ -48,7 +51,7 @@ def keys():
         add(m["cuisine"]); add(m.get("imageNote"))
         for sec in m["sections"]: add(sec["title"])
     # fixed words in the HTML files
-    for p in ["index.html", "cart.html"] + sorted(glob.glob(os.path.join(ROOT, "*/index.html"))):
+    for p in sorted(glob.glob(os.path.join(ROOT, "*/index.html"))):
         h = open(os.path.join(ROOT, p), encoding="utf-8").read()
         for m in re.finditer(r'<(\w+)([^>]*)\bdata-t(?:="([^"]*)")?([^>]*)>([^<]*)<', h):
             add(m.group(3) or m.group(5))
@@ -62,6 +65,15 @@ def keys():
 
 if __name__ == "__main__":
     ks = keys()
+    if "--prune" in sys.argv:
+        for code in ("pap", "nl", "es"):
+            f = os.path.join(ROOT, "shared/lang", code + ".json")
+            raw = open(f, encoding="utf-8").read(); d = json.loads(raw)
+            keep = {k: v for k, v in d.items() if k in ks or k.startswith("_")}
+            for k in d:
+                if k not in keep: print(f"{code}: removed {k!r}")
+            open(f, "w", encoding="utf-8").write(json.dumps(keep, indent=1, ensure_ascii=False) + ("\n" if raw.endswith("\n") else ""))
+        sys.exit(0)
     if "--check" in sys.argv:
         bad = 0
         for code in ("pap", "nl", "es"):
@@ -69,6 +81,9 @@ if __name__ == "__main__":
             d = json.load(open(f, encoding="utf-8")) if os.path.exists(f) else {}
             miss = [k for k in ks if not d.get(k)]
             for k in miss: print(f"{code}: missing {k!r}")
+            old = [k for k in d if k not in ks and not k.startswith("_")]
+            for k in old: print(f"{code}: no longer on the site {k!r} (run --prune)")
+            bad += len(old)
             for k in d:
                 for v in re.findall(r"\{\w+\}", k):
                     if v not in d[k]: print(f"{code}: {k!r} lost {v}"); bad += 1

@@ -62,6 +62,6 @@ Food-filled picker cards supersede atmosphere-only `shared/picker/*.webp` (were 
 - Heroes composited: dushi fr chicken fried rice; taco bt birria; smash sc cheeseburger; nonna bp baked penne
 - Wordmarks from `shared/logos/*-wordmark.png`; brand atmosphere per Hype matrix (Smash checkered only)
 - Covers refreshed into `shared/covers/{brand}.{png,webp}` at 1400×800 from `order-site/{brand}/*-cover-1400x800.png` (menu headers; picker aspect stays separate)
-- Brief: `shared/VISUAL_BRIEF.md`
+- Brief: `shared/VISUAL_BRIEF.md` (removed 9 Oct 2026: it described the old shared home page)
 - Script: `/workspace/pixel/order-site/src/build_picker_v2.py`
 Old hub atmosphere PNGs (`*-picker-card-780x360.png`) retained as reference only.

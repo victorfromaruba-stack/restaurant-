@@ -1,7 +1,10 @@
 """Site check: python3 qa/check_site.py from the repo folder. It serves the repo itself for the run
 (qa/local_server.py), so there is no server to start first. QA_BASE=<url> checks another server instead.
 Checks every menu image exists, every page loads with no errors, and builds the WhatsApp sample
-messages in qa/wa-samples.json from the real ordering code, testing the owner's rules."""
+messages in qa/wa-samples.json from the real ordering code, testing the owner's rules.
+Each restaurant must stand on its own (Victor, 9 Oct 2026: customers must believe each one is its own
+business): no page, order, ticket, link card or language file may name or link to another restaurant
+or a shared kitchen, and an order never carries over from one restaurant to another."""
 import asyncio, json, os, re, subprocess, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops, ImageStat
@@ -76,15 +79,38 @@ seo = subprocess.run([sys.executable, os.path.join(ROOT, "build/seo.py"), "--che
 check(seo.returncode == 0, "Google listing data matches site.json and the menus (else run: python3 build/seo.py)" + ("" if seo.returncode == 0 else ": " + seo.stdout.strip()))
 check(lang.returncode == 0, "every screen phrase has a Papiamento, Dutch and Spanish translation" + ("" if lang.returncode == 0 else ":\n" + lang.stdout[-1500:]))
 
+# one restaurant per order: each sample runs on its own restaurant's page
 SAMPLES = [
-  ("single brand, delivery, modifiers", [("dushi-wok", "fr", {"leave": ["onion", "egg"]}, 2), ("dushi-wok", "ss", {"sauce": "on-the-side"}, 1), ("dushi-wok", "ck", {}, 1)],
-   {"mode": "delivery", "area": "Noord", "addr": "Palm Beach 12, blue gate", "name": "Ana", "note": "no peanuts please", "pay": "Cash"}),
-  ("three restaurants, delivery, all three cans", [("dushi-wok", "ft", {}, 1), ("taco-brava", "bt", {}, 1), ("oranje-snack", "bb", {"dip": "mustard"}, 2),
-     ("taco-brava", "ck", {}, 1), ("taco-brava", "cz", {}, 1), ("taco-brava", "sp", {}, 2)],
-   {"mode": "delivery", "area": "Oranjestad", "addr": "Caya G.F. Betico Croes 10", "name": "Ben", "note": "", "pay": "Bank transfer"}),
-  ("pickup, burgers + Italian", [("smash-shack", "sc", {"leave": ["onion", "pickles"]}, 1), ("smash-shack", "fs", {}, 2), ("nonnas-night-in", "pa", {"heat": "extra-spicy"}, 1)],
-   {"mode": "pickup", "area": "", "addr": "", "name": "Carla", "note": "extra napkins", "pay": "Cash"}),
+  ("Dushi Wok, modifiers and a can", "dushi-wok", [("fr", {"leave": ["onion", "egg"]}, 2), ("ss", {"sauce": "on-the-side"}, 1), ("ck", {}, 1)],
+   {"area": "Noord", "addr": "Palm Beach 12, blue gate", "name": "Ana", "note": "no peanuts please", "pay": "Cash"}),
+  ("Taco Brava, all three cans", "taco-brava", [("bt", {}, 1), ("ck", {}, 1), ("cz", {}, 1), ("sp", {}, 2)],
+   {"area": "Oranjestad", "addr": "Caya G.F. Betico Croes 10", "name": "Ben", "note": "", "pay": "Bank transfer"}),
+  ("Smash Shack, leave-offs", "smash-shack", [("sc", {"leave": ["onion", "pickles"]}, 1), ("fs", {}, 2)],
+   {"area": "Santa Cruz", "addr": "Near the church, green house", "name": "Carla", "note": "extra napkins", "pay": "Cash"}),
+  ("Nonna's Night In, heat choice", "nonnas-night-in", [("pa", {"heat": "extra-spicy"}, 1)],
+   {"area": "Paradera", "addr": "Piedra Plat 3", "name": "Dave", "note": "", "pay": "Cash"}),
+  ("Oranje Snack, dip choice", "oranje-snack", [("bb", {"dip": "mustard"}, 2)],
+   {"area": "Eagle Beach", "addr": "Hotel lobby, room 214", "name": "Eva", "note": "", "pay": "Bank transfer"}),
 ]
+names = {b: menus[b]["name"] for b in brands}
+def leaks(text, here):
+    """what on a restaurant's page gives away the others: their names, the shared name, a shared kitchen"""
+    out = [n for b, n in names.items() if b != here and (n in text or n.replace("’", "'") in text)]
+    out += [w for w in ("Order Aruba", "one kitchen", "shared kitchen", "same kitchen", "our other restaurant", "five restaurants", "all five", "Kitchen order")
+            if w.lower() in text.lower()]
+    return out
+# public files that every restaurant page loads: nothing in them may point at the others or a shared kitchen
+for f in ["shared/lang/pap.json", "shared/lang/nl.json", "shared/lang/es.json", "shared/site.json", "sw.js", "404.html"]:
+    text = open(os.path.join(ROOT, f), encoding="utf-8").read()
+    bad = [w for w in ("Order Aruba", "one kitchen", "shared kitchen", "same kitchen", "other restaurants", "five restaurants", "all five") if w.lower() in text.lower()]
+    check(not bad, f"{f} says nothing about a shared kitchen" + (f": {bad}" if bad else ""))
+for b in brands:
+    html = open(os.path.join(ROOT, b, "index.html"), encoding="utf-8").read()
+    others = [x for x in brands if x != b and (x + "/" in html or names[x] in html)]
+    check(not others and "Order Aruba" not in html and "../index.html" not in html and "parentOrganization" not in html,
+          f"{b}/index.html (title, Google data, links) stands on its own" + (f": mentions {others}" if others else ""))
+check(not os.path.exists(os.path.join(ROOT, "index.html")) and not os.path.exists(os.path.join(ROOT, "cart.html")),
+      "no shared home or cart page listing the restaurants together")
 
 async def main():
     async with async_playwright() as p:
@@ -96,7 +122,7 @@ async def main():
         pg.on("console", lambda m: errs.append(f"console: {m.text}") if m.type == "error" and "404" not in m.text else None)
         # ops/chef.html is private (not on the public site); the chef app checks for it on purpose
         pg.on("response", lambda r: errs.append(f"HTTP {r.status} {r.url}") if r.status >= 400 and not r.url.endswith("ops/chef.html") else None)
-        for url in ["index.html", "cart.html", "ops/kitchen/index.html"] + [f"{x}/index.html" for x in brands]:
+        for url in ["404.html", "ops/kitchen/index.html"] + [f"{x}/index.html" for x in brands]:
             errs.clear()
             await pg.goto(BASE + url, wait_until="networkidle")
             h = await pg.evaluate("document.body.scrollHeight")
@@ -106,38 +132,61 @@ async def main():
             broken = await pg.evaluate("Array.from(document.images).filter(i => i.complete && i.naturalWidth === 0).map(i => i.src)")
             check(not errs and not broken, f"{url} loads with no errors or broken images" + (f": {errs + broken}" if errs or broken else ""))
         out = []
-        await pg.goto(BASE + "index.html", wait_until="networkidle")
-        for title, lines, meta in SAMPLES:
-            await pg.evaluate("OrderAruba.clear()")
-            for (br, iid, opts, q) in lines:
-                await pg.evaluate("([b,i,o,q]) => OrderAruba.loadMenu(b).then(() => OrderAruba.addItem(b,i,o,q))", [br, iid, opts, q])
-            await pg.evaluate("m => OrderAruba._set(m)", meta)
-            msg = await pg.evaluate("OrderAruba.buildMessage()")
-            sub, fee, tot = await pg.evaluate("[OrderAruba.subtotal(), OrderAruba.fee(), OrderAruba.total()]")
+        for title, br, lines, meta in SAMPLES:
+            await pg.goto(BASE + br + "/index.html", wait_until="networkidle")
+            await pg.evaluate("OrderApp.clear()")
+            for (iid, opts, q) in lines:
+                await pg.evaluate("([b,i,o,q]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,o,q))", [br, iid, opts, q])
+            await pg.evaluate("m => OrderApp._set(m)", meta)
+            msg = await pg.evaluate("OrderApp.buildMessage()")
+            sub, fee, tot = await pg.evaluate("[OrderApp.subtotal(), OrderApp.fee(), OrderApp.total()]")
             out.append({"case": title, "message": msg, "subtotal_cents": sub, "fee_cents": fee, "total_cents": tot})
             low = msg.lower()
             check("flavour" not in low and "flavor" not in low, f"[{title}] never asks for a drink flavour")
             for cid, cname in (("ck", "Coca-Cola (can)"), ("cz", "Coca-Cola Zero (can)"), ("sp", "Sprite (can)")):
-                if any(l[1] == cid for l in lines):
+                if any(l[0] == cid for l in lines):
                     check(re.search(r"^\d+ × " + re.escape(cname) + r" — ƒ", msg, re.M) is not None, f"[{title}] {cname} is its own line")
-            check(fee == (500 if meta["mode"] == "delivery" else 0), f"[{title}] delivery fee is {'ƒ5 once' if meta['mode']=='delivery' else 'free for pickup'}")
-            check(msg.count("Delivery ƒ") == (1 if meta["mode"] == "delivery" else 0), f"[{title}] fee line appears once")
+            check(fee == 500, f"[{title}] delivery fee is ƒ5")
+            check(msg.count("Delivery ƒ") == 1 and "Pickup" not in msg, f"[{title}] fee line appears once, and nothing offers pickup")
             item_sum = sum(int(round(float(x) * 100)) for x in re.findall(r"^\d+ × .+ — ƒ(\d+\.\d\d)$", msg, re.M))
             check(item_sum == sub and tot == sub + fee, f"[{title}] line prices add up to the total")
             first = msg.split("\n")[0]
-            nb = len({l[0] for l in lines})
-            check(first.startswith("*Kitchen order*") if nb > 1 else first.endswith(re.sub(r"^.*?(#\d+)$", r"\1", first)) and "order*" in first, f"[{title}] header names the restaurant / kitchen order")
+            check(re.match(r"^\*" + re.escape(names[br]) + r" order\* #\d{4}-[A-Z0-9]{2}$", first) is not None, f"[{title}] header names this restaurant: {first}")
+            bad = leaks(msg, br)
+            check(not bad, f"[{title}] ticket names no other restaurant or shared kitchen" + (f": {bad}" if bad else ""))
             if site.get("payWith"):
                 check(re.search(r"^Pay: " + re.escape(meta["pay"]) + "$", msg, re.M) is not None, f"[{title}] ticket says how the customer pays")
             check("DW-" not in msg and "TB-" not in msg and "OS-" not in msg, f"[{title}] no internal codes")
-        await pg.evaluate("OrderAruba.clear()")
+        # the customer's screens on each restaurant page: menu, a dish, the order sheet. Nothing about the others.
+        for bid in brands:
+            await pg.goto(BASE + f"{bid}/index.html", wait_until="networkidle")
+            await pg.evaluate("OrderApp.clear()")
+            first = next(i for i in menus[bid]["items"] if i.get("kind") != "drink" and not i.get("soldOut"))
+            await pg.evaluate("([b,i]) => OrderApp.addItem(b,i,{},1)", [bid, first["id"]])
+            await pg.click(".bar__btn"); await pg.wait_for_timeout(400)
+            text = await pg.evaluate("document.body.innerText")
+            hrefs = await pg.evaluate("Array.from(document.querySelectorAll('a[href]')).map(a => a.getAttribute('href'))")
+            away = [h for h in hrefs if not h.startswith(("#", "https://wa.me/", "http")) or any(x + "/" in h for x in brands if x != bid)]
+            bad = leaks(text, bid)
+            check(not bad and not away, f"{bid} page and order sheet name and link no other restaurant" + (f": {bad + away}" if bad or away else ""))
+            await pg.evaluate("OrderApp.clear()")
+        # an order on one restaurant never shows up on another one
+        await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
+        await pg.evaluate("OrderApp.addItem('dushi-wok','fr',{},1)")
+        await pg.goto(BASE + "taco-brava/index.html", wait_until="networkidle")
+        n = await pg.evaluate("OrderApp.count()")
+        check(n == 0, f"an order on Dushi Wok doesn't carry over to Taco Brava (bag shows {n})")
+        await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
+        check(await pg.evaluate("OrderApp.count()") == 1, "the Dushi Wok order is still there when the customer comes back")
+        await pg.evaluate("OrderApp.clear()")
         # the chef app reads each ticket back: same lines, prices, totals and payment for the customer receipt
         await pg.goto(BASE + "ops/kitchen/index.html", wait_until="networkidle")
-        for smp, (title, lines, meta) in zip(out, SAMPLES):
+        for smp, (title, br, lines, meta) in zip(out, SAMPLES):
             r = await pg.evaluate("t => window.__kitchen.receipt(window.__kitchen.parse(t))", smp["message"])
             ok = bool(r) and r["sub"] == smp["subtotal_cents"] and r["fee"] == smp["fee_cents"] and r["total"] == smp["total_cents"] \
                 and sum(l["p"] for l in r["lines"]) == smp["subtotal_cents"] and r["pay"] == meta.get("pay", "")
             check(ok, f"[{title}] chef app receipt matches the order (lines, totals, payment)")
+            check(bool(r) and r.get("biz") == names[br], f"[{title}] the customer's receipt carries {names[br]}'s name, not a shared one" + ("" if r and r.get("biz") == names[br] else f": {r and r.get('biz')}"))
         # a shared dish link (restaurant/#d=<id>) opens that dish, for every restaurant's signature dish
         for bid in brands:
             sig = next((i for i in menus[bid]["items"] if i.get("style") == "signature"), None)
@@ -146,26 +195,27 @@ async def main():
             await pg.goto(BASE + f"{bid}/#d={sig['id']}", wait_until="networkidle")
             got = await pg.evaluate("(document.querySelector('.dish__name') || {}).textContent || ''")
             check(got == sig["name"], f"{bid}/#d={sig['id']} opens {sig['name']}" + ("" if got == sig["name"] else f": got {got!r}"))
-        await pg.goto(BASE + "index.html", wait_until="networkidle")
+        await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]
         for code in ("pap", "nl", "es"):
-            await pg.evaluate("c => localStorage.setItem('orderaruba.lang.v1', c)", code)
-            for url in ["index.html", "dushi-wok/index.html", "cart.html"]:
+            await pg.evaluate("c => localStorage.setItem('lang.v1', c)", code)
+            for url in [f"{x}/index.html" for x in brands]:
                 errs.clear()
                 await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
                 check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))
-            await pg.evaluate("OrderAruba.clear()")
-            title, lines, meta = SAMPLES[0]
-            for (br, iid, opts, q) in lines:
-                await pg.evaluate("([b,i,o,q]) => OrderAruba.loadMenu(b).then(() => OrderAruba.addItem(b,i,o,q))", [br, iid, opts, q])
-            await pg.evaluate("m => OrderAruba._set(m)", meta)
-            msg = await pg.evaluate("OrderAruba.buildMessage()")
+            await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
+            await pg.evaluate("OrderApp.clear()")
+            title, br, lines, meta = SAMPLES[0]
+            for (iid, opts, q) in lines:
+                await pg.evaluate("([b,i,o,q]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,o,q))", [br, iid, opts, q])
+            await pg.evaluate("m => OrderApp._set(m)", meta)
+            msg = await pg.evaluate("OrderApp.buildMessage()")
             time_ok = re.search(r"^Time: (As soon as possible|(Tomorrow )?(Midnight|\d{1,2}(:\d\d)?\s(AM|PM)))$", msg, re.M) is not None
             norm = lambda t: re.sub(r"^Time: .*$", "Time:", re.sub(r"#\S+", "#", t), flags=re.M)
             check(time_ok and norm(msg) == norm(en_msg), f"[{code}] WhatsApp ticket is the same English text")
-            await pg.evaluate("OrderAruba.clear()")
-        await pg.evaluate("localStorage.removeItem('orderaruba.lang.v1')")
+            await pg.evaluate("OrderApp.clear()")
+        await pg.evaluate("localStorage.removeItem('lang.v1')")
         json.dump({"_about": "Real WhatsApp messages produced by shared/order-app.js. Regenerate with python3 qa/check_site.py.",
                    "samples": out}, open(os.path.join(ROOT, "qa/wa-samples.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         await b.close()

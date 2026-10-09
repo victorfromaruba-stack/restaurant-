@@ -22,8 +22,10 @@ Victor, not less.
 2. **Health first.** In a fresh cloud container first run `python3 -m pip install -q
    playwright==1.56.0 pillow` (the plain `pip` can belong to another Python). Then
    `python3 qa/check_site.py`; it serves the repo itself, no server to start. If anything
-   fails, fixing that *is* today's improvement. Also open the live site's home page and
-   one restaurant page and make sure they load.
+   fails, fixing that *is* today's improvement. Also open two restaurant pages on the live
+   site and make sure they load. (There is no home page: since 9 Oct 2026 each restaurant
+   stands alone, see the rule in CLAUDE.md. Never build anything that links the restaurants
+   together, names a shared kitchen or brings back a shared order.)
 3. **Pick one thing.** Take the open idea in `ideas.md` with the best impact for its
    effort that you're allowed to do alone (rules below). No good idea left? Run the
    human-touch audit (`shoot.py` + `check.py`, then look), add what you find to
@@ -41,7 +43,8 @@ Victor, not less.
 6. **Ship it.** Commit to `main` with a message that says what a customer would notice.
    `git pull --rebase origin main` (someone may have pushed while you worked), run QA
    again if anything came in, then `git push -u origin main`. Wait for GitHub Pages
-   (about a minute) and check the change is on https://victorfromaruba-stack.github.io/restaurant-/.
+   (about a minute) and check the change is on the restaurant page it touched, e.g.
+   https://victorfromaruba-stack.github.io/restaurant-/taco-brava/.
    The scheduled run happens in the "Order Aruba daily worker" session, which was started
    with this repo attached, so the push works. If a push is ever refused (403, "not in this
    session's authorized repository set"), this session has no repo access: try

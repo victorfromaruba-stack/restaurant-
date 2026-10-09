@@ -106,7 +106,7 @@ def site_copy():
     """Every piece of customer-facing copy, as (where, text)."""
     items = []
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
-    for page in ["index.html", "cart.html"] + [b["id"] + "/index.html" for b in site["brands"]]:
+    for page in [b["id"] + "/index.html" for b in site["brands"]]:
         p = ROOT / page
         if p.exists():
             items += [(page, t) for t in html_text(p.read_text(encoding="utf-8"))]
@@ -271,18 +271,13 @@ def image_findings():
         for f in feat:
             if near(cover, f["img"]) or near(f["img"], cover):
                 out.append(("FAIL", b["id"] + "/index.html", f"the cover ({cover.split('/')[-1]}) is the same picture as Featured “{f['name']}” right under it: the same photo twice on one screen is a stock-site tell"))
-        # Home page: the restaurant card (menu "hero") against the same restaurant's dishes in the Signature rail.
-        hero = m.get("hero")
-        for f in feat:
-            if hero and (hero == f["img"] or near(hero, f["img"])):
-                out.append(("WARN", "index.html", f"{m['name']}'s restaurant card shows the same photo as “{f['name']}” in the dish rail above it: give the card a different dish (menu.json \"hero\")"))
     return out
 
 
 def css_findings():
     out = []
     pills = 0
-    for css in [ROOT / "shared/order.css", ROOT / "shared/hub.css"]:
+    for css in [ROOT / "shared/order.css"]:
         if not css.exists():
             continue
         src = css.read_text(encoding="utf-8")
@@ -301,12 +296,37 @@ def css_findings():
     return out
 
 
+LEAKS = ("order aruba", "one kitchen", "shared kitchen", "same kitchen", "other restaurant", "five restaurants", "all five",
+         "sister restaurant", "kitchen order")
+
+
+def leak_findings(items):
+    """Victor, 9 Oct 2026: customers must believe each restaurant is its own business. Copy that names
+    the restaurants together, a shared kitchen, or another restaurant on one's own menu is a FAIL."""
+    site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
+    names = {}
+    for b in site["brands"]:
+        names[b["id"]] = json.loads((ROOT / b["id"] / "menu.json").read_text(encoding="utf-8"))["name"]
+    out = []
+    for where, text in items:
+        low = text.lower()
+        for w in LEAKS:
+            if w in low:
+                out.append(("FAIL", where, f"“{text[:70]}” says “{w}”: each restaurant has to read as its own business"))
+        here = where.split("/")[0]
+        if here in names:   # a restaurant's own page or menu: no other restaurant's name
+            for b, n in names.items():
+                if b != here and (n in text or n.replace("’", "'") in text):
+                    out.append(("FAIL", where, f"names {n}: a restaurant never mentions another one"))
+    return out
+
+
 def main(argv):
     show = "--show" in argv
     files = [a for a in argv if not a.startswith("--")]
     ok = allowed()
     items = file_copy(files) if files else site_copy()
-    found = copy_findings(items, ok)
+    found = copy_findings(items, ok) + leak_findings(items)
     if not files:
         found += formula_findings() + image_findings() + css_findings()
     if show:

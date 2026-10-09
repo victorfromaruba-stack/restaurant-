@@ -18,9 +18,11 @@ a second language. Short sentences and common words get read right the first tim
   about the birria and the dip, Smash Shack about the flat-top, Nonna's about a slow
   night in, Oranje Snack about the fryer and Dutch snackbar habits. Don't stamp one
   sentence shape on all five.
-- **Papiamento is a greeting and a wink, not a translation trick.** "Bon nochi." on the
-  home page works because it's how people talk here. Full Papiamento screens come from
+- **Papiamento is a greeting and a wink, not a translation trick.** A "Bon nochi." or
+  "Danki!" works because it's how people talk here. Full Papiamento screens come from
   `shared/lang/pap.json`, which Victor checks.
+- **Each restaurant is its own business.** Never name another restaurant, a shared
+  kitchen, or "Order Aruba" on anything a customer sees (Victor, 9 Oct 2026).
 - **Never invent proof.** No ratings, reviews, years, names, sourcing claims.
 - **Dish descriptions: what's in it, then how it comes.** Ingredients in the order you'd
   see them, then the one detail that matters ("with a cup of consommé", "cut on a
@@ -42,7 +44,7 @@ a second language. Short sentences and common words get read right the first tim
 
 | Before | After |
 |---|---|
-| Five restaurants. One kitchen. One ƒ5 delivery. | Mix dishes from all five restaurants. You pay ƒ5 delivery once. |
+| Hot. Fresh. Fast. | Cooked to order, delivered in 35–50 min. |
 | Three wok mains in one order — enough for the table. | Three wok mains in one order. Enough for the table. |
 | Smash burgers, tenders & loaded fries (and four more taglines in the same shape) | Thin patties, smashed hard on the flat-top |
 | Signature dishes | Start with these |

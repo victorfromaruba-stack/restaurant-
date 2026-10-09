@@ -7,8 +7,7 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
-- [ ] H · S · Home and Google: say plainly "One licensed kitchen, one chef, five menus: one cart, one ƒ5 delivery" (true per CLAUDE.md; 2 in 3 diners want shared kitchens disclosed, competitor study 8 Oct) · done when: on the home page in 4 languages, check.py 0 fail
-- [ ] M · S · Quick diet filters across all five menus: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on home search in 4 languages
+- [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
 - [ ] M · S · Chef app replies name the dish ("Your birria is on the stove now") and go out at the same moments every order (seeing the work raised food ratings 22%, Buell 2017) · done when: confirm/cooking/on-the-way replies use the ticket's first dish
 - [ ] M · M · Chef app "busy tonight: +15 min" switch that changes the delivery time the site shows (lateness costs ~3 future orders; widen the window instead of missing it) · done when: one tap saves site.json eta and the site shows it
 - [ ] M · S · "It's for someone else": optional name + phone for the person receiving, on the WhatsApp ticket and in the chef app · done when: ticket line parsed by the chef app, qa passes
@@ -19,7 +18,12 @@ under 25 lines: drop ideas that stopped making sense.
 - [ ] H · L · Real photos, signatures first (needs Victor) · done when: the five signature dishes are real photos
 - [ ] M · M · Chef app: send cash sales to Book Keeper at Close up (Book Keeper's /api/intake/sales is live; only orders paid cash, same date the order was placed, never bank transfers) · done when: a test order sent twice shows once in Book Keeper
 
+- [ ] H · M · Each restaurant its own look: today all five share one layout, one font and one dark palette, only the accent colour changes, which hints they're one maker. A font and background per restaurant (from its logo), keeping one engine · done when: five first screens side by side don't read as one template; check.py 0 fail
+- [ ] M · S · Per-restaurant hours and delivery time in site.json (all five identical is a small tell), only with Victor's real numbers (needs Victor)
+- [ ] M · S · Picture look per restaurant: build/grade.py gives all five the same warm grain, which makes them read as one set. A grade per restaurant, regrading from the originals in git history · done when: thumbnails per restaurant look distinct, qa passes
+
 ## Shipped
+- [x] 2026-10-09 · H · L · Each restaurant stands alone (Victor's rule): no home or cart page, one order per restaurant, no cross-selling, delivery only, receipts and tickets carry only that restaurant, Google data and link cards per restaurant, public language and settings files cleaned, Order again on the restaurant page; qa and check.py fail on any leak
 - [x] 2026-10-08 · H · M · From a fresh-eyes review: restaurant pages open on the menu (no one-card rail), Dushi cover pk (no dish twice), home facts line, rows show the tagline, cart says where the order goes, plain steps, no rail stickers, sentence-case sheet titles, toast at the bottom, stray dots, chip centring, add-ons name their restaurant, pre-order line in the customer's voice
 - [x] 2026-10-08 · M · S · Unused menu.json fields kicker/headline removed (intro stays: it's Google's description); chef app Menu screens fixed at 320px (long names wrap)
 - [x] 2026-10-08 · M · M · Share a dish: share button on the dish sheet, links like taco-brava/#d=bt open the dish (checked in qa/check_site.py)

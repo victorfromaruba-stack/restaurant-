@@ -36,7 +36,7 @@ page). Keep that line until every picture is a real one.
 
 | Tell | Why | What we do |
 |---|---|---|
-| Staccato triads: "Five restaurants. One kitchen. One delivery." | The single most common generated rhythm | Say it once, plainly: "Mix dishes from all five restaurants. You pay ƒ5 delivery once." |
+| Staccato triads: "Hot. Fresh. Fast." | The single most common generated rhythm | Say it once, plainly: "Cooked to order, delivered in 35–50 min." |
 | Every restaurant's tagline in the same shape ("A, B & C") | Stamped from one template | Each restaurant its own sentence, about what's true of it |
 | Adjectives instead of facts: delicious, fresh, bold, perfect, mouthwatering | A generator writes them because it knows nothing | Name the ingredient, the cooking, the time: "smashed thin on the flat-top", "with a cup of consommé to dip" |
 | Em dashes | Nobody types one in a WhatsApp or on a menu board | Full stop, comma, or two sentences |
@@ -49,10 +49,10 @@ page). Keep that line until every picture is a real one.
 
 - The WhatsApp number and that orders go to a person on WhatsApp.
 - Hours, last orders at 1:30 AM, delivery areas by name, "Elsewhere? Ask us".
-- How to pay: cash or bank transfer.
+- How to pay: cash in florins or US dollars, or bank transfer.
 - "House colour helps the driver": that is how addresses work here. Details like this
   are the opposite of generated copy.
-- "Bon nochi." and the four languages.
+- The four languages, and a Papiamento "Danki!" where people would say it.
 - The order number and the ticket the chef reads.
 
 ## 5. Things only Victor can unlock (ask, one line each, in `questions.md`)

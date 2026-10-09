@@ -11,9 +11,10 @@ Public repo: nothing private here (no costs, margins, buyer prices, plans, conta
 - Money is tight (8 Oct 2026: "Don't have the money now use what you can"). No paid APIs, no Gemini spend, no paid tools without asking.
 
 ## Decisions (dated)
-- 2026-10-08: 'you can't dine in it's all take out aka delivery': no dine-in, ever. The site says 'There's no dine-in.' in How ordering works; on Google the Dine-in option stays off. Pickup kept as it was (asked him to confirm).
+- 2026-10-09: 'Its delivery only and people also cannot know its all the same kitchen they really need to believe each restaurant is their own business'. Done the same day: no home page, no shared order, no links or add-ons between restaurants, delivery only (pickup gone), receipts and tickets carry the one restaurant's name, "Order Aruba" kept as an internal name only. Rule in CLAUDE.md; qa and check.py enforce it. This replaces the 8 Oct study idea of telling customers it's one kitchen.
+- 2026-10-08: 'you can't dine in it's all take out aka delivery': no dine-in, ever. (9 Oct: no pickup either.)
 - 2026-10-08: 'On Aruba of course we take usd': cash in florins or US dollars, or bank transfer (site.json `payment`; the Cash tap stays one choice). Rate and change not given yet, so the site names no rate.
-- 2026-10-08: Google Business Profile: 'Yes I will'. He opens it himself; Claude sent the steps.
+- 2026-10-08: Google Business Profile: 'Yes I will'. He opens it himself. (9 Oct: the 'Order Aruba' steps were withdrawn; one listing per restaurant instead.)
 - 2026-10-08: 'Generate images if you have to' — OK to spend Gemini credit on pictures that are wrong (not on more generated pictures for their own sake). Credit was empty that day.
 - 2026-10-08: His own Book Keeper business ("Victor") made a paid account at his request ('make it into a subscription account'): subscription_status set to active by hand, no Stripe customer, nothing is charged. Stripe webhooks can't overwrite it (they match on the Stripe customer). Billing's 'Manage billing' has no card behind it.
 - 2026-10-08: Book Keeper connection switched on ('Yes, switch it on'): migration 026 applied, PR #3 merged. He wants the chef never to log in to Book Keeper: receipts go from the chef app with a key per phone.

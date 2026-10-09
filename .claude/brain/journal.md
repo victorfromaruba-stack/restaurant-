@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-09 · claude (cloud) · Each restaurant stands alone (Victor: customers must believe each is its own business): home, cart page and shared order removed, delivery only, no cross-selling, tickets/receipts/Google data/link cards per restaurant, public language and settings files cleaned, Order again on each page; qa + check.py fail on any leak · waiting: Victor on separate WhatsApp numbers, own web addresses, making the repo private, one Google listing per restaurant
 - 2026-10-08 · claude (cloud) · No dine-in: How ordering works says 'There's no dine-in.' (4 languages) · waiting: Victor to confirm pickup stays
 - 2026-10-08 · claude (cloud) · US dollars on the site: checkout (under How will you pay?) and How ordering works say cash in florins or US dollars, or bank transfer; Google data lists AWG and USD · waiting: Victor's dollar rate and change; his Google Business Profile
 - 2026-10-08 · claude (cloud) · Worldwide competitor study done (8 research tracks; report sent to Victor, kept outside the repo). Top free moves added to ideas.md for the daily runs; Google profile and card/USD questions added
