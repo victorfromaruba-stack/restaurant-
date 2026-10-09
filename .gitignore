@@ -23,3 +23,6 @@ __pycache__/
 *.preview.png
 .DS_Store
 build/gemini/out/
+
+# design prototypes in git worktrees (never part of the site)
+.claude/worktrees/
