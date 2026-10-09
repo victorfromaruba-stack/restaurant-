@@ -1,162 +1,151 @@
-/* One run from the database. Same steps as v1: pickup, then each drop. */
-import { clear, client, el, loadConfig, mapsHref, money, savedToken, wazeHref } from "./client.js";
+/* One run from the database. Pickup, then each drop. */
+import { clear, client, el, loadConfig, mapsHref, message, money, savedToken, wazeHref } from "./client.js";
 
 const main = document.getElementById("screen");
 const dock = document.getElementById("dock");
-const runId = new URLSearchParams(location.search).get("run");
 let db = null;
 let run = null;
+let shown = "";
 let locateTimer = null;
 
 function toTop() {
+  if (history.scrollRestoration) history.scrollRestoration = "manual";
   window.scrollTo(0, 0);
 }
 
-function cashBox(stops) {
-  const cash = (stops || []).filter((stop) => stop.pay === "cash");
-  const collect = cash.reduce((sum, stop) => sum + stop.total_cents, 0);
-  const pays = cash.map((stop) => stop.pays_with_cents).find((value) => value != null);
+function cashBox(stop) {
   const box = el("div", { class: "money" });
-  if (!cash.length) {
+  if (stop.pay === "transfer") {
     box.appendChild(el("p", { class: "kicker", text: "Awaiting transfer" }));
     box.appendChild(el("p", { class: "figure", text: "Don't collect cash" }));
     return box;
   }
   box.appendChild(el("p", { class: "kicker", text: "Collect" }));
-  box.appendChild(el("p", { class: "figure", text: money(collect) }));
-  if (pays != null) {
-    const change = pays - collect;
-    box.appendChild(el("p", { class: "line", text: "Pays with " + money(pays) }));
+  box.appendChild(el("p", { class: "figure", text: money(stop.total_cents) }));
+  if (stop.pays_with_cents != null) {
+    box.appendChild(el("p", { class: "line", text: "Pays with " + money(stop.pays_with_cents) }));
+    const change = stop.change_due_cents;
     box.appendChild(el("p", { class: "line", text: change >= 0 ? "Give " + money(change) + " change" : "Short " + money(-change) }));
   }
   box.appendChild(el("p", { class: "small", text: "Includes ƒ5 delivery" }));
   return box;
 }
 
-function actions(stop) {
-  return el("div", { class: "actions" }, [
+function actions(stop, withCall) {
+  const rows = [
     el("div", { class: "row" }, [
       el("a", { class: "btn secondary", href: mapsHref(stop), target: "_blank", rel: "noopener", text: "Google Maps" }),
       el("a", { class: "btn secondary", href: wazeHref(stop), target: "_blank", rel: "noopener", text: "Waze" }),
     ]),
-    el("div", { class: "row" }, [
-      el("a", { class: "btn secondary", href: "tel:+" + String(stop.phone || "").replace(/\D/g, ""), text: "Call" }),
+  ];
+  if (withCall) {
+    const phone = String(stop.phone || "").replace(/\D/g, "");
+    rows.push(el("div", { class: "row" }, [
+      el("a", { class: "btn secondary", href: "tel:+" + phone, text: "Call" }),
       el("a", {
         class: "btn secondary",
-        href: "https://wa.me/" + String(stop.phone || "").replace(/\D/g, "") + "?text=" + encodeURIComponent("Hi " + stop.name + ", your " + stop.restaurant + " order is outside."),
+        href: "https://wa.me/" + phone + "?text=" + encodeURIComponent("Hi " + stop.name + ", your " + stop.restaurant + " order is outside."),
         target: "_blank",
         rel: "noopener",
         text: "WhatsApp",
       }),
-    ]),
-  ]);
+    ]));
+  }
+  return el("div", { class: "actions" }, rows);
 }
 
-function items(stop) {
-  const list = el("ul");
-  (stop.items || []).forEach((item) => {
-    list.appendChild(el("li", { text: (item.qty ? item.qty + " " : "") + item.name }));
-  });
-  return el("div", { class: "bag" }, [
-    el("img", { class: "logo", src: "../brand/" + stop.restaurant_slug + ".png", alt: stop.restaurant }),
-    el("div", {}, [el("p", { class: "who", text: stop.restaurant }), list]),
-  ]);
-}
-
-function render() {
+function paint() {
+  const stops = (run && run.stops) || [];
+  const pendingPickup = stops.some((stop) => stop.status === "assigned");
+  const drop = stops.find((stop) => stop.status !== "delivered");
+  const step = !run ? "empty" : pendingPickup ? "pickup" : drop ? "drop-" + drop.order_id : "done";
+  if (step !== shown) {
+    shown = step;
+    toTop();
+  }
   clear(main);
   clear(dock);
   if (!run) {
-    main.appendChild(el("h1", { text: "Pidi" }));
-    main.appendChild(el("p", { text: "This run is not on this phone." }));
+    main.appendChild(el("h1", { text: "No run right now" }));
+    main.appendChild(el("p", { text: "Go back and wait for an offer." }));
     dock.appendChild(el("a", { class: "btn", href: "index.html", text: "Back" }));
-    toTop();
     return;
   }
-  const stops = run.stops || [];
-  if (run.step === "done" || run.status === "done") {
-    main.appendChild(el("h1", { text: stops.length > 1 ? "Both drops done" : "Drop done" }));
-    main.appendChild(cashBox(stops));
-    dock.appendChild(el("a", { class: "btn", href: "index.html", text: "Done" }));
-    stopLocate();
-    toTop();
-    return;
-  }
-  if (run.step === "pickup") {
-    main.appendChild(el("h1", { text: "Pick up" }));
-    const seen = {};
-    stops.forEach((stop) => {
-      if (seen[stop.restaurant_slug]) return;
-      seen[stop.restaurant_slug] = true;
-      const merged = { ...stop, items: [] };
-      stops.forEach((other) => {
-        if (other.restaurant_slug === stop.restaurant_slug) merged.items = merged.items.concat(other.items || []);
-      });
-      main.appendChild(items(merged));
-    });
+  if (pendingPickup) {
+    main.appendChild(el("h1", { text: "Pickup" }));
     const pickup = run.pickup || {};
-    if (pickup.name) main.appendChild(el("p", { class: "who", text: pickup.name }));
-    if (pickup.address) main.appendChild(el("p", { class: "addr", text: pickup.address }));
-    if (pickup.address || pickup.lat) {
-      main.appendChild(el("div", { class: "row" }, [
-        el("a", { class: "btn secondary", href: mapsHref(pickup), target: "_blank", rel: "noopener", text: "Google Maps" }),
-        el("a", { class: "btn secondary", href: wazeHref(pickup), target: "_blank", rel: "noopener", text: "Waze" }),
-      ]));
-    }
+    if (pickup.name) main.appendChild(el("p", { class: "place", text: pickup.name }));
+    stops.forEach((stop) => {
+      main.appendChild(el("p", { class: "kicker", text: stop.restaurant }));
+      (stop.items || []).forEach((item) => {
+        main.appendChild(el("p", { text: item.qty + " × " + item.name }));
+      });
+    });
+    if (pickup.address || pickup.lat) main.appendChild(actions(pickup, false));
     const button = el("button", { class: "btn", type: "button", text: "Picked up" });
-    button.addEventListener("click", () => advance("picked_up"));
+    button.addEventListener("click", pickupBags);
     dock.appendChild(button);
-    toTop();
     return;
   }
-  const drop = stops[run.drop_index] || stops[0];
-  main.appendChild(el("p", { class: "quiet", text: "Drop " + (run.drop_index + 1) + " of " + stops.length }));
+  if (!drop) {
+    main.appendChild(el("h1", { text: "Run finished" }));
+    dock.appendChild(el("a", { class: "btn", href: "index.html", text: "Back" }));
+    return;
+  }
+  main.appendChild(el("p", { class: "quiet", text: "Drop " + drop.stop_index + " of " + stops.length }));
   main.appendChild(el("h1", { text: drop.name }));
   if (drop.area) main.appendChild(el("p", { class: "place", text: drop.area }));
-  main.appendChild(cashBox(stops.length > 1 ? stops : [drop]));
-  main.appendChild(actions(drop));
-  main.appendChild(el("p", { class: "addr", text: drop.address }));
-  if (drop.note) main.appendChild(el("p", { class: "note", text: drop.note }));
-  main.appendChild(items(drop));
+  main.appendChild(cashBox(drop));
+  main.appendChild(actions(drop, true));
+  if (drop.address) main.appendChild(el("p", { text: drop.address }));
+  if (drop.note) main.appendChild(el("p", { text: drop.note }));
+  (drop.items || []).forEach((item) => main.appendChild(el("p", { class: "small", text: item.qty + " × " + item.name })));
   const button = el("button", { class: "btn", type: "button", text: "Delivered" });
-  button.addEventListener("click", () => advance("delivered"));
+  button.addEventListener("click", () => delivered(drop));
   dock.appendChild(button);
-  toTop();
-}
-
-async function advance(action) {
-  const { data, error } = await db.rpc("advance_run", { run_id: runId, action });
-  if (error || !data || data.ok === false) return;
-  run = data;
-  render();
-}
-
-async function sendLocation() {
-  if (!navigator.geolocation || !run || run.status !== "active") return;
-  navigator.geolocation.getCurrentPosition((pos) => {
-    db.rpc("push_location", { lat: pos.coords.latitude, lng: pos.coords.longitude });
-  });
-}
-
-function stopLocate() {
-  if (locateTimer) clearInterval(locateTimer);
 }
 
 async function load() {
-  const cfg = await loadConfig();
-  const token = savedToken();
-  if (!cfg || !token || !runId) {
-    main.appendChild(el("h1", { text: "Pidi" }));
-    main.appendChild(el("p", { text: "Sign in on the driver page first." }));
-    dock.appendChild(el("a", { class: "btn", href: "index.html", text: "Sign in" }));
+  const { data, error } = await db.rpc("pidi_driver_run", { session: savedToken() });
+  if (error) {
+    clear(main);
+    main.appendChild(el("p", { class: "err", text: message(error) }));
     return;
   }
-  db = client(cfg, token);
-  const { data } = await db.rpc("run_detail", { run_id: runId });
   run = data;
-  render();
-  sendLocation();
-  locateTimer = setInterval(sendLocation, 15000);
+  paint();
 }
 
-load();
+async function pickupBags() {
+  const { error } = await db.rpc("pidi_driver_picked_up", { session: savedToken(), run_id: run.run_id });
+  if (error) return;
+  load();
+}
+
+async function delivered(stop) {
+  const { error } = await db.rpc("pidi_driver_delivered", { session: savedToken(), order_id: stop.order_id });
+  if (error) return;
+  load();
+}
+
+function sendLocation() {
+  if (!navigator.geolocation || !run) return;
+  navigator.geolocation.getCurrentPosition((pos) => {
+    db.rpc("pidi_driver_location", {
+      session: savedToken(),
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+    });
+  });
+}
+
+loadConfig().then((cfg) => {
+  if (!cfg || !savedToken()) {
+    location.href = "index.html";
+    return;
+  }
+  db = client(cfg);
+  load();
+  setInterval(load, 8000);
+  locateTimer = setInterval(sendLocation, 15000);
+});

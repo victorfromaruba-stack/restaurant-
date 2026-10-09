@@ -5,6 +5,7 @@ session doesn't pay for them again. One entry: date, what happens, what to do.
 Newest on top. When a lesson turns into a rule everyone must follow, move it into
 CLAUDE.md and delete it here.
 
+- 2026-10-09 · Pidi v2 shares Victor's live bookkeeping database (`cdkopyphjvfxjqhasrae`). The only paste is `driver/v2/supabase/PIDI_SETUP.sql`, and it may create only `public.pidi_*`. Do not enable extensions, create roles, deploy Edge Functions, or alter anything that is not `pidi_`. The anon key is committed in `driver/v2/config.js`. A service role key and a signing JWK are not used. The older lesson's project `orxpuikpgshcajwripxy` is a different paused project. Do not point Pidi at it.
 - 2026-10-09 · With `.nojekyll`, GitHub Pages serves every file in the repo, dot-folders included: /restaurant-/CLAUDE.md and /.claude/brain/victor.md answer 200 on the live site. Anything in the repo is public twice (GitHub and the site). Write internal notes knowing that until the repo is private.
 - 2026-10-09 · Public files the restaurant pages load (shared/site.json, shared/lang/*.json) also leak: old phrases like "Also tonight from our kitchen" stayed in the language files after the code stopped using them. `build/lang_keys.py --prune` removes them, and `--check` now fails on them.
 - 2026-10-08 · A subagent with fresh eyes (first-time customer at 11 PM, screenshots only, no edits) found 8 real problems after 0 fail from check.py, incl. a one-card rail wasting the first screen and the same dish twice via a bundle picture. Worth one run after any big pass.

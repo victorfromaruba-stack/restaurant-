@@ -1,29 +1,28 @@
 /* Sign in, go online, accept a run. v1 is unchanged and stays the live app. */
-import { clear, clearSession, client, el, loadConfig, money, saveSession, savedDriver, savedToken } from "./client.js";
+import { clear, clearSession, client, el, loadConfig, message, money, saveSession, savedDriver, savedToken } from "./client.js";
 
 const main = document.getElementById("screen");
 const dock = document.getElementById("dock");
 let cfg = null;
 let db = null;
 let timer = null;
+let channel = null;
 
 function banner(text) {
   return el("p", { class: "test-flag", text });
 }
 
-function showSignIn(message) {
+function showSignIn(note) {
   clear(main);
   clear(dock);
-  if (!cfg) main.appendChild(banner("Not connected yet. Add the Supabase keys in config.js."));
+  if (!cfg) main.appendChild(banner("Not connected yet. Add the anon key in config.js."));
   main.appendChild(el("h1", { text: "Pidi" }));
   main.appendChild(el("p", { class: "quiet", text: "Driver sign in" }));
-  if (message) main.appendChild(el("p", { class: "err", text: message }));
-  const code = el("input", { id: "code", autocomplete: "username", placeholder: "Your code" });
+  if (note) main.appendChild(el("p", { class: "err", text: note }));
+  const code = el("input", { id: "code", autocomplete: "username", placeholder: "Your name" });
   const pin = el("input", { id: "pin", inputmode: "numeric", autocomplete: "current-password", placeholder: "PIN", type: "password" });
-  const codeLabel = el("label", { class: "field" }, [el("span", { text: "Code" }), code]);
-  const pinLabel = el("label", { class: "field" }, [el("span", { text: "PIN" }), pin]);
-  main.appendChild(codeLabel);
-  main.appendChild(pinLabel);
+  main.appendChild(el("label", { class: "field" }, [el("span", { text: "Name" }), code]));
+  main.appendChild(el("label", { class: "field" }, [el("span", { text: "PIN" }), pin]));
   const button = el("button", { class: "btn", type: "button", text: "Sign in" });
   button.disabled = !cfg;
   button.addEventListener("click", signIn);
@@ -31,20 +30,14 @@ function showSignIn(message) {
 }
 
 async function signIn() {
-  const code = document.getElementById("code").value.trim().toLowerCase();
+  const code = document.getElementById("code").value.trim();
   const pin = document.getElementById("pin").value.trim();
-  const res = await fetch(cfg.url.replace(/\/$/, "") + "/functions/v1/driver-pin", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: cfg.anonKey },
-    body: JSON.stringify({ code, pin }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    showSignIn(body.error || "That PIN does not match.");
+  const { data, error } = await db.rpc("pidi_driver_login", { driver_name_or_id: code, pin });
+  if (error || !data || !data.token) {
+    showSignIn(message(error) || "That PIN does not match.");
     return;
   }
-  saveSession(body.token, body.driver);
-  db = client(cfg, body.token);
+  saveSession(data.token, data);
   showHome();
 }
 
@@ -54,9 +47,8 @@ function showHome() {
   const driver = savedDriver();
   main.appendChild(el("h1", { text: driver && driver.name ? driver.name : "Pidi" }));
   main.appendChild(el("p", { class: "quiet", id: "state", text: "Offline" }));
-  const list = el("div", { id: "offers" });
-  main.appendChild(list);
-  const online = el("button", { class: "btn", type: "button", id: "online", text: "Go online" });
+  main.appendChild(el("div", { id: "offers" }));
+  const online = el("button", { class: "btn", type: "button", text: "Go online" });
   online.addEventListener("click", () => setOnline(true));
   const offline = el("button", { class: "btn secondary", type: "button", text: "Go offline" });
   offline.addEventListener("click", () => setOnline(false));
@@ -65,35 +57,43 @@ function showHome() {
   const out = el("button", { class: "text-link", type: "button", text: "Sign out" });
   out.addEventListener("click", () => {
     clearSession();
+    if (channel) db.removeChannel(channel);
     location.reload();
   });
   main.appendChild(out);
   refresh();
   if (timer) clearInterval(timer);
-  timer = setInterval(refresh, 3000);
-  db.channel("driver-offers")
-    .on("postgres_changes", { event: "*", schema: "public", table: "offers" }, refresh)
-    .subscribe();
+  timer = setInterval(refresh, 8000);
+  if (driver && driver.topic) {
+    channel = db.channel(driver.topic, { config: { private: false } });
+    channel.on("broadcast", { event: "changed" }, refresh).subscribe();
+  }
 }
 
 async function setOnline(on) {
-  const { error } = await db.rpc(on ? "go_online" : "go_offline");
+  const { error } = await db.rpc("pidi_driver_set_online", { session: savedToken(), online: on });
+  const state = document.getElementById("state");
   if (error) {
-    document.getElementById("state").textContent = "Could not update. Try again.";
+    if (state) state.textContent = message(error);
     return;
   }
-  document.getElementById("state").textContent = on ? "Online. Waiting for a run." : "Offline";
+  if (state) state.textContent = on ? "Online. Waiting for a run." : "Offline";
   refresh();
 }
 
 async function refresh() {
-  if (!db) return;
-  const { data, error } = await db.rpc("my_offers");
+  if (!db || !savedToken()) return;
+  const { data, error } = await db.rpc("pidi_driver_offers", { session: savedToken() });
   const box = document.getElementById("offers");
   if (!box) return;
   clear(box);
   if (error) {
-    box.appendChild(el("p", { class: "err", text: "Could not load offers." }));
+    if (String(message(error)).toLowerCase().indexOf("sign in") >= 0) {
+      clearSession();
+      showSignIn("Sign in again.");
+      return;
+    }
+    box.appendChild(el("p", { class: "err", text: message(error) }));
     return;
   }
   const offers = data || [];
@@ -101,7 +101,8 @@ async function refresh() {
     box.appendChild(el("p", { text: "No offer right now." }));
     return;
   }
-  document.getElementById("state").textContent = "Online";
+  const state = document.getElementById("state");
+  if (state) state.textContent = "Online";
   offers.forEach((offer) => box.appendChild(offerCard(offer)));
 }
 
@@ -111,11 +112,7 @@ function offerCard(offer) {
   (offer.stops || []).forEach((stop) => {
     card.appendChild(el("p", { class: "kicker", text: stop.restaurant }));
     card.appendChild(el("p", { class: "line", text: (stop.area ? stop.area + " · " : "") + stop.name }));
-    if (stop.pay === "transfer") {
-      card.appendChild(el("p", { text: "Awaiting transfer. Don't collect cash." }));
-    } else {
-      card.appendChild(el("p", { text: "Collect " + money(stop.total_cents) }));
-    }
+    card.appendChild(el("p", { text: stop.pay === "transfer" ? "Awaiting transfer. Don't collect cash." : "Collect " + money(stop.total_cents) }));
   });
   card.appendChild(el("p", { class: "figure", "data-seconds": String(offer.seconds_left), text: offer.seconds_left + "s" }));
   wrap.appendChild(card);
@@ -129,16 +126,16 @@ function offerCard(offer) {
 }
 
 async function take(offer) {
-  const { data, error } = await db.rpc("accept_offer", { offer_id: offer.offer_id });
+  const { data, error } = await db.rpc("pidi_driver_accept", { session: savedToken(), offer_id: offer.offer_id });
   if (error || !data || !data.ok) {
     refresh();
     return;
   }
-  location.href = "run.html?run=" + data.run_id;
+  location.href = "run.html";
 }
 
 async function pass(offer) {
-  await db.rpc("decline_offer", { offer_id: offer.offer_id });
+  await db.rpc("pidi_driver_decline", { session: savedToken(), offer_id: offer.offer_id });
   refresh();
 }
 
@@ -147,16 +144,20 @@ setInterval(() => {
     const left = Math.max(0, Number(node.getAttribute("data-seconds")) - 1);
     node.setAttribute("data-seconds", String(left));
     node.textContent = left + "s";
+    if (left === 0 && node.getAttribute("data-fired") !== "1") {
+      node.setAttribute("data-fired", "1");
+      refresh();
+    }
   });
 }, 1000);
 
 loadConfig().then((got) => {
   cfg = got;
-  const token = savedToken();
-  if (cfg && token) {
-    db = client(cfg, token);
+  if (cfg && savedToken()) {
+    db = client(cfg);
     showHome();
     return;
   }
+  if (cfg) db = client(cfg);
   showSignIn("");
 });

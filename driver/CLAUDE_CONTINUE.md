@@ -155,7 +155,9 @@ Needs Playwright (`playwright` Python package and Chromium).
 
 v1 is one phone and a link. It stays that way until Supabase is connected.
 
-v2 is written and waiting. It lives in `/driver/v2/`. WhatsApp is no longer the order path in that design: the customer checkout inserts a row, the kitchen sees it live, and an online driver is offered the run. Do not turn it on by linking it from v1. Victor still has to create the Supabase project and provide the URL, the anon key, the service role key for the functions, a signing key, and the driver PINs. Steps are in `/driver/v2/README.md`. The paste-ready prompt for the kitchen app and the customer site is `/driver/v2/CLAUDE_REALTIME_PROMPT.md`. Do not edit `/ops/kitchen/` or the customer site from the driver task.
+v2 is written and waiting. It lives in `/driver/v2/`. The database is the live bookkeeping project (`https://cdkopyphjvfxjqhasrae.supabase.co`). Victor pastes `driver/v2/supabase/PIDI_SETUP.sql` once. That file creates only `public.pidi_*` objects. It must not be replaced with the old migration (that one created roles, schemas, and Edge Functions). There is no service role and no Edge Function.
+
+Apply in this order: SQL first, then the PIN seed he edits in the SQL editor, then put the URL and anon key in `driver/v2/config.js` and commit it. Never commit a service role key or a signing JWK (those are not used). Empty `anonKey` keeps the "not connected" screen. v2 also stays off until `pidi_ping()` answers. Do not link v2 from v1. Steps are in `/driver/v2/README.md`. The paste-ready prompt for the kitchen app and the customer site is `/driver/v2/CLAUDE_REALTIME_PROMPT.md`. Do not edit `/ops/kitchen/` or the customer site from the driver task.
 
 Still not built: native TestFlight and APK (Capacitor wrapping `/driver/`, keys out of the repo), a second person at the cash count, a float, and a US dollar rate.
 
@@ -172,5 +174,5 @@ Pidi is the name (capital P, rest lowercase). Pidi Blue is #2D3BE8. Payment is c
 
 The driver UI stays one step per screen, big buttons (56px), plain words, restaurant logos, no internal codes on screen. Run links are a base64url JSON hash documented in CLAUDE_CONTINUE.md. Keep tests/flow.py passing on the live URL with Playwright device profiles iPhone 13 and Pixel 7. Bump the CACHE name in sw.js when you change cached files. The service worker scope must stay the /driver/ folder only.
 
-v2 is already in /driver/v2/ and must stay unmerged until Victor connects Supabase. Do not change v1 behaviour while you do that. The kitchen feed and the customer checkout are specified in /driver/v2/CLAUDE_REALTIME_PROMPT.md. Those folders belong to another tool. Native TestFlight and APK come after the live orders work, by wrapping /driver/ with Capacitor, keys kept out of the repo.
+v2 is already in /driver/v2/ and must stay unmerged until a test order has gone through the bookkeeping database. The only SQL to paste is driver/v2/supabase/PIDI_SETUP.sql. It may create only public.pidi_* objects. Do not create roles, schemas, extensions, or Edge Functions, and do not alter any object that is not pidi_. Put the URL and anon key in driver/v2/config.js and commit that file. Never commit a service role key or a signing JWK. Do not change v1 behaviour. The kitchen feed and the customer checkout are specified in /driver/v2/CLAUDE_REALTIME_PROMPT.md. Those folders belong to another tool. Native TestFlight and APK come after the live orders work, by wrapping /driver/ with Capacitor, keys kept out of the repo.
 ```

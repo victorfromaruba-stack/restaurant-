@@ -4,18 +4,27 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 export const TOKEN_KEY = "pidi.v2.token";
 export const DRIVER_KEY = "pidi.v2.driver";
 
+export function client(cfg) {
+  return createClient(cfg.url, cfg.anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/* v2 stays off unless both values are set and pidi_ping() answers. */
 export async function loadConfig() {
+  let mod;
   try {
-    return await import("../config.js");
+    mod = await import("../config.js");
   } catch (e) {
     return null;
   }
-}
-
-export function client(cfg, token) {
-  const options = { auth: { persistSession: false, autoRefreshToken: false } };
-  if (token) options.accessToken = async () => token;
-  return createClient(cfg.url, cfg.anonKey, options);
+  const url = String(mod.url || "").trim();
+  const anonKey = String(mod.anonKey || "").trim();
+  if (!url || !anonKey) return null;
+  const db = client({ url, anonKey });
+  const { data, error } = await db.rpc("pidi_ping");
+  if (error || !data || data.ok !== true) return null;
+  return { url, anonKey };
 }
 
 export function savedToken() {
@@ -79,4 +88,9 @@ export function el(tag, attrs, kids) {
 
 export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+export function message(error) {
+  if (!error) return "";
+  return error.message || error.details || "Try again.";
 }

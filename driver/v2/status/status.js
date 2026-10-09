@@ -1,7 +1,8 @@
-/* Customer status. The link is /driver/v2/status/#t=TOKEN and &u= for a second restaurant. */
+/* Customer status. The link is /driver/v2/status/#t=TOKEN and &u= for a second order. */
 import { client, loadConfig } from "../js/client.js";
 
 const main = document.getElementById("screen");
+let db = null;
 
 function tokensFromHash() {
   const params = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -22,7 +23,6 @@ function paintOrders(orders) {
   main.textContent = "";
   orders.forEach((order) => {
     const block = document.createElement("section");
-    block.className = "section";
     const title = document.createElement("h1");
     title.textContent = order.label;
     const where = document.createElement("p");
@@ -43,34 +43,24 @@ loadConfig().then(async (cfg) => {
     showProblem("This page is not connected yet.");
     return;
   }
-  const anon = client(cfg);
+  db = client(cfg);
+  const seen = {};
   async function paint() {
     const orders = [];
     for (const token of tokens) {
-      const { data } = await anon.rpc("order_by_token", { token });
-      if (data) orders.push(data);
+      const { data, error } = await db.rpc("pidi_order_status", { token });
+      if (error || !data) continue;
+      orders.push(data);
+      if (data.topic && !seen[data.topic]) {
+        seen[data.topic] = true;
+        db.channel(data.topic, { config: { private: false } })
+          .on("broadcast", { event: "changed" }, paint)
+          .subscribe();
+      }
     }
     if (!orders.length) showProblem("We can't find that order.");
     else paintOrders(orders);
   }
-  tokens.forEach((token) => {
-    fetch(cfg.url.replace(/\/$/, "") + "/functions/v1/order-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: cfg.anonKey },
-      body: JSON.stringify({ token }),
-    }).then((res) => res.ok ? res.json() : null).then((body) => {
-      if (!body || !body.token) return;
-      client(cfg, body.token)
-        .channel("order-" + token)
-        .on("postgres_changes", {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: "public_token=eq." + token,
-        }, paint)
-        .subscribe();
-    }).catch(() => {});
-  });
   await paint();
-  setInterval(paint, 5000);
+  setInterval(paint, 8000);
 });
