@@ -1,7 +1,7 @@
 {
  "name": "Order Aruba",
  "short_name": "Order Aruba",
- "description": "Late-night delivery in Aruba, 10 PM to 2 AM.",
+ "description": "Late-night delivery in Aruba from 10 PM.",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

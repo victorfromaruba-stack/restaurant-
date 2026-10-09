@@ -1,9 +1,6 @@
 {
  "_about": "Papiamento (Aruba). Draft: Victor checks every line before it goes live. Edit the right-hand side only. The left side is the English the site shows; {words} in braces must stay.",
- "Open until {time}": "Habri te {time}",
  "Language": "Idioma",
- "Last orders {time}": "Ultimo orden {time}",
- "until {time}": "te {time}",
  "Opens tonight {time}": "Ta habri awe nochi {time}",
  "Opens today {time}": "Ta habri awe {time}",
  "Opens tomorrow night {time}": "Ta habri mañan nochi {time}",
@@ -46,7 +43,6 @@
  "Open WhatsApp again": "Habri WhatsApp atrobe",
  "Start a new order": "Cuminsa un orden nobo",
  "Edit this order": "Cambia e orden aki",
- "Last orders have passed for tonight.": "E ultimo orden pa awe nochi a pasa.",
  "We’re closed.": "Nos ta cera.",
  "Order now for later and we confirm when we open.": "Ordena awor pa despues y nos ta confirma ora nos habri.",
  "Drinks": "Bebida",
@@ -152,10 +148,7 @@
  "WhatsApp opens with your order already written out. Just press send.": "WhatsApp ta habri cu bo orden caba skirbi. Djis primi manda.",
  "We reply to confirm": "Nos ta contesta pa confirma",
  "Delivery takes about {eta}.": "Entrega ta tuma mas o menos {eta}.",
- "Open every night from {open} to {close}.": "Habri tur anochi di {open} pa {close}.",
- "Open today {hours}.": "Awe habri {hours}.",
  "Closed today.": "Awe ta cera.",
- "Last orders at {time}.": "Ultimo orden na {time}.",
  "Share this dish": "Comparti e cuminda aki",
  "Link copied": "Link a wordo copia",
  "Questions? WhatsApp us on {number}.": "Pregunta? Manda nos un WhatsApp na {number}.",
@@ -202,5 +195,7 @@
  "Fried in shared oil.": "Frita den mesun azeta.",
  "From other restaurants · same order, still one {fee} delivery": "Di otro restaurant · mes orden, ainda un entrega di {fee}",
  "You order here and send it on WhatsApp. We reply to confirm.": "Bo ta ordena aki y manda e orden riba WhatsApp. Nos ta contesta pa confirma.",
- "{app} delivers until {time}": "{app} ta entregá te {time}"
+ "Open now": "Habri awor",
+ "Late night from {time}": "Tardi anochi for di {time}",
+ "Every night from {time}.": "Tur anochi for di {time}."
 }

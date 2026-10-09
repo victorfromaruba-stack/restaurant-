@@ -81,7 +81,7 @@
     if (LANG === "en") return Promise.resolve();
     return getJSON("shared/lang/" + LANG + ".json").then(function (w) { WORDS = w || {}; }, function () { WORDS = {}; });
   }
-  /* tr("Open until {time}", {time: "2 AM"}): the translation if there is one, else the English */
+  /* tr("Late night from {time}", {time: "10 PM"}): the translation if there is one, else the English */
   function tr(text, vars) {
     var out = (LANG !== "en" && WORDS[text]) || text;
     if (vars) out = out.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
@@ -209,11 +209,10 @@
     for (var k = 0; k < wins.length; k++) {
       var x = wins[k];
       if (now >= x.o && now < x.cut) {
-        var left = x.cut - now, hasCut = x.cut < x.c;
-        var last = left <= 30 && hasCut;
-        return { open: true, soon: left <= 30, lastOrder: hasCut ? clock(x.cut) : "", last: last, close: clock(x.c),
-          label: last ? tr("Last orders {time}", { time: clock(x.cut) }) : tr("Open until {time}", { time: clock(x.c) }),
-          sub: last ? tr("Last orders {time}", { time: clock(x.cut) }) : tr("until {time}", { time: clock(x.c) }) };
+        // No closing or last-orders time on screen until the permit is confirmed (Victor, 9 Oct): only when we open.
+        var opens = clock(((x.o % 1440) + 1440) % 1440);
+        return { open: true, soon: false, lastOrder: "", last: false,
+          label: tr("Open now"), sub: tr("Late night from {time}", { time: opens }) };
       }
     }
     var finishing = wins.some(function (x) { return now >= x.cut && now < x.c; });
@@ -916,7 +915,7 @@
       .concat(ts.slots.map(function (x) { return '<option value="' + esc(x.v) + '"' + (x.v === when ? " selected" : "") + ">" + esc(x.d) + "</option>"; }));
     html += '<label class="field"><span class="field__l">' + esc(tr(ts.asap ? "When" : "Tonight at")) + '</span><span class="select"><select id="oa-when" data-f="when">' + whenOpts.join("") + "</select></span></label>";
     // closed: say so right at the time choice, where it matters
-    if (!st.open) html += '<p class="note note--warn">' + keep(tr(st.finishing ? "Last orders have passed for tonight." : "We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
+    if (!st.open) html += '<p class="note note--warn">' + keep(tr("We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
     // after a Send that found gaps, every field still missing says so (and keeps saying so through a re-render)
     var bad = node._tried ? missing() : {};
     function errAttrs(f, extra) {
@@ -1110,12 +1109,11 @@
   function howNote() {
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
     var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().getDay()]];
-    var hours = same ? tr("Open every night from {open} to {close}.", { open: clock(mins(h[0])), close: clock(mins(h[1])) })
-      : today ? tr("Open today {hours}.", { hours: clock(mins(today[0])) + "–" + clock(mins(today[1])) }) : tr("Closed today.");
+    var hours = same ? tr("Every night from {time}.", { time: clock(mins(h[0])) })
+      : today ? tr("Late night from {time}", { time: clock(mins(today[0])) }) + "." : tr("Closed today.");
     var many = PAGE === "hub" ? mixGroup().length > 1 : ALLOWED.length > 1;
     return [tr(many ? "Delivery is {fee} per order, even with dishes from several restaurants." : "Delivery is {fee} per order.", { fee: shortMoney(SITE.deliveryFee) }),
-      tr("We only deliver: there\u2019s no pickup or dine-in."), hours,
-      SITE.lastOrder ? tr("Last orders at {time}.", { time: clock(mins(SITE.lastOrder)) }) : ""].join(" ").trim();
+      tr("We only deliver: there\u2019s no pickup or dine-in."), hours].join(" ").trim();
   }
   function setupIAB() {
     var ua = navigator.userAgent || "";
@@ -1209,14 +1207,13 @@
       out.list.push({ id: s.id, title: s.title, items: carry.concat(s.items) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
     var cover = coverPick(menu, feat);
-    // the app's delivery line, said as the app's ("Order Aruba delivers until 2 AM"), then the restaurant's own sign: its
+    // the app's delivery line ("Open now · ƒ5 delivery · 45–60 min"), then the restaurant's own sign: its
     // wordmark, its line, a small framed picture. Closed: an unlit sign, like the home page's, when it opens in amber,
     // and no delivery time (so the line stays one line)
-    var app = SITE.name || "", says = st.open && !st.last && app;   // "Order Aruba delivers until 2 AM · ƒ5 · 45–60 min"
     var html = '<div class="strip' + (st.open ? "" : " strip--closed") + '"><ul class="facts">' +
           '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") +
-            esc(says ? tr("{app} delivers until {time}", { app: app, time: st.close }) : st.label) + "</li>" +
-          "<li>" + esc(says ? shortMoney(SITE.deliveryFee) : tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
+            esc(st.label) + "</li>" +
+          "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
           (st.open && SITE.eta ? "<li>" + esc(SITE.eta) + "</li>" : "") +
         "</ul></div>" +
       '<header class="store' + (cover ? "" : " store--plain") + '">' +

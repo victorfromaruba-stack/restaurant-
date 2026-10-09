@@ -1,9 +1,6 @@
 {
  "_about": "Nederlands. Edit the right-hand side only. The left side is the English the site shows; {words} in braces must stay.",
- "Open until {time}": "Open tot {time}",
  "Language": "Taal",
- "Last orders {time}": "Laatste bestelling {time}",
- "until {time}": "tot {time}",
  "Opens tonight {time}": "Vanavond open om {time}",
  "Opens today {time}": "Vandaag open om {time}",
  "Opens tomorrow night {time}": "Morgenavond open om {time}",
@@ -46,7 +43,6 @@
  "Open WhatsApp again": "Open WhatsApp opnieuw",
  "Start a new order": "Begin een nieuwe bestelling",
  "Edit this order": "Deze bestelling aanpassen",
- "Last orders have passed for tonight.": "De laatste bestellingen voor vanavond zijn voorbij.",
  "We’re closed.": "We zijn gesloten.",
  "Order now for later and we confirm when we open.": "Bestel nu voor later; we bevestigen zodra we open zijn.",
  "Drinks": "Drankjes",
@@ -152,10 +148,7 @@
  "WhatsApp opens with your order already written out. Just press send.": "WhatsApp opent met je bestelling al uitgeschreven. Druk alleen op versturen.",
  "We reply to confirm": "Wij bevestigen het",
  "Delivery takes about {eta}.": "Bezorgen duurt ongeveer {eta}.",
- "Open every night from {open} to {close}.": "Elke avond open van {open} tot {close}.",
- "Open today {hours}.": "Vandaag open {hours}.",
  "Closed today.": "Vandaag gesloten.",
- "Last orders at {time}.": "Laatste bestelling om {time}.",
  "Share this dish": "Deel dit gerecht",
  "Link copied": "Link gekopieerd",
  "Questions? WhatsApp us on {number}.": "Vragen? WhatsApp ons op {number}.",
@@ -202,5 +195,7 @@
  "Fried in shared oil.": "Gefrituurd in gedeelde olie.",
  "From other restaurants · same order, still one {fee} delivery": "Van andere restaurants · zelfde bestelling, nog steeds één keer {fee} bezorgen",
  "You order here and send it on WhatsApp. We reply to confirm.": "Je bestelt hier en stuurt de bestelling via WhatsApp. Wij antwoorden om te bevestigen.",
- "{app} delivers until {time}": "{app} bezorgt tot {time}"
+ "Open now": "Nu open",
+ "Late night from {time}": "'s Avonds laat vanaf {time}",
+ "Every night from {time}.": "Elke avond vanaf {time}."
 }
