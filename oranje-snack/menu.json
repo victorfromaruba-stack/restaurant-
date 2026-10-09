@@ -4,8 +4,12 @@
  "cuisine": "Dutch",
  "code": "OS",
  "color": "#E86A17",
+ "sign": {
+  "ground": "#FFFFFF",
+  "line": "#1B2A4A"
+ },
  "tagline": "Dutch snackbar: bitterballen, kroket, frikandel",
- "intro": "Bitterballen, kroket, frikandel and fries straight from the fryer, and chicken saté with peanut sauce. Cooked to order in Aruba.",
+ "intro": "Bitterballen with curry mayo, beef kroket with mustard, frikandel special and fries with mayo, plus chicken saté with peanut sauce.",
  "logo": "shared/logos/oranje-snack.svg",
  "mark": "shared/logos/oranje-snack-mark.webp",
  "hero": "oranje-snack/assets/art/mx.webp",

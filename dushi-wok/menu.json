@@ -4,8 +4,12 @@
  "cuisine": "Chinese",
  "code": "DW",
  "color": "#0F7B6C",
+ "sign": {
+  "ground": "#FBF8F1",
+  "line": "#0F7B6C"
+ },
  "tagline": "Chinese takeout, straight off the wok",
- "intro": "Cooked to order in our delivery kitchen in Aruba. Hot from the wok, packed to travel.",
+ "intro": "Wok-tossed chicken fried rice, lo mein in soy and oyster sauce, sweet & sour crunch chicken and soy-garlic wings, with egg rolls on the side.",
  "logo": "shared/logos/dushi-wok.svg",
  "mark": "shared/logos/dushi-wok-mark.webp",
  "hero": "dushi-wok/assets/dishes/lm.webp",
@@ -53,7 +57,8 @@
     "sesame",
     "shellfish"
    ],
-   "fried": true
+   "fried": true,
+   "hidePhoto": true
   },
   {
    "id": "fr",

@@ -4,11 +4,17 @@
  "cuisine": "Italian",
  "code": "NN",
  "color": "#B23A2E",
+ "sign": {
+  "ground": "#F4E9D8",
+  "line": "#C9A227"
+ },
  "tagline": "Baked pasta for a quiet night in",
- "intro": "Bubbling baked penne, chicken parm and garlic bread, cooked to order in Aruba.",
+ "intro": "Penne baked with beef bolognese and mozzarella, spaghetti and meatballs, chicken parmigiana and cheesy garlic bread.",
  "logo": "shared/logos/nonnas-night-in.svg",
  "mark": "shared/logos/nonnas-night-in-mark.webp",
- "hero": "nonnas-night-in/assets/dishes/sm.webp",
+ "hero": "nonnas-night-in/assets/dishes/bp-hero.webp",
+ "mainSection": "mains",
+ "cover": false,
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -191,9 +197,5 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ],
- "video": {
-  "src": "nonnas-night-in/video/cover.mp4",
-  "poster": "nonnas-night-in/video/cover.webp"
- }
+ ]
 }

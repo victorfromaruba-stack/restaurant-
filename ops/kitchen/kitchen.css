@@ -114,10 +114,6 @@ h2 { font-size: 26px; line-height: 1.1; margin: 28px 0 10px; font-weight: 900; f
 .big-mode.prep { background: var(--cream); }
 .big-mode.cook { background: var(--sodium); }
 .big-mode.close { background: var(--steel); }
-.home-foot { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--rule); }
-.home-foot h2 { font-size: 17px; color: var(--haze); margin: 0 0 8px; }
-.old-links { display: flex; flex-wrap: wrap; gap: 8px; }
-.old-links a { min-height: 50px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 10px; background: var(--night-2); font-size: 17px; font-weight: 700; color: var(--haze); }
 .today { font-size: 18px; font-weight: 600; color: var(--haze); margin: 0 0 12px; }
 
 /* ---------- checklists ---------- */
@@ -172,6 +168,8 @@ h2 { font-size: 26px; line-height: 1.1; margin: 28px 0 10px; font-weight: 900; f
 .ohead .mode { font-size: 34px; font-weight: 900; line-height: 1; text-transform: uppercase; letter-spacing: .01em; }
 .ohead .when { margin-top: 8px; font-size: 22px; font-weight: 900; }
 .ohead .when--set { display: inline-block; background: var(--sodium); color: var(--ink); padding: 4px 10px; }
+/* ƒ is a lowercase letter: uppercase styling turns it into a capital Ƒ. */
+.fl { text-transform: none; }
 .ohead .pay { display: inline-block; margin-top: 10px; padding: 5px 10px; background: #17733E; color: #fff; font-size: 19px; font-weight: 900; text-transform: uppercase; letter-spacing: .02em; }
 .ohead .pay--bank { background: #2456A6; }
 .ohead .who { font-size: 21px; font-weight: 800; margin-top: 8px; }
@@ -390,3 +388,33 @@ mark.skip { background: var(--hot); color: #fff; text-transform: uppercase; font
   .me-row img { width: 56px; height: 56px; flex-basis: 56px; }
   .me-t b { font-size: 17px; }
 }
+
+/* ---------- Orders from the app (live.js) ---------- */
+.big-mode.live { background: var(--go); color: var(--ink); text-decoration: none; }
+.big-mode.live.lv-has-new { background: var(--sodium); animation: lv-pulse 1.2s ease-in-out infinite alternate; }
+@keyframes lv-pulse { from { box-shadow: inset 0 0 0 0 var(--hot); } to { box-shadow: inset 0 0 0 10px var(--hot); } }
+@media (prefers-reduced-motion: reduce) { .big-mode.live.lv-has-new { animation: none; box-shadow: inset 0 0 0 8px var(--hot); } }
+.lv-pin { max-width: 420px; margin: 8px auto 0; }
+.lv-pin input { width: 100%; min-height: 80px; font-size: 40px; font-weight: 900; letter-spacing: .3em; text-align: center; border-radius: 12px; border: 0; background: var(--paper); color: var(--ink); margin: 6px 0 12px; }
+.lv-big { min-height: 76px; font-size: 26px; font-weight: 900; margin-top: 12px; }
+.lv-card { margin: 0 -16px 26px; padding: 0 16px 16px; border-bottom: 1px solid var(--rule); }
+.lv-card .ohead { margin: 0 -16px 0; }
+.lv-card.lv-new .ohead { box-shadow: inset 0 10px 0 var(--sodium), 0 8px 20px rgba(0,0,0,.25); padding-top: 24px; }
+.lv-when { font-size: 18px; font-weight: 700; color: #4A4A4A; margin-top: 4px; }
+.lv-phone { font-weight: 600; color: #4A4A4A; }
+.lv-contact { display: flex; gap: 8px; margin-top: 10px; }
+.lv-call { display: inline-flex; align-items: center; min-height: 48px; padding: 0 16px; border-radius: 10px; background: var(--ink); color: var(--paper); font-weight: 800; font-size: 18px; }
+.lv-brand { justify-content: space-between; margin-top: 16px; }
+.lv-tick { background: rgba(0,0,0,.25); color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 18px; }
+.lv-items { list-style: none; margin: 0; padding: 0; }
+.lv-items li { display: flex; gap: 10px; padding: 8px 0; font-size: 24px; font-weight: 800; line-height: 1.2; border-bottom: 1px dashed var(--rule); }
+.lv-items li b { flex: 0 0 auto; color: var(--sodium); }
+.lv-items li em { display: block; font-style: normal; font-size: 18px; font-weight: 700; color: var(--sodium); }
+.lv-total { margin-top: 14px; font-size: 18px; color: var(--haze); }
+.lv-total b { color: var(--cream); }
+.lv-wait { margin-top: 14px; padding: 14px 16px; background: var(--night-2); font-size: 21px; font-weight: 800; border-left: 6px solid var(--go); }
+.lv-small { margin-top: 14px; }
+.lv-empty { padding: 40px 8px; text-align: center; }
+.lv-empty b { display: block; font-size: 30px; font-stretch: 75%; text-transform: uppercase; }
+.lv-empty span { display: block; margin-top: 8px; color: var(--haze); }
+.lv-out { margin-top: 30px; }

@@ -4,11 +4,15 @@
  "cuisine": "Burgers",
  "code": "SS",
  "color": "#FFC72C",
+ "sign": {
+  "ground": "#111111",
+  "line": "#FFC72C"
+ },
  "tagline": "Thin patties, smashed hard on the flat-top",
- "intro": "Thin patties smashed hard on the flat-top for crispy edges. Cooked to order in Aruba.",
+ "intro": "Smash cheeseburgers with two thin beef patties, or four on the double, plus crispy chicken sandwiches, tenders and loaded fries.",
  "logo": "shared/logos/smash-shack.svg",
- "mark": "shared/logos/smash-shack-mark.webp",
- "hero": "smash-shack/assets/dishes/ds.webp",
+ "mark": "shared/logos/smash-shack-mark.svg",
+ "hero": false,
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -37,6 +41,7 @@
    "style": "signature",
    "desc": "Two thin smashed beef patties with cheddar, lettuce, tomato, onion, pickles, ketchup and mayo on a toasted bun.",
    "img": "smash-shack/assets/dishes/sc-hero.webp",
+   "hidePhoto": true,
    "allergens": [
     "dairy",
     "gluten",
@@ -83,6 +88,7 @@
    "price": 2150,
    "desc": "Smash cheeseburger with a side of fries.",
    "img": "smash-shack/assets/dishes/co.webp",
+   "hidePhoto": true,
    "allergens": [
     "dairy",
     "gluten",
@@ -159,7 +165,8 @@
       }
      ]
     }
-   ]
+   ],
+   "hidePhoto": true
   },
   {
    "id": "cc",
@@ -296,9 +303,5 @@
    "kind": "drink"
   }
  ],
- "video": {
-  "src": "smash-shack/video/cover.mp4",
-  "poster": "smash-shack/video/cover.webp"
- },
- "cover": "ds"
+ "cover": false
 }

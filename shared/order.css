@@ -1,356 +1,453 @@
-/* Order Aruba — one look for every page.
-   One typeface (Archivo: condensed for headlines, normal for everything else), one night palette,
-   and each restaurant's own colour as the accent on its page (set from menu.json). */
+/* Order Aruba: the app's own look (top bar, delivery line, order ticket, end of page, footer) in Archivo on a
+   warm night black, and the skeleton every restaurant page shares. Each restaurant loads its own stylesheet
+   (<restaurant>/style.css) that sets the restaurant tokens below (--g ground, --ink, --display font ...) and gives
+   its header, section titles and menu rows its own type, colours and rules. The app's parts switch back to the
+   app tokens, so they look the same on every restaurant. */
 @font-face{font-family:"Archivo";src:url(fonts/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
 @font-face{font-family:"Archivo";src:url(fonts/archivo-florin.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap;unicode-range:U+0192}
 :root{
   color-scheme:dark;
-  --night:#0B1D3A;   /* ground: Aruba at night */
-  --night-2:#102748; /* sheets, fields */
-  --night-3:#183461; /* chips, quiet buttons */
-  --rule:#213A62;    /* hairlines */
-  --field:#5574A6;   /* field outlines: 3:1 against the night */
-  --cream:#FFF4DF;   /* text */
-  --haze:#A9B6CC;    /* secondary text */
-  --sodium:#FFC93C;  /* Order Aruba yellow */
-  --accent:var(--sodium);--accent-ink:#0B1D3A; /* each restaurant page swaps these for its own colour */
-  --wa:#0F7A3D;--ok:#3DDC84;--bad:#FF7A7A;--warn-bg:#3A3112;--warn-ink:#FFE7A6;
+  /* Order Aruba */
+  --app:#15130F;      /* a street at 1 AM */
+  --app-2:#1F1C17;    /* raised parts */
+  --app-3:#2C2822;    /* quiet buttons */
+  --app-rule:#37322B; /* hairlines */
+  --app-field:#776F61;/* outlines of fields and boxes: 3:1 on the night */
+  --app-ink:#F4EEE3;  /* text */
+  --app-muted:#ADA698;/* second line of text */
+  --sodium:#FFC93C;   /* the OPEN sign, and the focus ring */
+  /* the order ticket: paper on the night */
+  --paper:#FBF7EE;--paper-2:#FFFFFF;--paper-ink:#1C1A16;--paper-muted:#5B554A;--paper-rule:#DDD4C4;--paper-field:#857C6D;
+  --wa:#0F7A3D;--bad:#FF8A7A;--warn-bg:#3A2F12;--warn-ink:#FFE7A6;
   --font:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --r:14px;--r-sm:10px;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --safe-b:env(safe-area-inset-bottom,0px);
+  /* the restaurant layer: each restaurant's stylesheet sets these on body[data-brand] */
+  --g:var(--app);--g2:var(--app-2);--ink:var(--app-ink);--muted:var(--app-muted);--line:var(--app-rule);--field-line:var(--app-field);
+  --acc:var(--app-ink);--acc-ink:var(--app);--price:var(--app-ink);--r:6px;
+  --display:var(--font);--body:var(--font);--name:var(--font);--name-w:700;--name-size:17px;
+  --chip-bg:transparent;--chip-ink:var(--app-ink);--chip-line:var(--app-field);--chip-on-bg:var(--app-ink);--chip-on-ink:var(--app);
+  --add-bg:transparent;--add-ink:var(--app-ink);--add-line:var(--app-field);--add-on-bg:var(--app-ink);--add-on-ink:var(--app);
+  --lead:2px dotted;--lead-ink:var(--app-field);--focus:var(--sodium);
+}
+/* the app's own parts, on every page */
+.top,.strip,.also,.how,.pfoot,.bar,.hfoot,.home{
+  --g:var(--app);--g2:var(--app-2);--ink:var(--app-ink);--muted:var(--app-muted);--line:var(--app-rule);--field-line:var(--app-field);
+  --acc:var(--app-ink);--acc-ink:var(--app);--price:var(--app-ink);--r:6px;
+  --display:var(--font);--body:var(--font);--name:var(--font);--name-w:600;--name-size:16px;
+  --chip-bg:transparent;--chip-ink:var(--app-ink);--chip-line:var(--app-field);--chip-on-bg:var(--app-ink);--chip-on-ink:var(--app);
+  --add-bg:transparent;--add-ink:var(--app-ink);--add-line:var(--app-field);
+  --lead:2px dotted;--lead-ink:#5A5348;--focus:var(--sodium);
+  color:var(--ink);font-family:var(--font)
+}
+/* the order: Order Aruba's paper ticket */
+.sheet__panel--order{
+  --g:var(--paper);--g2:var(--paper-2);--ink:var(--paper-ink);--muted:var(--paper-muted);--line:var(--paper-rule);--field-line:var(--paper-field);
+  --acc:var(--paper-ink);--acc-ink:var(--paper);--price:var(--paper-ink);--r:4px;
+  --display:var(--font);--body:var(--font);--name:var(--font);
+  --chip-bg:var(--paper-2);--chip-ink:var(--paper-ink);--chip-line:var(--paper-field);--chip-on-bg:var(--paper-ink);--chip-on-ink:var(--paper);
+  --focus:#1C1A16;--bad:#B3261E;color-scheme:light;
+  color:var(--ink);font-family:var(--font)
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-padding-top:130px}
-body{margin:0;background:var(--night);color:var(--cream);font:400 16px/1.5 var(--font);font-stretch:100%;-webkit-font-smoothing:antialiased}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:112px}
+body{margin:0;background:var(--g);color:var(--ink);font:400 16px/1.5 var(--body);font-stretch:100%;-webkit-font-smoothing:antialiased}
 body.oa-lock{overflow:hidden}
 img{max-width:100%;display:block}
-button,input,textarea{font:inherit;color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 a{color:inherit}
 [hidden]{display:none!important}
-:focus-visible{outline:3px solid var(--sodium);outline-offset:2px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 [tabindex="-1"]:focus{outline:none}  /* headings that only receive focus so screen readers start there */
-h1,h2,h3{margin:0;font-weight:800;line-height:1.1}
+h1,h2,h3{margin:0;font-weight:700;line-height:1.15}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.oa-skip{position:absolute;left:-9999px;top:8px;z-index:100;background:var(--cream);color:var(--night);padding:10px 14px;border-radius:10px}
+.nw{white-space:nowrap}
+.oa-skip{position:absolute;left:-9999px;top:8px;z-index:100;background:var(--app-ink);color:var(--app);padding:10px 14px;border-radius:6px}
 .oa-skip:focus{left:8px}
 
-/* ---------- top bar */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:rgba(11,29,58,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.top__in{max-width:1100px;margin:0 auto;height:60px;display:flex;align-items:center;gap:10px;padding:0 12px 0 16px}
-.logo{display:flex;align-items:center;gap:8px;text-decoration:none;font:900 21px/1 var(--font);font-stretch:70%;text-transform:uppercase;letter-spacing:.01em;flex:none}
-.top__back{width:44px;height:44px;margin-left:-8px;display:grid;place-items:center;border-radius:50%;text-decoration:none;flex:none}
-.top__back svg{width:24px;height:24px}
-@media (max-width:359px){.logo{font-size:17px;min-height:44px}}
-.top__title{flex:1;min-width:0;font:800 18px/1 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s}
+/* ---------- top bar (Order Aruba) */
+.top{position:sticky;top:0;z-index:30;background:var(--app);border-bottom:1px solid var(--app-rule)}
+/* one width on every page (the restaurant pages' column plus its margins), so the mark, the back link and the bag
+   never move when you go from the home page to a restaurant and back */
+.top__in{max-width:752px;margin:0 auto;height:56px;display:flex;align-items:center;gap:6px;padding:0 6px 0 4px}
+/* the app's own icon (its lit OA sign on the night), where the back arrow sits on a restaurant page */
+.logo{display:flex;align-items:center;gap:3px;min-height:44px;text-decoration:none;font:800 18px/1 var(--font);letter-spacing:-.01em;flex:none}
+.logo__icon{width:34px;height:34px;border-radius:7px;flex:none}
+.top__back{display:flex;align-items:center;gap:2px;min-width:44px;height:44px;padding:0 10px 0 4px;text-decoration:none;font:600 15px/1 var(--font);flex:none;border-radius:6px}
+.top__back svg{width:24px;height:24px;flex:none}
+.top__app{white-space:nowrap}
+body.past-name .top__app{display:none}
+.top__title{flex:1;min-width:0;font:700 17px/1 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s}
 body.past-name .top__title{opacity:1;transform:none}
 .top__spacer{flex:1}
-.bag{position:relative;width:44px;height:44px;border:0;border-radius:50%;background:var(--night-3);color:var(--cream);display:grid;place-items:center;flex:none}
-.bag svg{width:22px;height:22px}
-.bag__n{position:absolute;top:-2px;right:-3px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font:800 12px/20px var(--font);text-align:center}
-.tabs{max-width:720px;margin:0 auto;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--rule)}
+/* the bag, with how many things are in it written on a badge */
+.bag{position:relative;width:48px;height:44px;border:0;border-radius:6px;background:transparent;color:var(--app-ink);display:grid;place-items:center;flex:none;margin-left:auto}
+.bag svg{width:25px;height:25px}
+.bag__n{position:absolute;top:1px;right:1px;min-width:21px;height:21px;padding:0 5px;border-radius:4px;background:var(--sodium);color:#15130F;box-shadow:0 0 0 2px var(--app);font:800 12.5px/21px var(--font);text-align:center;font-variant-numeric:tabular-nums}
+/* menu sections: they drop in under the bar once the restaurant's name has scrolled away */
+.tabs{position:absolute;left:0;right:0;top:100%;background:var(--app);border-bottom:1px solid var(--app-rule);overflow-x:auto;scrollbar-width:none;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s,transform .18s,visibility .18s}
+body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 .tabs::-webkit-scrollbar{display:none}
-.tabs__in{display:flex;gap:24px;padding:0 16px;height:46px;width:max-content}
-.tabs a{display:flex;align-items:center;text-decoration:none;color:var(--haze);font:700 15px/1 var(--font);border-bottom:3px solid transparent;padding-top:3px}
-.tabs a.on{color:var(--cream);border-bottom-color:var(--accent)}
+.tabs__in{display:flex;gap:22px;height:44px;width:max-content;padding:0 16px}
+@media (min-width:752px){.tabs__in{margin:0 auto;padding:0;min-width:720px}}
+.tabs a{display:flex;align-items:center;justify-content:center;min-width:44px;text-decoration:none;color:var(--app-muted);font:600 14.5px/1 var(--font);border-bottom:2px solid transparent;padding-top:2px;white-space:nowrap}
+.tabs a.on{color:var(--app-ink);border-bottom-color:var(--app-ink)}
 
-/* ---------- restaurant page */
-.page{max-width:720px;margin:0 auto;padding:0 0 calc(120px + var(--safe-b))}
-.cover{height:180px;width:100%;overflow:hidden;background:var(--night-2)}
-.cover{position:relative}
+/* ---------- a line of facts, "Open until 2 AM · ƒ5 delivery · 35–50 min": each fact stays in one piece, and a
+   dot that would start a new line is clipped off, so separators never dangle */
+.facts,.meta{list-style:none;margin:0 0 0 -15px;padding:0;display:flex;flex-wrap:wrap;clip-path:inset(0 0 0 15px)}
+.facts>li,.meta>*{position:relative;padding-left:15px;white-space:nowrap}
+.facts>li::before,.meta>*::before{content:"\00B7";position:absolute;left:5px;font-weight:700}
+.facts{color:var(--muted);font:500 14.5px/1.4 var(--font)}
+
+/* ---------- restaurant page: the skeleton every restaurant styles its own way */
+.page{padding:0;overflow-x:clip}
+.page>*{padding-inline:max(16px,calc(50% - 360px))}
+/* the app's delivery line, right under the bar: one Order Aruba fact, the same on every restaurant */
+.strip{padding-block:8px;background:var(--app);border-bottom:1px solid var(--app-rule)}
+.strip .facts{font-size:14px}
+.strip .facts__status{color:var(--app-ink);font-weight:700}
+/* closed: an unlit sign, like the home page's, and the opening time in amber */
+.strip .facts__status.is-closed{color:#F2B84B}
+.unlit{display:inline-block;margin-right:4px;padding:1px 6px 0;border:1.5px solid #5A5347;border-radius:4px;color:#A29A8A;font:800 12px/16px var(--font);font-stretch:75%;letter-spacing:.08em;text-transform:uppercase;vertical-align:1px}
+/* the restaurant's own sign: wordmark, its line, a small framed picture beside the line */
+.store{--cw:116px;--logo-h:52px;display:grid;grid-template-columns:minmax(0,1fr) var(--cw);grid-template-areas:"name name" "tag cover" "note note";column-gap:16px;align-items:center;padding-block:20px 22px}
+.store--plain{grid-template-columns:minmax(0,1fr);grid-template-areas:"name" "tag" "note"}
+.store__name{grid-area:name;margin:0 0 14px;line-height:0}
+.store__logo{display:block;width:auto;height:var(--logo-h);max-width:100%;object-fit:contain;object-position:left center}
+.store__tag{grid-area:tag;margin:0;font:600 17px/1.35 var(--body);text-wrap:balance}
+.cover{grid-area:cover;position:relative;width:var(--cw);aspect-ratio:1;overflow:hidden;border-radius:var(--r);background:var(--g2)}
 .cover img,.cover__v{width:100%;height:100%;object-fit:cover;display:block}
-.cover__pp{position:absolute;right:12px;bottom:12px;z-index:2;width:44px;height:44px;border:0;border-radius:50%;background:rgba(11,29,58,.72);color:var(--cream);display:grid;place-items:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.cover__pp svg{width:18px;height:18px}
-.store{position:relative;padding:0 16px 6px}
-.store__mark{width:76px;height:76px;margin-top:-38px;border-radius:18px;border:4px solid var(--night);background:var(--night);object-fit:cover;box-shadow:0 8px 20px rgba(0,0,0,.35)}
-.store__name{margin-top:12px;font-size:clamp(38px,11vw,56px);font-weight:900;font-stretch:68%;text-transform:uppercase;line-height:.92;letter-spacing:.005em}
-.store__tag{margin:8px 0 0;color:var(--haze);font-size:16px}
-.facts{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 20px;color:var(--haze);font:600 15px/1.3 var(--font)}
-.facts li{display:flex;align-items:center;gap:7px}
-.facts__status{color:var(--cream)}
-.facts__status i{width:8px;height:8px;border-radius:50%;background:var(--bad)}
-.facts__status.is-open i{background:var(--ok)}
-
-.sec{padding:30px 16px 0}
-.sec__t{font-size:25px;font-weight:900;font-stretch:75%;letter-spacing:0;margin-bottom:6px}
-.note{margin:14px 0 0;padding:12px 14px;border-radius:var(--r-sm);background:var(--night-3);font-size:15px;line-height:1.45}
+.cover__pp{position:absolute;right:6px;bottom:6px;z-index:2;width:44px;height:44px;border:0;border-radius:6px;background:rgba(15,13,10,.72);color:#fff;display:grid;place-items:center}
+.cover__pp svg{width:16px;height:16px}
+.store .note{grid-area:note;margin-top:16px}
+.note{margin:14px 0 0;padding:12px 14px;border-radius:6px;background:var(--g2);font-size:15px;line-height:1.45}
 .note--warn{background:var(--warn-bg);color:var(--warn-ink)}
+@media (max-width:359px){.store{--cw:96px;--logo-h:46px;column-gap:12px}.store__tag{font-size:16px}}
 
-/* menu rows */
+.sec{padding-top:26px}
+.sec__t{margin:0 0 4px;font:700 20px/1.15 var(--display);color:var(--ink)}
+
+/* ---------- menu rows, set like a printed menu. The words: the name, then the price on its own line under it on a
+   phone; where the words' column is wide enough, the price on the name's line across a dotted line (never wider than
+   a printed menu's measure). Beside the words, one column of the same width on every row of the list: the small
+   picture, and the + box right under it, so every + sits in the same place and the descriptions keep one measure. */
 .rows{display:flex;flex-direction:column}
-.row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 116px;gap:16px;padding:18px 0;border-bottom:1px solid var(--rule)}
-.row:last-child{border-bottom:0}
-.row__open,.feat__open{position:absolute;inset:0;z-index:1;border:0;background:transparent;border-radius:var(--r)}
-.row__name{font-size:18px;font-weight:800;line-height:1.2}
-.row__brand{margin:0 0 3px;font:700 13px/1.2 var(--font);color:var(--haze)}
-.row__price{margin:4px 0 0;font:600 16px/1.3 var(--font);color:var(--cream);font-variant-numeric:tabular-nums}
-.row__out{color:var(--bad);font-weight:700;margin-left:6px}
-.row__desc{margin:6px 0 0;color:var(--haze);font-size:14.5px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.row__flags{margin:7px 0 0;font:600 13px/1.3 var(--font);color:var(--haze)}
-.fl+.fl::before{content:" \00B7  ";color:var(--haze)}
-.fl--spicy{color:#FF9A8A}
-.fl--vegetarian{color:#8FE3A8}
-.row__media{position:relative;width:116px;height:116px;align-self:start}
-.row__media img{width:100%;height:100%;object-fit:cover;border-radius:var(--r);background:var(--night-2)}
-.row__media.is-drink img{object-fit:contain;padding:12%;background:var(--night-2)}
+.row{--ph:76px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--ph);grid-template-areas:"text side";column-gap:14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}
+.rows>.row:last-child{border-bottom:0}
+.row__open{position:absolute;inset:0;z-index:1;border:0;background:transparent;border-radius:0;padding:0}
+.row__text{grid-area:text;min-width:0;container:row/inline-size}
+.row__head{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.row__name{margin:0;font:var(--name-w) var(--name-size)/1.25 var(--name);color:var(--name-ink,var(--ink));text-wrap:pretty}
+.row__lead{display:none;flex:1 1 12px;min-width:12px;margin:0 7px;border-bottom:var(--lead) var(--lead-ink);position:relative;top:-.28em}
+.row__price{flex:none;margin:0;font:700 16px/1.25 var(--body);color:var(--price);font-variant-numeric:tabular-nums;white-space:nowrap}
+@container row (min-width:360px){
+  .row__head{flex-direction:row;align-items:flex-end;align-items:last baseline;gap:0;max-width:30rem}
+  .row__name{flex:0 1 auto}
+  .row__lead{display:block}
+}
+.row__brand{margin:0 0 3px;font:600 12.5px/1.2 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.row__out{margin:4px 0 0;color:var(--bad);font:700 14px/1.3 var(--font)}
+.row__desc{margin:6px 0 0;color:var(--muted);font-size:14.5px;line-height:1.45;max-width:30rem}
+.row__inc{margin:6px 0 0;font:600 14px/1.4 var(--body);color:var(--ink);max-width:30rem}
+.row__flags{margin:6px 0 0;font:600 13px/1.3 var(--font);color:var(--muted)}
+.fl+.fl::before{content:" \00B7  "}
+/* the picture column: the picture, then the + box under it, both against the outer edge */
+.row__side{grid-area:side;display:flex;flex-direction:column;align-items:flex-end;gap:10px;min-width:0}
+.row__media{position:relative;width:var(--ph);height:var(--ph-h,var(--ph))}
+.row__media img{width:100%;height:100%;object-fit:cover;border-radius:var(--r);background:var(--g2)}
 .row.is-out .row__media img{filter:grayscale(1);opacity:.5}
-.plus{position:absolute;z-index:2;right:8px;bottom:8px;width:38px;height:38px;border:0;border-radius:50%;background:#fff;color:#0B1D3A;display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.35)}
-.plus svg{width:20px;height:20px}
-.plus::after{content:"";position:absolute;inset:-4px}
+.row.is-out .row__name{color:var(--muted)}
+.row__act{position:relative;z-index:2}
+/* the + box: a square, like the box on a paper order pad; the number goes in it once the dish is in the order */
+.plus{position:relative;width:44px;height:44px;padding:0;border:1.5px solid var(--add-line);border-radius:4px;background:var(--add-bg);color:var(--add-ink);display:grid;place-items:center}
+.plus svg{width:18px;height:18px}
+.plus__n{display:none}
+.plus.has-n{background:var(--add-on-bg,var(--ink));border-color:var(--add-on-bg,var(--ink));color:var(--add-on-ink,var(--g))}
+.plus.has-n svg{display:none}
+.plus.has-n .plus__n{display:block;font:800 17px/1 var(--font);font-variant-numeric:tabular-nums}
 .plus.pop{animation:pop .3s ease}
-@keyframes pop{40%{transform:scale(1.18)}}
-.qtybadge{position:absolute;z-index:2;left:8px;top:8px;min-width:26px;height:26px;padding:0 8px;border-radius:13px;background:var(--accent);color:var(--accent-ink);font:800 13px/26px var(--font);text-align:center}
+@keyframes pop{40%{transform:scale(1.1)}}
+/* the house dish and the family deal: a bigger name and a taller picture, never a wider one */
+.row.is-sig,.row.is-bundle{--ph-h:calc(var(--ph) * 1.3)}
+.row.is-sig .row__name,.row.is-bundle .row__name{font-size:calc(var(--name-size) + 3px)}
+/* drinks: a plain line of words, the + in the same place as on the food */
+.rows--drinks .row{padding:8px 0;align-items:center}
+.rows--drinks .row__name{font-weight:500}
+@media (max-width:359px){.row{--ph:68px;column-gap:12px}}
 
-/* featured: big picture cards in a side-scrolling rail */
-.rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;margin:10px -16px 0;padding:0 16px 6px;scrollbar-width:none}
-.rail::-webkit-scrollbar{display:none}
-.feat{position:relative;flex:none;width:min(78vw,300px);scroll-snap-align:start}
-.rail--feat .feat{width:min(84vw,360px)}
-.feat__media{position:relative;aspect-ratio:4/3;border-radius:var(--r);overflow:hidden;background:var(--night-2)}
-.feat__media img{width:100%;height:100%;object-fit:cover}
-.feat__media .plus{width:44px;height:44px;right:10px;bottom:10px}
-.feat__name{margin-top:10px;font-size:17px;font-weight:800;line-height:1.2}
-.feat__meta{margin:4px 0 0;display:flex;gap:8px;color:var(--haze);font-size:14.5px}
-.feat__meta span:first-child{color:var(--cream);font-weight:600}
-.feat__meta span+span::before{content:"\00B7";margin-right:8px}
-.feat.is-out .feat__media img{filter:grayscale(1);opacity:.5}
-.feat.is-out .feat__name{color:var(--haze)}
-.feat.is-out .feat__meta span:last-child{color:var(--bad);font-weight:700}
+/* order again: this restaurant's last sent order, one tap */
+.again{padding-top:20px}
+.again__card{display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;align-items:center;padding:12px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--g2)}
+.again__card--np{grid-template-columns:minmax(0,1fr)}
+.again__card img{width:64px;height:64px;object-fit:cover;border-radius:4px}
+.again__t{font:700 18px/1.2 var(--display)}
+.again__items{margin:3px 0 10px;color:var(--muted);font-size:14px;line-height:1.4}
+.again__btn{min-height:44px;font-size:15px;justify-content:space-between}
 
-/* drinks: three cans */
-.cans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-top:8px;align-items:start}
-.cans .row{grid-template-columns:minmax(0,1fr);grid-template-areas:"media" "text";gap:8px;padding:0;border:0}
-.cans .row__text{grid-area:text}
-.cans .row__media{grid-area:media;width:100%;height:auto;aspect-ratio:1}
-.cans .row__name{font-size:14.5px}
-.cans .row__price{font-size:14px;margin-top:2px}
-.cans .plus{width:34px;height:34px;right:6px;bottom:6px}
-.cans .plus::after{inset:-5px}
+/* ---------- the app again from here on: other restaurants, how ordering works, footer */
+.page>.also,.page>.how,.page>.pfoot{background:var(--app)}
+.page>.also,.page>.also[hidden]+.how{margin-top:40px;padding-top:28px;border-top:1px solid var(--app-rule)}
+.page>.how{padding-top:30px}
+.page>.also .sec__t,.page>.how .sec__t,.hsec__t{display:block;margin:0 0 4px;padding:0;background:none;border:0;border-radius:0;text-align:left;text-transform:none;letter-spacing:-.005em;font:700 19px/1.2 var(--font);color:var(--app-ink)}
+.page>.also .sec__t::before,.page>.also .sec__t::after,.page>.how .sec__t::before,.page>.how .sec__t::after{content:none}
+.pfoot{margin:0;padding-top:24px;padding-bottom:calc(32px + var(--safe-b));color:var(--app-muted);font-size:13.5px;line-height:1.5}
+body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
+.pfoot p{margin:0 0 10px;padding-top:20px;border-top:1px solid var(--app-rule)}
+.pfoot__all{display:inline-flex;align-items:center;min-height:44px;font-weight:700;color:var(--app-ink)}
+/* language switch: EN · PAP · NL · ES, a line of words */
+.langs{display:flex;flex-wrap:wrap;align-items:center;margin:4px 0 0 -10px}
+.langs button{position:relative;min-width:44px;min-height:44px;padding:0 10px;border:0;background:none;color:var(--app-muted);font:600 14px/1 var(--font);letter-spacing:.04em}
+.langs button+button::before{content:"\00B7";position:absolute;left:-3px;color:var(--app-muted);font-weight:400}
+.langs button[aria-pressed="true"]{color:var(--app-ink);font-weight:800;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
 
-.pfoot{margin:40px 16px 0;padding-top:20px;border-top:1px solid var(--rule);color:var(--haze);font-size:13.5px;line-height:1.5}
-.pfoot__all{position:relative;font-weight:700;color:var(--cream)}
-.pfoot__all::after{content:"";position:absolute;inset:-15px -8px}
-.pfoot p{margin:0 0 12px}
-/* language switch: EN / PAP / NL / ES */
-.langs{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
-.langs button{min-width:52px;min-height:44px;padding:0 12px;border:0;border-radius:10px;background:var(--night-2);color:var(--haze);font:800 13.5px/1 var(--font);letter-spacing:.05em}
-.langs button[aria-pressed="true"]{background:var(--cream);color:var(--night)}
+/* each restaurant's sign: its wordmark on its own ground, with an edge of its own: the pink wall is flat, the black
+   griddle has a mustard hairline (so it shows on the night), the cream menu card a gold one inside, the white tile
+   its orange fascia, the menu board is lit */
+.shop__sign,.plate__sign{display:flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:3px;background:var(--sign,var(--app-2))}
+[data-shop="smash-shack"] .shop__sign,[data-shop="smash-shack"] .plate__sign{border-radius:2px;box-shadow:inset 0 0 0 1.5px #FFC72C}
+[data-shop="nonnas-night-in"] .shop__sign,[data-shop="nonnas-night-in"] .plate__sign{border-radius:2px;box-shadow:inset 0 0 0 4px var(--sign),inset 0 0 0 5px #C9A227}
+[data-shop="oranje-snack"] .shop__sign,[data-shop="oranje-snack"] .plate__sign{border-radius:2px;box-shadow:inset 0 -5px 0 #E86A17}
+[data-shop="dushi-wok"] .shop__sign,[data-shop="dushi-wok"] .plate__sign{border-radius:4px;box-shadow:0 0 0 1px #FFFFFF}
+.shop__logo,.plate__logo{width:auto;height:auto;max-width:100%}
+.is-soon .shop__sign,.is-soon .plate__sign{filter:grayscale(.85);opacity:.6}
+.meta{font:500 14.5px/1.35 var(--font);color:var(--app-muted)}
+.meta b{color:var(--app-ink);font-weight:700}
+.meta .soon{color:var(--warn-ink)}
+/* "More on Order Aruba": small plates, about 90px, the sign and two facts */
+.plates{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:14px}
+.plate{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:center;min-height:60px;text-decoration:none;color:inherit}
+.plate__sign{height:58px;padding:8px 12px}
+.plate__logo{max-height:30px}
+.plate__txt{font-size:14px}
+@media (min-width:560px){.plates{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;row-gap:12px}}
+@media (hover:hover){.plate:hover .meta b{text-decoration:underline;text-underline-offset:3px}}
 
-/* ---------- order bar */
+/* how ordering works: three steps, then the plain facts */
+.how__steps{list-style:none;counter-reset:step;margin:14px 0 0;padding:0;display:grid;gap:12px;max-width:62ch}
+.how__steps li{counter-increment:step;position:relative;padding-left:42px;font-size:15.5px;line-height:1.45;color:var(--app-muted)}
+.how__steps li::before{content:counter(step);position:absolute;left:0;top:-1px;width:28px;height:28px;border:1.5px solid var(--app-field);border-radius:5px;display:grid;place-items:center;font:700 14px/1 var(--font);color:var(--app-ink)}
+.how__steps b{color:var(--app-ink);font-weight:700}
+.how__note{margin:20px 0 0;color:var(--app-muted);font-size:14.5px;line-height:1.5;max-width:68ch}
+.areas{margin:12px 0 0;color:var(--app-muted);font-size:14.5px;line-height:1.5;max-width:68ch}
+.areas a{position:relative;color:var(--app-ink);font-weight:700;white-space:nowrap;text-underline-offset:3px}
+.areas a::after{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:44px;transform:translateY(-50%)}
+/* the end of a restaurant page: how ordering works in one paragraph */
+.how--brief .areas{margin-top:8px;font-size:15px;max-width:62ch}
+
+/* ---------- order bar (the app's) */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:10px 12px calc(12px + var(--safe-b));pointer-events:none}
-.bar__btn{pointer-events:auto;display:flex;align-items:center;gap:12px;width:100%;max-width:560px;margin:0 auto;height:58px;padding:0 18px 0 10px;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font:800 16.5px/1 var(--font);box-shadow:0 12px 30px rgba(0,0,0,.45)}
-.bar__count{min-width:38px;height:38px;padding:0 9px;border-radius:11px;background:rgba(0,0,0,.16);display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.bar__btn{pointer-events:auto;display:flex;align-items:center;gap:12px;width:100%;max-width:560px;margin:0 auto;height:56px;padding:0 18px 0 10px;border:1px solid #4A443A;border-radius:8px;background:var(--app);color:var(--app-ink);font:700 16.5px/1 var(--font);box-shadow:0 10px 26px rgba(0,0,0,.4)}
+.bar__count{min-width:36px;height:36px;padding:0 9px;border-radius:5px;background:var(--app-ink);color:var(--app);display:grid;place-items:center;font-weight:800;font-variant-numeric:tabular-nums}
 .bar__label{flex:1;text-align:left}
 .bar__total{font-variant-numeric:tabular-nums}
-/* a small bounce when something goes in the bag */
 .bag.bump{animation:bump .36s ease}
 .bar__btn.bump{animation:bumpsm .36s ease}
-@keyframes bump{35%{transform:scale(1.16)}70%{transform:scale(.96)}}
-@keyframes bumpsm{35%{transform:scale(1.035)}70%{transform:scale(.995)}}
+@keyframes bump{35%{transform:scale(1.14)}70%{transform:scale(.97)}}
+@keyframes bumpsm{35%{transform:scale(1.03)}70%{transform:scale(.995)}}
 
 /* ---------- buttons */
-.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:0 18px;border:0;border-radius:14px;font:800 16.5px/1.1 var(--font);text-decoration:none;text-align:center}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;padding:0 18px;border:0;border-radius:var(--r);font:700 16.5px/1.1 var(--font);text-decoration:none;text-align:center}
 .btn svg{width:22px;height:22px;flex:none}
-.btn--accent{background:var(--accent);color:var(--accent-ink)}
+.btn--accent{background:var(--acc);color:var(--acc-ink)}
 .btn--accent:disabled{opacity:.45;cursor:not-allowed}
 .btn--wa{background:var(--wa);color:#fff}
-.btn--line{background:transparent;color:var(--cream);box-shadow:inset 0 0 0 1.5px var(--rule)}
-.btn--sm{min-height:40px;width:auto;font-size:14px;border-radius:10px}
+.btn--line{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--field-line)}
+.btn--sm{min-height:44px;width:auto;font-size:14.5px}
 .btn__total{margin-left:auto;font-variant-numeric:tabular-nums}
-.link{position:relative;display:block;margin:10px auto 0;padding:8px;border:0;background:none;color:var(--haze);font:600 14.5px/1.2 var(--font);text-decoration:underline;text-underline-offset:3px}
+.link{display:flex;align-items:center;justify-content:center;min-height:44px;margin:4px auto 0;padding:0 10px;border:0;background:none;color:var(--muted);font:600 14.5px/1.2 var(--font);text-decoration:underline;text-underline-offset:3px}
 
 /* ---------- sheets */
 .oa-sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
-.oa-sheet__scrim{position:absolute;inset:0;background:rgba(3,9,20,.66);opacity:0;transition:opacity .2s}
-.oa-sheet__panel{position:relative;width:100%;max-width:600px;max-height:94vh;max-height:94dvh;overflow:auto;overscroll-behavior:contain;background:var(--night-2);color:var(--cream);border-radius:22px 22px 0 0;transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
+.oa-sheet__scrim{position:absolute;inset:0;background:rgba(8,7,5,.72);opacity:0;transition:opacity .2s}
+/* on a phone a tall sheet stops right under the app's top bar, so its edge never cuts through a line of text */
+.oa-sheet__panel{position:relative;width:100%;max-width:600px;max-height:calc(100vh - 56px);max-height:calc(100dvh - 56px);overflow:auto;overscroll-behavior:contain;background:var(--g);color:var(--ink);border-radius:10px 10px 0 0;transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
 .oa-sheet.is-open .oa-sheet__scrim{opacity:1}
 .oa-sheet.is-open .oa-sheet__panel{transform:none}
 @media (min-width:720px){
   .oa-sheet{align-items:center;padding:24px}
-  .oa-sheet__panel{border-radius:22px;max-height:88vh;transform:translateY(24px);opacity:0;transition:transform .22s,opacity .22s}
+  .oa-sheet__panel{border-radius:8px;max-height:88vh;transform:translateY(24px);opacity:0;transition:transform .22s,opacity .22s}
+  /* the dish's picture never pushes "Goes well with" off the screen */
+  .oa-sheet .dish__media{aspect-ratio:auto;height:min(40vh,340px)}
   .oa-sheet.is-open .oa-sheet__panel{opacity:1}
 }
 @media (prefers-reduced-motion:reduce){
-  .oa-sheet__panel,.oa-sheet__scrim,.top__title{transition:none}
+  .oa-sheet__panel,.oa-sheet__scrim,.top__title,.tabs{transition:none}
   .plus.pop,.bag.bump,.bar__btn.bump{animation:none}
 }
-.sheet__head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;margin:0 -20px;padding:16px 16px 12px 20px;background:var(--night-2)}
-.sheet__head h2{font-size:24px;font-weight:900;font-stretch:75%}
-.x{width:42px;height:42px;border:0;border-radius:50%;background:var(--night-3);color:var(--cream);display:grid;place-items:center;flex:none}
-.x svg{width:20px;height:20px}
-.x--float{position:absolute;top:12px;right:12px;z-index:3;background:rgba(11,29,58,.82)}
-.x--share{right:auto;left:12px}
+.sheet__head{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;margin:0 -20px;padding:10px 8px 10px 20px;background:var(--g);border-bottom:2px solid var(--ink)}
+.sheet__head h2{font:800 20px/1.2 var(--font);letter-spacing:-.01em}
+.x{width:44px;height:44px;border:0;border-radius:6px;background:transparent;color:var(--ink);display:grid;place-items:center;flex:none}
+.x svg{width:22px;height:22px}
+.x--float{position:absolute;top:10px;right:10px;z-index:3;background:rgba(15,13,10,.78);color:#fff}
+.x--share{right:auto;left:10px}
 
-/* dish sheet */
-.dish__media{aspect-ratio:16/10;background:var(--night)}
+/* dish sheet: the restaurant's own colours and type (from its stylesheet) */
+.dish__media{aspect-ratio:16/10;background:var(--g2)}
 .dish__media img{width:100%;height:100%;object-fit:cover}
-.dish--drink .dish__media img{object-fit:contain;padding:8%}
+.dish--np .dish__body{padding-top:66px}
+.dish--np .x--float{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--field-line)}
 .dish__body{padding:18px 20px 8px}
-.dish__name{font-size:28px;font-weight:900;font-stretch:72%;line-height:1.05}
-.dish__price{margin:6px 0 0;font:700 18px/1 var(--font)}
-.dish__desc{margin:12px 0 0;font-size:16px;line-height:1.5;color:var(--cream)}
+.dish__name{font:var(--name-w) 26px/1.12 var(--name);color:var(--name-ink,var(--ink));text-wrap:balance}
+.dish__price{margin:6px 0 0;font:700 18px/1.2 var(--body);color:var(--price);font-variant-numeric:tabular-nums}
+.dish__desc{margin:12px 0 0;font-size:16px;line-height:1.5}
 .dish__inc{margin:10px 0 0;padding-left:20px}
-.dish__allergens{margin:12px 0 0;font-size:13.5px;line-height:1.45;color:var(--haze)}
-.dish__foot{position:sticky;bottom:0;display:flex;gap:12px;align-items:center;padding:14px 20px calc(14px + var(--safe-b));background:var(--night-2);border-top:1px solid var(--rule)}
+.dish__allergens{margin:12px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.dish__foot{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 20px calc(12px + var(--safe-b));background:var(--g);border-top:1px solid var(--line)}
+.dish__pre{flex-basis:100%;margin:0 0 -4px;font:700 14px/1.3 var(--font);color:var(--muted)}
 .dish__add{flex:1;justify-content:space-between}
 .opt{border:0;margin:22px 0 0;padding:0}
-.opt legend{padding:0;margin-bottom:10px;font:800 16px/1.2 var(--font)}
-.opt legend span{font-weight:500;font-size:13.5px;color:var(--haze);margin-left:4px}
+.opt legend{padding:0;margin-bottom:10px;font:700 16px/1.2 var(--font)}
+.opt legend span{font-weight:500;font-size:13.5px;color:var(--muted);margin-left:4px}
+/* choices: square-cornered boxes with a visible outline; picked ones are filled and ticked */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{position:relative;display:inline-flex}
 .chip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
-.chip span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:var(--night-3);font:600 15px/1.1 var(--font);color:var(--cream);transition:background .15s,color .15s}
-.chip input:checked+span{background:var(--cream);color:var(--night)}
-.chip input[type=checkbox]:checked+span::before{content:"";width:7px;height:12px;border:solid currentColor;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translateY(-2px);margin-right:9px}
-.chip input:focus-visible+span{outline:3px solid var(--sodium);outline-offset:2px}
+.chip>span{display:inline-flex;align-items:center;min-height:44px;white-space:nowrap;padding:0 14px;border-radius:4px;background:var(--chip-bg);color:var(--chip-ink);box-shadow:inset 0 0 0 1.5px var(--chip-line);font:600 15px/1.1 var(--font);transition:background .15s,color .15s}
+.chip input:checked+span{background:var(--chip-on-bg);color:var(--chip-on-ink);box-shadow:inset 0 0 0 1.5px var(--chip-on-bg)}
+.chip input:checked+span::before{content:"";width:6px;height:11px;border:solid currentColor;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translateY(-2px);margin-right:9px}
+.chip input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+.chip__p{margin-left:6px;font-style:normal;font-weight:500;font-variant-numeric:tabular-nums}
 
 /* qty */
-.qty{display:inline-flex;align-items:center;gap:2px;border-radius:999px;background:var(--night-3);padding:3px}
-.link::after{content:"";position:absolute;inset:-6px 0}
-.qty__b{position:relative;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--cream);display:grid;place-items:center}
-.qty__b svg{width:17px;height:17px}
-.qty__b::after{content:"";position:absolute;inset:-4px}
-.qty__n{min-width:26px;text-align:center;font:800 16px/1 var(--font);font-variant-numeric:tabular-nums}
-.qty--lg .qty__b{width:44px;height:44px}
+.qty{display:inline-flex;align-items:center;gap:0;border-radius:4px;box-shadow:inset 0 0 0 1.5px var(--field-line);flex:none}
+.qty__b{position:relative;width:44px;height:44px;border:0;border-radius:4px;background:transparent;color:var(--ink);display:grid;place-items:center}
+.qty__b svg{width:16px;height:16px}
+.qty__n{min-width:22px;text-align:center;font:700 16px/1 var(--font);font-variant-numeric:tabular-nums}
 
-/* ---------- order / checkout */
+/* ---------- the order ticket (the app's paper, on the night) */
+.sheet__panel--order{background:var(--paper);scroll-padding-bottom:120px}
 .order{padding:0 20px calc(4px + var(--safe-b))}
 .order--page{padding:0}
-.lines{list-style:none;margin:4px 0 0;padding:0}
-.lines__brand{margin:18px 0 0;font-size:15px;font-weight:800;color:var(--haze);text-transform:uppercase;letter-spacing:.06em}
-.line{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--rule)}
+.order .note{margin:-8px 0 0;background:#F5E7BF;color:#4A3A08}
+.lines{list-style:none;margin:2px 0 0;padding:0}
+.lines__brand{display:flex;align-items:center;gap:8px;margin:18px 0 0;padding-bottom:6px;border-bottom:1.5px solid var(--ink);font:700 12.5px/1.2 var(--font);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.lines__brand::before{content:"";width:10px;height:10px;flex:none;background:var(--shop,var(--muted));box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.lines__brand--drinks::before{background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted)}
+.line{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--line)}
 .line__main{min-width:0;flex:1 1 auto}
-.line__pic{width:56px;height:56px;flex:none;border-radius:10px;object-fit:cover;background:var(--night-2)}
-.line__pic--can{object-fit:contain;padding:6px}
-.line__n{margin:0;font:700 16px/1.3 var(--font)}
-.line__d{margin:3px 0 0;font-size:14px;line-height:1.35;color:var(--sodium)}
-.line__d--warn{color:var(--bad)}
-.line__t{margin:4px 0 0;font:600 15px/1 var(--font);color:var(--haze);font-variant-numeric:tabular-nums}
-.sugg{margin:20px 0 4px}
-.sugg h3{font-size:16px;font-weight:800;margin-bottom:10px}
-.sugg__row{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:0 16px 6px;scroll-padding-inline:16px;scrollbar-width:none}
-.oa-sheet .sugg__row{margin:0 -20px;padding:0 20px 6px;scroll-padding-inline:20px}
-.sugg__row::-webkit-scrollbar{display:none}
-.sugg__i{flex:none;width:112px;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:0;border:0;background:none;text-align:left}
-.sugg__img{position:relative;display:block}
-.sugg__img img{width:112px;height:84px;object-fit:cover;border-radius:10px;background:var(--night)}
-.sugg__i.is-drink .sugg__img img{object-fit:contain;padding:8px}
-.sugg__img i{position:absolute;right:6px;bottom:6px;width:30px;height:30px;border-radius:50%;background:#fff;color:#0B1D3A;display:grid;place-items:center}
-.sugg__img svg{width:16px;height:16px}
-.sugg__n{font:700 13.5px/1.25 var(--font)}
-.sugg__p{font:600 13.5px/1 var(--font);color:var(--haze)}
-.sugg--x h3 span{display:block;margin-top:3px;font:600 13.5px/1.3 var(--font);color:var(--haze)}
-.sugg__b{font-size:12.5px;line-height:1.2;color:var(--haze);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.line__pic{width:44px;height:44px;flex:none;border-radius:3px;object-fit:cover;background:var(--line)}
+/* a line without a picture keeps the picture's place: the restaurant's mark, or nothing for a can */
+.line__pic--mark{object-fit:contain;background:transparent}
+.line__pic--none{display:block;background:transparent}
+.line__n{margin:0;font:600 15.5px/1.3 var(--font)}
+.line__d{margin:2px 0 0;font-size:14px;line-height:1.35;color:var(--muted)}
+.line__d--warn{color:#B3261E;font-weight:700}
+.line__t{margin:3px 0 0;font:500 14.5px/1 var(--font);color:var(--ink);font-variant-numeric:tabular-nums}
+/* "anything else?", right under the lines: words only, one compact block. This restaurant's sides and drinks first,
+   then a few dishes from the other restaurants, each with a small square in its restaurant's colour */
+.addon{margin:14px 0 0}
+.addon__t{margin:0 0 8px;font:700 14.5px/1.3 var(--font)}
+.addon__t--other{margin-top:14px;font-weight:600;color:var(--muted)}
+.addon__row{display:flex;flex-wrap:wrap;gap:8px 6px}
+.add{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 9px;border:1.5px solid var(--field-line);border-radius:4px;background:transparent;color:var(--ink);text-align:left;white-space:nowrap}
+.add::after{content:"";position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+/* a dish from another restaurant: its name and price, the restaurant's name under it, a small square in its colour */
+.add--other{display:inline-grid;grid-template-columns:auto auto auto;grid-template-areas:"sq n p" "sq b b";align-items:center;column-gap:6px;row-gap:1px;padding:5px 10px 6px 9px}
+.add--other::before{content:"";grid-area:sq;align-self:start;margin-top:4px;width:9px;height:9px;flex:none;background:var(--shop);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.add__n{grid-area:n;font:600 14px/1.2 var(--font)}
+.add__p{grid-area:p;font:600 13.5px/1.2 var(--font);color:var(--muted);font-variant-numeric:tabular-nums}
+.add__b{grid-area:b;font:600 12px/1.25 var(--font);letter-spacing:.02em;color:var(--muted)}
+@media (hover:hover){.add:hover{border-color:var(--ink)}}
 .form{margin-top:20px;display:flex;flex-direction:column;gap:18px}
-.field{display:flex;flex-direction:column;gap:7px;border:0;margin:0;padding:0}
-.field legend{font:800 15px/1.2 var(--font);margin-bottom:10px;padding:0}
-.field__l{font:800 15px/1.2 var(--font)}
-.field__l em{font-style:normal;font-weight:500;color:var(--haze);margin-left:4px;font-size:13.5px}
-.field input,.field textarea{width:100%;min-height:50px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--field);background:var(--night);font-size:16px;line-height:1.35;resize:vertical}
-.field input:focus,.field textarea:focus{outline:none;border-color:var(--sodium)}
-.field__help{font-size:13.5px;line-height:1.4;color:var(--haze)}
-.field__err{display:none;color:var(--bad);font:700 14px/1.3 var(--font)}
+.field{display:flex;flex-direction:column;gap:7px;border:0;margin:0;padding:0;min-width:0}
+.field legend{font:700 15px/1.2 var(--font);margin-bottom:10px;padding:0}
+.field__l{font:700 15px/1.2 var(--font)}
+.field__l em{font-style:normal;font-weight:500;color:var(--muted);margin-left:4px;font-size:13.5px}
+.field input,.field textarea{width:100%;min-height:48px;padding:12px 13px;border-radius:4px;border:1.5px solid var(--field-line);background:var(--g2);color:var(--ink);font-size:16px;line-height:1.35;resize:vertical}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.field__help{margin:0;font-size:13.5px;line-height:1.4;color:var(--muted)}
+.field__err{display:none;margin:0;color:#B3261E;font:700 14px/1.3 var(--font)}
+.field--areas .field__err{margin-top:10px}
 .field.is-bad .field__err{display:block}
-.field.is-bad input,.field.is-bad textarea{border-color:var(--bad)}
-.field--areas .chip span{min-height:40px;padding:0 14px;font-size:14.5px}
-.field--areas .chip::after{content:"";position:absolute;inset:-2px 0}
-.field--areas.is-bad .chip span{box-shadow:inset 0 0 0 1.5px var(--bad)}
-.sum{margin:22px 0 0;padding:10px 0 0;border-top:1px solid var(--rule)}
-.sum div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:15.5px}
-.sum dt{color:var(--haze)}
+.field.is-bad input,.field.is-bad textarea{border-color:#B3261E}
+.field--areas .chip>span{padding:0 13px;font-size:14.5px}
+.field--areas.is-bad .chip>span{box-shadow:inset 0 0 0 1.5px #B3261E}
+.select{position:relative;display:block}
+.select select{width:100%;height:48px;padding:0 40px 0 13px;border-radius:4px;border:1.5px solid var(--field-line);background:var(--g2);color:var(--ink);font:600 16px/1 var(--font);-webkit-appearance:none;appearance:none;text-overflow:ellipsis}
+.select::after{content:"";position:absolute;right:16px;top:50%;width:8px;height:8px;border:solid var(--muted);border-width:0 2.5px 2.5px 0;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.select select:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+/* the money, set like a printed bill */
+.sum{margin:22px 0 0;padding:8px 0 0;border-top:1.5px solid var(--ink)}
+.sum div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:15.5px}
+.sum dt{color:var(--muted)}
 .sum dd{margin:0;font-variant-numeric:tabular-nums;font-weight:600}
-.sum__total{margin-top:6px;padding-top:11px!important;border-top:1px solid var(--rule)}
-.sum__total dt,.sum__total dd{color:var(--cream);font:800 20px/1.1 var(--font)}
-.ticket{margin:16px 0 0}
-.ticket summary{position:relative;cursor:pointer;font:700 14.5px/1.3 var(--font);color:var(--haze);padding:6px 0}
-.ticket summary::after{content:"";position:absolute;inset:-7px 0}
-.ticket pre{margin:8px 0 0;padding:16px;background:#FFFDF5;color:#1E1E1E;font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word;border-top:2px dashed #C9C2B2;border-bottom:2px dashed #C9C2B2}
-.order__hint{margin:16px 0 0;font-size:13.5px;line-height:1.45;color:var(--haze);text-align:center}
-.order__send{position:sticky;bottom:0;z-index:2;margin:12px -20px 0;padding:12px 20px calc(12px + var(--safe-b));background:linear-gradient(to top,var(--night-2) 78%,transparent)}
-.order--page .order__send{margin:12px -16px 0;padding:12px 16px calc(12px + var(--safe-b));background:linear-gradient(to top,var(--night) 78%,transparent)}
-.order__send .btn{justify-content:flex-start}
+.sum__total{margin-top:6px;padding-top:10px!important;border-top:1.5px dashed var(--field-line)}
+.sum__total dt,.sum__total dd{color:var(--ink);font:800 20px/1.1 var(--font)}
+.ticket{margin:14px 0 0}
+/* "Preview the message": reads as a link, with a chevron that turns when it's open */
+.ticket summary{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;list-style:none;font:600 14.5px/1.3 var(--font);color:var(--ink)}
+.ticket summary::-webkit-details-marker{display:none}
+.ticket summary span{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.ticket summary::after{content:"";width:7px;height:7px;margin:-3px 0 0 2px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .15s}
+.ticket[open] summary::after{margin-top:3px;transform:rotate(-135deg)}
+.ticket pre{margin:4px 0 0;padding:14px;background:var(--paper-2);color:#1E1E1E;font:13px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:break-word;border-top:2px dashed var(--line);border-bottom:2px dashed var(--line)}
+.order__hint{margin:12px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted);text-align:center;text-wrap:pretty}
+.order__send{position:sticky;bottom:0;z-index:2;margin:12px -20px 0;padding:12px 20px calc(12px + var(--safe-b));background:var(--g);border-top:1px solid var(--line)}
+.order--page .order__send{margin:12px -16px 0;padding:12px 16px calc(12px + var(--safe-b))}
+.order__send .btn{justify-content:flex-start;border-radius:6px}
 .order__send .sm{display:none}
-@media (max-width:359px){.order__send .btn{font-size:15.5px;gap:8px;padding-left:14px;padding-right:14px}}
+@media (max-width:359px){
+  .order{padding-left:16px;padding-right:16px}
+  .sheet__head{margin:0 -16px;padding:4px 8px 4px 16px}
+  /* the smallest phones: no line pictures, tighter add block, so "When" is on the first screen */
+  .line__pic{display:none}
+  .line{padding:8px 0}
+  .lines__brand{margin-top:12px}
+  .addon{margin-top:12px}
+  .addon__t--other{margin-top:12px}
+  .add{padding:0 8px}
+  .add--other{padding:5px 8px 6px 8px}
+  .add__n{font-size:13.5px}
+  .add__p{font-size:13px}
+  .addon__row--other .add:nth-child(n+2){display:none}
+  .sheet__panel--order{max-height:100vh;max-height:100dvh;border-radius:0}
+  .order__send{padding-top:8px;padding-bottom:calc(8px + var(--safe-b))}
+  .order__send .btn{min-height:48px}
+  .order__send{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
+  .order__send .btn{font-size:15.5px;gap:8px;padding-left:14px;padding-right:14px}
+  .select select{padding-left:11px;padding-right:34px}   /* 16px stays: iPhones zoom in on a smaller field */
+  .select::after{right:13px}
+}
 .empty{padding:28px 4px 12px;text-align:center}
-.empty p{margin:0 auto 18px;color:var(--haze)}
-.empty .empty__t{font:900 26px/1.1 var(--font);font-stretch:70%;text-transform:uppercase;color:var(--cream);margin-bottom:6px}
+.empty p{margin:0 auto 18px;color:var(--muted)}
+.empty .empty__t{font:700 22px/1.2 var(--font);color:var(--ink);margin-bottom:6px}
 .sent{padding:20px 4px 6px;text-align:center}
-.sent__icon{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;background:var(--wa);color:#fff;display:grid;place-items:center}
-.sent__icon svg{width:32px;height:32px}
-.sent .sent__k{margin:0 0 6px;color:var(--sodium);font:800 15px/1.2 var(--font);letter-spacing:.06em;font-variant-numeric:tabular-nums}
-.sent h3{font-size:22px;font-weight:800}
-.sent p{margin:8px auto 20px;color:var(--haze)}
+.sent__icon{width:60px;height:60px;margin:0 auto 14px;border-radius:12px;background:var(--wa);color:#fff;display:grid;place-items:center}
+.sent__icon svg{width:30px;height:30px}
+.sent .sent__k{margin:0 0 6px;color:var(--muted);font:700 15px/1.2 var(--font);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.sent h3{font-size:22px;font-weight:700}
+.sent p{margin:8px auto 20px;color:var(--muted)}
 .sent .btn+.btn{margin-top:10px}
 
-/* toast, in-app browser note, loading */
-.oa-toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:80;max-width:calc(100% - 32px);padding:12px 16px;border-radius:12px;background:var(--cream);color:var(--night);font:700 14.5px/1.35 var(--font);box-shadow:0 10px 24px rgba(0,0,0,.4);text-align:center}
-.iab{display:flex;align-items:center;gap:12px;margin:12px 16px 0;padding:6px 6px 6px 14px;border-radius:var(--r-sm);background:var(--warn-bg);color:var(--warn-ink);font-size:14px;line-height:1.4}
+/* toast at the bottom, just above the order bar or a sheet's Send / Add bar, never over the top bar or a sheet's
+   head; taps go straight through it; in-app browser note; loading */
+.oa-toast{position:fixed;left:50%;bottom:calc(86px + var(--safe-b));transform:translateX(-50%);z-index:80;pointer-events:none;width:max-content;max-width:calc(100% - 24px);padding:11px 15px;border-radius:6px;background:#15130F;color:#F4EEE3;border:1px solid #4A443A;font:700 14.5px/1.35 var(--font);box-shadow:0 8px 22px rgba(0,0,0,.35);text-align:center}
+.iab{display:flex;align-items:center;gap:12px;margin:12px 16px 0;padding:6px 6px 6px 14px;border-radius:6px;background:var(--warn-bg);color:var(--warn-ink);font:400 14px/1.4 var(--font)}
 .iab p{flex:1;min-width:0;margin:0}
-.iab .link{flex:none;margin:0;min-height:44px;padding:0 10px;color:var(--warn-ink)}
+.iab .link{flex:none;margin:0;color:var(--warn-ink)}
 .oa-skel{padding:0 16px;display:flex;flex-direction:column;gap:14px}
-.oa-skel div{border-radius:var(--r);background:var(--night-2);height:96px;animation:skel 1.2s ease-in-out infinite alternate}
-.oa-skel div:first-child{height:auto;aspect-ratio:16/9;margin:0 -16px;border-radius:0}
+.oa-skel div{border-radius:6px;background:var(--g2);height:88px;animation:skel 1.2s ease-in-out infinite alternate}
+.oa-skel div:first-child{height:140px;margin:16px 0 0}
 @keyframes skel{to{opacity:.5}}
 @media (prefers-reduced-motion:reduce){.oa-skel div{animation:none}}
 
-@media (min-width:720px){
-  .page{padding-top:16px}
-  .cover{height:auto;aspect-ratio:16/9;max-height:42vh;border-radius:18px}
-  .row{grid-template-columns:minmax(0,1fr) 132px}
-  .row__media{width:132px;height:132px}
-  .cans .row__media{width:100%;height:auto}
-  .rail{margin:10px 0 0;padding:0 0 6px}
-}
-
-/* native select styled like the other fields */
-.select{position:relative;display:block}
-.select select{width:100%;height:50px;padding:0 44px 0 14px;border-radius:12px;border:1.5px solid var(--field);background:var(--night);color:var(--cream);font:600 16px/1 var(--font);-webkit-appearance:none;appearance:none}
-.select::after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;border:solid var(--haze);border-width:0 2.5px 2.5px 0;transform:translateY(-70%) rotate(45deg);pointer-events:none}
-.select select:focus{outline:none;border-color:var(--sodium)}
-/* restaurant pages: keep the top bar lined up with the menu column on wide screens */
-body[data-page="brand"] .top__in{max-width:720px}
-
-/* order again: this restaurant's last sent order, one tap */
-.again{padding:18px 16px 0}
-.again__card{display:grid;grid-template-columns:88px minmax(0,1fr);gap:14px;align-items:center;padding:12px;border-radius:var(--r);background:var(--night-2)}
-.again__card img{width:88px;height:88px;object-fit:cover;border-radius:10px}
-.again__t{font-size:20px;font-weight:900;font-stretch:68%;text-transform:uppercase}
-.again__items{margin:4px 0 10px;color:var(--haze);font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.again__btn{min-height:44px;font-size:15px;justify-content:space-between;border-radius:12px}
-
-.also__sub{margin:0 0 14px;color:var(--haze);font-size:15px;line-height:1.4}
-/* restaurants as rows (the home page, and "More on Order Aruba" at the end of a restaurant page) */
-.shops{display:grid;grid-template-columns:1fr;margin-top:6px}
-.shop{display:grid;grid-template-columns:92px minmax(0,1fr);gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule);text-decoration:none;color:inherit}
-.shop:last-child{border-bottom:0}
-.shop__media{position:relative;width:92px;height:92px;border-radius:12px;overflow:hidden;background:var(--night-2)}
-.shop__media img{width:100%;height:100%;object-fit:cover}
-.shop__media::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--shop)}
-.shop.is-soon .shop__media img{filter:saturate(.3) brightness(.7)}
-.shop__txt{display:flex;flex-direction:column;min-width:0}
-.shop__top{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;min-width:0}
-.shop__name{font-size:19px;font-weight:800;line-height:1.15}
-.shop__c{flex:none;color:var(--haze);font-size:14px}
-.shop__dishes{margin-top:4px;color:#D5DCE8;font-size:14.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.shop__meta{margin-top:6px;font:700 14px/1.2 var(--font);color:var(--cream)}
-.shop__meta:empty{display:none}
-.shop__soon{color:var(--sodium)}
-.shop:hover .shop__name{text-decoration:underline;text-underline-offset:3px}
-.shop--fail{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:12px;min-height:120px;padding:20px;border-radius:var(--r);background:var(--night-2);color:var(--haze)}
-.shop--fail p{margin:0}
+/* ---------- wide screens: one centred column, the picture column on the left */
 @media (min-width:760px){
-  .shops{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px}
+  .store{--cw:300px;--logo-h:72px;grid-template-areas:"name cover" "tag cover" "note note";column-gap:40px;align-items:center;padding-block:32px}
+  .store--plain{grid-template-areas:"name" "tag" "note"}
+  .store__name{align-self:end}
+  .store__tag{align-self:start;font-size:19px}
+  .cover{aspect-ratio:16/10}
+  .sec{padding-top:34px}
+  /* the picture moves to the left of the words (a row without one starts at the edge), the name runs across a dotted
+     line to the price, and the + box sits right after the price at the end of the line */
+  .row{--ph:92px;padding:18px 0}
+  .row:not(.row--link){grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"media text act";column-gap:0}
+  .row__side{display:contents}
+  .row__side>.row__media{grid-area:media;margin-right:20px}
+  .row__act{grid-area:act;align-self:start;margin:-10px 0 0 16px}
+  .rows--drinks .row__act{align-self:center;margin-top:0}
+  .row__head{max-width:none}
 }
-
-/* how ordering works: three steps, then the plain facts */
-
-.how{margin-top:10px}
-.how__steps{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
-.how__steps li{font-size:15.5px;line-height:1.45;color:var(--haze)}
-.how__steps b{color:var(--cream);font-weight:700}
-.how__note{margin:20px 0 0;color:var(--haze);font-size:14.5px;line-height:1.5}
-.how .areas{margin:10px 0 0}
-.how__note,.how .areas{max-width:68ch}
-.areas{margin:18px 16px 0;color:var(--haze);font-size:14.5px;line-height:1.5}
-.areas a{position:relative;color:var(--sodium);font-weight:700;white-space:nowrap}
-.areas a::after{content:"";position:absolute;inset:-15px -8px}

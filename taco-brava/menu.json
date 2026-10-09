@@ -4,11 +4,16 @@
  "cuisine": "Mexican",
  "code": "TB",
  "color": "#D01C60",
+ "sign": {
+  "ground": "#E6246E",
+  "line": "#FBEBD0"
+ },
  "tagline": "Birria tacos with a cup of consommé to dip",
- "intro": "Slow-braised birria, loaded burritos and crispy nachos, cooked to order in Aruba.",
+ "intro": "Birria tacos filled with slow-braised beef and mozzarella, with a cup of consommé to dip, plus ground beef street tacos, quesadillas and nachos.",
  "logo": "shared/logos/taco-brava.svg",
  "mark": "shared/logos/taco-brava-mark.webp",
- "hero": "taco-brava/assets/dishes/bb.webp",
+ "hero": "taco-brava/assets/dishes/bt-hero.webp",
+ "mainSection": "mains",
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -134,7 +139,8 @@
       }
      ]
     }
-   ]
+   ],
+   "hidePhoto": true
   },
   {
    "id": "cq",
@@ -240,7 +246,8 @@
       }
      ]
     }
-   ]
+   ],
+   "hidePhoto": true
   },
   {
    "id": "st",
@@ -329,9 +336,5 @@
    "kind": "drink"
   }
  ],
- "video": {
-  "src": "taco-brava/video/cover.mp4",
-  "poster": "taco-brava/video/cover.webp"
- },
- "cover": "cq"
+ "cover": false
 }

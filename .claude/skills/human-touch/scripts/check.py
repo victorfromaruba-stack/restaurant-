@@ -264,16 +264,23 @@ def image_findings():
                 out.append(("WARN", b["id"], f"one picture for {len(names)} dishes ({', '.join(names)}): each dish should show itself"))
         # Restaurant page: the cover (video poster, or the dish order-app.js picks) against Featured right under it.
         ids = [f["id"] for f in feat] + [x for f in feat for x in f.get("includes", [])]   # featured dishes and the dishes inside a bundle picture
-        pool = [i for i in m["items"] if i.get("kind") not in ("drink", "side") and i["id"] not in ids]
-        pick = next((i for i in m["items"] if i["id"] == m.get("cover")), None) or \
+        shown = [i for i in m["items"] if not i.get("hidePhoto")]   # "hidePhoto": the site shows that dish without its picture
+        pool = [i for i in shown if i.get("kind") not in ("drink", "side") and i["id"] not in ids]
+        pick = next((i for i in shown if i["id"] == m.get("cover")), None) or \
             next((i for i in pool if "/art/" not in i["img"] and not i.get("soldOut")), None) or (pool or feat or m["items"])[0]
-        cover = (m.get("video") or {}).get("poster") or pick["img"]
+        cover = None if m.get("cover") is False else (m.get("video") or {}).get("poster") or pick["img"]   # "cover": false = no picture
         for f in feat:
-            if near(cover, f["img"]) or near(f["img"], cover):
+            if f.get("hidePhoto"):
+                continue
+            if cover and (near(cover, f["img"]) or near(f["img"], cover)):
                 out.append(("FAIL", b["id"] + "/index.html", f"the cover ({cover.split('/')[-1]}) is the same picture as Featured “{f['name']}” right under it: the same photo twice on one screen is a stock-site tell"))
         # Home page: the restaurant card (menu "hero") against the same restaurant's dishes in the Signature rail.
         hero = m.get("hero")
+        if hero in {i["img"] for i in m["items"] if i.get("hidePhoto")}:
+            out.append(("FAIL", b["id"] + "/menu.json", f"\"hero\" is the picture of a dish whose picture is hidden (it doesn't match its words): pick another dish's picture"))
         for f in feat:
+            if f.get("hidePhoto"):
+                continue
             if hero and (hero == f["img"] or near(hero, f["img"])):
                 out.append(("WARN", "index.html", f"{m['name']}'s restaurant card shows the same photo as “{f['name']}” in the dish rail above it: give the card a different dish (menu.json \"hero\")"))
     return out
