@@ -722,9 +722,12 @@ def main():
         select r.status::text, (select count(*) from public.pidi_run_orders x where x.run_id = r.id)
         from public.pidi_run_orders ro join public.pidi_runs r on r.id = ro.run_id where ro.order_id = %s
     """, [near["order_id"]])
-    bag_left = scalar(conn, "select count(*) from public.pidi_run_orders where order_id = %s", [bag["order_id"]])
+    bag_left = q(conn, """
+        select r.status::text from public.pidi_run_orders ro join public.pidi_runs r on r.id = ro.run_id
+        where ro.order_id = %s
+    """, [bag["order_id"]])
     conn.commit()
-    check("cancel takes the order off its run", gone_bag.get("status") == "cancelled" and bag_left == 0, str(gone_bag))
+    check("cancel takes the order off its run", gone_bag.get("status") == "cancelled" and bag_left == [("cancelled",)], str(gone_bag) + str(bag_left))
     check("the other order is offered again on its own", near_runs == [("offered", 1)], str(near_runs))
     q(conn, "set role anon")
     told = scalar(conn, "select public.pidi_order_status(%s)", [bag["public_token"]])
@@ -759,7 +762,7 @@ def main():
     conn.commit()
     q(conn, "reset role")
     still_active = scalar(conn, "select active from public.pidi_drivers where id = %s", [cara["driver_id"]])
-    sessions = scalar(conn, "select count(*) from public.pidi_driver_sessions where driver_id = %s", [cara["driver_id"]])
+    sessions = scalar(conn, "select count(*) from public.pidi_driver_sessions where driver_id = %s and expires_at > now()", [cara["driver_id"]])
     check("removed driver is deactivated", gone.get("ok") is True and still_active is False and sessions == 0, str(gone))
     q(conn, "set role anon")
     listed = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
