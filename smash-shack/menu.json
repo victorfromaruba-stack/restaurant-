@@ -4,6 +4,10 @@
  "cuisine": "Burgers",
  "code": "SS",
  "color": "#FFC72C",
+ "sign": {
+  "ground": "#111111",
+  "line": "#FFC72C"
+ },
  "tagline": "Thin patties, smashed hard on the flat-top",
  "intro": "Thin patties smashed hard on the flat-top for crispy edges. Cooked to order in Aruba.",
  "logo": "shared/logos/smash-shack.svg",

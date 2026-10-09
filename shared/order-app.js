@@ -596,11 +596,13 @@
   }
   function qtyBadge(n) { return '<span class="qtybadge"' + (n ? "" : " hidden") + ">" + n + "</span>"; }
 
-  /* a menu row: words on the left, picture with a + on the right */
+  /* a menu row: the words, the price with its own + beside it, and a small picture (the house dish gets the big one).
+     Each restaurant's stylesheet lays these pieces out its own way. */
   function rowHTML(b, item, opts) {
     opts = opts || {};
     var n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
-    return '<article class="row' + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
+    var kind = item.style === "signature" ? " is-sig" : item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "";
+    return '<article class="row' + kind + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
       '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + '"></button>' +
       '<div class="row__text">' +
         '<h3 class="row__name">' + esc(item.name) + "</h3>" +
@@ -608,8 +610,9 @@
         (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + esc(item.desc) + "</p>" : "") +
         (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
       "</div>" +
-      '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '">' + thumbImg(item, ' loading="lazy" decoding="async"') +
-        qtyBadge(n) + plusBtn(item, orderable) + "</div></article>";
+      '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '">' +
+        (item.style === "signature" ? '<img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' : thumbImg(item, ' loading="lazy" decoding="async"')) +
+        qtyBadge(n) + "</div>" + plusBtn(item, orderable) + "</article>";
   }
   /* a big picture card for featured dishes */
   function featHTML(b, item, opts) {
@@ -618,9 +621,9 @@
     var tag = item.soldOut ? tr("Sold out today") : item.includes ? includesNames(m, item).join(", ") : "";
     return '<article class="feat' + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
       '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
-      '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (opts.eager ? "eager" : "lazy") + '"' + (opts.eager ? ' fetchpriority="high"' : "") + ' decoding="async">' + qtyBadge(n) + plusBtn(item, orderable) + "</div>" +
+      '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (opts.eager ? "eager" : "lazy") + '"' + (opts.eager ? ' fetchpriority="high"' : "") + ' decoding="async">' + qtyBadge(n) + "</div>" +
       '<h3 class="feat__name">' + esc(item.name) + "</h3>" +
-      '<p class="feat__meta"><span>' + money(item.price) + "</span>" + (tag ? "<span>" + esc(tag) + "</span>" : "") + "</p></article>";
+      '<p class="feat__meta"><span>' + money(item.price) + "</span>" + (tag ? "<span>" + esc(tag) + "</span>" : "") + "</p>" + plusBtn(item, orderable) + "</article>";
   }
   function repaintCards() {
     if (MENU[HERE]) paintAgain();
@@ -854,11 +857,11 @@
     html += head;
     if (!st.open) html += '<p class="note note--warn">' + esc(tr(st.finishing ? "Last orders have passed for tonight." : "We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
     var brands = brandsInCart(), groups = [];
-    brands.forEach(function (b) { var f = foodLines(b); if (f.length) groups.push({ t: brandName(b), lines: f }); });
+    brands.forEach(function (b) { var f = foodLines(b); if (f.length) groups.push({ t: brandName(b), b: b, lines: f }); });
     if (drinkLines().length) groups.push({ t: tr("Drinks"), lines: drinkLines() });
     if (groups.length < 2) groups = [{ t: "", lines: foodLines().concat(drinkLines()) }];
     groups.forEach(function (g) {
-      if (g.t) html += '<h3 class="lines__brand">' + esc(g.t) + "</h3>";
+      if (g.t) html += '<h3 class="lines__brand"' + (g.b && MENU[g.b] ? ' style="--shop:' + esc(MENU[g.b].color) + '"' : "") + ">" + esc(g.t) + "</h3>";
       html += '<ul class="lines">' + g.lines.map(function (l) {
         var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
         var it = MENU[l.b] && MENU[l.b].byId[l.id];   // a small picture per line, so the order can be checked at a glance
@@ -1093,6 +1096,9 @@
   }
   function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " " + tr("and") + " " + arr[arr.length - 1]; }
   function paintSign(first) {
+    // the greeting follows the Aruba clock: Papiamento for morning, afternoon and night
+    var hello = $("[data-oa-hello]"), hr = arubaNow().getHours();
+    if (hello) hello.textContent = hr >= 5 && hr < 12 ? "Bon dia." : hr >= 12 && hr < 18 ? "Bon tardi." : "Bon nochi.";
     var sign = $("[data-oa-sign]");
     if (!sign) return;
     var st = kitchenStatus();
@@ -1116,13 +1122,13 @@
     var railIds = rail.map(function (i) { return i.id; });
     var secs = menu.sections.map(function (s) {
       var items = menu.items.filter(function (i) { return i.section === s.id && railIds.indexOf(i.id) < 0; });
-      return { id: s.id, title: s.title, items: items.filter(function (i) { return i.style === "signature"; }).concat(items.filter(function (i) { return i.style !== "signature"; })) };
+      return { id: s.id, title: s.title, kicker: s.kicker, klang: s.lang, items: items.filter(function (i) { return i.style === "signature"; }).concat(items.filter(function (i) { return i.style !== "signature"; })) };
     }).filter(function (s) { return s.items.length; });
     // without a rail, a section that only holds the house dish ("Signature") isn't a section: that dish leads the next one
     secs = secs.reduce(function (out, s, n) {
       var lead = out.carry || [];
       if (!rail.length && s.items.every(function (i) { return i.style; }) && n < secs.length - 1) { out.carry = lead.concat(s.items); return out; }
-      out.list.push({ id: s.id, title: s.title, items: lead.concat(s.items) }); out.carry = null; return out;
+      out.list.push({ id: s.id, title: s.title, kicker: s.kicker, klang: s.klang, items: lead.concat(s.items) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
     // cover: not a featured dish and not one inside a bundle picture, so no dish shows twice on the first screen; real photo first
     var featIds = feat.map(function (i) { return i.id; }), inside = [];
@@ -1130,26 +1136,28 @@
     var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && featIds.indexOf(i.id) < 0 && inside.indexOf(i.id) < 0; });
     var pick = (menu.cover && menu.byId[menu.cover]) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0] || feat[0] || menu.items[0];
     var cover = pick.img;
-    var html = '<div class="cover">' + coverMedia(menu, cover) + "</div>" +
-      '<header class="store">' +
-        '<img class="store__mark" src="' + esc(path(menu.mark)) + '" alt="" width="76" height="76">' +
-        '<h1 class="store__name" id="store-name">' + esc(menu.name) + "</h1>" +
-        '<p class="store__tag">' + esc(menu.tagline) + "</p>" +
-        '<ul class="facts">' +
-          '<li class="facts__status' + (st.open ? " is-open" : "") + '"><i></i>' + esc(st.label) + "</li>" +
+    // the app's delivery line (Order Aruba's), then the restaurant's own sign: its wordmark, its line, its picture
+    var html = '<ul class="facts strip">' +
+          '<li class="facts__status' + (st.open ? " is-open" : "") + '">' + esc(st.label) + "</li>" +
           "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
           "<li>" + esc(SITE.eta || "") + "</li>" +
         "</ul>" +
+      '<header class="store">' +
+        '<div class="store__sign"><h1 class="store__name" id="store-name"><img class="store__logo" src="' + esc(path(menu.logo)) + '" alt="" decoding="async">' +
+          '<span class="sr">' + esc(menu.name) + "</span></h1>" +
+          '<p class="store__tag">' + esc(menu.tagline) + "</p></div>" +
+        '<div class="cover">' + coverMedia(menu, cover) + "</div>" +
         (status === "soon" ? '<p class="note note--warn">' + esc(tr("Opening soon. Ordering starts shortly.")) + "</p>" : "") +
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>" +
       '<section class="again" id="oa-again" hidden></section>';
     if (rail.length) {
-      html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Start here")) + "</h2>" +
+      html += '<section class="sec sec--feat" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Start here")) + "</h2>" +
         '<div class="rail rail--feat">' + rail.map(function (i) { return featHTML(b, i); }).join("") + "</div></section>";
     }
     secs.forEach(function (s) {
-      html += '<section class="sec" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' + esc(tr(s.title)) + "</h2>" +
+      html += '<section class="sec sec--' + esc(s.id) + '" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' +
+        (s.kicker ? '<span class="sec__k"' + (s.klang ? ' lang="' + esc(s.klang) + '"' : "") + ">" + esc(s.kicker) + "</span> " : "") + '<span class="sec__n">' + esc(tr(s.title)) + "</span></h2>" +
         '<div class="' + (s.id === "drinks" ? "cans" : "rows") + '">' + s.items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
     });
     html += '<section class="sec also" id="oa-also" aria-labelledby="h-also" hidden></section>';
@@ -1281,14 +1289,14 @@
     var alt = others.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || others[0] || pool[0];
     return alt ? alt.img : m.items[0].img;
   }
-  /* one row per restaurant, like the index of a printed menu: a small picture, the name, its own line, the price */
+  /* one row per restaurant, like a street of shop signs: each restaurant's own sign (its wordmark on its own
+     colours), then its cuisine, its own line and the price, in the app's type */
   function shopHTML(b, idx) {
     var m = MENU[b];
     if (!m) return "";
     var status = brandStatus(b), from = fromPrice(m);
-    var img = heroImg(m), shown = m.items.filter(function (i) { return i.img === img; })[0] || m.items[0];
-    return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
-      '<span class="shop__media"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="' + esc(shown.name) + '" width="360" height="360" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
+    return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" data-shop="' + esc(b) + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + (m.sign ? ";--sign:" + esc(m.sign.ground || "") + ";--sign-line:" + esc(m.sign.line || "transparent") : "") + '">' +
+      '<span class="shop__sign"><img class="shop__logo" src="' + esc(path(m.logo)) + '" alt="" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
       '<span class="shop__txt"><span class="shop__top"><h3 class="shop__name">' + esc(m.name) + '</h3><span class="shop__c">' + esc(tr(m.cuisine)) + "</span></span>" +
         '<span class="shop__dishes">' + esc(m.tagline || "") + "</span>" +
         '<span class="shop__meta">' + (status !== "open" ? '<span class="shop__soon">' + esc(tr("Opening soon")) + "</span>"
@@ -1437,8 +1445,8 @@
   }
   function linkFeatHTML(b, item, eager) {
     var m = MENU[b];
-    return '<a class="feat feat--link" href="' + esc(dishLink(b, item)) + '">' +
-      '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (eager ? "eager" : "lazy") + '"' + (eager ? ' fetchpriority="high"' : "") + ' decoding="async"></div>' +
+    return '<a class="feat feat--link" href="' + esc(dishLink(b, item)) + '" data-shop="' + esc(b) + '">' +
+      '<div class="feat__media"><img src="' + esc(path(thumb(item.img))) + '" alt="" width="360" height="360" loading="lazy" decoding="async"></div>' +
       '<h3 class="feat__name">' + esc(item.name) + "</h3>" +
       '<p class="feat__meta"><span>' + money(item.price) + "</span><span>" + esc(m.name) + "</span></p></a>";
   }

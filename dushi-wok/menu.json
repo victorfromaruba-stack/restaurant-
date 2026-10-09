@@ -4,6 +4,10 @@
  "cuisine": "Chinese",
  "code": "DW",
  "color": "#0F7B6C",
+ "sign": {
+  "ground": "#FBF8F1",
+  "line": "#0F7B6C"
+ },
  "tagline": "Chinese takeout, straight off the wok",
  "intro": "Cooked to order in our delivery kitchen in Aruba. Hot from the wok, packed to travel.",
  "logo": "shared/logos/dushi-wok.svg",

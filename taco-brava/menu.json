@@ -4,6 +4,10 @@
  "cuisine": "Mexican",
  "code": "TB",
  "color": "#D01C60",
+ "sign": {
+  "ground": "#E6246E",
+  "line": "#FBEBD0"
+ },
  "tagline": "Birria tacos with a cup of consommé to dip",
  "intro": "Slow-braised birria, loaded burritos and crispy nachos, cooked to order in Aruba.",
  "logo": "shared/logos/taco-brava.svg",
@@ -21,11 +25,15 @@
   },
   {
    "id": "sides",
-   "title": "Sides"
+   "title": "Sides",
+   "kicker": "Para picar",
+   "lang": "es"
   },
   {
    "id": "drinks",
-   "title": "Drinks"
+   "title": "Drinks",
+   "kicker": "Bebidas",
+   "lang": "es"
   }
  ],
  "items": [

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Order Aruba · Late-night delivery, 10 PM to 2 AM</title>
 <meta name="description" content="Late-night food delivery in Aruba, 10 PM to 2 AM: Chinese, Mexican, smash burgers, Italian pasta and Dutch snacks. ƒ5 delivery. Order on WhatsApp.">
-<meta name="theme-color" content="#0B1D3A">
+<meta name="theme-color" content="#15130F">
 <meta property="og:title" content="Order Aruba · Late-night delivery">
 <meta property="og:description" content="Late-night food delivery in Aruba, 10 PM to 2 AM. Pick a restaurant, order on WhatsApp.">
 <meta property="og:type" content="website">
@@ -24,7 +24,7 @@
 <a class="oa-skip" href="#oa-main" data-t>Skip to the menus</a>
 <header class="top">
   <div class="top__in">
-    <a class="logo" href="index.html" aria-label="Order Aruba home" data-t-attr="aria-label"><span class="logo__t">Order Aruba</span></a>
+    <a class="logo" href="index.html" aria-label="Order Aruba home" data-t-attr="aria-label"><span class="logo__mk" aria-hidden="true">OA</span><span class="logo__t">Order Aruba</span></a>
     <span class="top__spacer"></span>
   </div>
 </header>
@@ -32,26 +32,25 @@
 <main class="home" id="oa-main">
   <section class="hero" aria-labelledby="hero-h">
     <div class="hero__row">
-      <h1 id="hero-h">Bon nochi.</h1>
+      <h1 id="hero-h" data-oa-hello>Bon nochi.</h1>
       <div class="sign" data-oa-sign role="status"><b>Open</b><span>10 PM to 2 AM</span></div>
     </div>
     <p class="hero__sub" data-oa-hero>Late-night food, delivered. <b>ƒ5 delivery.</b></p>
     <ul class="facts hero__facts" data-oa-facts><li>Delivery in 35–50 min</li><li>Noord to Santa Cruz</li></ul>
     <label class="search"><span class="sr" data-t>Search all menus</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><input id="oa-q" type="search" placeholder="Search tacos, fried rice, bitterballen" data-t-attr="placeholder" autocomplete="off" enterkeyhint="search"></label>
-    <nav class="quick" id="oa-quick" aria-label="Restaurants" data-t-attr="aria-label"></nav>
   </section>
 
   <section class="results" id="oa-results" aria-live="polite" hidden></section>
 
   <div id="oa-browse">
     <section class="hsec mine" id="oa-mine" aria-label="Your orders" data-t-attr="aria-label" hidden></section>
-    <section class="hsec" aria-labelledby="sig-h">
-      <h2 class="hsec__t" id="sig-h" data-t>Start with these</h2>
-      <div class="rail" id="oa-rail"></div>
-    </section>
-    <section class="hsec" aria-labelledby="rest-h">
+    <section class="hsec hsec--shops" aria-labelledby="rest-h">
       <h2 class="hsec__t" id="rest-h" data-t>Restaurants</h2>
       <div class="shops" id="oa-list"></div>
+    </section>
+    <section class="hsec hsec--sig" aria-labelledby="sig-h">
+      <h2 class="hsec__t" id="sig-h" data-t>Start with these</h2>
+      <div class="rail" id="oa-rail"></div>
     </section>
   </div>
 

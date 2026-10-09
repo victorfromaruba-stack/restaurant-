@@ -4,6 +4,10 @@
  "cuisine": "Italian",
  "code": "NN",
  "color": "#B23A2E",
+ "sign": {
+  "ground": "#F4E9D8",
+  "line": "#C9A227"
+ },
  "tagline": "Baked pasta for a quiet night in",
  "intro": "Bubbling baked penne, chicken parm and garlic bread, cooked to order in Aruba.",
  "logo": "shared/logos/nonnas-night-in.svg",

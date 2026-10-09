@@ -1,92 +1,87 @@
-/* Order Aruba home: the delivery app's list of restaurants. Builds on shared/order.css (same font, same night palette). */
-.home{max-width:1100px;margin:0 auto;padding:0 0 calc(120px + var(--safe-b))}
-.hero{padding:18px 16px 4px;display:grid;gap:14px}
+/* Order Aruba home: the app's list of restaurants. Builds on shared/order.css; the app stays quiet so each
+   restaurant's own sign carries the colour. */
+.home{max-width:1100px;margin:0 auto;padding:0 0 calc(56px + var(--safe-b))}
+.hero{padding:20px 16px 4px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .hero__row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.hero h1{font-size:44px;line-height:.95;font-weight:900;font-stretch:62%;text-transform:uppercase;letter-spacing:-.005em;white-space:nowrap}
-.hero__sub{margin:0;font-size:17px;line-height:1.35;color:var(--haze)}
-.hero__sub b{color:var(--cream)}
+.hero h1{font:700 30px/1.1 var(--font);letter-spacing:-.015em}
+.hero__sub{margin:0;font-size:16.5px;line-height:1.4;color:var(--app-muted)}
+.hero__sub b{color:var(--app-ink);font-weight:700}
 .hero__facts{margin:-4px 0 0;font-size:14.5px}
-.hero{grid-template-columns:minmax(0,1fr)}
-/* smallest phones while closed: "Opens tonight 10 PM" goes on two lines instead of pushing the page sideways */
-@media (max-width:359px){.hero h1{font-size:38px}.sign span{white-space:normal;text-align:center;max-width:104px}}
+@media (max-width:359px){.hero h1{font-size:26px}.sign span{white-space:normal;text-align:center;max-width:104px}}
 
-/* the OPEN sign: the one glowing thing on the page */
-.sign{flex:none;display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px 7px;border:2px solid #40557A;border-radius:9px;color:#8FA0BF;text-transform:uppercase}
-.sign b{font:900 22px/.9 var(--font);font-stretch:62%;letter-spacing:.05em}
-.sign span{font:800 10.5px/1.1 var(--font);font-stretch:75%;letter-spacing:.07em;white-space:nowrap}
-.sign.is-on{border-color:var(--sodium);color:var(--sodium);box-shadow:0 0 22px rgba(255,201,60,.28),inset 0 0 14px rgba(255,201,60,.12)}
-.sign.is-on b{text-shadow:0 0 6px rgba(255,201,60,.9),0 0 20px rgba(255,201,60,.5)}
-.sign.is-last{border-color:#FF9F43;color:#FF9F43;box-shadow:0 0 22px rgba(255,159,67,.28),inset 0 0 14px rgba(255,159,67,.12)}
-.sign.is-last b{text-shadow:0 0 6px rgba(255,159,67,.9),0 0 20px rgba(255,159,67,.5)}
+/* the OPEN sign: the one glowing thing on the page. Closed, it's an unlit tube, not a grey button */
+.sign{flex:none;display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:6px 11px 7px;border:2px solid #4A443B;border-radius:10px;color:#8E8676;text-transform:uppercase}
+.sign b{font:900 23px/.9 var(--font);font-stretch:62%;letter-spacing:.06em}
+.sign span{font:700 10.5px/1.1 var(--font);font-stretch:80%;letter-spacing:.07em;white-space:nowrap}
+.sign.is-on{border-color:var(--sodium);color:var(--sodium);box-shadow:0 0 20px rgba(255,201,60,.26),inset 0 0 12px rgba(255,201,60,.12)}
+.sign.is-on b{text-shadow:0 0 6px rgba(255,201,60,.9),0 0 18px rgba(255,201,60,.45)}
+.sign.is-last{border-color:#FF9F43;color:#FF9F43;box-shadow:0 0 20px rgba(255,159,67,.26),inset 0 0 12px rgba(255,159,67,.12)}
+.sign.is-last b{text-shadow:0 0 6px rgba(255,159,67,.9),0 0 18px rgba(255,159,67,.45)}
 .sign.is-on.flick{animation:flick 1.1s steps(1,end) 1}
 @keyframes flick{0%{opacity:.25}12%{opacity:1}18%{opacity:.35}26%{opacity:1}40%{opacity:.6}48%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.sign.is-last{border-color:#FF9F43;color:#FF9F43;box-shadow:0 0 22px rgba(255,159,67,.28),inset 0 0 14px rgba(255,159,67,.12)}
-.sign.is-last b{text-shadow:0 0 6px rgba(255,159,67,.9),0 0 20px rgba(255,159,67,.5)}
-.sign.is-on.flick{animation:none}}
+@media (prefers-reduced-motion:reduce){.sign.is-on.flick{animation:none}}
 
 /* search across every menu */
-.search{position:relative;display:block}
-.search svg{position:absolute;left:16px;top:50%;width:20px;height:20px;transform:translateY(-50%);color:var(--haze);pointer-events:none}
-.search input{width:100%;height:54px;padding:0 16px 0 48px;border:0;border-radius:14px;background:var(--cream);color:var(--night);font:600 16.5px/1 var(--font)}
-.search input::placeholder{color:#5C6A85}
-.search input:focus{outline:3px solid var(--sodium);outline-offset:2px}
+.search{position:relative;display:block;margin-top:4px}
+.search svg{position:absolute;left:14px;top:50%;width:19px;height:19px;transform:translateY(-50%);color:var(--app-muted);pointer-events:none}
+.search input{width:100%;height:50px;padding:0 14px 0 44px;border:1.5px solid var(--app-field);border-radius:8px;background:var(--app-2);color:var(--app-ink);font:500 16px/1 var(--font)}
+.search input::placeholder{color:#9A9385}
+.search input:focus{outline:none;border-color:var(--sodium)}
 .results{padding:10px 16px 0}
-.results__n{margin:8px 0 0;color:var(--haze);font:700 14px/1 var(--font)}
-.results__none{margin:20px 0 0;color:var(--haze);font-size:16px}
+.results__n{margin:8px 0 0;color:var(--app-muted);font:600 14px/1 var(--font)}
+.results__none{margin:20px 0 0;color:var(--app-muted);font-size:16px}
 .chips--suggest{margin-top:12px}
-.chip--btn{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:var(--night-3);color:var(--cream);font:600 15px/1.1 var(--font)}
-.chip--btn:hover{background:var(--rule)}
+.chip--btn{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1.5px solid var(--app-field);border-radius:6px;background:transparent;color:var(--app-ink);font:600 15px/1.1 var(--font)}
+.chip--btn:hover{background:var(--app-3)}
 
-/* the five restaurants in one row, right under the search */
-.quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-.quick:empty{display:none}
-.qk{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-decoration:none;text-align:center}
-.qk img{width:100%;max-width:64px;aspect-ratio:1;height:auto;border-radius:16px;object-fit:cover;background:var(--night-2);box-shadow:0 0 0 2px var(--night),0 0 0 4px var(--shop)}
-.qk__c{max-width:100%;font:700 13px/1.15 var(--font);font-stretch:84%;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.qk__n{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.qk:hover img{transform:translateY(-2px)}
-@media (prefers-reduced-motion:no-preference){.qk img{transition:transform .2s}}
-@media (max-width:359px){.quick{gap:6px}.qk__c{font-size:11.5px}}
-
-.hsec{padding:34px 16px 0}
-.hsec{position:relative}
-.hsec__t{font-size:25px;font-weight:900;font-stretch:75%;letter-spacing:0}
+.hsec{position:relative;padding:32px 16px 0}
+.hsec__t{display:block}
+.hsec--sig{padding-top:36px}
 /* prev/next arrows for the dish rail: only on wide screens, where a mouse can't swipe */
 .railnav{display:none}
 @media (min-width:760px){
-  .railnav{position:absolute;top:36px;right:24px;display:flex;gap:8px}
-  .railnav button{width:44px;height:44px;border:0;border-radius:50%;background:var(--night-3);color:var(--cream);display:grid;place-items:center}
-  .railnav button:hover:not(:disabled){background:var(--rule)}
-  .railnav button:disabled{opacity:.35;cursor:default}
+  .railnav{position:absolute;top:28px;right:24px;display:flex;gap:6px}
+  .railnav button{width:44px;height:44px;border:1.5px solid var(--app-field);border-radius:6px;background:transparent;color:var(--app-ink);display:grid;place-items:center}
+  .railnav button:hover:not(:disabled){background:var(--app-3)}
+  .railnav button:disabled{opacity:.3;cursor:default}
   .railnav svg{width:22px;height:22px}
   .railnav [data-dir="1"] svg{transform:scaleX(-1)}
 }
 
+/* dish cards on the home page: small, a picture and the words, each opens the dish on its restaurant's page */
+.row--link,.feat--link{text-decoration:none;color:inherit}
+.feat--link{width:148px;grid-template-columns:minmax(0,1fr);grid-template-areas:"media" "name" "meta"}
+.feat--link .feat__media{aspect-ratio:1;border-radius:6px}
+.feat--link .feat__name{margin-top:9px;font:600 15px/1.25 var(--font)}
+.feat--link .feat__meta{margin-top:3px;font-size:13.5px}
+.feat--link .feat__meta span{display:block}
+.feat--link .feat__meta span+span::before{content:none}
+.feat--link .feat__meta span:first-child{color:var(--app-ink)}
+/* search results: the restaurant's name, the dish, its price, a small picture */
+.row--link{grid-template-areas:"brand media" "name media" "price media" "desc media"}
+.row--link .row__price{margin-top:4px;align-self:start}
+.row--link .row__media{width:80px;height:80px}
+@media (hover:hover){.row--link:hover .row__name,.feat--link:hover .feat__name{text-decoration:underline;text-underline-offset:3px}}
 
-.hfoot{margin:28px 16px 0;color:#7F8DA6;font-size:12.5px;line-height:1.5}
+/* an order already started: the way back to it */
+.mine{padding-top:20px;display:grid;gap:8px}
+.mine__row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:10px 14px;border-radius:8px;background:var(--app-2);box-shadow:inset 4px 0 0 var(--shop);text-decoration:none}
+.mine__t{font-weight:700;font-size:15.5px;line-height:1.25}
+.mine__d{flex:none;color:var(--app-muted);font:600 14px/1.2 var(--font)}
+
+.how{margin-top:8px}
+.hfoot{margin:30px 16px 0;padding-top:20px;border-top:1px solid var(--app-rule);color:var(--app-muted);font-size:13px;line-height:1.5}
 .hfoot p{margin:0}
 
-
 @media (min-width:760px){
-  .hero{padding:40px 24px 8px;grid-template-columns:minmax(0,1fr) 420px;align-items:center;column-gap:40px}
-  .hero__row{grid-column:1/-1;justify-content:flex-start;gap:24px}
-  .hero h1{font-size:72px}
-  .sign b{font-size:30px}
-  .sign span{font-size:12px}
-  .quick{grid-column:1/-1;grid-template-columns:repeat(5,84px);gap:14px}
-  .hsec{padding:44px 24px 0}
+  .hero{padding:36px 24px 8px;max-width:760px}
+  .hero h1{font-size:40px}
+  .sign b{font-size:28px}
+  .sign span{font-size:11.5px}
+  .hsec{padding:40px 24px 0}
   .rail{margin:12px -24px 0;padding:0 24px 6px;scroll-padding-inline:24px}
+  .feat--link{width:160px}
+  .shops{max-width:860px}
   .hfoot{margin-left:24px;margin-right:24px}
   .results{padding:10px 24px 0}
 }
-
-/* home cards are links: they open the dish on its own restaurant's page */
-.row--link,.feat--link{text-decoration:none;color:inherit}
-.feat--link{display:block}
-@media (hover:hover){.row--link:hover .row__name,.feat--link:hover .feat__name{text-decoration:underline;text-underline-offset:3px}}
-
-/* an order already started at a restaurant: the way back to it */
-.mine{padding-top:22px;display:grid;gap:8px}
-.mine__row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:10px 14px;border-radius:var(--r);background:var(--night-2);border-left:4px solid var(--shop);text-decoration:none}
-.mine__t{font-weight:800;font-size:15.5px;line-height:1.25}
-.mine__d{flex:none;color:var(--haze);font:700 14px/1.2 var(--font)}
