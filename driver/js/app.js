@@ -313,6 +313,35 @@ var Pidi = (function () {
     return rootPath() + file;
   }
 
+  /* The bottom bar is fixed, so the page padding has to match its real height. */
+  function syncDock() {
+    var dock = document.querySelector(".dock");
+    var h = 0;
+    if (dock && window.getComputedStyle(dock).display !== "none") {
+      h = Math.ceil(dock.getBoundingClientRect().height);
+    }
+    document.documentElement.style.setProperty("--dock-h", h + "px");
+  }
+
+  function watchDock() {
+    syncDock();
+    var dock = document.querySelector(".dock");
+    if (!dock || !window.ResizeObserver) return;
+    new ResizeObserver(syncDock).observe(dock);
+  }
+
+  function toTop() {
+    var root = document.scrollingElement || document.documentElement;
+    if (root) root.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", watchDock);
+  } else {
+    watchDock();
+  }
+
   return {
     FEE: FEE,
     MIN_FOOD: MIN_FOOD,
@@ -348,6 +377,8 @@ var Pidi = (function () {
     watchSignal: watchSignal,
     wake: wake,
     runUrl: runUrl,
-    pageUrl: pageUrl
+    pageUrl: pageUrl,
+    syncDock: syncDock,
+    toTop: toTop
   };
 })();

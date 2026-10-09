@@ -63,6 +63,7 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--ink); color: var(--cloud); }
+html { scroll-padding-bottom: calc(16px + var(--dock-h, 96px) + env(safe-area-inset-bottom)); }
 body {
   font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
   font-weight: 500;
@@ -104,7 +105,7 @@ p { margin: 0 0 10px; }
 }
 
 main {
-  padding: 8px 16px 128px;
+  padding: 8px 16px calc(24px + var(--dock-h, 96px) + env(safe-area-inset-bottom));
   max-width: 520px;
   margin: 0 auto;
 }
@@ -172,6 +173,20 @@ main.wide { max-width: 640px; }
 .row { display: flex; gap: 8px; margin: 8px 0; }
 .row .btn { flex: 1 1 0; font-size: 17px; }
 
+/* Drop: name, amount, then Maps / Waze / Call / WhatsApp above the bar. */
+main[data-step="drop"] .test-flag { margin-bottom: 8px; padding: 6px 10px; }
+main[data-step="drop"] .quiet { margin-bottom: 0; }
+main[data-step="drop"] h1 { font-size: 32px; margin-bottom: 0; }
+main[data-step="drop"] .place { margin: 2px 0 8px; font-size: 18px; font-weight: 700; }
+main[data-step="drop"] .money { margin: 0 0 8px; padding: 10px 12px; }
+main[data-step="drop"] .money .figure { font-size: 40px; }
+main[data-step="drop"] .money .line { margin-top: 4px; font-size: 18px; line-height: 1.2; }
+main[data-step="drop"] .money .small { margin-top: 4px; font-size: 15px; }
+main[data-step="drop"] .actions .row { margin: 0 0 8px; }
+main[data-step="drop"] .actions .row:last-child { margin-bottom: 0; }
+main[data-step="drop"] .addr { margin: 10px 0 4px; }
+main[data-step="drop"] .note { margin: 0 0 8px; }
+
 .money {
   background: var(--cloud);
   color: var(--ink);
@@ -234,7 +249,7 @@ main.wide { max-width: 640px; }
 }
 .list .sub { display: block; color: var(--muted); font-weight: 500; margin-top: 2px; }
 
-.field { display: block; margin: 0 0 12px; }
+.field { display: block; margin: 0 0 12px; scroll-margin-bottom: calc(16px + var(--dock-h, 96px)); }
 .field span { display: block; font-weight: 700; margin-bottom: 6px; }
 input, select, textarea {
   width: 100%;

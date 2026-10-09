@@ -1,5 +1,6 @@
 /* One step: intro, pickup, each drop, then done. */
 (function () {
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   Pidi.registerSW();
   Pidi.watchSignal();
 
@@ -56,6 +57,10 @@
     ]);
   }
 
+  function actions(stop) {
+    return Pidi.el("div", { class: "actions" }, [navRow(stop), contactRow(stop)]);
+  }
+
   function items(drop) {
     var name = Pidi.restaurantName(drop.restaurant, drop.restaurantName);
     var src = Pidi.logo(drop.restaurant);
@@ -108,7 +113,10 @@
   function render() {
     Pidi.clear(main);
     Pidi.clear(dock);
-    if (!record) return;
+    if (!record) {
+      Pidi.toTop();
+      return;
+    }
     var p = record.payload;
     main.setAttribute("data-step", record.step);
     if (p.test) main.appendChild(Pidi.el("p", { class: "test-flag", text: WORDS.testRun }));
@@ -122,6 +130,7 @@
         main.appendChild(Pidi.el("p", { text: (i + 1) + ". " + d.name + " · " + (d.area || "") }));
       });
       dock.appendChild(Pidi.el("button", { class: "btn", type: "button", "data-action": "start", text: WORDS.startPickup }));
+      Pidi.toTop();
       return;
     }
 
@@ -152,6 +161,7 @@
         main.appendChild(navRow(p.pickup));
       }
       dock.appendChild(Pidi.el("button", { class: "btn", type: "button", "data-action": "picked-up", text: WORDS.pickedUp }));
+      Pidi.toTop();
       return;
     }
 
@@ -161,14 +171,14 @@
       main.setAttribute("data-drop", String(i));
       main.appendChild(Pidi.el("p", { class: "quiet", text: WORDS.drop + " " + (i + 1) + " " + WORDS.of + " " + p.drops.length }));
       main.appendChild(Pidi.el("h1", { text: d.name }));
-      if (d.area) main.appendChild(Pidi.el("p", { class: "addr", text: d.area }));
+      if (d.area) main.appendChild(Pidi.el("p", { class: "place", text: d.area }));
       main.appendChild(moneyBox(d));
+      main.appendChild(actions(d));
       main.appendChild(Pidi.el("p", { class: "addr", text: d.address }));
       if (d.note) main.appendChild(Pidi.el("p", { class: "note", text: d.note }));
-      main.appendChild(navRow(d));
-      main.appendChild(contactRow(d));
       main.appendChild(items(d));
       dock.appendChild(Pidi.el("button", { class: "btn", type: "button", "data-action": "delivered", text: WORDS.delivered }));
+      Pidi.toTop();
       return;
     }
 
@@ -179,6 +189,7 @@
     main.appendChild(Pidi.el("p", { class: "quiet", text: WORDS.cashThisRun }));
     main.appendChild(Pidi.el("p", { class: "figure", style: "font-size:40px;font-weight:800;margin:0", text: Pidi.money(got) }));
     dock.appendChild(Pidi.el("a", { class: "btn", href: "cash.html", text: WORDS.countCash }));
+    Pidi.toTop();
   }
 
   function fail(msg) {

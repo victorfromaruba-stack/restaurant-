@@ -13,7 +13,7 @@ Pidi Blue is `#2D3BE8`. Night background is Pidi Ink `#12143A`. The wordmark, ic
 | Home | `index.html` | No run yet, or Continue if one is open. Hours, cash or bank transfer, 2 drops. Links to install, the cash count, and Send a run. A run link opened here is sent on to `run.html`. |
 | Run, intro | `run.html` | "Tonight's run". Names and areas. One button: Start pickup. A `test: true` run shows "TEST run. Not a real order." |
 | Pickup | `run.html` | One step. Restaurant logos and item names, grouped into bags. Address and pin if the link has them, with Google Maps and Waze. One button: Picked up. |
-| Drop | `run.html` | One drop at a time, up to 2. Name, area, money box, address, note, Google Maps, Waze, Call, WhatsApp, then the items. One button: Delivered. |
+| Drop | `run.html` | One drop at a time, up to 2. Name, area, money box, then Google Maps, Waze, Call and WhatsApp (those four sit above the Delivered bar on a 390×664 phone). Address, note and items follow. Every step starts at the top. One button: Delivered. |
 | Run done | `run.html` | Cash collected on this run. Button: Count the cash. |
 | Cash count | `cash.html` | Sum of delivered cash drops for this service night, across every run on the phone. Transfer drops are listed as awaiting or paid, and they add ƒ0. Type the florins counted, then Compare. A match says "It matches." A gap under ƒ9 is "Small difference, noted." ƒ9 to ƒ36 is "Check within 24 hours." Over ƒ36 is "Check now." |
 | Send a run | `dispatch.html` | Form for one pickup and one or two drops. Checks the ƒ24 food floor and adds ƒ5. "Send to driver on WhatsApp" opens `wa.me` with the run link. Default number is 2977477794. Copy and "Open this run on this phone" are there too. |
@@ -29,7 +29,7 @@ Buttons are at least 56px. One primary action sits in the bottom bar.
 | `index.html` `run.html` `cash.html` `dispatch.html` `help.html` | Screens |
 | `install/index.html` `install/qr.svg` | Add to Home Screen, and the QR |
 | `manifest.webmanifest` | PWA. `start_url` and `scope` are `./`, so they resolve to the `/driver/` folder (`/restaurant-/driver/` on GitHub Pages). `display` is `standalone`. |
-| `sw.js` | Cache `pidi-driver-v1`. Registered with scope = the `/driver/` directory only. It ignores any URL whose path does not contain `/driver/`. Bump `CACHE` after a change that must replace an old copy. |
+| `sw.js` | Cache `pidi-driver-v2`. Registered with scope = the `/driver/` directory only. It ignores any URL whose path does not contain `/driver/`. Bump `CACHE` after a change that must replace an old copy. |
 | `css/app.css` | The whole look, plus the self-hosted fonts |
 | `js/words.js` | English screen words. Add `pap` / `nl` / `es` beside this object later. |
 | `js/app.js` | Money, links, encode/decode, localStorage, service worker, maps and WhatsApp URLs |

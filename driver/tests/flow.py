@@ -80,6 +80,44 @@ def fonts(page):
     page.evaluate("() => document.fonts.ready.then(() => true)")
 
 
+def in_viewport(page, locator, label):
+    box = locator.bounding_box()
+    if box is None:
+        raise AssertionError(label + " has no box")
+    height = page.viewport_size["height"]
+    bottom = box["y"] + box["height"]
+    if box["y"] < -1 or bottom > height + 1:
+        raise AssertionError(
+            "%s is outside the viewport (y=%.1f bottom=%.1f vh=%s)"
+            % (label, box["y"], bottom, height)
+        )
+    return box
+
+
+def above_bar(page, locator, label):
+    box = in_viewport(page, locator, label)
+    dock = page.locator(".dock").bounding_box()
+    if dock is None:
+        raise AssertionError("fixed bar is missing")
+    bottom = box["y"] + box["height"]
+    if bottom > dock["y"] + 0.5:
+        raise AssertionError(
+            "%s ends at %.1f, bar starts at %.1f" % (label, bottom, dock["y"])
+        )
+    return box
+
+
+def drop_actions_clear(page):
+    """Maps, Waze, Call and WhatsApp must sit fully above the Delivered bar."""
+    for selector, label in (
+        ("[data-nav=google]", "Google Maps"),
+        ("[data-nav=waze]", "Waze"),
+        ("[data-act=call]", "Call"),
+        ("[data-act=whatsapp]", "WhatsApp"),
+    ):
+        above_bar(page, page.locator(selector), label)
+
+
 def run_device(browser, playwright, device_name):
     results = []
     device = dict(playwright.devices[device_name])
@@ -143,12 +181,24 @@ def run_device(browser, playwright, device_name):
         text = parse_qs(urlparse(wa).query).get("text", [""])[0]
         if "Maria TEST" not in text or "Dushi Wok" not in text:
             raise AssertionError("WhatsApp text " + text)
+        heading = page.get_by_role("heading", name="Maria TEST")
+        in_viewport(page, heading, "Drop 1 heading")
+        in_viewport(page, page.get_by_text("Drop 1 of 2", exact=True), "Drop 1 of 2")
+        drop_actions_clear(page)
         page.screenshot(path=shot(device_name, "03-drop1-cash.png"))
+        # A driver who scrolled the items still lands at the top of the next drop.
+        page.evaluate("() => window.scrollTo(0, 480)")
         page.get_by_role("button", name="Delivered").click()
 
     def drop2():
         page.get_by_role("heading", name="Carlos TEST").wait_for()
         fonts(page)
+        scroll_y = page.evaluate("() => window.scrollY")
+        if scroll_y > 1:
+            raise AssertionError("Drop 2 kept the old scroll (" + str(scroll_y) + ")")
+        heading = page.get_by_role("heading", name="Carlos TEST")
+        in_viewport(page, heading, "Drop 2 heading")
+        in_viewport(page, page.get_by_text("Drop 2 of 2", exact=True), "Drop 2 of 2")
         expect(page.get_by_text("Awaiting transfer", exact=True)).to_be_visible()
         expect(page.locator("[data-money=transfer]")).to_have_text("Don't collect cash")
         if page.locator("[data-money=collect]").count() != 0:
@@ -159,6 +209,7 @@ def run_device(browser, playwright, device_name):
         wa = page.locator("[data-act=whatsapp]").get_attribute("href")
         if not wa.startswith("https://wa.me/" + DROP2["phone"]):
             raise AssertionError("WhatsApp href " + str(wa))
+        drop_actions_clear(page)
         page.screenshot(path=shot(device_name, "04-drop2-transfer.png"))
         page.get_by_role("button", name="Delivered").click()
 
@@ -175,7 +226,9 @@ def run_device(browser, playwright, device_name):
         expect(page.locator("[data-result=match]")).to_be_visible()
         expect(page.locator("[data-total=counted]")).to_have_text(money(CASH))
         fonts(page)
-        page.evaluate("() => window.scrollTo(0, 0)")
+        above_bar(page, page.locator("[data-field-wrap=counted]"), "You counted")
+        above_bar(page, page.locator("[data-field=counted]"), "count box")
+        above_bar(page, page.locator("[data-result=match]"), "It matches")
         page.screenshot(path=shot(device_name, "05-cash-count.png"))
 
     def install_and_pwa():

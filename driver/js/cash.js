@@ -36,6 +36,18 @@
   var result = Pidi.el("div", { id: "result" });
   main.appendChild(result);
 
+  var label = Pidi.el("label", { class: "field", "data-field-wrap": "counted" });
+  label.appendChild(Pidi.el("span", { text: WORDS.youCounted }));
+  var input = Pidi.el("input", {
+    id: "counted",
+    "data-field": "counted",
+    inputmode: "decimal",
+    autocomplete: "off",
+    placeholder: "0.00"
+  });
+  label.appendChild(input);
+  main.appendChild(label);
+
   var list = Pidi.el("ul", { class: "list" });
   rows.forEach(function (row) {
     var place = Pidi.restaurantName(row.drop.restaurant, row.drop.restaurantName);
@@ -49,18 +61,6 @@
   });
   main.appendChild(list);
 
-  var label = Pidi.el("label", { class: "field" });
-  label.appendChild(Pidi.el("span", { text: WORDS.youCounted }));
-  var input = Pidi.el("input", {
-    id: "counted",
-    "data-field": "counted",
-    inputmode: "decimal",
-    autocomplete: "off",
-    placeholder: "0.00"
-  });
-  label.appendChild(input);
-  main.appendChild(label);
-
   function band(diff) {
     var abs = Math.abs(diff);
     if (abs < 900) return WORDS.smallDiff;
@@ -70,7 +70,7 @@
 
   function compare() {
     Pidi.clear(result);
-    window.scrollTo(0, 0);
+    Pidi.toTop();
     var cents = Pidi.parseFlorin(input.value);
     if (input.value.trim() === "") {
       result.appendChild(Pidi.el("p", { class: "err", text: WORDS.typeFlorins }));
@@ -103,4 +103,6 @@
   input.addEventListener("keydown", function (ev) {
     if (ev.key === "Enter") compare();
   });
+  Pidi.toTop();
+  Pidi.syncDock();
 })();

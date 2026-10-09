@@ -1,7 +1,7 @@
 /* Pidi driver service worker.
    Scope is only the /driver/ folder (on GitHub Pages: /restaurant-/driver/).
    It must not control the customer site. */
-var CACHE = "pidi-driver-v1";
+var CACHE = "pidi-driver-v2";
 
 var FILES = [
   "./",
