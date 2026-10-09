@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#12143A">
+  <title>Pidi setup</title>
+  <link rel="icon" href="../brand/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/app.css">
+  <style>
+    main { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+    .step { margin: 22px 0 8px; }
+    .note { color: #DCE0FF; font-size: 16px; margin: 8px 0 0; }
+    .pin {
+      display: block;
+      width: 100%;
+      min-height: 56px;
+      margin: 0 0 12px;
+      padding: 12px 14px;
+      border: 2px solid #DCE0FF;
+      border-radius: 12px;
+      background: transparent;
+      font-size: 24px;
+      letter-spacing: 0.18em;
+    }
+    #status { font-weight: 700; min-height: 3.2em; margin-top: 18px; }
+    a.btn { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <img class="wordmark" src="../brand/wordmark.svg" alt="Pidi">
+  </header>
+  <main>
+    <h1>Pidi setup</h1>
+
+    <h2 class="step">Step 1</h2>
+    <a class="btn" href="https://supabase.com/dashboard/project/cdkopyphjvfxjqhasrae/sql/new" target="_blank" rel="noopener">Open Supabase SQL editor</a>
+    <p class="note">Run it once. Running it again is safe.</p>
+
+    <h2 class="step">Step 2</h2>
+    <button class="btn" type="button" id="copy-setup" disabled>Copy setup</button>
+    <p class="note">Run it once. Running it again is safe.</p>
+
+    <h2 class="step">Step 3</h2>
+    <label class="field" for="admin-pin">Your admin PIN</label>
+    <input class="pin" id="admin-pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" enterkeyhint="done">
+    <button class="btn" type="button" id="copy-pin" disabled>Copy PIN step</button>
+    <p class="note">Run it once. Running it again is safe.</p>
+
+    <p id="status"></p>
+  </main>
+  <script>
+    var setupSql = "";
+    var copySetup = document.getElementById("copy-setup");
+    var copyPin = document.getElementById("copy-pin");
+    var pinInput = document.getElementById("admin-pin");
+    var copiedNote = document.getElementById("status");
+
+    function showCopied(text) {
+      copiedNote.textContent = "Copied. Paste it in Supabase and tap Run. " + text.length + " characters.";
+    }
+
+    function copyNow(text) {
+      var area = document.createElement("textarea");
+      area.value = text;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.top = "0";
+      area.style.left = "0";
+      area.style.width = "2px";
+      area.style.height = "2px";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.focus();
+      area.select();
+      try { area.setSelectionRange(0, text.length); } catch (e) {}
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(area);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return Promise.resolve();
+    }
+
+    function seedBlock(pin) {
+      var start = setupSql.indexOf("do $pidi_admin_seed$");
+      var marker = "$pidi_admin_seed$;";
+      var end = setupSql.indexOf(marker, start);
+      if (start < 0 || end < 0) return "";
+      return setupSql.slice(start, end + marker.length).split("PUT_8_DIGIT_ADMIN_PIN").join(pin);
+    }
+
+    copySetup.addEventListener("click", function () {
+      if (!setupSql) return;
+      var text = setupSql;
+      copyNow(text);
+      showCopied(text);
+    });
+
+    pinInput.addEventListener("input", function () {
+      var digits = pinInput.value.replace(/\D/g, "").slice(0, 8);
+      if (digits !== pinInput.value) pinInput.value = digits;
+      copyPin.disabled = digits.length !== 8;
+    });
+
+    copyPin.addEventListener("click", function () {
+      var pin = pinInput.value;
+      if (!/^[0-9]{8}$/.test(pin) || !setupSql) return;
+      var text = seedBlock(pin);
+      if (!text) return;
+      copyNow(text);
+      pinInput.value = "";
+      copyPin.disabled = true;
+      showCopied(text);
+    });
+
+    fetch("PIDI_SETUP.sql").then(function (res) {
+      if (!res.ok) throw new Error("load");
+      return res.text();
+    }).then(function (text) {
+      setupSql = text;
+      copySetup.disabled = false;
+    }).catch(function () {
+      copiedNote.textContent = "Couldn't load the setup file. Refresh the page.";
+    });
+  </script>
+</body>
+</html>
