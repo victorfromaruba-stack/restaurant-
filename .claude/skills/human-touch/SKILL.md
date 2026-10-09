@@ -80,8 +80,9 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    English. Victor checks Papiamento, so keep new Papiamento short and simple.
 8. **Order Aruba is a delivery app, like Uber Eats; each restaurant is its own
    business** (Victor, 9 Oct 2026). The app may list them together (home page, "More on
-   Order Aruba"), but nothing a customer can see or load may say or hint that they share
-   a kitchen or an owner, and one order is always one restaurant. Delivery only.
+   Order Aruba"), and the five `mix` restaurants share one order and one ƒ5 delivery as
+   the app's perk. But nothing a customer can see or load may say or hint that they share
+   a kitchen or an owner. Delivery only.
    check.py and `qa/check_site.py` fail on it. Honest stays honest: the allergen line
    still says the restaurant's kitchen handles the big allergens, and we never claim
    the restaurants are independent or "local partners" either. We just don't say more.

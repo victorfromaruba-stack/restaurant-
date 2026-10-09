@@ -83,7 +83,7 @@
 /* home cards are links: they open the dish on its own restaurant's page */
 .row--link,.feat--link{text-decoration:none;color:inherit}
 .feat--link{display:block}
-.row--link:hover .row__name,.feat--link:hover .feat__name{text-decoration:underline;text-underline-offset:3px}
+@media (hover:hover){.row--link:hover .row__name,.feat--link:hover .feat__name{text-decoration:underline;text-underline-offset:3px}}
 
 /* an order already started at a restaurant: the way back to it */
 .mine{padding-top:22px;display:grid;gap:8px}

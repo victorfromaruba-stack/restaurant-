@@ -217,6 +217,7 @@ body.past-name .top__title{opacity:1;transform:none}
 .order{padding:0 20px calc(4px + var(--safe-b))}
 .order--page{padding:0}
 .lines{list-style:none;margin:4px 0 0;padding:0}
+.lines__brand{margin:18px 0 0;font-size:15px;font-weight:800;color:var(--haze);text-transform:uppercase;letter-spacing:.06em}
 .line{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--rule)}
 .line__main{min-width:0;flex:1 1 auto}
 .line__pic{width:56px;height:56px;flex:none;border-radius:10px;object-fit:cover;background:var(--night-2)}
@@ -238,6 +239,8 @@ body.past-name .top__title{opacity:1;transform:none}
 .sugg__img svg{width:16px;height:16px}
 .sugg__n{font:700 13.5px/1.25 var(--font)}
 .sugg__p{font:600 13.5px/1 var(--font);color:var(--haze)}
+.sugg--x h3 span{display:block;margin-top:3px;font:600 13.5px/1.3 var(--font);color:var(--haze)}
+.sugg__b{font-size:12.5px;line-height:1.2;color:var(--haze);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .form{margin-top:20px;display:flex;flex-direction:column;gap:18px}
 .field{display:flex;flex-direction:column;gap:7px;border:0;margin:0;padding:0}
 .field legend{font:800 15px/1.2 var(--font);margin-bottom:10px;padding:0}
@@ -315,6 +318,7 @@ body[data-page="brand"] .top__in{max-width:720px}
 .again__items{margin:4px 0 10px;color:var(--haze);font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .again__btn{min-height:44px;font-size:15px;justify-content:space-between;border-radius:12px}
 
+.also__sub{margin:0 0 14px;color:var(--haze);font-size:15px;line-height:1.4}
 /* restaurants as rows (the home page, and "More on Order Aruba" at the end of a restaurant page) */
 .shops{display:grid;grid-template-columns:1fr;margin-top:6px}
 .shop{display:grid;grid-template-columns:92px minmax(0,1fr);gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule);text-decoration:none;color:inherit}

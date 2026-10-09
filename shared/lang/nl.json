@@ -194,8 +194,15 @@
  "Late-night food, delivered.": "Laat op de avond eten, bezorgd.",
  "More on {app}": "Meer op {app}",
  "Pick a restaurant": "Kies een restaurant",
- "Your order at {name}": "Je bestelling bij {name}",
  "{fee} delivery.": "Bezorgen {fee}.",
  "Prices in Aruban florin (ƒ). Pictures are illustrations.": "Prijzen in Arubaanse florin (ƒ). De foto's zijn illustraties.",
- "Your orders": "Je bestellingen"
+ "Your orders": "Je bestellingen",
+ "You pay {fee} delivery once.": "Je betaalt maar één keer {fee} bezorging.",
+ "Order from several restaurants at once.": "Bestel bij meerdere restaurants tegelijk.",
+ "From one restaurant or several, in one order.": "Bij één restaurant of meerdere, in één bestelling.",
+ "Delivery is {fee} per order, even with dishes from several restaurants.": "Bezorgen kost {fee} per bestelling, ook met gerechten van meerdere restaurants.",
+ "Add from another restaurant": "Voeg toe van een ander restaurant",
+ "Same order, still one {fee} delivery": "Zelfde bestelling, nog steeds één keer {fee} bezorgen",
+ "Add dishes from any of them to the same order: still one {fee} delivery.": "Voeg gerechten van elk van hen toe aan dezelfde bestelling: nog steeds één keer {fee} bezorgen.",
+ "Your order: {names}": "Je bestelling: {names}"
 }

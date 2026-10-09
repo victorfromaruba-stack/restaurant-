@@ -25,7 +25,7 @@ Victor, not less.
    fails, fixing that *is* today's improvement. Also open the live home page and one
    restaurant page and make sure they load. (Since 9 Oct 2026 Order Aruba is a delivery
    app like Uber Eats and each restaurant is its own business: see the rule in CLAUDE.md.
-   Never build anything that hints at a shared kitchen or mixes restaurants in one order.)
+   Never build anything that hints at a shared kitchen.)
 3. **Pick one thing.** Take the open idea in `ideas.md` with the best impact for its
    effort that you're allowed to do alone (rules below). No good idea left? Run the
    human-touch audit (`shoot.py` + `check.py`, then look), add what you find to

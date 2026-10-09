@@ -1,7 +1,8 @@
 /* Order Aruba: a late-night delivery app, like Uber Eats. The home page lists the restaurants; each
-   restaurant page is its own shop with its own order and its own WhatsApp ticket, delivery only.
+   restaurant page is its own shop. Restaurants marked "mix" in site.json share one order and one
+   delivery fee (the app's perk, like DoorDash's Double Dash); any other restaurant has its own order.
    Customers must believe each restaurant is its own business: nothing here ever says or hints that
-   they share a kitchen, and one order never mixes restaurants.
+   they share a kitchen.
    Menus live in <restaurant>/menu.json. Shop settings (WhatsApp number, hours, areas, delivery fee,
    which restaurants are open) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
    No framework, no build step. */
@@ -12,9 +13,8 @@
   var ROOT = BODY.getAttribute("data-root") || "";
   var PAGE = BODY.getAttribute("data-page") || "";
   var HERE = BODY.getAttribute("data-brand") || "";
-  var KEY = "order." + HERE + ".v1";          // one order per restaurant: nothing carries over to another one
-  var LAST_KEY = "last." + HERE + ".v1";
-  var OLD_KEY = "orderaruba.cart.v2";          // the old bag that mixed restaurants (until 9 Oct 2026): this restaurant's lines move over
+  var KEY = "", LAST_KEY = "", ALLOWED = [];   // set by setOrder() once site.json is in
+  var MIX_KEY = "orderaruba.cart.v2", MIX_LAST = "orderaruba.last.v1";
   var MAX_QTY = 20;
   var OTHER = "Other area";
   var OTHER_NOTE = "Outside our usual area. We\u2019ll confirm on WhatsApp if we can reach you, and the fee.";
@@ -143,6 +143,13 @@
     }
     return pending[id];
   }
+  /* which order this page fills: the shared one for "mix" restaurants, else the restaurant's own */
+  function mixGroup() { return (SITE.brands || []).filter(function (b) { return b.mix; }).map(function (b) { return b.id; }); }
+  function inMix(b) { return mixGroup().indexOf(b) >= 0; }
+  function setOrder() {
+    if (inMix(HERE)) { KEY = MIX_KEY; LAST_KEY = MIX_LAST; ALLOWED = mixGroup(); }
+    else { KEY = "order." + HERE + ".v1"; LAST_KEY = "last." + HERE + ".v1"; ALLOWED = [HERE]; }
+  }
   function brandStatus(id) {
     var b = (SITE.brands || []).filter(function (x) { return x.id === id; })[0];
     return b ? b.status || "open" : "hidden";
@@ -216,28 +223,25 @@
   function readStore() {
     var s;
     try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) { return memState || blank(); }
-    if (!(s && s.v === 2 && Array.isArray(s.lines))) s = migrate() || memState || blank();
+    if (!(s && s.v === 2 && Array.isArray(s.lines))) s = memState || blank();
+    if (KEY === MIX_KEY) absorb(s);
     s.mode = "delivery";   // delivery only (Victor, 9 Oct 2026)
-    s.lines = s.lines.filter(function (l) { return l.b === HERE; });
+    s.lines = s.lines.filter(function (l) { return ALLOWED.indexOf(l.b) >= 0; });
     return s;
   }
-  function migrate() {
+  /* For a few hours on 9 Oct 2026 every restaurant had its own order (order.<id>.v1). A mix restaurant's
+     unsent lines from then join the shared order once, and the old key goes. */
+  function absorb(s) {
     try {
-      var o = JSON.parse(localStorage.getItem(OLD_KEY));
-      if (!o || !Array.isArray(o.lines)) return null;
-      var fresh = !o.sentAt && Date.now() - (o.updated || 0) < SENT_KEEP;
-      var mine = o.lines.filter(function (l) { return l.b === HERE; });
-      o.lines = o.lines.filter(function (l) { return l.b !== HERE; });
-      if (!fresh || !o.lines.length) localStorage.removeItem(OLD_KEY); else localStorage.setItem(OLD_KEY, JSON.stringify(o));
-      if (!fresh || !mine.length) return null;
-      var s = blank();
-      s.lines = mine;
-      ["area", "addr", "name"].forEach(function (k) { if (o[k]) s[k] = o[k]; });
-      s.updated = o.updated;
-      memState = s;
-      try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* private mode */ }
-      return s;
-    } catch (e) { return null; }
+      ALLOWED.forEach(function (b) {
+        var k = "order." + b + ".v1", o = JSON.parse(localStorage.getItem(k));
+        if (!o) return;
+        localStorage.removeItem(k);
+        if (!Array.isArray(o.lines) || o.sentAt || s.sentAt) return;
+        o.lines.forEach(function (l) { if (!s.lines.some(function (x) { return x.k === l.k; })) s.lines.push(l); });
+        ["area", "addr", "name"].forEach(function (f) { if (o[f] && !s[f]) s[f] = o[f]; });
+      });
+    } catch (e) { /* private mode */ }
   }
   var listeners = [];
   function onChange(fn) { listeners.push(fn); }
@@ -250,7 +254,7 @@
   }
   var state = null;
   function S() { if (!state) { state = readStore(); tidy(state); } return state; }
-  /* one line per can, however it was added */
+  /* one line per can, whichever restaurant it was added from */
   function isDrinkLine(l) { return l.dr || /^(ck|cz|sp)$/.test(l.id); }
   function tidy(s) {
     var seen = {}, changed = false;
@@ -324,7 +328,7 @@
   var freshStart = false;
   function addItem(b, id, opts, qty) {
     var menu = MENU[b], item = menu && menu.byId[id];
-    if (!item || item.soldOut || brandStatus(b) !== "open") return null;
+    if (!item || item.soldOut || brandStatus(b) !== "open" || ALLOWED.indexOf(b) < 0) return null;
     var o = normOpts(item, opts || {});
     var drink = item.kind === "drink";
     var k = drink ? "drink|" + id : lineKey(b, id, o);
@@ -376,8 +380,22 @@
   function subtotal() { return liveLines().reduce(function (n, l) { return n + l.q * l.p; }, 0); }
   function fee() { return count() > 0 ? SITE.deliveryFee : 0; }
   function total() { return subtotal() + fee(); }
-  function foodLines() { return liveLines().filter(function (l) { return !isDrinkLine(l); }); }
+  /* restaurants with food in the order (drinks don't count unless the order is only drinks), in site.json order */
+  function brandsInCart() {
+    var lines = liveLines(), food = lines.filter(function (l) { return !isDrinkLine(l); });
+    var use = food.length ? food : lines.slice(0, 1), seen = [];
+    (SITE.brands || []).forEach(function (b) { if (use.some(function (l) { return l.b === b.id; })) seen.push(b.id); });
+    use.forEach(function (l) { if (seen.indexOf(l.b) < 0) seen.push(l.b); });
+    return seen;
+  }
+  function foodLines(b) { return liveLines().filter(function (l) { return !isDrinkLine(l) && (!b || l.b === b); }); }
   function drinkLines() { return liveLines().filter(isDrinkLine); }
+  /* menus needed to show the order: every restaurant with a line in it, drinks included */
+  function menusInCart() {
+    var ids = [];
+    liveLines().forEach(function (l) { if (ids.indexOf(l.b) < 0) ids.push(l.b); });
+    return ids;
+  }
   function brandName(b) { return MENU[b] ? MENU[b].name : b.replace(/-/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
   /* Order number = Aruba time it was sent + 2 letters, e.g. 2314-K7. Readable on the phone, and
      two orders only share a number if they're sent in the same minute AND draw the same letters. */
@@ -425,8 +443,9 @@
 
   /* ---------------------------------------------------------------- WhatsApp ticket */
   function buildMessage() {
-    var s = S(), out = [];
-    out.push("*" + brandName(HERE) + " order* #" + orderNo());
+    var s = S(), out = [], brands = brandsInCart();
+    if (brands.length > 1) out.push("*Order* #" + orderNo() + " · " + brands.length + " restaurants");
+    else out.push("*" + brandName(brands[0] || HERE) + " order* #" + orderNo());
     out.push("Delivery · " + (s.area ? s.area + (s.area === OTHER ? " (please confirm)" : "") : "area not set"));
     out.push("Time: " + (validWhen() || "As soon as possible"));
     if (!kitchenStatus().open) out.push("Pre-order: sent while you were closed");
@@ -436,8 +455,15 @@
       if (l.inc && l.inc.length) out.push("   Includes: " + l.inc.join(", "));
       if (l.d && l.d.length) out.push("   " + l.d.join(" · "));
     }
-    foodLines().forEach(put);
-    drinkLines().forEach(put);
+    var drinks = drinkLines(), onlyDrinks = drinks.length === liveLines().length;
+    brands.forEach(function (b) {
+      if (brands.length > 1) out.push("*" + brandName(b) + "*");
+      (onlyDrinks ? [] : foodLines(b)).forEach(put);
+    });
+    if (drinks.length) {
+      if (brands.length > 1) out.push("*Drinks*");
+      drinks.forEach(put);
+    }
     out.push("");
     out.push("Subtotal " + money(subtotal()));
     out.push("Delivery " + money(fee()));
@@ -747,13 +773,24 @@
     });
     return node;
   }
-  function suggItem(b, i) {
+  /* cheap add-ons from the other "mix" restaurants: one order, still one delivery fee */
+  var CROSS = [["dushi-wok", "er"], ["nonnas-night-in", "gb"], ["taco-brava", "cs"], ["smash-shack", "fs"], ["oranje-snack", "bb"]];
+  function crossPicks() {
+    var brands = brandsInCart();
+    return CROSS.filter(function (c) {
+      var m = MENU[c[0]], i = m && m.byId[c[1]];
+      return i && !i.soldOut && c[0] !== HERE && ALLOWED.length > 1 && ALLOWED.indexOf(c[0]) >= 0 && brandStatus(c[0]) === "open" && brands.indexOf(c[0]) < 0;
+    }).slice(0, 4);
+  }
+  function crossMenus() { return CROSS.map(function (c) { return c[0]; }).filter(function (b) { return b !== HERE && ALLOWED.indexOf(b) >= 0; }); }
+  function suggItem(b, i, brand) {
     return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(b + "|" + i.id) + '" aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price)) + '">' +
       '<span class="sugg__img">' + thumbImg(i, ' loading="lazy" decoding="async"') + "<i>" + ICON.plus + "</i></span>" +
-      '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
+      '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span>" +
+      (brand ? '<span class="sugg__b">' + esc(MENU[b].name) + "</span>" : "") + "</button>";
   }
   function suggestions() {
-    var lines = liveLines(), host = HERE;
+    var lines = liveLines(), brands = brandsInCart(), host = brands.indexOf(HERE) >= 0 ? HERE : brands[0];
     if (!lines.length) return "";
     var menu = MENU[host], out = "";
     var hasDrink = drinkLines().length > 0;
@@ -764,6 +801,12 @@
       if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
       if (picks.length) out += '<section class="sugg" aria-label="' + esc(tr("Add to your order")) + '"><h3>' + esc(tr(!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side")) + "</h3>" +
         '<div class="sugg__row">' + picks.map(function (i) { return suggItem(host, i); }).join("") + "</div></section>";
+    }
+    var other = crossPicks();
+    if (other.length) {
+      out += '<section class="sugg sugg--x" aria-label="' + esc(tr("Add from another restaurant")) + '"><h3>' + esc(tr("Add from another restaurant")) +
+        " <span>" + esc(tr("Same order, still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</span></h3>" +
+        '<div class="sugg__row">' + other.map(function (c) { return suggItem(c[0], MENU[c[0]].byId[c[1]], true); }).join("") + "</div></section>";
     }
     return out;
   }
@@ -810,18 +853,25 @@
     }
     html += head;
     if (!st.open) html += '<p class="note note--warn">' + esc(tr(st.finishing ? "Last orders have passed for tonight." : "We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
-    html += '<ul class="lines">' + foodLines().concat(drinkLines()).map(function (l) {
-      var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
-      var it = MENU[l.b] && MENU[l.b].byId[l.id];   // a small picture per line, so the order can be checked at a glance
-      return '<li class="line">' + (it ? thumbImg(it, ' class="line__pic' + (it.kind === "drink" ? " line__pic--can" : "") + '" loading="lazy" decoding="async"') : "") +
-        '<div class="line__main"><p class="line__n">' + esc(l.n) + "</p>" +
-        (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
-        (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
-        '<p class="line__t">' + money(l.p * l.q) + "</p></div>" +
-        '<div class="qty"><button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + esc(tr(l.q === 1 ? "Remove {name}" : "One less {name}", { name: l.n })) + '">' + ICON.minus + "</button>" +
-        '<span class="qty__n">' + l.q + "</span>" +
-        '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="' + esc(tr("One more {name}", { name: l.n })) + '">' + ICON.plus + "</button></div></li>";
-    }).join("") + "</ul>";
+    var brands = brandsInCart(), groups = [];
+    brands.forEach(function (b) { var f = foodLines(b); if (f.length) groups.push({ t: brandName(b), lines: f }); });
+    if (drinkLines().length) groups.push({ t: tr("Drinks"), lines: drinkLines() });
+    if (groups.length < 2) groups = [{ t: "", lines: foodLines().concat(drinkLines()) }];
+    groups.forEach(function (g) {
+      if (g.t) html += '<h3 class="lines__brand">' + esc(g.t) + "</h3>";
+      html += '<ul class="lines">' + g.lines.map(function (l) {
+        var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
+        var it = MENU[l.b] && MENU[l.b].byId[l.id];   // a small picture per line, so the order can be checked at a glance
+        return '<li class="line">' + (it ? thumbImg(it, ' class="line__pic' + (it.kind === "drink" ? " line__pic--can" : "") + '" loading="lazy" decoding="async"') : "") +
+          '<div class="line__main"><p class="line__n">' + esc(l.n) + "</p>" +
+          (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
+          (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
+          '<p class="line__t">' + money(l.p * l.q) + "</p></div>" +
+          '<div class="qty"><button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + esc(tr(l.q === 1 ? "Remove {name}" : "One less {name}", { name: l.n })) + '">' + ICON.minus + "</button>" +
+          '<span class="qty__n">' + l.q + "</span>" +
+          '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="' + esc(tr("One more {name}", { name: l.n })) + '">' + ICON.plus + "</button></div></li>";
+      }).join("") + "</ul>";
+    });
     html += suggestions();
     var areas = (SITE.areas || []).concat([OTHER]);
     html += '<form class="form" novalidate onsubmit="return false">';
@@ -932,7 +982,7 @@
   function openOrder() {
     if (orderSheet) return;
     var node = orderNode("sheet");
-    loadMenu(HERE).catch(function () {}).then(function () { renderOrder(node); });
+    Promise.all([HERE].concat(menusInCart(), crossMenus()).map(function (b) { return loadMenu(b).catch(function () {}); })).then(function () { renderOrder(node); });
     orderSheet = openSheet(node, { label: tr("Your order"), cls: "sheet__panel--order", onClose: function () { orderSheet = null; } });
     orderSheet.node = node;
   }
@@ -941,7 +991,9 @@
   function setHTML(sel, html) { $$(sel).forEach(function (n) { if (n._html !== html) { n._html = html; n.innerHTML = html; } }); }
   function fillCommon() {
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
-    setHTML("[data-oa-hero]", esc(tr("Late-night food, delivered.")) + " <b>" + esc(tr("{fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
+    setHTML("[data-oa-hero]", mixGroup().length > 1
+      ? esc(tr("Order from several restaurants at once.")) + " <b>" + esc(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>"
+      : esc(tr("Late-night food, delivered.")) + " <b>" + esc(tr("{fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
     var ar = SITE.areas || [];
     setHTML("[data-oa-facts]", [SITE.eta ? tr("Delivery in {eta}", { eta: SITE.eta }) : "", ar.length > 1 ? tr("{from} to {to}", { from: ar[0], to: ar[ar.length - 1] }) : ar.join("")]
       .filter(Boolean).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join(""));
@@ -967,7 +1019,8 @@
   }
   function howSteps() {
     var steps = [
-      PAGE === "hub" ? [tr("Pick a restaurant"), tr("Each restaurant is its own order. Tap + on what you want.")]
+      PAGE === "hub" && mixGroup().length > 1 ? [tr("Pick your dishes"), tr("From one restaurant or several, in one order.")]
+        : PAGE === "hub" ? [tr("Pick a restaurant"), tr("Each restaurant is its own order. Tap + on what you want.")]
         : [tr("Pick your dishes"), tr("Tap + to add a dish, or open it for choices like no onion.")],
       [tr("Send it on WhatsApp"), tr("WhatsApp opens with your order already written out. Just press send.")],
       [tr("We reply to confirm"), clean((SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
@@ -979,7 +1032,9 @@
     var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().getDay()]];
     var hours = same ? tr("Open every night from {open} to {close}.", { open: clock(mins(h[0])), close: clock(mins(h[1])) })
       : today ? tr("Open today {hours}.", { hours: clock(mins(today[0])) + "–" + clock(mins(today[1])) }) : tr("Closed today.");
-    return [tr("Delivery is {fee} per order.", { fee: shortMoney(SITE.deliveryFee) }), tr("We only deliver: there\u2019s no pickup or dine-in."), hours,
+    var many = PAGE === "hub" ? mixGroup().length > 1 : ALLOWED.length > 1;
+    return [tr(many ? "Delivery is {fee} per order, even with dishes from several restaurants." : "Delivery is {fee} per order.", { fee: shortMoney(SITE.deliveryFee) }),
+      tr("We only deliver: there\u2019s no pickup or dine-in."), hours,
       SITE.lastOrder ? tr("Last orders at {time}.", { time: clock(mins(SITE.lastOrder)) }) : ""].join(" ").trim();
   }
   function setupIAB() {
@@ -1007,6 +1062,11 @@
   }
   /* restaurant/#d=<id>: open that dish once the page is drawn, then tidy the address so a refresh doesn't reopen it */
   function openFromHash() {
+    if (location.hash === "#o") {
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
+      if (count()) openOrder();
+      return;
+    }
     var m = /[#&]d=([^&]+)/.exec(location.hash), id = m && decodeURIComponent(m[1]);
     if (!id || !MENU[HERE] || !MENU[HERE].byId[id]) return;
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
@@ -1025,9 +1085,10 @@
     try { pack = JSON.parse(decodeURIComponent(escape(atob(m[1])))); } catch (e) { pack = null; }
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
     if (!Array.isArray(pack)) return Promise.resolve();
-    return loadMenu(HERE).catch(function () {}).then(function () {
+    var ids = []; pack.forEach(function (p) { if (ids.indexOf(p[0]) < 0 && ALLOWED.indexOf(p[0]) >= 0) ids.push(p[0]); });
+    return Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () {}); })).then(function () {
       if (liveLines().length) return;
-      pack.forEach(function (p) { if (p[0] === HERE) addItem(p[0], p[1], p[3] || {}, p[2]); });
+      pack.forEach(function (p) { if (ALLOWED.indexOf(p[0]) >= 0) addItem(p[0], p[1], p[3] || {}, p[2]); });
     });
   }
   function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " " + tr("and") + " " + arr[arr.length - 1]; }
@@ -1108,7 +1169,10 @@
         var box = $("#oa-also");
         var cards = others.filter(function (x) { return MENU[x]; }).map(function (x) { return shopHTML(x, 9); }).join("");
         if (!box || !cards) return;
-        box.innerHTML = '<h2 class="sec__t" id="h-also">' + esc(tr("More on {app}", { app: SITE.name || "" })) + "</h2>" + '<div class="shops">' + cards + "</div>";
+        var mixed = others.some(function (x) { return ALLOWED.indexOf(x) >= 0; });
+        box.innerHTML = '<h2 class="sec__t" id="h-also">' + esc(tr("More on {app}", { app: SITE.name || "" })) + "</h2>" +
+          (mixed ? '<p class="also__sub">' + esc(tr("Add dishes from any of them to the same order: still one {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</p>" : "") +
+          '<div class="shops">' + cards + "</div>";
         box.hidden = false;
       });
     });
@@ -1177,7 +1241,7 @@
     try {
       var l = JSON.parse(localStorage.getItem(LAST_KEY));
       if (!l || !Array.isArray(l.lines) || Date.now() - l.at > 60 * 864e5) return null;
-      var lines = l.lines.filter(function (x) { var m = MENU[x.b], i = m && m.byId[x.id]; return x.b === HERE && i && !i.soldOut && brandStatus(x.b) === "open"; });
+      var lines = l.lines.filter(function (x) { var m = MENU[x.b], i = m && m.byId[x.id]; return ALLOWED.indexOf(x.b) >= 0 && i && !i.soldOut && brandStatus(x.b) === "open"; });
       return lines.length ? lines : null;
     } catch (e) { return null; }
   }
@@ -1382,16 +1446,20 @@
   function paintMine(ids) {
     var box = $("#oa-mine");
     if (!box) return;
-    var rows = ids.map(function (b) {
+    function row(key, keep) {
       var o = null;
-      try { o = JSON.parse(localStorage.getItem("order." + b + ".v1")); } catch (e) { o = null; }
-      if (!o || !Array.isArray(o.lines) || o.sentAt || !MENU[b]) return "";
-      var lines = o.lines.filter(function (l) { return !l.gone && l.q > 0; });
+      try { o = JSON.parse(localStorage.getItem(key)); } catch (e) { o = null; }
+      if (!o || !Array.isArray(o.lines) || o.sentAt || Date.now() - (o.updated || 0) > SENT_KEEP) return "";
+      var lines = o.lines.filter(function (l) { return !l.gone && l.q > 0 && keep.indexOf(l.b) >= 0 && MENU[l.b]; });
       if (!lines.length) return "";
+      var bs = []; lines.forEach(function (l) { if (bs.indexOf(l.b) < 0 && !isDrinkLine(l)) bs.push(l.b); });
+      if (!bs.length) bs = [lines[0].b];
       var n = lines.reduce(function (t, l) { return t + l.q; }, 0), sum = lines.reduce(function (t, l) { return t + l.q * l.p; }, 0);
-      return '<a class="mine__row" href="' + esc(path(b + "/")) + '" style="--shop:' + esc(MENU[b].color) + '"><span class="mine__t">' +
-        esc(tr("Your order at {name}", { name: MENU[b].name })) + '</span><span class="mine__d">' + esc(plural(n, "item", "items")) + " \u00b7 " + money(sum) + "</span></a>";
-    }).join("");
+      return '<a class="mine__row" href="' + esc(path(bs[0] + "/#o")) + '" style="--shop:' + esc(MENU[bs[0]].color) + '"><span class="mine__t">' +
+        esc(tr("Your order: {names}", { names: listAnd(bs.map(function (b) { return MENU[b].name; })) })) + '</span><span class="mine__d">' + esc(plural(n, "item", "items")) + " \u00b7 " + money(sum) + "</span></a>";
+    }
+    var mix = mixGroup();
+    var rows = row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row("order." + b + ".v1", [b]); }).join("");
     box.innerHTML = rows;
     box.hidden = !rows;
   }
@@ -1417,6 +1485,8 @@
     if (PAGE !== "brand" || !HERE) return;
     // settings, this restaurant's menu and the words all load at the same time
     Promise.all([loadSite(), loadMenu(HERE), loadLang()]).then(function () {
+      setOrder();
+      menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });   // fresh names and prices for the other restaurants' lines
       state = readStore();
       translatePage();
       return importHash().then(function () {

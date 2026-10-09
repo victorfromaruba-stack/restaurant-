@@ -53,23 +53,28 @@
  "brands": [
   {
    "id": "dushi-wok",
-   "status": "open"
+   "status": "open",
+   "mix": true
   },
   {
    "id": "taco-brava",
-   "status": "open"
+   "status": "open",
+   "mix": true
   },
   {
    "id": "smash-shack",
-   "status": "open"
+   "status": "open",
+   "mix": true
   },
   {
    "id": "nonnas-night-in",
-   "status": "open"
+   "status": "open",
+   "mix": true
   },
   {
    "id": "oranje-snack",
-   "status": "open"
+   "status": "open",
+   "mix": true
   }
  ],
  "_status_help": "status can be open, soon (shows 'Opening soon', can't order) or hidden (not on the home page; its own page says it isn't taking orders).",
@@ -77,5 +82,6 @@
  "_lastOrder_help": "lastOrder: new orders stop at this time (Aruba time); the sign shows Last orders in the final 30 minutes. Remove the line for no cut-off.",
  "_payWith_help": "payWith: the ways to pay that customers tap at checkout; the choice goes on the WhatsApp ticket as \"Pay: ...\". Remove it to show only the payment sentence.",
  "_payment_help": "payment: one sentence on how to pay. With payWith it shows under the pay choices at checkout and in How ordering works.",
- "_whatsapp_help": "whatsapp: the number orders go to. A restaurant can have its own: add \"whatsapp\": \"297...\" to its line under brands."
+ "_whatsapp_help": "whatsapp: the number orders go to. A restaurant can have its own: add \"whatsapp\": \"297...\" to its line under brands.",
+ "_mix_help": "mix: true lets a restaurant share one order and one delivery fee with the other mix restaurants (customers can combine them). A restaurant without it has its own order and its own fee."
 }

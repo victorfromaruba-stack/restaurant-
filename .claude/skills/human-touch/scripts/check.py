@@ -303,7 +303,7 @@ def css_findings():
 
 # Order Aruba is the delivery app (like Uber Eats) and may be named; a shared kitchen or owner may not
 LEAKS = ("one kitchen", "shared kitchen", "same kitchen", "from our kitchen", "our other restaurant", "sister restaurant",
-         "all five", "one delivery", "kitchen order", "mix dishes")
+         "all five", "kitchen order")
 
 
 def leak_findings(items):

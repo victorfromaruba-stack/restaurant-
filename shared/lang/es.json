@@ -194,8 +194,15 @@
  "Late-night food, delivered.": "Comida de noche, a domicilio.",
  "More on {app}": "Más en {app}",
  "Pick a restaurant": "Elige un restaurante",
- "Your order at {name}": "Tu pedido en {name}",
  "{fee} delivery.": "Entrega {fee}.",
  "Prices in Aruban florin (ƒ). Pictures are illustrations.": "Precios en florín arubeño (ƒ). Las fotos son ilustraciones.",
- "Your orders": "Tus pedidos"
+ "Your orders": "Tus pedidos",
+ "You pay {fee} delivery once.": "Pagas la entrega de {fee} una sola vez.",
+ "Order from several restaurants at once.": "Pide de varios restaurantes a la vez.",
+ "From one restaurant or several, in one order.": "De un restaurante o de varios, en un solo pedido.",
+ "Delivery is {fee} per order, even with dishes from several restaurants.": "La entrega cuesta {fee} por pedido, aunque pidas de varios restaurantes.",
+ "Add from another restaurant": "Añade de otro restaurante",
+ "Same order, still one {fee} delivery": "Mismo pedido, sigue siendo una entrega de {fee}",
+ "Add dishes from any of them to the same order: still one {fee} delivery.": "Añade platos de cualquiera de ellos al mismo pedido: sigue siendo una entrega de {fee}.",
+ "Your order: {names}": "Tu pedido: {names}"
 }

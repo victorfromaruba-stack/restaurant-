@@ -194,8 +194,15 @@
  "Late-night food, delivered.": "Cuminda tarde anochi, te na bo porta.",
  "More on {app}": "Mas riba {app}",
  "Pick a restaurant": "Scoge un restaurant",
- "Your order at {name}": "Bo orden na {name}",
  "{fee} delivery.": "Entrega {fee}.",
  "Prices in Aruban florin (ƒ). Pictures are illustrations.": "Preis na florin arubano (ƒ). E potretnan ta ilustracion.",
- "Your orders": "Bo ordennan"
+ "Your orders": "Bo ordennan",
+ "You pay {fee} delivery once.": "Bo ta paga entrega di {fee} un biaha so.",
+ "Order from several restaurants at once.": "Pidi di varios restaurant na mes momento.",
+ "From one restaurant or several, in one order.": "Di un restaurant of di varios, den un orden.",
+ "Delivery is {fee} per order, even with dishes from several restaurants.": "Entrega ta {fee} pa orden, aunke bo pidi di varios restaurant.",
+ "Add from another restaurant": "Agrega di otro restaurant",
+ "Same order, still one {fee} delivery": "Mes orden, ainda un entrega di {fee}",
+ "Add dishes from any of them to the same order: still one {fee} delivery.": "Agrega cuminda di cualkier di nan na mes orden: ainda un entrega di {fee}.",
+ "Your order: {names}": "Bo orden: {names}"
 }
