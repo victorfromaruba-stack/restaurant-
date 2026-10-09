@@ -163,9 +163,48 @@ def static_sql():
     guarded = "alter publication supabase_realtime add table public.%I" in text
     check("publication change is only pidi_ tables", guarded and "supabase_realtime" in text)
     check(
-        "placeholder line is PUT_8_DIGIT_ADMIN_PIN",
-        "pin text := 'PUT_8_DIGIT_ADMIN_PIN';" in text,
+        "placeholder appears once, on the pin assignment",
+        text.count("PUT_8_DIGIT_ADMIN_PIN") == 1 and "pin text := 'PUT_8_DIGIT_ADMIN_PIN';" in text,
+        str(text.count("PUT_8_DIGIT_ADMIN_PIN")),
     )
+
+
+def seed_when_placeholder_replaced():
+    pin = "13572468"
+    admin = psycopg2.connect(DSN_ADMIN)
+    admin.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    admin.cursor().execute("drop database if exists pidi_v2_seed")
+    admin.cursor().execute("create database pidi_v2_seed")
+    admin.close()
+    conn = psycopg2.connect("dbname=pidi_v2_seed host=/var/run/postgresql")
+    conn.autocommit = True
+    q(conn, "create schema if not exists extensions")
+    q(conn, "create extension if not exists pgcrypto with schema extensions")
+    q(conn, """
+        do $role$ begin
+          if not exists (select 1 from pg_roles where rolname = 'anon') then
+            create role anon nologin noinherit;
+          end if;
+        end $role$
+    """)
+    replaced = SQL_PATH.read_text(encoding="utf-8").replace("PUT_8_DIGIT_ADMIN_PIN", pin)
+    cur = conn.cursor()
+    cur.execute(replaced)
+    conn.commit()
+    stored = scalar(conn, "select value from public.pidi_settings where key = 'admin_pin_hash'")
+    matches = False
+    if stored:
+        matches = scalar(conn, "select extensions.crypt(%s, %s) = %s", [pin, stored, stored])
+    check(
+        "replacing the placeholder with 8 digits seeds the admin PIN",
+        bool(stored) and matches is True,
+        "no hash" if not stored else "hash does not match",
+    )
+    conn.close()
+    admin = psycopg2.connect(DSN_ADMIN)
+    admin.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    admin.cursor().execute("drop database if exists pidi_v2_seed")
+    admin.close()
 
 
 def apply_sql(conn):
@@ -637,6 +676,8 @@ def main():
         bool(bea_still.get("token")) and bea_still.get("ok") is True,
         str(bea_still),
     )
+
+    seed_when_placeholder_replaced()
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

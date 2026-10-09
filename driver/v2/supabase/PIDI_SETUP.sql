@@ -20,7 +20,7 @@
 -- No policy is added to realtime.messages. If send is missing or refused,
 -- the order still saves. The apps poll every 8 seconds either way.
 --
--- Safe to run twice. The only line to fill in is PUT_8_DIGIT_ADMIN_PIN at the
+-- Safe to run twice. The only line to fill in is the admin PIN placeholder at the
 -- bottom. If that line is still the placeholder, or it is not 8 digits, the
 -- paste still finishes and a notice says the admin PIN was not stored.
 
@@ -1670,7 +1670,7 @@ begin
 end
 $pidi_pub$;
 
--- The one line to fill in before pasting. Replace PUT_8_DIGIT_ADMIN_PIN with
+-- The one line to fill in before pasting. Replace the placeholder below with
 -- exactly 8 digits. Kitchen and driver PINs are set on the admin screen.
 -- If this line is unchanged, or it is not 8 digits, seeding is skipped and a
 -- notice is raised. The rest of the file still commits. A PIN already stored
@@ -1680,8 +1680,8 @@ do $pidi_admin_seed$
 declare
   pin text := 'PUT_8_DIGIT_ADMIN_PIN';
 begin
-  if pin = 'PUT_8_DIGIT_ADMIN_PIN' or pin !~ '^[0-9]{8}$' then
-    raise notice 'Admin PIN was not set. Replace PUT_8_DIGIT_ADMIN_PIN near the bottom of PIDI_SETUP.sql with exactly 8 digits, then run this file again. Setup finished. A PIN already stored was left as it is.';
+  if pin !~ '^[0-9]{8}$' then
+    raise notice 'Admin PIN was not set. Replace the placeholder near the bottom of PIDI_SETUP.sql with exactly 8 digits, then run this file again. Setup finished. A PIN already stored was left as it is.';
     return;
   end if;
   insert into public.pidi_settings (key, value)
