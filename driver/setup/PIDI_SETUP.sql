@@ -4,8 +4,10 @@
 -- It creates objects in public only, and every new name starts with pidi_:
 -- tables, types, functions, triggers, indexes, and policies.
 -- It does not enable extensions, create schemas, create roles, or change
--- default privileges. It does not drop, alter, grant, or revoke anything
--- whose name does not start with pidi_.
+-- default privileges. It removes nothing, and it does not alter, grant, or
+-- revoke anything whose name does not start with pidi_.
+-- On pidi_ objects only, it takes back the rights Supabase hands anon and
+-- authenticated by default, then grants anon the functions the apps call.
 --
 -- Needs these already present (Supabase has them). If they are missing,
 -- this script stops. It will not enable them:
@@ -151,17 +153,6 @@ create table if not exists public.pidi_order_restaurants (
 
 alter table public.pidi_order_items add column if not exists restaurant_id uuid references public.pidi_restaurants (id);
 
-do $pidi_order_shape$
-begin
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'pidi_orders' and column_name = 'restaurant_id'
-  ) then
-    execute 'alter table public.pidi_orders alter column restaurant_id drop not null';
-  end if;
-end
-$pidi_order_shape$;
-
 create table if not exists public.pidi_order_events (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.pidi_orders (id),
@@ -217,6 +208,70 @@ create table if not exists public.pidi_driver_sessions (
   token_hash text not null,
   expires_at timestamptz not null
 );
+
+alter table public.pidi_restaurants enable row level security;
+alter table public.pidi_settings enable row level security;
+alter table public.pidi_drivers enable row level security;
+alter table public.pidi_orders enable row level security;
+alter table public.pidi_order_items enable row level security;
+alter table public.pidi_order_events enable row level security;
+alter table public.pidi_order_restaurants enable row level security;
+alter table public.pidi_runs enable row level security;
+alter table public.pidi_run_orders enable row level security;
+alter table public.pidi_offers enable row level security;
+alter table public.pidi_driver_locations enable row level security;
+alter table public.pidi_kitchen_sessions enable row level security;
+alter table public.pidi_driver_sessions enable row level security;
+
+alter table public.pidi_orders replica identity full;
+alter table public.pidi_runs replica identity full;
+alter table public.pidi_offers replica identity full;
+alter table public.pidi_driver_locations replica identity full;
+
+do $pidi_rls$
+declare
+  t text;
+begin
+  foreach t in array array[
+    'pidi_restaurants', 'pidi_settings', 'pidi_drivers', 'pidi_orders', 'pidi_order_items',
+    'pidi_order_events', 'pidi_order_restaurants', 'pidi_runs', 'pidi_run_orders', 'pidi_offers',
+    'pidi_driver_locations', 'pidi_kitchen_sessions', 'pidi_driver_sessions'
+  ]
+  loop
+    if not exists (
+      select 1 from pg_policies
+      where schemaname = 'public' and tablename = t and policyname = t || '_no_select'
+    ) then
+      execute format(
+        'create policy %I on public.%I for all to anon using (false) with check (false)',
+        t || '_no_select', t
+      );
+    end if;
+  end loop;
+end
+$pidi_rls$;
+
+-- Supabase gives anon and authenticated all rights on every new table by default.
+-- Take them back on pidi_ tables: the apps reach the data through functions only.
+do $pidi_table_rights$
+declare
+  t text;
+  who text;
+begin
+  for t in
+    select c.relname
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r' and c.relname like 'pidi\_%' escape '\'
+  loop
+    foreach who in array array['anon', 'authenticated'] loop
+      if exists (select 1 from pg_roles where rolname = who) then
+        execute format('revoke all on table public.%I from %I', t, who);
+      end if;
+    end loop;
+  end loop;
+end
+$pidi_table_rights$;
 
 insert into public.pidi_restaurants (slug, name, partner) values
   ('dushi-wok', 'Dushi Wok', false),
@@ -521,6 +576,9 @@ as $$
     'fee_cents', o.fee_cents,
     'total_cents', o.food_cents + o.fee_cents,
     'change_due_cents', o.change_due_cents,
+    'pay', o.pay,
+    'transfer_status', o.transfer_status,
+    'due_at', o.due_at,
     'restaurant', (
       select string_agg(r.name, ', ' order by r.name)
       from public.pidi_order_restaurants orr
@@ -567,7 +625,7 @@ declare
   local_time time;
   hours text;
   token text;
-  client_token text;
+  v_client text;
   existing jsonb;
   new_id uuid;
   uname text;
@@ -648,27 +706,32 @@ begin
     end if;
   end if;
 
+  -- A pre-order for tonight is judged by its delivery time, not by when it was sent.
   if nullif(payload->>'due_at', '') is not null then
     v_due := (payload->>'due_at')::timestamptz;
+    if v_due < now() - interval '10 minutes' or v_due > now() + interval '24 hours' then
+      raise exception 'Pick a delivery time tonight.';
+    end if;
+    v_due := greatest(v_due, now());
   else
     v_due := now();
   end if;
 
   hours := coalesce(public.pidi_setting('hours_mode'), 'reject');
-  local_time := (now() at time zone 'America/Aruba')::time;
+  local_time := (v_due at time zone 'America/Aruba')::time;
   if not (local_time >= time '22:00' or local_time < time '02:00') then
     if hours = 'flag' then
       outside := true;
     else
-      raise exception 'Orders are open from 10:00 PM to 2:00 AM.';
+      raise exception 'We deliver late night from 10 PM. Pick a time tonight.';
     end if;
   end if;
 
-  client_token := nullif(trim(coalesce(payload->>'client_token', '')), '');
-  if client_token is not null then
+  v_client := nullif(trim(coalesce(payload->>'client_token', '')), '');
+  if v_client is not null then
     select public.pidi_order_public(o.id) into existing
     from public.pidi_orders o
-    where o.client_token = client_token;
+    where o.client_token = v_client;
     if existing is not null then
       return existing;
     end if;
@@ -680,7 +743,7 @@ begin
     lat, lng, note, pay, food_cents, fee_cents, pays_with_cents, transfer_status,
     due_at, outside_hours, test
   ) values (
-    token, client_token, uname, trim(payload->>'phone'), trim(payload->>'area'),
+    token, v_client, uname, trim(payload->>'phone'), trim(payload->>'area'),
     trim(payload->>'address'), v_lat, v_lng, nullif(trim(coalesce(payload->>'note', '')), ''),
     pay::public.pidi_pay_method, food, fee, pays,
     case when pay = 'transfer' then 'awaiting'::public.pidi_transfer_status else null end,
@@ -799,8 +862,7 @@ begin
   end if;
   insert into public.pidi_settings (key, value) values ('kitchen_pin_failures', '0')
   on conflict (key) do update set value = '0';
-  delete from public.pidi_settings where key = 'kitchen_pin_locked_until';
-  delete from public.pidi_kitchen_sessions where expires_at < now() - interval '1 day';
+  update public.pidi_settings set value = '' where key = 'kitchen_pin_locked_until';
   token := public.pidi_new_token();
   hours := coalesce(public.pidi_setting('session_hours')::integer, 12);
   insert into public.pidi_kitchen_sessions (token_hash, expires_at)
@@ -988,6 +1050,84 @@ begin
 end
 $$;
 
+-- The kitchen can't do an order (sold out, a prank). Only before a driver has it.
+-- If it shared a run still being offered, the other order keeps that run and is offered again.
+create or replace function public.pidi_kitchen_cancel(session text, order_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  cur text;
+  v_run uuid;
+  v_closed uuid;
+begin
+  if not public.pidi_kitchen_ok(session) then
+    raise exception 'Sign in again.';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('pidi-dispatch'));
+  select o.status::text into cur
+  from public.pidi_orders o
+  where o.id = pidi_kitchen_cancel.order_id
+  for update;
+  if not found then
+    raise exception 'No such order.';
+  end if;
+  if cur = 'cancelled' then
+    return jsonb_build_object('ok', true, 'status', 'cancelled');
+  end if;
+  if cur in ('assigned', 'picked_up', 'delivered') then
+    raise exception 'A driver has this order already. Call the driver.';
+  end if;
+  for v_run in
+    select ro.run_id
+    from public.pidi_run_orders ro
+    join public.pidi_runs r on r.id = ro.run_id
+    where ro.order_id = pidi_kitchen_cancel.order_id and r.status = 'offered'
+  loop
+    update public.pidi_offers set status = 'expired'
+      where run_id = v_run and status = 'pending';
+    if exists (
+      select 1 from public.pidi_run_orders x
+      where x.run_id = v_run and x.order_id <> pidi_kitchen_cancel.order_id
+    ) then
+      insert into public.pidi_runs (status) values ('cancelled') returning id into v_closed;
+      update public.pidi_run_orders x
+        set run_id = v_closed, stop_index = 1
+        where x.order_id = pidi_kitchen_cancel.order_id;
+      update public.pidi_run_orders x set stop_index = 1 where x.run_id = v_run;
+    else
+      update public.pidi_runs set status = 'cancelled' where id = v_run;
+    end if;
+  end loop;
+  update public.pidi_orders set status = 'cancelled' where id = pidi_kitchen_cancel.order_id;
+  perform public.pidi_log(pidi_kitchen_cancel.order_id, 'cancelled');
+  perform public.pidi_dispatch();
+  return jsonb_build_object('ok', true, 'status', 'cancelled');
+end
+$$;
+
+create or replace function public.pidi_kitchen_transfer_paid(session text, order_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+begin
+  if not public.pidi_kitchen_ok(session) then
+    raise exception 'Sign in again.';
+  end if;
+  update public.pidi_orders o
+    set transfer_status = 'paid'
+    where o.id = pidi_kitchen_transfer_paid.order_id and o.pay = 'transfer';
+  if not found then
+    raise exception 'That order is not a bank transfer.';
+  end if;
+  return jsonb_build_object('ok', true, 'transfer_status', 'paid');
+end
+$$;
+
 create or replace function public.pidi_driver_id(token text)
 returns uuid
 language plpgsql
@@ -1048,7 +1188,7 @@ begin
   end if;
   insert into public.pidi_settings (key, value) values ('admin_pin_failures', '0')
   on conflict (key) do update set value = '0';
-  delete from public.pidi_settings where key = 'admin_pin_locked_until';
+  update public.pidi_settings set value = '' where key = 'admin_pin_locked_until';
   return null;
 end
 $$;
@@ -1074,8 +1214,8 @@ begin
   on conflict (key) do update set value = excluded.value;
   insert into public.pidi_settings (key, value) values ('kitchen_pin_failures', '0')
   on conflict (key) do update set value = '0';
-  delete from public.pidi_settings where key = 'kitchen_pin_locked_until';
-  delete from public.pidi_kitchen_sessions;
+  update public.pidi_settings set value = '' where key = 'kitchen_pin_locked_until';
+  update public.pidi_kitchen_sessions set expires_at = now() where expires_at > now();
   return '{"ok":true}'::jsonb;
 end
 $$;
@@ -1165,8 +1305,9 @@ begin
   update public.pidi_drivers d
     set active = false, online = false
     where d.id = pidi_admin_remove_driver.driver_id;
-  delete from public.pidi_driver_sessions s
-    where s.driver_id = pidi_admin_remove_driver.driver_id;
+  update public.pidi_driver_sessions s
+    set expires_at = now()
+    where s.driver_id = pidi_admin_remove_driver.driver_id and s.expires_at > now();
   update public.pidi_offers f
     set status = 'lost'
     where f.driver_id = pidi_admin_remove_driver.driver_id
@@ -1209,8 +1350,6 @@ begin
   update public.pidi_drivers
     set pin_failures = 0, pin_locked_until = null
     where id = drv.id;
-  delete from public.pidi_driver_sessions
-    where driver_id = drv.id and expires_at < now() - interval '1 day';
   token := public.pidi_new_token();
   hours := coalesce(public.pidi_setting('session_hours')::integer, 12);
   insert into public.pidi_driver_sessions (driver_id, token_hash, expires_at)
@@ -1565,57 +1704,20 @@ begin
 end
 $$;
 
-drop trigger if exists pidi_trg_orders_ping on public.pidi_orders;
-create trigger pidi_trg_orders_ping
+create or replace trigger pidi_trg_orders_ping
   after insert or update on public.pidi_orders
   for each row execute function public.pidi_trg_order_ping();
 
-drop trigger if exists pidi_trg_offers_ping on public.pidi_offers;
-create trigger pidi_trg_offers_ping
+create or replace trigger pidi_trg_offers_ping
   after insert or update on public.pidi_offers
   for each row execute function public.pidi_trg_offer_ping();
 
-alter table public.pidi_restaurants enable row level security;
-alter table public.pidi_settings enable row level security;
-alter table public.pidi_drivers enable row level security;
-alter table public.pidi_orders enable row level security;
-alter table public.pidi_order_items enable row level security;
-alter table public.pidi_order_events enable row level security;
-alter table public.pidi_order_restaurants enable row level security;
-alter table public.pidi_runs enable row level security;
-alter table public.pidi_run_orders enable row level security;
-alter table public.pidi_offers enable row level security;
-alter table public.pidi_driver_locations enable row level security;
-alter table public.pidi_kitchen_sessions enable row level security;
-alter table public.pidi_driver_sessions enable row level security;
-
-alter table public.pidi_orders replica identity full;
-alter table public.pidi_runs replica identity full;
-alter table public.pidi_offers replica identity full;
-alter table public.pidi_driver_locations replica identity full;
-
-do $pidi_rls$
-declare
-  t text;
-begin
-  foreach t in array array[
-    'pidi_restaurants', 'pidi_settings', 'pidi_drivers', 'pidi_orders', 'pidi_order_items',
-    'pidi_order_events', 'pidi_order_restaurants', 'pidi_runs', 'pidi_run_orders', 'pidi_offers',
-    'pidi_driver_locations', 'pidi_kitchen_sessions', 'pidi_driver_sessions'
-  ]
-  loop
-    execute format('drop policy if exists %I on public.%I', t || '_no_select', t);
-    execute format(
-      'create policy %I on public.%I for all to anon using (false) with check (false)',
-      t || '_no_select', t
-    );
-  end loop;
-end
-$pidi_rls$;
-
+-- Supabase gives anon and authenticated execute on every new function by default.
+-- Take that back on pidi_ functions, then grant anon only the ones the apps call.
 do $pidi_grants$
 declare
   sig text;
+  who text;
 begin
   for sig in
     select p.oid::regprocedure::text
@@ -1624,6 +1726,11 @@ begin
     where n.nspname = 'public' and p.proname like 'pidi\_%' escape '\'
   loop
     execute format('revoke all on function %s from public', sig);
+    foreach who in array array['anon', 'authenticated'] loop
+      if exists (select 1 from pg_roles where rolname = who) then
+        execute format('revoke all on function %s from %I', sig, who);
+      end if;
+    end loop;
   end loop;
 end
 $pidi_grants$;
@@ -1636,6 +1743,8 @@ grant execute on function public.pidi_kitchen_feed(text) to anon;
 grant execute on function public.pidi_kitchen_accept(text, uuid) to anon;
 grant execute on function public.pidi_kitchen_set_status(text, uuid, text) to anon;
 grant execute on function public.pidi_kitchen_mark_ready(text, uuid, text) to anon;
+grant execute on function public.pidi_kitchen_cancel(text, uuid) to anon;
+grant execute on function public.pidi_kitchen_transfer_paid(text, uuid) to anon;
 grant execute on function public.pidi_driver_login(text, text) to anon;
 grant execute on function public.pidi_driver_set_online(text, boolean) to anon;
 grant execute on function public.pidi_driver_offers(text) to anon;
