@@ -7,6 +7,7 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
+- [ ] NOTE 2026-10-09 · A big redesign is in progress in another session (Victor: 'the website looks a lot like AI build it, redesign 100 times better'). Until it lands on main, the daily run must not change shared/*.css, page layout or markup in order-app.js: pick a chef-app or data idea instead, or only fix a broken check.
 - [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
 - [ ] M · S · Chef app replies name the dish ("Your birria is on the stove now") and go out at the same moments every order (seeing the work raised food ratings 22%, Buell 2017) · done when: confirm/cooking/on-the-way replies use the ticket's first dish
 - [ ] M · M · Chef app "busy tonight: +15 min" switch that changes the delivery time the site shows (lateness costs ~3 future orders; widen the window instead of missing it) · done when: one tap saves site.json eta and the site shows it
