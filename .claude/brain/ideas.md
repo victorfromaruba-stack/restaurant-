@@ -7,7 +7,6 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
-- [ ] H · S · Kitchen and driver PIN lockouts still raise after counting, so five wrong tries do not lock. Return the wait sentence the way the admin check does, and show it on the sign-in screen · done when: 6 wrong kitchen PINs and 6 wrong driver PINs refuse the right PIN until the lock ends
 - [ ] NOTE 2026-10-09 · A big redesign is in progress in another session (Victor: 'the website looks a lot like AI build it, redesign 100 times better'). Until it lands on main, the daily run must not change shared/*.css, page layout or markup in order-app.js: pick a chef-app or data idea instead, or only fix a broken check.
 - [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
 - [ ] M · S · Chef app replies name the dish ("Your birria is on the stove now") and go out at the same moments every order (seeing the work raised food ratings 22%, Buell 2017) · done when: confirm/cooking/on-the-way replies use the ticket's first dish
@@ -24,6 +23,7 @@ under 25 lines: drop ideas that stopped making sense.
 - [ ] M · S · Picture look per restaurant: build/grade.py gives all five the same warm grain, which makes them read as one set. A grade per restaurant, regrading from the originals in git history · done when: thumbnails per restaurant look distinct, qa passes
 
 ## Shipped
+- [x] 2026-10-09 · H · S · Kitchen and driver PIN lockouts return the wait sentence so the count commits. Six wrong kitchen PINs lock the kitchen, six wrong tries lock that driver only
 - [x] 2026-10-09 · H · L · Order Aruba as a delivery app like Uber, each restaurant its own business (Victor): home lists restaurants, cards open the dish on its own page, 'More on Order Aruba', one order per restaurant, delivery only, no shared-kitchen wording anywhere public, receipts 'Order Aruba' + restaurant. Earlier the same day: no home or cart page, one order per restaurant, no cross-selling, delivery only, receipts and tickets carry only that restaurant, Google data and link cards per restaurant, public language and settings files cleaned, Order again on the restaurant page; qa and check.py fail on any leak
 - [x] 2026-10-08 · H · M · From a fresh-eyes review: restaurant pages open on the menu (no one-card rail), Dushi cover pk (no dish twice), home facts line, rows show the tagline, cart says where the order goes, plain steps, no rail stickers, sentence-case sheet titles, toast at the bottom, stray dots, chip centring, add-ons name their restaurant, pre-order line in the customer's voice
 - [x] 2026-10-08 · M · S · Unused menu.json fields kicker/headline removed (intro stays: it's Google's description); chef app Menu screens fixed at 320px (long names wrap)

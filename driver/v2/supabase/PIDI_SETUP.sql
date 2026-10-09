@@ -671,6 +671,8 @@ begin
 end
 $$;
 
+-- A miss is returned as jsonb, not raised. A raised error would roll the failure
+-- count back, and the lock would never stick. One kitchen, so the lock is global.
 create or replace function public.pidi_kitchen_login(pin text)
 returns jsonb
 language plpgsql
@@ -684,18 +686,16 @@ declare
   token text;
   hours integer;
 begin
-  if pin is null or pin !~ '^[0-9]{4,8}$' then
-    raise exception 'That PIN does not match.';
-  end if;
   hash := public.pidi_setting('kitchen_pin_hash');
   if hash is null or hash = '' then
-    raise exception 'The kitchen PIN is not set yet.';
+    return jsonb_build_object('ok', false, 'error', 'The kitchen PIN is not set yet.');
   end if;
   locked := nullif(public.pidi_setting('kitchen_pin_locked_until'), '')::timestamptz;
   if locked is not null and locked > now() then
-    raise exception 'Too many tries. Wait 5 minutes.';
+    return jsonb_build_object('ok', false, 'error', 'Too many tries. Wait 5 minutes.');
   end if;
-  if extensions.crypt(pin, hash) is distinct from hash then
+  if pin is null or pin !~ '^[0-9]{4,8}$'
+     or extensions.crypt(pin, hash) is distinct from hash then
     failures := coalesce(public.pidi_setting('kitchen_pin_failures')::integer, 0) + 1;
     insert into public.pidi_settings (key, value) values ('kitchen_pin_failures', failures::text)
     on conflict (key) do update set value = excluded.value;
@@ -704,7 +704,7 @@ begin
       values ('kitchen_pin_locked_until', (now() + interval '5 minutes')::text)
       on conflict (key) do update set value = excluded.value;
     end if;
-    raise exception 'That PIN does not match.';
+    return jsonb_build_object('ok', false, 'error', 'That PIN does not match.');
   end if;
   insert into public.pidi_settings (key, value) values ('kitchen_pin_failures', '0')
   on conflict (key) do update set value = '0';
@@ -715,6 +715,7 @@ begin
   insert into public.pidi_kitchen_sessions (token_hash, expires_at)
   values (extensions.crypt(token, extensions.gen_salt('bf', 8)), now() + make_interval(hours => hours));
   return jsonb_build_object(
+    'ok', true,
     'token', token,
     'expires_at', now() + make_interval(hours => hours),
     'topic', public.pidi_kitchen_topic()
@@ -952,18 +953,19 @@ begin
   from public.pidi_drivers d
   where d.active and (d.code = key or lower(d.name) = key or d.id::text = key);
   if not found then
-    raise exception 'That PIN does not match.';
+    return jsonb_build_object('ok', false, 'error', 'That PIN does not match.');
   end if;
   if drv.pin_locked_until is not null and drv.pin_locked_until > now() then
-    raise exception 'Too many tries. Wait 5 minutes.';
+    return jsonb_build_object('ok', false, 'error', 'Too many tries. Wait 5 minutes.');
   end if;
+  -- Returned, not raised: a raised error would roll this driver's count back.
   if pin is null or pin !~ '^[0-9]{4,8}$'
      or extensions.crypt(pin, drv.pin_hash) is distinct from drv.pin_hash then
     update public.pidi_drivers
       set pin_failures = pin_failures + 1,
           pin_locked_until = case when pin_failures + 1 >= 5 then now() + interval '5 minutes' else pin_locked_until end
       where id = drv.id;
-    raise exception 'That PIN does not match.';
+    return jsonb_build_object('ok', false, 'error', 'That PIN does not match.');
   end if;
   update public.pidi_drivers
     set pin_failures = 0, pin_locked_until = null
@@ -975,6 +977,7 @@ begin
   insert into public.pidi_driver_sessions (driver_id, token_hash, expires_at)
   values (drv.id, extensions.crypt(token, extensions.gen_salt('bf', 8)), now() + make_interval(hours => hours));
   return jsonb_build_object(
+    'ok', true,
     'token', token,
     'driver_id', drv.id,
     'name', drv.name,
@@ -1406,6 +1409,8 @@ $pidi_pub$;
 -- The dashboard runs this as the database owner, not as a customer.
 -- The admin PIN is exactly 8 digits. Kitchen and driver PINs are 4 to 8 digits.
 -- Five wrong admin PINs lock admin checks for 5 minutes.
+-- Five wrong kitchen PINs lock the kitchen for 5 minutes.
+-- Five wrong tries lock that driver only. The others can still sign in.
 --
 -- insert into public.pidi_settings (key, value)
 -- values ('admin_pin_hash', extensions.crypt('PUT_8_DIGIT_ADMIN_PIN', extensions.gen_salt('bf', 8)))

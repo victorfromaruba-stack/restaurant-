@@ -302,8 +302,12 @@ def main():
     refused = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["0000", "Ari", "2975550001", "2468"])
     check("wrong admin PIN is refused", refused.get("ok") is False and "does not match" in refused.get("error", "").lower(), str(refused))
     q(conn, "select public.pidi_admin_set_kitchen_pin(%s, %s)", ["42424242", "9999"])
-    ok, detail = explodes(conn, "select public.pidi_kitchen_login(%s)", ["0000"], "does not match")
-    check("wrong kitchen PIN is refused", ok, detail)
+    refused_kitchen = scalar(conn, "select public.pidi_kitchen_login(%s)", ["0000"])
+    check(
+        "wrong kitchen PIN is refused",
+        refused_kitchen.get("ok") is False and "does not match" in refused_kitchen.get("error", "").lower(),
+        str(refused_kitchen),
+    )
     ari = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["42424242", "Ari", "2975550001", "2468"])
     bea = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["42424242", "Bea", "2975550002", "1357"])
     conn.commit()
@@ -454,6 +458,33 @@ def main():
     detail = (row or {}).get("error", "")
     check("right admin PIN refused during lockout", row.get("ok") is False and "too many tries" in detail.lower(), detail)
     check("lockout message is the five minute wait", "wait 5 minutes" in sixth.lower() and "wait 5 minutes" in detail.lower(), sixth + " / " + detail)
+
+    def pin_lock(label, sql, wrong, right):
+        sixth_msg = ""
+        for n in range(1, 7):
+            row = scalar(conn, sql, wrong)
+            conn.commit()
+            detail = (row or {}).get("error", "")
+            if n < 6:
+                check("wrong %s PIN %s" % (label, n), row.get("ok") is False and "does not match" in detail.lower(), detail)
+            else:
+                check("six wrong %s PINs lock it" % label, row.get("ok") is False and "too many tries" in detail.lower(), detail)
+            sixth_msg = detail
+        row = scalar(conn, sql, right)
+        conn.commit()
+        detail = (row or {}).get("error", "")
+        check("right %s PIN refused during lockout" % label, row.get("ok") is False and "too many tries" in detail.lower(), detail)
+        check("%s lockout message is the five minute wait" % label, "wait 5 minutes" in sixth_msg.lower() and "wait 5 minutes" in detail.lower(), sixth_msg + " / " + detail)
+
+    pin_lock("kitchen", "select public.pidi_kitchen_login(%s)", ["0000"], ["9999"])
+    pin_lock("driver", "select public.pidi_driver_login(%s, %s)", ["Ari", "0000"], ["Ari", "2468"])
+    bea_still = scalar(conn, "select public.pidi_driver_login(%s, %s)", ["Bea", "1357"])
+    conn.commit()
+    check(
+        "a different driver is not locked",
+        bool(bea_still.get("token")) and bea_still.get("ok") is True,
+        str(bea_still),
+    )
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

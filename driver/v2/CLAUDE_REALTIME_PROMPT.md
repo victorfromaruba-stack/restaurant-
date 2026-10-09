@@ -43,7 +43,7 @@ There is no JWT. A kitchen or driver session is a random token returned by the l
 
 Labels: Received (new, accepted), Cooking (cooking, ready), On the way (assigned, picked_up), Delivered, Cancelled.
 
-`pidi_kitchen_login(pin text)` → `{token, expires_at, topic}`
+`pidi_kitchen_login(pin text)` → `{ok:true, token, expires_at, topic}` or `{ok:false, error}`. Five wrong PINs lock the kitchen for 5 minutes. The miss is returned, not raised, so the count is saved. Until the lock ends, the right PIN is refused too: "Too many tries. Wait 5 minutes."
 
 `pidi_kitchen_feed(session text)` → `{topic, orders:[...]}`
 
@@ -159,6 +159,10 @@ var PidiLive = (function () {
       root.innerHTML = '<h1>Kitchen</h1><input id="pidi-pin" inputmode="numeric" placeholder="PIN"><button type="button" id="pidi-in">Sign in</button>';
       document.getElementById("pidi-in").onclick = function () {
         rpc("pidi_kitchen_login", { pin: document.getElementById("pidi-pin").value }).then(function (data) {
+          if (!data || data.ok === false || !data.token) {
+            alert((data && data.error) || "That PIN does not match.");
+            return;
+          }
           sessionStorage.setItem(KEY, JSON.stringify(data));
           open(root);
         }).catch(function (err) { alert(err.message); });

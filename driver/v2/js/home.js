@@ -33,8 +33,8 @@ async function signIn() {
   const code = document.getElementById("code").value.trim();
   const pin = document.getElementById("pin").value.trim();
   const { data, error } = await db.rpc("pidi_driver_login", { driver_name_or_id: code, pin });
-  if (error || !data || !data.token) {
-    showSignIn(message(error) || "That PIN does not match.");
+  if (error || !data || data.ok === false || !data.token) {
+    showSignIn((data && data.error) || message(error) || "That PIN does not match.");
     return;
   }
   saveSession(data.token, data);

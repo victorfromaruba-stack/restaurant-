@@ -23,7 +23,7 @@ select public.pidi_admin_add_driver('PUT_8_DIGIT_ADMIN_PIN', 'Ari', '2975550000'
 
 The admin PIN is exactly 8 digits. Kitchen and driver PINs are 4 to 8 digits. The driver signs in with their name (`Ari`) and their PIN. Add each driver with another `pidi_admin_add_driver` line. Do not commit these PINs.
 
-Five wrong admin PINs lock admin checks for 5 minutes. Until that ends, the right PIN is refused too: "Too many tries. Wait 5 minutes." There is one admin, so the lock is global.
+Five wrong admin PINs lock admin checks for 5 minutes. There is one admin, so the lock is global. Five wrong kitchen PINs lock the kitchen the same way. Five wrong tries lock that driver only. The other drivers can still sign in. Until a lock ends, the right PIN is refused too: "Too many tries. Wait 5 minutes."
 
 **3. Then config.js.** Put the anon key in `driver/v2/config.js` and commit it. The URL is already there. The URL and the anon key are public. Never commit a service role key or a signing JWK (this setup does not use them).
 
