@@ -311,7 +311,7 @@
       if (clash) { UI.toast('There’s already a dish called ' + clash.name + '.', 3500); return; }
       var item = id ? menu.items.filter(function (i) { return i.id === id; })[0] : { id: newId(menu, f.name), img: '' };
       var msg = 'Menu (kitchen app): ' + menu.name + ' · ' + (id ? 'changed ' : 'new dish ') + f.name;
-      var picStep = pics ? savePictures(brand, item, pics, msg) : Promise.resolve(item.img);
+      var picStep = pics ? savePictures(brand, item, pics, msg) : Promise.resolve(item.img), newPhoto = !!pics;
       saving(picStep.then(function (imgPath) {
         return updateJson(brand + '/menu.json', function (m) {
           var it = id ? m.items.filter(function (i) { return i.id === id; })[0] : null;
@@ -325,6 +325,9 @@
           // An iPhone photo lands at a new path (.jpg): the link-card picture ("hero") follows it to the new picture.
           if (imgPath && m.hero && m.hero === it.img) m.hero = imgPath;
           if (imgPath) it.img = imgPath;
+          // "hidePhoto": the old picture didn't match the words, so the site showed the dish without one.
+          // A new photo of the real dish replaces it, so the site shows the picture again.
+          if (newPhoto) delete it.hidePhoto;
         }, msg);
       }), function () { UI.go('#/menu/' + brand); });
     },

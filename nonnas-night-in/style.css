@@ -1,54 +1,49 @@
-/* Nonna's Night In: a printed trattoria menu under a warm lamp. Ivory paper, green ink, the dish names in
-   tomato-red italic, small-caps headings between gold rules, prices across a dotted line. */
+/* Nonna's Night In: a printed trattoria menu under a warm lamp. Ivory paper, green ink, dish names in tomato-red
+   italic, small-caps headings between gold rules, prices across a dotted line. Words only, except the house dish,
+   which gets a small framed picture. */
 @font-face{font-family:"Playfair Display";src:url(../shared/fonts/playfair-600i.woff2) format("woff2");font-weight:600;font-style:italic;font-display:swap}
 @font-face{font-family:"Playfair Display";src:url(../shared/fonts/playfair-600i-f.woff2) format("woff2");font-weight:600;font-style:italic;font-display:swap;unicode-range:U+0192}
 @font-face{font-family:"Lora";src:url(../shared/fonts/lora-400.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Lora";src:url(../shared/fonts/lora-400-f.woff2) format("woff2");font-weight:400;font-display:swap;unicode-range:U+0192}
 body[data-brand="nonnas-night-in"]{
   color-scheme:light;
-  --tomato:#B23A2E;--gold:#C9A227;--paper:#F4E9D8;
+  --tomato:#B23A2E;--gold:#C9A227;
   --g:#F4E9D8;--g2:#FBF4E8;--ink:#1F3D2B;--muted:#4A5B4D;--line:#D9C8A6;--field-line:#857656;
   --acc:#1F3D2B;--acc-ink:#F7EEDF;--price:#1F3D2B;--r:2px;
-  --display:"Playfair Display",Georgia,serif;--name:"Playfair Display",Georgia,serif;--name-w:600;--body:"Lora",Georgia,serif;
-  --chip-bg:transparent;--chip-ink:#1F3D2B;--chip-line:#A08F6F;--chip-on-bg:#1F3D2B;--chip-on-ink:#F7EEDF;
-  --add-bg:transparent;--add-ink:#1F3D2B;--add-line:#1F3D2B;
-  --badge-bg:#B23A2E;--badge-ink:#FFFFFF;--focus:#B23A2E;
+  --display:"Playfair Display",Georgia,serif;--name:"Playfair Display",Georgia,serif;--name-w:600;--name-size:20px;--name-ink:#B23A2E;
+  --body:"Lora",Georgia,serif;
+  --chip-bg:transparent;--chip-ink:#1F3D2B;--chip-line:#857656;--chip-on-bg:#1F3D2B;--chip-on-ink:#F7EEDF;
+  --add-bg:transparent;--add-ink:#1F3D2B;--add-line:#1F3D2B;--add-on-bg:#1F3D2B;--add-on-ink:#F7EEDF;
+  --lead:2px dotted;--lead-ink:#A39271;--focus:#B23A2E;--bad:#B3261E;
 }
-/* the menu's cover page: the name centred, a gold double rule, the line in italic, the picture in a frame */
-[data-brand="nonnas-night-in"] .store{padding-block:26px 6px;text-align:center}
-[data-brand="nonnas-night-in"] .store__sign{justify-items:center;gap:6px}
-[data-brand="nonnas-night-in"] .store__logo{max-height:108px;max-width:min(100%,260px)}
-[data-brand="nonnas-night-in"] .store__tag{padding-top:12px;border-top:3px double var(--gold);font:italic 600 20px/1.3 var(--display);color:var(--ink)}
-[data-brand="nonnas-night-in"] .cover{height:150px;margin:20px auto 0;max-width:560px;padding:6px;background:var(--g2);border:1px solid var(--gold);border-radius:2px}
+/* the menu's front page: the name, its line in italic under a gold double rule, the picture in a gold frame */
+[data-brand="nonnas-night-in"] .store{--logo-h:76px;padding-block:24px 22px}
+[data-brand="nonnas-night-in"] .store__name{padding-bottom:14px;border-bottom:3px double var(--gold)}
+[data-brand="nonnas-night-in"] .store__tag{font:italic 600 19px/1.3 var(--display);color:var(--ink)}
+[data-brand="nonnas-night-in"] .cover{padding:4px;background:var(--g2);border:1px solid var(--gold);border-radius:2px}
 [data-brand="nonnas-night-in"] .cover img,[data-brand="nonnas-night-in"] .cover__v{border-radius:1px}
-[data-brand="nonnas-night-in"] .store .note{text-align:left}
 
 /* headings: small capitals between two gold lines */
-[data-brand="nonnas-night-in"] .sec{padding-top:34px}
-[data-brand="nonnas-night-in"] .sec__t{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px;font:400 14px/1.3 var(--body);letter-spacing:.2em;text-transform:uppercase;color:var(--ink);text-align:center}
+[data-brand="nonnas-night-in"] .sec{padding-top:28px}
+[data-brand="nonnas-night-in"] .sec__t{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:2px;font:400 13.5px/1.3 var(--body);letter-spacing:.2em;text-transform:uppercase;color:var(--ink);text-align:center}
 [data-brand="nonnas-night-in"] .sec__t::before,[data-brand="nonnas-night-in"] .sec__t::after{content:"";flex:1;height:1px;background:var(--gold)}
 [data-brand="nonnas-night-in"] .sec__k{display:inline;font:inherit;color:inherit}
 
-/* rows: name in red italic, a dotted line to the price, the words under it. No pictures on the printed menu */
-[data-brand="nonnas-night-in"] .row{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"name name price" "desc desc desc" "flags media add";column-gap:10px;padding:18px 0 14px;border-bottom:0}
-[data-brand="nonnas-night-in"] .row__name{display:flex;align-items:baseline;gap:10px;font:italic 600 21px/1.25 var(--name);color:var(--tomato)}
-[data-brand="nonnas-night-in"] .row__name::after{content:"";flex:1 0 28px;border-bottom:2px dotted #A39271;transform:translateY(-5px)}
-[data-brand="nonnas-night-in"] .row__price{margin:0;align-self:end;font:400 18px/1.25 var(--body);color:var(--ink);padding-bottom:1px}
-[data-brand="nonnas-night-in"] .row__desc{margin-top:4px;font:400 15.5px/1.5 var(--body);color:var(--muted);max-width:52ch}
-[data-brand="nonnas-night-in"] .row__flags{align-self:center;margin-top:6px;font:400 13.5px/1.3 var(--body);font-style:normal}
-[data-brand="nonnas-night-in"] .row__media{width:auto;height:auto;align-self:end}
-[data-brand="nonnas-night-in"] .row__media img{display:none}
-[data-brand="nonnas-night-in"] .qtybadge{position:static;display:block;margin-top:8px;border-radius:2px}
-[data-brand="nonnas-night-in"] .plus{width:44px;height:38px;border-width:1px;margin-top:8px}
-/* the house dish keeps its picture, framed like the cover */
-[data-brand="nonnas-night-in"] .row.is-sig{grid-template-areas:"media media media" "name name price" "desc desc desc" "flags x add";padding-top:8px}
-[data-brand="nonnas-night-in"] .row.is-sig .row__media{grid-area:media;width:100%;height:auto;aspect-ratio:16/9;margin-bottom:14px;padding:6px;background:var(--g2);border:1px solid var(--gold)}
-[data-brand="nonnas-night-in"] .row.is-sig .row__media img{display:block;border-radius:1px}
-[data-brand="nonnas-night-in"] .row.is-sig .qtybadge{position:absolute;left:12px;top:12px;margin:0}
-[data-brand="nonnas-night-in"] .row.is-sig .row__name{font-size:24px}
-[data-brand="nonnas-night-in"] .row--drink{grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-areas:"name media price add";align-items:center;padding:8px 0}
-[data-brand="nonnas-night-in"] .row--drink .row__name{font-size:18px}
-[data-brand="nonnas-night-in"] .row--drink .row__price,[data-brand="nonnas-night-in"] .row--drink .plus,[data-brand="nonnas-night-in"] .row--drink .qtybadge{margin:0;align-self:center}
+/* rows: the name in red italic, a dotted line to the price, the words under it. No pictures on the printed menu */
+[data-brand="nonnas-night-in"] .row{padding:14px 0;border-bottom:0}
+[data-brand="nonnas-night-in"] .row:not(.is-sig){grid-template-columns:minmax(0,1fr);grid-template-areas:"text"}
+[data-brand="nonnas-night-in"] .row:not(.is-sig) .row__media{display:none}
+[data-brand="nonnas-night-in"] .row__name{font-style:italic;line-height:1.22}
+[data-brand="nonnas-night-in"] .row__price{font:400 17.5px/1.25 var(--body)}
+[data-brand="nonnas-night-in"] .row__desc{margin-top:4px;font:400 15px/1.5 var(--body);color:var(--muted)}
+[data-brand="nonnas-night-in"] .row__flags{font:400 13.5px/1.3 var(--body)}
+[data-brand="nonnas-night-in"] .plus{border-radius:2px}
+/* the house dish keeps a small picture, framed like the cover */
+[data-brand="nonnas-night-in"] .row.is-sig{--ph:104px;margin:4px 0 6px;padding:14px;background:var(--g2);border:1px solid var(--gold)}
+[data-brand="nonnas-night-in"] .row.is-sig .row__media{padding:3px;background:var(--g);border:1px solid var(--gold)}
+[data-brand="nonnas-night-in"] .row.is-sig .row__media img{border-radius:1px}
+[data-brand="nonnas-night-in"] .rows--drinks .row{padding:7px 0}
+[data-brand="nonnas-night-in"] .rows--drinks .row__name{font-size:18px}
 
 [data-brand="nonnas-night-in"] .again__card{background:var(--g2);border:1px solid var(--gold)}
 [data-brand="nonnas-night-in"] .again__t{font:italic 600 20px/1.2 var(--display);color:var(--tomato)}
@@ -58,13 +53,14 @@ body[data-brand="nonnas-night-in"]{
 [data-brand="nonnas-night-in"] .dish__media{padding:8px 8px 0;background:var(--g)}
 [data-brand="nonnas-night-in"] .dish__media img{border:1px solid var(--gold)}
 
+@media (max-width:359px){
+  [data-brand="nonnas-night-in"] .store{--logo-h:64px}
+  [data-brand="nonnas-night-in"] .store__tag{font-size:17px}
+  [data-brand="nonnas-night-in"] .row{--name-size:19px}
+  [data-brand="nonnas-night-in"] .row.is-sig{--ph:72px;padding:10px}
+}
 @media (min-width:760px){
-  [data-brand="nonnas-night-in"] .store{padding-block:36px 8px}
-  [data-brand="nonnas-night-in"] .store__logo{max-height:150px;max-width:360px}
-  [data-brand="nonnas-night-in"] .cover{height:230px}
-  [data-brand="nonnas-night-in"] .row:not(.row--drink):not(.is-sig){grid-template-areas:"name name price" "desc desc add" "flags media add"}
-  [data-brand="nonnas-night-in"] .row:not(.row--drink):not(.is-sig) .plus{align-self:start}
-  [data-brand="nonnas-night-in"] .row.is-sig{grid-template-columns:320px minmax(0,1fr) auto;grid-template-areas:"media name price" "media desc desc" "media flags add";column-gap:24px;align-items:start}
-  [data-brand="nonnas-night-in"] .row.is-sig .row__media{width:320px;margin:0}
-  [data-brand="nonnas-night-in"] .row.is-sig .row__price{align-self:start;padding-top:6px}
+  [data-brand="nonnas-night-in"] .store{--logo-h:104px;padding-block:34px}
+  [data-brand="nonnas-night-in"] .store__tag{font-size:22px}
+  [data-brand="nonnas-night-in"] .row.is-sig{--ph:150px;padding:18px}
 }

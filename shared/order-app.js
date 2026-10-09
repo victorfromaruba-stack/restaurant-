@@ -36,12 +36,19 @@
   function money(c) { return "ƒ" + (Math.round(c) / 100).toFixed(2); }
   function shortMoney(c) { return "ƒ" + (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2)); }
   function path(p) { return ROOT + p; }
-  /* small square pictures for menu rows (build/thumbs.py makes them); drinks are small already */
+  /* small square pictures for menu rows (build/thumbs.py makes them) */
   function thumb(img) { return String(img).replace(/([^/]+)$/, "thumbs/$1"); }   // same file name, in thumbs/
+  /* Drinks are words only (no can drawings). A dish whose picture doesn't match its words ("hidePhoto": true in
+     menu.json, e.g. a burger picture with one patty for a two-patty burger) shows no picture anywhere until a real
+     photo replaces it: a text-only line beats a wrong picture. The chef app's new photo clears the flag. */
+  function hasPic(item) { return !!(item && item.img && !item.hidePhoto && item.kind !== "drink"); }
   function thumbImg(item, attrs) {
-    if (item.kind === "drink") return '<img src="' + esc(path(item.img)) + '" alt="" width="360" height="360"' + attrs + ">";
+    if (!hasPic(item)) return "";
     return '<img src="' + esc(path(thumb(item.img))) + '" data-full="' + esc(path(item.img)) + '" alt="" width="360" height="360"' + attrs + ">";
   }
+  /* names and lines on screen wrap only between words: "stir-fry", "flat-top" and "35–50" never split at the dash */
+  function keep(s) { return esc(s).replace(/(\S+[-\u2013]\S+)/g, '<span class="nw">$1</span>'); }
+  function shortName(i) { return i.name.replace(/ \(can\)$/, "").replace(/ \(side\)$/, ""); }
   // a missing thumbnail falls back to the full picture instead of a broken image
   document.addEventListener("error", function (e) {
     var t = e.target, full = t && t.tagName === "IMG" && t.getAttribute("data-full");
@@ -580,7 +587,7 @@
     var h = String(hex || "").replace("#", "");
     if (h.length !== 6) return "#FFFFFF";
     var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#0B1D3A" : "#FFFFFF";
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#15130F" : "#FFFFFF";
   }
   function setAccent(hex) {
     if (!hex) return;
@@ -591,46 +598,40 @@
     var host = node.closest("[data-b][data-id]");
     return host ? { b: host.getAttribute("data-b"), id: host.getAttribute("data-id") } : null;
   }
-  function plusBtn(item, orderable) {
-    return orderable ? '<button type="button" class="plus" data-quick aria-label="' + esc(tr("Add {name}", { name: item.name })) + '">' + ICON.plus + "</button>" : "";
+  /* the + box, like the tick box on a paper order pad: once the dish is in the order, the box shows how many */
+  function plusBtn(item, n) {
+    return '<button type="button" class="plus' + (n ? " has-n" : "") + '" data-quick aria-label="' + esc(tr("Add {name}", { name: item.name })) + '">' + ICON.plus +
+      '<span class="plus__n" aria-hidden="true">' + (n || "") + "</span></button>";
   }
-  function qtyBadge(n) { return '<span class="qtybadge"' + (n ? "" : " hidden") + ">" + n + "</span>"; }
 
-  /* a menu row: the words, the price with its own + beside it, and a small picture (the house dish gets the big one).
-     Each restaurant's stylesheet lays these pieces out its own way. */
-  function rowHTML(b, item, opts) {
-    opts = opts || {};
-    var n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
-    var kind = item.style === "signature" ? " is-sig" : item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "";
-    return '<article class="row' + kind + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
-      '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + '"></button>' +
+  /* A menu row, set like a printed menu: the name, a dotted line and the price on the name's last line, the whole
+     description under it, a small picture beside it and the + box under the picture (or beside the price when there's
+     no picture). Each restaurant's stylesheet gives the row its own type, colours and rules. */
+  function rowHTML(b, item) {
+    var n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut, pic = hasPic(item);
+    var words = !!(item.desc && item.kind !== "drink") || !!item.includes || !!(item.flags && item.flags.length) || !!item.soldOut;
+    var cls = "row" + (item.style === "signature" ? " is-sig" : item.style === "bundle" ? " is-bundle" : "") +
+      (item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "") + (pic ? "" : " row--np") + (words ? "" : " row--line") + (item.soldOut ? " is-out" : "");
+    var inc = item.includes ? includesNames(MENU[b], item).join(", ") : "";
+    return '<article class="' + cls + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
+      '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
       '<div class="row__text">' +
-        '<h3 class="row__name">' + esc(item.name) + "</h3>" +
-        '<p class="row__price">' + money(item.price) + (item.soldOut ? ' <span class="row__out">' + esc(tr("Sold out today")) + "</span>" : "") + "</p>" +
-        (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + esc(item.desc) + "</p>" : "") +
+        '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
+        (orderable ? '<div class="row__act">' + plusBtn(item, n) + "</div>" : "") +
+        (item.soldOut ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
+        (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") +
+        (inc ? '<p class="row__inc">' + esc(inc) + "</p>" : "") +
         (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
       "</div>" +
-      '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '">' +
-        (item.style === "signature" ? '<img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="lazy" decoding="async">' : thumbImg(item, ' loading="lazy" decoding="async"')) +
-        qtyBadge(n) + "</div>" + plusBtn(item, orderable) + "</article>";
-  }
-  /* a big picture card for featured dishes */
-  function featHTML(b, item, opts) {
-    opts = opts || {};
-    var m = MENU[b], n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut;
-    var tag = item.soldOut ? tr("Sold out today") : item.includes ? includesNames(m, item).join(", ") : "";
-    return '<article class="feat' + (item.soldOut ? " is-out" : "") + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
-      '<button type="button" class="feat__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
-      '<div class="feat__media"><img src="' + esc(path(item.img)) + '" alt="" width="780" height="446" loading="' + (opts.eager ? "eager" : "lazy") + '"' + (opts.eager ? ' fetchpriority="high"' : "") + ' decoding="async">' + qtyBadge(n) + "</div>" +
-      '<h3 class="feat__name">' + esc(item.name) + "</h3>" +
-      '<p class="feat__meta"><span>' + money(item.price) + "</span>" + (tag ? "<span>" + esc(tag) + "</span>" : "") + "</p>" + plusBtn(item, orderable) + "</article>";
+      (pic ? '<div class="row__media">' + thumbImg(item, ' loading="lazy" decoding="async"') + "</div>" : "") + "</article>";
   }
   function repaintCards() {
     if (MENU[HERE]) paintAgain();
     $$("[data-b][data-id]").forEach(function (c) {
-      var n = itemCount(c.getAttribute("data-b"), c.getAttribute("data-id"));
-      var badge = $(".qtybadge", c);
-      if (badge) { badge.textContent = n; badge.hidden = n === 0; }
+      var n = itemCount(c.getAttribute("data-b"), c.getAttribute("data-id")), box = $(".plus", c);
+      if (!box) return;
+      box.classList.toggle("has-n", n > 0);
+      $(".plus__n", box).textContent = n || "";
     });
   }
   function quickAdd(btn) {
@@ -669,20 +670,21 @@
       menu.items.filter(function (i) { return (i.kind === "side" || i.kind === "drink") && !i.soldOut; }).slice(0, 5);
     var pairHTML = pairs.length && orderable ? '<fieldset class="opt"><legend>' + esc(tr("Goes well with")) + " <span>" + esc(tr("optional")) + '</span></legend><div class="chips">' +
       pairs.map(function (i) {
-        return '<label class="chip"><input type="checkbox" name="pair" value="' + esc(i.id) + '"><span>' + esc(i.name.replace(/ \(can\)$/, "")) + " +" + shortMoney(i.price) + "</span></label>";
+        return '<label class="chip"><input type="checkbox" name="pair" value="' + esc(i.id) + '"><span>' + esc(shortName(i)) + " +" + shortMoney(i.price) + "</span></label>";
       }).join("") + "</div></fieldset>" : "";
     var inc = item.includes ? '<ul class="dish__inc">' + includesNames(menu, item).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "";
+    var pic = hasPic(item);
     var node = el(
-      '<div class="dish' + (item.kind === "drink" ? " dish--drink" : "") + '" style="--accent:' + esc(menu.color) + ";--accent-ink:" + inkFor(menu.color) + '">' +
+      '<div class="dish' + (pic ? "" : " dish--np") + '" style="--accent:' + esc(menu.color) + ";--accent-ink:" + inkFor(menu.color) + '">' +
         '<button type="button" class="x x--float" data-close aria-label="' + esc(tr("Close")) + '">' + ICON.close + "</button>" +
         '<button type="button" class="x x--float x--share" data-share aria-label="' + esc(tr("Share this dish")) + '">' + ICON.share + "</button>" +
-        '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' +
+        (pic ? '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' : "") +
         '<div class="dish__body">' +
-          '<h2 class="dish__name" tabindex="-1" data-autofocus>' + esc(item.name) + "</h2>" +
+          '<h2 class="dish__name" tabindex="-1" data-autofocus>' + keep(item.name) + "</h2>" +
           '<p class="dish__price">' + money(item.price) + "</p>" +
-          '<p class="dish__desc">' + esc(item.desc) + "</p>" + inc +
+          '<p class="dish__desc">' + keep(item.desc) + "</p>" + inc +
           (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
-          (allergenLine(item) ? '<p class="dish__allergens">' + esc(allergenLine(item) + " " + tr("Allergies? Add a note at checkout.")) + "</p>" : "") +
+          (allergenLine(item) ? '<p class="dish__allergens">' + keep(allergenLine(item) + " " + tr("Allergies? Add a note at checkout.")) + "</p>" : "") +
           groups + pairHTML +
         "</div>" +
         '<div class="dish__foot">' +
@@ -786,32 +788,36 @@
     }).slice(0, 4);
   }
   function crossMenus() { return CROSS.map(function (c) { return c[0]; }).filter(function (b) { return b !== HERE && ALLOWED.indexOf(b) >= 0; }); }
-  function suggItem(b, i, brand) {
-    return '<button type="button" class="sugg__i' + (i.kind === "drink" ? " is-drink" : "") + '" data-add="' + esc(b + "|" + i.id) + '" aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price)) + '">' +
-      '<span class="sugg__img">' + thumbImg(i, ' loading="lazy" decoding="async"') + "<i>" + ICON.plus + "</i></span>" +
-      '<span class="sugg__n">' + esc(i.name.replace(/ \(can\)$/, "")) + '</span><span class="sugg__p">' + money(i.price) + "</span>" +
-      (brand ? '<span class="sugg__b">' + esc(MENU[b].name) + "</span>" : "") + "</button>";
+  /* the app's perk, right under the lines: one row of small tiles from the other "mix" restaurants */
+  function crossTiles() {
+    var other = crossPicks();
+    if (!other.length) return "";
+    return '<section class="xsell" aria-labelledby="oa-xsell-h"><h3 class="xsell__t" id="oa-xsell-h">' + esc(tr("Add from another restaurant")) +
+      ' <span class="xsell__s">' + esc(tr("Same order, still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</span></h3>" +
+      '<div class="xsell__row">' + other.map(function (c) {
+        var m = MENU[c[0]], i = m.byId[c[1]];
+        return '<button type="button" class="tile' + (hasPic(i) ? "" : " tile--np") + '" data-add="' + esc(c[0] + "|" + i.id) + '" style="--shop:' + esc(m.color) + '" aria-label="' +
+          esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price) + ", " + m.name) + '">' +
+          (hasPic(i) ? thumbImg(i, ' class="tile__pic" loading="lazy" decoding="async"') : "") +
+          '<span class="tile__n">' + keep(shortName(i)) + '</span><span class="tile__p">+ ' + money(i.price) + "</span></button>";
+      }).join("") + "</div></section>";
   }
-  function suggestions() {
+  /* "anything else?" at the end, like the till: this restaurant's own sides and drinks as one-line chips */
+  function ownChips() {
     var lines = liveLines(), brands = brandsInCart(), host = brands.indexOf(HERE) >= 0 ? HERE : brands[0];
-    if (!lines.length) return "";
-    var menu = MENU[host], out = "";
+    var menu = MENU[host];
+    if (!lines.length || !menu || brandStatus(host) !== "open") return "";
     var hasDrink = drinkLines().length > 0;
     var hasSide = lines.some(function (l) { var m = MENU[l.b], it = m && m.byId[l.id]; return l.b === host && it && it.kind === "side"; });
-    if (menu && brandStatus(host) === "open") {
-      var picks = [];
-      if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
-      if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
-      if (picks.length) out += '<section class="sugg" aria-label="' + esc(tr("Add to your order")) + '"><h3>' + esc(tr(!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side")) + "</h3>" +
-        '<div class="sugg__row">' + picks.map(function (i) { return suggItem(host, i); }).join("") + "</div></section>";
-    }
-    var other = crossPicks();
-    if (other.length) {
-      out += '<section class="sugg sugg--x" aria-label="' + esc(tr("Add from another restaurant")) + '"><h3>' + esc(tr("Add from another restaurant")) +
-        " <span>" + esc(tr("Same order, still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</span></h3>" +
-        '<div class="sugg__row">' + other.map(function (c) { return suggItem(c[0], MENU[c[0]].byId[c[1]], true); }).join("") + "</div></section>";
-    }
-    return out;
+    var picks = [];
+    if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
+    if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
+    if (!picks.length) return "";
+    return '<section class="sugg" aria-labelledby="oa-sugg-h"><h3 class="sugg__t" id="oa-sugg-h">' + esc(tr(!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side")) + "</h3>" +
+      '<div class="sugg__row">' + picks.map(function (i) {
+        return '<button type="button" class="sugg__i" data-add="' + esc(host + "|" + i.id) + '" aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price)) + '">' +
+          '<span class="sugg__n">' + keep(shortName(i)) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
+      }).join("") + "</div></section>";
   }
   /* keep keyboard focus on the same control after the order re-renders */
   function focusKey(n) {
@@ -855,18 +861,17 @@
       return;
     }
     html += head;
-    if (!st.open) html += '<p class="note note--warn">' + esc(tr(st.finishing ? "Last orders have passed for tonight." : "We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
     var brands = brandsInCart(), groups = [];
     brands.forEach(function (b) { var f = foodLines(b); if (f.length) groups.push({ t: brandName(b), b: b, lines: f }); });
     if (drinkLines().length) groups.push({ t: tr("Drinks"), lines: drinkLines() });
     if (groups.length < 2) groups = [{ t: "", lines: foodLines().concat(drinkLines()) }];
     groups.forEach(function (g) {
-      if (g.t) html += '<h3 class="lines__brand"' + (g.b && MENU[g.b] ? ' style="--shop:' + esc(MENU[g.b].color) + '"' : "") + ">" + esc(g.t) + "</h3>";
+      if (g.t) html += '<h3 class="lines__brand' + (g.b ? "" : " lines__brand--drinks") + '"' + (g.b && MENU[g.b] ? ' style="--shop:' + esc(MENU[g.b].color) + '"' : "") + ">" + esc(g.t) + "</h3>";
       html += '<ul class="lines">' + g.lines.map(function (l) {
         var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
         var it = MENU[l.b] && MENU[l.b].byId[l.id];   // a small picture per line, so the order can be checked at a glance
-        return '<li class="line">' + (it ? thumbImg(it, ' class="line__pic' + (it.kind === "drink" ? " line__pic--can" : "") + '" loading="lazy" decoding="async"') : "") +
-          '<div class="line__main"><p class="line__n">' + esc(l.n) + "</p>" +
+        return '<li class="line">' + (it ? thumbImg(it, ' class="line__pic" loading="lazy" decoding="async"') : "") +
+          '<div class="line__main"><p class="line__n">' + keep(l.n) + "</p>" +
           (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
           (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
           '<p class="line__t">' + money(l.p * l.q) + "</p></div>" +
@@ -875,13 +880,15 @@
           '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="' + esc(tr("One more {name}", { name: l.n })) + '">' + ICON.plus + "</button></div></li>";
       }).join("") + "</ul>";
     });
-    html += suggestions();
+    html += crossTiles();
     var areas = (SITE.areas || []).concat([OTHER]);
     html += '<form class="form" novalidate onsubmit="return false">';
     var ts = timeSlots(), when = validWhen();
     var whenOpts = (ts.asap ? ['<option value=""' + (when === "" ? " selected" : "") + ">" + esc(tr("As soon as possible ({eta})", { eta: SITE.eta || "" })) + "</option>"] : [])
       .concat(ts.slots.map(function (x) { return '<option value="' + esc(x.v) + '"' + (x.v === when ? " selected" : "") + ">" + esc(x.d) + "</option>"; }));
     html += '<label class="field"><span class="field__l">' + esc(tr(ts.asap ? "When" : "Tonight at")) + '</span><span class="select"><select id="oa-when" data-f="when">' + whenOpts.join("") + "</select></span></label>";
+    // closed: say so right at the time choice, where it matters
+    if (!st.open) html += '<p class="note note--warn">' + keep(tr(st.finishing ? "Last orders have passed for tonight." : "We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
     html += '<fieldset class="field field--areas" id="oa-f-area"><legend>' + esc(tr("Delivery area")) + '</legend><div class="chips">' +
         areas.map(function (a) {
           return '<label class="chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(tr(a)) + "</span></label>";
@@ -902,6 +909,7 @@
         }).join("") + "</div>" + (SITE.payment ? '<p class="field__help">' + esc(clean(tr(SITE.payment))) + "</p>" : "") +
         '<p class="field__err">' + esc(tr("Pick how you\u2019ll pay.")) + "</p></fieldset>" : "") +
       "</form>";
+    html += ownChips();
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
       '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
@@ -995,7 +1003,7 @@
   function fillCommon() {
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     setHTML("[data-oa-hero]", mixGroup().length > 1
-      ? esc(tr("Order from several restaurants at once.")) + " <b>" + esc(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>"
+      ? keep(tr("Order from several restaurants at once.")) + " <b>" + keep(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>"
       : esc(tr("Late-night food, delivered.")) + " <b>" + esc(tr("{fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
     var ar = SITE.areas || [];
     setHTML("[data-oa-facts]", [SITE.eta ? tr("Delivery in {eta}", { eta: SITE.eta }) : "", ar.length > 1 ? tr("{from} to {to}", { from: ar[0], to: ar[ar.length - 1] }) : ar.join("")]
@@ -1004,16 +1012,17 @@
     setHTML("[data-oa-deliver-to]", deliverToHTML());
     setHTML("[data-oa-contact]", contactHTML());
     setHTML("[data-oa-how]", howSteps());
-    setHTML("[data-oa-how-note]", esc(howNote()));
+    setHTML("[data-oa-how-note]", keep(howNote()));
   }
   function deliverToHTML() {
-    return esc(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + esc(tr("Elsewhere?")) +
+    return keep(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + keep(tr("Elsewhere?")) +
       ' <a data-oa-ask href="' + esc(waLink("Hi! Do you deliver to my area? I’m in ")) + '" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.";
   }
   /* the restaurant's real WhatsApp number, written out, so people can see who they're ordering from */
   function waNumber() {
     var w = waNum();
-    return w.length === 10 && w.indexOf("297") === 0 ? "+297 " + w.slice(3, 6) + " " + w.slice(6) : "+" + w;
+    // no-break spaces: the number never splits over two lines
+    return w.length === 10 && w.indexOf("297") === 0 ? "+297\u00a0" + w.slice(3, 6) + "\u00a0" + w.slice(6) : "+" + w;
   }
   function contactHTML() {
     if (!waNum()) return "";
@@ -1028,7 +1037,7 @@
       [tr("Send it on WhatsApp"), tr("WhatsApp opens with your order already written out. Just press send.")],
       [tr("We reply to confirm"), clean((SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
     ];
-    return steps.map(function (s) { return "<li><b>" + esc(s[0]) + ".</b> <span>" + esc(s[1]) + "</span></li>"; }).join("");
+    return steps.map(function (s) { return "<li><b>" + keep(s[0]) + ".</b> <span>" + keep(s[1]) + "</span></li>"; }).join("");
   }
   function howNote() {
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
@@ -1117,77 +1126,70 @@
     setAccent(menu.color);
     var main = $("#oa-main");
     var feat = menu.items.filter(function (i) { return i.style === "signature" || i.style === "bundle"; });
-    // one dish alone in a sideways rail leaves most of the first screen empty: then it just leads its section
-    var rail = feat.length >= 2 ? feat : [];
-    var railIds = rail.map(function (i) { return i.id; });
+    // two house dishes (a family deal and the house dish) open the menu as "Start here"; one just leads its own section
+    var lead = feat.length >= 2 ? feat : [];
+    var leadIds = lead.map(function (i) { return i.id; });
     var secs = menu.sections.map(function (s) {
-      var items = menu.items.filter(function (i) { return i.section === s.id && railIds.indexOf(i.id) < 0; });
+      var items = menu.items.filter(function (i) { return i.section === s.id && leadIds.indexOf(i.id) < 0; });
       return { id: s.id, title: s.title, kicker: s.kicker, klang: s.lang, items: items.filter(function (i) { return i.style === "signature"; }).concat(items.filter(function (i) { return i.style !== "signature"; })) };
     }).filter(function (s) { return s.items.length; });
-    // without a rail, a section that only holds the house dish ("Signature") isn't a section: that dish leads the next one
+    // without "Start here", a section that only holds the house dish ("Signature") isn't a section: that dish leads the next one
     secs = secs.reduce(function (out, s, n) {
-      var lead = out.carry || [];
-      if (!rail.length && s.items.every(function (i) { return i.style; }) && n < secs.length - 1) { out.carry = lead.concat(s.items); return out; }
-      out.list.push({ id: s.id, title: s.title, kicker: s.kicker, klang: s.klang, items: lead.concat(s.items) }); out.carry = null; return out;
+      var carry = out.carry || [];
+      if (!lead.length && s.items.every(function (i) { return i.style; }) && n < secs.length - 1) { out.carry = carry.concat(s.items); return out; }
+      out.list.push({ id: s.id, title: s.title, kicker: s.kicker, klang: s.klang, items: carry.concat(s.items) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
-    // cover: not a featured dish and not one inside a bundle picture, so no dish shows twice on the first screen; real photo first
-    var featIds = feat.map(function (i) { return i.id; }), inside = [];
-    feat.forEach(function (i) { (i.includes || []).forEach(function (x) { inside.push(x); }); });
-    var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && featIds.indexOf(i.id) < 0 && inside.indexOf(i.id) < 0; });
-    var pick = (menu.cover && menu.byId[menu.cover]) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0] || feat[0] || menu.items[0];
-    var cover = pick.img;
-    // the app's delivery line (Order Aruba's), then the restaurant's own sign: its wordmark, its line, its picture
-    var html = '<ul class="facts strip">' +
+    var cover = coverPick(menu, feat);
+    // the app's delivery line (Order Aruba's), then the restaurant's own sign: its wordmark, its line, a small framed picture
+    var html = '<div class="strip"><ul class="facts">' +
           '<li class="facts__status' + (st.open ? " is-open" : "") + '">' + esc(st.label) + "</li>" +
           "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
           "<li>" + esc(SITE.eta || "") + "</li>" +
-        "</ul>" +
-      '<header class="store">' +
-        '<div class="store__sign"><h1 class="store__name" id="store-name"><img class="store__logo" src="' + esc(path(menu.logo)) + '" alt="" decoding="async">' +
+        "</ul></div>" +
+      '<header class="store' + (cover ? "" : " store--plain") + '">' +
+        '<h1 class="store__name" id="store-name"><img class="store__logo" src="' + esc(path(menu.logo)) + '" alt="" decoding="async">' +
           '<span class="sr">' + esc(menu.name) + "</span></h1>" +
-          '<p class="store__tag">' + esc(menu.tagline) + "</p></div>" +
-        '<div class="cover">' + coverMedia(menu, cover) + "</div>" +
+        '<p class="store__tag">' + keep(menu.tagline) + "</p>" +
+        (cover ? '<div class="cover">' + coverMedia(menu, cover) + "</div>" : "") +
         (status === "soon" ? '<p class="note note--warn">' + esc(tr("Opening soon. Ordering starts shortly.")) + "</p>" : "") +
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>" +
       '<section class="again" id="oa-again" hidden></section>';
-    if (rail.length) {
-      html += '<section class="sec sec--feat" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Start here")) + "</h2>" +
-        '<div class="rail rail--feat">' + rail.map(function (i) { return featHTML(b, i); }).join("") + "</div></section>";
+    function section(id, label, items, kicker, klang) {
+      return '<section class="sec sec--' + esc(id) + '" id="' + esc(id) + '" aria-labelledby="h-' + esc(id) + '"><h2 class="sec__t" id="h-' + esc(id) + '">' +
+        (kicker ? '<span class="sec__k"' + (klang ? ' lang="' + esc(klang) + '"' : "") + ">" + esc(kicker) + "</span> " : "") + '<span class="sec__n">' + esc(label) + "</span></h2>" +
+        '<div class="rows' + (id === "drinks" ? " rows--drinks" : "") + '">' + items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
     }
-    secs.forEach(function (s) {
-      html += '<section class="sec sec--' + esc(s.id) + '" id="' + esc(s.id) + '" aria-labelledby="h-' + esc(s.id) + '"><h2 class="sec__t" id="h-' + esc(s.id) + '">' +
-        (s.kicker ? '<span class="sec__k"' + (s.klang ? ' lang="' + esc(s.klang) + '"' : "") + ">" + esc(s.kicker) + "</span> " : "") + '<span class="sec__n">' + esc(tr(s.title)) + "</span></h2>" +
-        '<div class="' + (s.id === "drinks" ? "cans" : "rows") + '">' + s.items.map(function (i) { return rowHTML(b, i); }).join("") + "</div></section>";
-    });
+    if (lead.length) html += section("featured", tr("Start here"), lead);
+    secs.forEach(function (s) { html += section(s.id, tr(s.title), s.items, s.kicker, s.klang); });
     html += '<section class="sec also" id="oa-also" aria-labelledby="h-also" hidden></section>';
     // people arriving from a shared dish link land here first, so the page explains ordering too
     html += '<section class="sec how" aria-labelledby="h-how"><h2 class="sec__t" id="h-how">' + esc(tr("How ordering works")) + "</h2>" +
-      '<ol class="how__steps" data-oa-how>' + howSteps() + '</ol><p class="how__note" data-oa-how-note>' + esc(howNote()) + "</p>" +
+      '<ol class="how__steps" data-oa-how>' + howSteps() + '</ol><p class="how__note" data-oa-how-note>' + keep(howNote()) + "</p>" +
       '<p class="areas" data-oa-deliver-to>' + deliverToHTML() + '</p><p class="areas" data-oa-contact>' + contactHTML() + "</p></section>";
     html += '<footer class="pfoot"><p>' + esc(tr(menu.imageNote) + " " + tr("Prices in Aruban florin (ƒ).")) + "</p>" +
       '<a class="pfoot__all" href="' + path("index.html") + '">' + esc(tr("All restaurants")) + "</a>" + langSwitch() + "</footer>";
     main.innerHTML = html;
     wireVideo(main);
     paintAgain();
-    // like any delivery app: other restaurants on Order Aruba, at the very end. Never in the order itself.
+    // like any delivery app: other restaurants on Order Aruba, at the very end, as small plates. Never in the order itself.
     later(function () {
       var others = (SITE.brands || []).filter(function (x) { return x.id !== b && x.status !== "hidden"; }).map(function (x) { return x.id; });
       Promise.all(others.map(function (x) { return loadMenu(x).catch(function () { return null; }); })).then(function () {
         var box = $("#oa-also");
-        var cards = others.filter(function (x) { return MENU[x]; }).map(function (x) { return shopHTML(x, 9); }).join("");
+        var cards = others.filter(function (x) { return MENU[x]; }).map(plateHTML).join("");
         if (!box || !cards) return;
         var mixed = others.some(function (x) { return ALLOWED.indexOf(x) >= 0; });
         box.innerHTML = '<h2 class="sec__t" id="h-also">' + esc(tr("More on {app}", { app: SITE.name || "" })) + "</h2>" +
-          (mixed ? '<p class="also__sub">' + esc(tr("Add dishes from any of them to the same order: still one {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</p>" : "") +
-          '<div class="shops">' + cards + "</div>";
+          (mixed ? '<p class="also__sub">' + keep(tr("Add dishes from any of them to the same order: still one {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</p>" : "") +
+          '<div class="plates">' + cards + "</div>";
         box.hidden = false;
       });
     });
 
     var nav = $("#oa-cats");
     if (nav) {
-      var tabs = (rail.length ? [{ id: "featured", title: "Start here" }] : []).concat(secs);
+      var tabs = (lead.length ? [{ id: "featured", title: "Start here" }] : []).concat(secs);
       nav.innerHTML = tabs.map(function (s, i) { return '<a href="#' + esc(s.id) + '" data-nav="' + esc(s.id) + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(tr(s.title)) + "</a>"; }).join("");
       if ("IntersectionObserver" in window) {
         var io = new IntersectionObserver(function (es) {
@@ -1220,10 +1222,24 @@
     var save = navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || ""));
     return reduce || save;
   }
+  /* The restaurant's small framed picture: not a featured dish and not one inside a bundle picture, so no dish shows
+     twice on the first screen; a photo before a drawing. "cover": false in menu.json = no picture (the house dish leads). */
+  function coverPick(menu, feat) {
+    if (menu.cover === false) return "";
+    if (menu.video && menu.video.poster) return menu.video.poster;
+    var featIds = feat.map(function (i) { return i.id; }), inside = [];
+    feat.forEach(function (i) { (i.includes || []).forEach(function (x) { inside.push(x); }); });
+    var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && hasPic(i) && featIds.indexOf(i.id) < 0 && inside.indexOf(i.id) < 0; });
+    var pick = (menu.cover && menu.byId[menu.cover]) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0];
+    return pick ? pick.img : "";
+  }
+  /* On a phone the cover is a small still. Where it's big (wide screens) it plays the menu's short silent loop,
+     unless the phone asks for less motion or less data. */
   function coverMedia(menu, img) {
-    var pic = '<img src="' + esc(path(img)) + '" alt="" width="780" height="446" fetchpriority="high" decoding="async">';
-    if (!menu.video || quietMode()) return pic;
-    return '<video class="cover__v" muted loop playsinline autoplay preload="none" poster="' + esc(path(menu.video.poster || img)) + '" aria-hidden="true">' +
+    var wide = window.matchMedia && matchMedia("(min-width: 760px)").matches;
+    var pic = '<img src="' + esc(path(img)) + '" alt="" width="960" height="540" fetchpriority="high" decoding="async">';
+    if (!menu.video || quietMode() || !wide) return pic;
+    return '<video class="cover__v" muted loop playsinline autoplay preload="none" poster="' + esc(path(img)) + '" aria-hidden="true">' +
       '<source src="' + esc(path(menu.video.src)) + '" type="video/mp4"></video>' +
       '<button type="button" class="cover__pp" aria-label="' + esc(tr("Pause video")) + '" data-pp>' + ICON.pause + "</button>";
   }
@@ -1260,8 +1276,8 @@
     if (!lines) { box.hidden = true; return; }
     var sum = lines.reduce(function (t, x) { var i = MENU[x.b].byId[x.id]; return t + unitPrice(i, normOpts(i, x.o || {})) * x.q; }, 0);
     var names = lines.map(function (x) { return x.q + " \u00d7 " + MENU[x.b].byId[x.id].name; });
-    var pic = MENU[lines[0].b].byId[lines[0].id];
-    var html = '<div class="again__card">' + thumbImg(pic, ' loading="lazy"') +
+    var pic = lines.map(function (x) { return MENU[x.b].byId[x.id]; }).filter(hasPic)[0];
+    var html = '<div class="again__card' + (pic ? "" : " again__card--np") + '">' + (pic ? thumbImg(pic, ' loading="lazy"') : "") +
       '<div class="again__body"><h2 class="again__t">' + esc(tr("Order again")) + '</h2><p class="again__items">' + esc(names.join(", ")) + "</p>" +
       '<button type="button" class="btn btn--accent again__btn" data-again><span>' + esc(tr("Add all")) + "</span><span>" + money(sum) + "</span></button></div></div>";
     if (box._html === html && !box.hidden) return;
@@ -1278,29 +1294,41 @@
     var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
     return mains.length ? Math.min.apply(null, mains.map(function (i) { return i.price; })) : 0;
   }
-  /* the restaurant card's picture ("hero" in menu.json), only while a dish on the menu has that picture and
-     isn't sold out, so the card never shows a dish you can't order under another dish's name. Otherwise not the
-     signature dish (it's already in the dish rail above) and a photo before a drawing. */
+  /* the restaurant's dish picture on the home page ("hero" in menu.json: the dish its line is about), only while a
+     dish on the menu has that picture, it isn't sold out and the picture matches the dish. Otherwise a photo before a drawing. */
   function heroImg(m) {
     var hero = m.hero && m.items.filter(function (i) { return i.img === m.hero; })[0];
-    if (hero && !hero.soldOut) return hero.img;
-    var pool = m.items.filter(function (i) { return !i.soldOut && i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
-    var others = pool.filter(function (i) { return i.style !== "signature"; });
-    var alt = others.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || others[0] || pool[0];
-    return alt ? alt.img : m.items[0].img;
+    if (hero && !hero.soldOut && hasPic(hero)) return hero.img;
+    var pool = m.items.filter(function (i) { return !i.soldOut && hasPic(i) && i.kind !== "side" && i.style !== "bundle"; });
+    var alt = pool.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || pool[0];
+    return alt ? alt.img : "";
   }
-  /* one row per restaurant, like a street of shop signs: each restaurant's own sign (its wordmark on its own
-     colours), then its cuisine, its own line and the price, in the app's type */
+  function signStyle(m) {
+    return "--shop:" + esc(m.color) + (m.sign ? ";--sign:" + esc(m.sign.ground || "") + ";--sign-line:" + esc(m.sign.line || "transparent") : "");
+  }
+  function fromLine(b, m) {
+    var from = fromPrice(m);
+    return brandStatus(b) !== "open" ? '<span class="soon">' + esc(tr("Opening soon")) + "</span>" : from ? "<span>" + esc(tr("From {price}", { price: money(from) })) + "</span>" : "";
+  }
+  /* the home page's list: each restaurant's own sign (its wordmark on its own ground, framed), one dish picture,
+     then its cuisine, price and its own line in the app's type */
   function shopHTML(b, idx) {
     var m = MENU[b];
     if (!m) return "";
-    var status = brandStatus(b), from = fromPrice(m);
-    return '<a class="shop' + (status !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" data-shop="' + esc(b) + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + (m.sign ? ";--sign:" + esc(m.sign.ground || "") + ";--sign-line:" + esc(m.sign.line || "transparent") : "") + '">' +
+    var img = heroImg(m);
+    return '<a class="shop' + (brandStatus(b) !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" data-shop="' + esc(b) + '" href="' + path(b + "/index.html") + '" style="' + signStyle(m) + '">' +
       '<span class="shop__sign"><img class="shop__logo" src="' + esc(path(m.logo)) + '" alt="" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
-      '<span class="shop__txt"><span class="shop__top"><h3 class="shop__name">' + esc(m.name) + '</h3><span class="shop__c">' + esc(tr(m.cuisine)) + "</span></span>" +
-        '<span class="shop__dishes">' + esc(m.tagline || "") + "</span>" +
-        '<span class="shop__meta">' + (status !== "open" ? '<span class="shop__soon">' + esc(tr("Opening soon")) + "</span>"
-          : from ? esc(tr("From {price}", { price: money(from) })) : "") + "</span></span></a>";
+      (img ? '<span class="shop__pic"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="" width="360" height="360" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async"></span>' : "") +
+      '<span class="shop__txt"><h3 class="shop__name">' + esc(m.name) + "</h3>" +
+        '<span class="meta"><b>' + esc(tr(m.cuisine)) + "</b>" + fromLine(b, m) + "</span>" +
+        '<span class="shop__tag">' + keep(m.tagline || "") + "</span></span></a>";
+  }
+  /* "More on Order Aruba" at the end of a restaurant page: small plates, the sign and two facts */
+  function plateHTML(b) {
+    var m = MENU[b];
+    return '<a class="plate' + (brandStatus(b) !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '" style="' + signStyle(m) + '">' +
+      '<span class="plate__sign"><img class="plate__logo" src="' + esc(path(m.logo)) + '" alt="' + esc(m.name) + '" loading="lazy" decoding="async"></span>' +
+      '<span class="meta plate__txt"><b>' + esc(tr(m.cuisine)) + "</b>" + fromLine(b, m) + "</span></a>";
   }
   /* words people type for the same food: English, Papiamento, Dutch, Spanish */
   var SYNONYMS = {
@@ -1313,9 +1341,23 @@
     "sweet & sour": "sweet sour zoetzuur agridulce", "fried rice": "nasi bami", "frikandel": "frikadel", vegetarian: "veggie vega vegetariano"
   };
   var SUGGEST = ["Chicken", "Fries", "Tacos", "Pasta", "Burgers", "Shrimp", "Bitterballen"];
+  /* the search box hint: the long one ("Search tacos, fried rice, bitterballen") when it fits the box in this
+     language, else the short one, so it's never cut off on a small phone */
+  function fitSearchHint() {
+    var input = $("#oa-q");
+    if (!input) return;
+    var long = tr("Search tacos, fried rice, bitterballen"), short = tr("Search all menus");
+    var cs = getComputedStyle(input), c = document.createElement("canvas").getContext("2d");
+    c.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+    var room = input.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 4;
+    input.placeholder = c.measureText(long).width <= room ? long : short;
+  }
   function setupSearch(ids) {
     var input = $("#oa-q"), out = $("#oa-results"), browse = $("#oa-browse");
     if (!input || !out || !browse) return;
+    fitSearchHint();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSearchHint);
+    window.addEventListener("resize", fitSearchHint);
     function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
     function extra(text) {
       var t = norm(text), add = [];
@@ -1369,24 +1411,13 @@
     input.addEventListener("input", function () { clearTimeout(t); t = setTimeout(run, 90); });
     input.addEventListener("search", run);
   }
-  function quickRow(ids) {
-    var row = $("#oa-quick");
-    if (!row) return;
-    row.innerHTML = ids.filter(function (b) { return MENU[b]; }).map(function (b) {
-      var m = MENU[b];
-      return '<a class="qk" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
-        '<img src="' + esc(path(m.mark)) + '" alt="" width="64" height="64" decoding="async">' +
-        '<span class="qk__c">' + esc(tr(m.cuisine)) + '</span><span class="qk__n">' + esc(m.name) + "</span></a>";
-    }).join("");
-  }
   function renderHub() {
     var ids = (SITE.brands || []).filter(function (b) { return b.status !== "hidden"; }).map(function (b) { return b.id; });
     paintSign(true);
     Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
-      var rail = $("#oa-rail"), list = $("#oa-list");
-      quickRow(ids);
-      if (rail) {
-        // one signature dish per restaurant first, family deals after, so no restaurant fills the first screen
+      var start = $("#oa-rail"), list = $("#oa-list");
+      if (start) {
+        // one house dish per restaurant first, family deals after: a short printed list, each opens on its own restaurant's page
         var picks = [];
         ["signature", "bundle"].forEach(function (style) {
           ids.forEach(function (b) {
@@ -1395,13 +1426,12 @@
             m.items.filter(function (i) { return i.style === style && !i.soldOut; }).forEach(function (i) { picks.push([b, i]); });
           });
         });
-        rail.innerHTML = picks.map(function (p, n) { return linkFeatHTML(p[0], p[1], n < 2); }).join("");
-        railArrows(rail);
+        start.innerHTML = picks.map(function (p) { return linkRowHTML(p[0], p[1], true); }).join("");
       }
       if (list) {
         list.innerHTML = ids.map(function (b, i) {
           return MENU[b] ? shopHTML(b, i) :
-            '<div class="shop shop--fail"><p>' + esc(tr("One menu didn\u2019t load.")) + '</p><button type="button" class="btn btn--line btn--sm" data-retry>' + esc(tr("Try again")) + "</button></div>";
+            '<div class="shop shop--fail"><p>' + esc(tr("One menu didn’t load.")) + '</p><button type="button" class="btn btn--line btn--sm" data-retry>' + esc(tr("Try again")) + "</button></div>";
         }).join("");
         $$("[data-retry]", list).forEach(function (r) { r.addEventListener("click", function () { location.reload(); }); });
       }
@@ -1410,45 +1440,17 @@
       paintMine(ids);
     });
   }
-  /* desktop: arrow buttons for sideways rails (a mouse wheel can't scroll them) */
-  function railArrows(rail) {
-    if (!rail || rail._arrows) return;
-    rail._arrows = true;
-    var wrap = rail.parentNode;
-    var nav = el('<div class="railnav" aria-hidden="true"><button type="button" tabindex="-1" data-dir="-1">' + ICON.back + '</button><button type="button" tabindex="-1" data-dir="1">' + ICON.back + "</button></div>");
-    wrap.insertBefore(nav, rail);
-    function upd() {
-      var max = rail.scrollWidth - rail.clientWidth - 4;
-      nav.hidden = max <= 0;
-      $("[data-dir='-1']", nav).disabled = rail.scrollLeft <= 4;
-      $("[data-dir='1']", nav).disabled = rail.scrollLeft >= max;
-    }
-    nav.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-dir]");
-      if (b) rail.scrollBy({ left: +b.getAttribute("data-dir") * rail.clientWidth * 0.85, behavior: "smooth" });
-    });
-    rail.addEventListener("scroll", upd, { passive: true });
-    window.addEventListener("resize", upd);
-    upd();
-  }
 
-  /* home page cards open the dish on its own restaurant's page: each restaurant is its own order */
+  /* home page dish lines (search results, "Start with these") open the dish on its own restaurant's page */
   function dishLink(b, item) { return path(b + "/#d=" + encodeURIComponent(item.id)); }
-  function linkRowHTML(b, item) {
-    var m = MENU[b];
-    return '<a class="row row--link' + (item.soldOut ? " is-out" : "") + '" href="' + esc(dishLink(b, item)) + '">' +
+  function linkRowHTML(b, item, short) {
+    var m = MENU[b], pic = hasPic(item);
+    return '<a class="row row--link' + (short ? " row--start" : "") + (pic ? "" : " row--np") + (item.soldOut ? " is-out" : "") + '" href="' + esc(dishLink(b, item)) + '" data-shop="' + esc(b) + '" style="--shop:' + esc(m.color) + '">' +
       '<div class="row__text"><p class="row__brand">' + esc(m.name) + "</p>" +
-        '<h3 class="row__name">' + esc(item.name) + "</h3>" +
-        '<p class="row__price">' + money(item.price) + (item.soldOut ? ' <span class="row__out">' + esc(tr("Sold out today")) + "</span>" : "") + "</p>" +
-        (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + esc(item.desc) + "</p>" : "") + "</div>" +
-      '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '">' + thumbImg(item, ' loading="lazy" decoding="async"') + "</div></a>";
-  }
-  function linkFeatHTML(b, item, eager) {
-    var m = MENU[b];
-    return '<a class="feat feat--link" href="' + esc(dishLink(b, item)) + '" data-shop="' + esc(b) + '">' +
-      '<div class="feat__media"><img src="' + esc(path(thumb(item.img))) + '" alt="" width="360" height="360" loading="lazy" decoding="async"></div>' +
-      '<h3 class="feat__name">' + esc(item.name) + "</h3>" +
-      '<p class="feat__meta"><span>' + money(item.price) + "</span><span>" + esc(m.name) + "</span></p></a>";
+        '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
+        (item.soldOut ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
+        (!short && item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") + "</div>" +
+      (pic ? '<div class="row__media">' + thumbImg(item, ' loading="lazy" decoding="async"') + "</div>" : "") + "</a>";
   }
   /* an order already started at a restaurant: a way back to it from the home page */
   function paintMine(ids) {

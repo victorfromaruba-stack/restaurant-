@@ -5,7 +5,7 @@ import json, os
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-W, H, GAP, BG = 780, 446, 6, (11, 29, 58)
+W, H, GAP, BG = 780, 446, 6, (21, 19, 15)   # gutters in the app's warm black (#15130F)
 
 def panel(path, w, h):
     im = Image.open(os.path.join(ROOT, path)).convert("RGB")

@@ -12,7 +12,7 @@
  "intro": "Slow-braised birria, loaded burritos and crispy nachos, cooked to order in Aruba.",
  "logo": "shared/logos/taco-brava.svg",
  "mark": "shared/logos/taco-brava-mark.webp",
- "hero": "taco-brava/assets/dishes/bb.webp",
+ "hero": "taco-brava/assets/dishes/bt-hero.webp",
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -337,9 +337,5 @@
    "kind": "drink"
   }
  ],
- "video": {
-  "src": "taco-brava/video/cover.mp4",
-  "poster": "taco-brava/video/cover.webp"
- },
- "cover": "cq"
+ "cover": false
 }

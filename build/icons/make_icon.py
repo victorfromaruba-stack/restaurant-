@@ -8,7 +8,7 @@ from playwright.async_api import async_playwright
 BASE = start()
 HTML = """<!doctype html><html><head><style>
 @font-face{font-family:Archivo;src:url(%sshared/fonts/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62%% 125%%}
-html,body{margin:0;width:512px;height:512px;background:#0B1D3A;display:grid;place-items:center;overflow:hidden}
+html,body{margin:0;width:512px;height:512px;background:#15130F;display:grid;place-items:center;overflow:hidden}
 .sg{width:330px;height:228px;box-sizing:border-box;border:13px solid #FFC93C;border-radius:30px;display:grid;place-items:center;
  box-shadow:0 0 46px rgba(255,201,60,.38),inset 0 0 30px rgba(255,201,60,.16)}
 b{font:900 196px/1 Archivo;font-stretch:62%%;letter-spacing:.04em;color:#FFC93C;margin-top:6px;

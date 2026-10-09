@@ -41,6 +41,7 @@
    "style": "signature",
    "desc": "Two thin smashed beef patties with cheddar, lettuce, tomato, onion, pickles, ketchup and mayo on a toasted bun.",
    "img": "smash-shack/assets/dishes/sc-hero.webp",
+   "hidePhoto": true,
    "allergens": [
     "dairy",
     "gluten",
@@ -87,6 +88,7 @@
    "price": 2150,
    "desc": "Smash cheeseburger with a side of fries.",
    "img": "smash-shack/assets/dishes/co.webp",
+   "hidePhoto": true,
    "allergens": [
     "dairy",
     "gluten",

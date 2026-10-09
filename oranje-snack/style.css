@@ -1,5 +1,5 @@
-/* Oranje Snack: a Dutch snackbar. White tiles on the wall, an orange fascia, the menu on a lit price board
-   with the prices on yellow strips, Dutch headings in a fat round serif like the sign. */
+/* Oranje Snack: a Dutch snackbar. White tiles on the wall, an orange fascia, the menu on a lit price board with
+   the prices on yellow strips, Dutch headings in a fat round serif like the sign. */
 @font-face{font-family:"Fraunces";src:url(../shared/fonts/fraunces-900.woff2) format("woff2");font-weight:900;font-display:swap}
 @font-face{font-family:"Fraunces";src:url(../shared/fonts/fraunces-900-f.woff2) format("woff2");font-weight:900;font-display:swap;unicode-range:U+0192}
 body[data-brand="oranje-snack"]{
@@ -7,42 +7,33 @@ body[data-brand="oranje-snack"]{
   --oranje:#E86A17;--oranje-ink:#A84A0E;--navy:#1B2A4A;--mayo:#FFE9A8;
   --g:#F6F7F5;--g2:#FFFFFF;--ink:#1B2A4A;--muted:#46526B;--line:#D9DDE3;--field-line:#7C869A;
   --acc:#E86A17;--acc-ink:#141414;--price:#1B2A4A;--r:3px;
-  --display:"Fraunces",Georgia,serif;--name:var(--font);--name-w:700;
-  --chip-bg:#FFFFFF;--chip-ink:#1B2A4A;--chip-line:#AEB5C2;--chip-on-bg:#1B2A4A;--chip-on-ink:#FFFFFF;
-  --add-bg:#1B2A4A;--add-ink:#FFFFFF;--add-line:#1B2A4A;
-  --badge-bg:#E86A17;--badge-ink:#141414;--focus:#1B2A4A;
+  --display:"Fraunces",Georgia,serif;--name:var(--font);--name-w:700;--name-size:17px;
+  --chip-bg:#FFFFFF;--chip-ink:#1B2A4A;--chip-line:#7C869A;--chip-on-bg:#1B2A4A;--chip-on-ink:#FFFFFF;
+  --add-bg:#1B2A4A;--add-ink:#FFFFFF;--add-line:#1B2A4A;--add-on-bg:#E86A17;--add-on-ink:#141414;
+  --lead:2px dotted;--lead-ink:#B3BAC6;--focus:#1B2A4A;--bad:#B3261E;
 }
 /* the tiled wall */
 [data-brand="oranje-snack"] .page{background-color:#F6F7F5;background-image:linear-gradient(#E3E6EA 1px,transparent 1px),linear-gradient(90deg,#E3E6EA 1px,transparent 1px);background-size:30px 30px;background-position:-1px -1px}
-/* the front: the sign on the tiles, the line, the picture in the board frame, and the orange fascia under it */
-[data-brand="oranje-snack"] .store{padding-block:22px 24px;border-bottom:10px solid var(--oranje)}
-[data-brand="oranje-snack"] .store__logo{max-height:66px;max-width:min(100%,330px);margin-left:-6px}
+/* the front: the sign on the tiles, the line, the picture in the board's frame, the orange fascia under it */
+[data-brand="oranje-snack"] .store{--logo-h:54px;padding-block:20px 22px;border-bottom:10px solid var(--oranje)}
 [data-brand="oranje-snack"] .store__tag{font:600 17px/1.35 var(--font);color:var(--navy)}
-[data-brand="oranje-snack"] .cover{height:150px;border:4px solid var(--navy);border-radius:4px}
+[data-brand="oranje-snack"] .cover{border:3px solid var(--navy);border-radius:4px}
 
 /* headings: the Dutch word big in orange, the English small beside it */
-[data-brand="oranje-snack"] .sec{padding-top:32px}
-[data-brand="oranje-snack"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-bottom:10px;font:900 28px/1.05 var(--display);color:var(--oranje-ink)}
-[data-brand="oranje-snack"] .sec__k{display:inline;font:900 28px/1.05 var(--display);color:#D35C0E}
+[data-brand="oranje-snack"] .sec{padding-top:26px}
+[data-brand="oranje-snack"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-bottom:10px;font:900 26px/1.05 var(--display);color:var(--oranje-ink)}
+[data-brand="oranje-snack"] .sec__k{display:inline;font:inherit;color:var(--oranje-ink)}
 [data-brand="oranje-snack"] .sec__k~.sec__n{font:600 14px/1.2 var(--font);color:var(--muted)}
 
-/* the price board: white, a navy frame, each price on a yellow strip */
-[data-brand="oranje-snack"] .rows,[data-brand="oranje-snack"] .cans{padding:0 12px;background:#FFFFFF;border:3px solid var(--navy);border-radius:4px}
-[data-brand="oranje-snack"] .row{grid-template-columns:64px minmax(0,1fr) auto;grid-template-areas:"media name price" "media desc desc" "media flags add";column-gap:12px;padding:14px 0}
-[data-brand="oranje-snack"] .row__media{width:64px;height:64px}
+/* the price board: white, a navy frame, each price on a yellow strip on the name's line */
+[data-brand="oranje-snack"] .rows{padding:0 12px;background:#FFFFFF;border:3px solid var(--navy);border-radius:4px}
+[data-brand="oranje-snack"] .row{--ph:72px;padding:14px 0}
+[data-brand="oranje-snack"] .row.is-sig{--ph:84px}
 [data-brand="oranje-snack"] .row__media img{border-radius:2px}
-[data-brand="oranje-snack"] .row__name{font:700 17px/1.25 var(--font)}
-[data-brand="oranje-snack"] .row__price{margin:0;align-self:start;padding:3px 8px;background:var(--mayo);border-radius:2px;font:800 16px/1.25 var(--font);color:var(--navy)}
-[data-brand="oranje-snack"] .row__desc{margin-top:4px}
-[data-brand="oranje-snack"] .plus{color:#FFFFFF}
-[data-brand="oranje-snack"] .row.is-sig{grid-template-columns:112px minmax(0,1fr) auto;grid-template-areas:"media name name" "media price price" "desc desc desc" "flags flags add";padding-top:14px}
-[data-brand="oranje-snack"] .row.is-sig .row__media{width:112px;height:112px;aspect-ratio:auto;margin:0 0 10px}
-[data-brand="oranje-snack"] .row.is-sig .row__price{justify-self:start;margin-top:8px}
-[data-brand="oranje-snack"] .row.is-sig .row__name{font:900 25px/1.1 var(--display);color:var(--navy)}
-[data-brand="oranje-snack"] .row.is-sig .row__price{font-size:18px}
-[data-brand="oranje-snack"] .row--drink{grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-areas:"name media price add";align-items:center;padding:10px 0}
-[data-brand="oranje-snack"] .row--drink .row__media{width:auto;height:auto}
-[data-brand="oranje-snack"] .row--drink .row__price{align-self:center}
+[data-brand="oranje-snack"] .row__price{padding:2px 7px;background:var(--mayo);border-radius:2px;font:800 15.5px/1.25 var(--font);color:var(--navy)}
+[data-brand="oranje-snack"] .row.is-sig .row__name{font:900 20px/1.1 var(--display);color:var(--navy)}
+[data-brand="oranje-snack"] .rows--drinks .row{padding:9px 0}
+[data-brand="oranje-snack"] .rows--drinks .row__name{font-weight:600}
 
 [data-brand="oranje-snack"] .again__card{background:#FFFFFF;border:3px solid var(--navy)}
 [data-brand="oranje-snack"] .again__t{font:900 22px/1.1 var(--display);color:var(--navy)}
@@ -50,11 +41,19 @@ body[data-brand="oranje-snack"]{
 [data-brand="oranje-snack"] .dish__name{font:900 28px/1.1 var(--display);color:var(--navy)}
 [data-brand="oranje-snack"] .dish__price{display:inline-block;padding:3px 9px;background:var(--mayo);border-radius:2px;font:800 18px/1.25 var(--font)}
 
+@media (max-width:359px){
+  [data-brand="oranje-snack"] .store{--logo-h:46px}
+  [data-brand="oranje-snack"] .rows{padding:0 10px}
+  [data-brand="oranje-snack"] .row{--ph:64px}
+  [data-brand="oranje-snack"] .row.is-sig{--ph:64px}
+  [data-brand="oranje-snack"] .row.is-sig .row__name{font-size:18px}
+  [data-brand="oranje-snack"] .row__price{font-size:14.5px;padding:2px 6px}
+  [data-brand="oranje-snack"] .sec__t{font-size:24px}
+}
 @media (min-width:760px){
-  [data-brand="oranje-snack"] .store{display:grid;grid-template-columns:minmax(0,1fr) 360px;column-gap:28px;align-items:center;padding-block:30px}
-  [data-brand="oranje-snack"] .cover{margin-top:0;height:200px}
-  [data-brand="oranje-snack"] .store .note{grid-column:1/-1}
-  [data-brand="oranje-snack"] .store__logo{max-height:80px;max-width:400px}
-  [data-brand="oranje-snack"] .row:not(.row--drink):not(.is-sig){grid-template-columns:80px minmax(0,1fr) auto}
-  [data-brand="oranje-snack"] .rows .row:not(.is-sig) .row__media{width:80px;height:80px}
+  [data-brand="oranje-snack"] .store{--logo-h:72px;padding-block:30px}
+  [data-brand="oranje-snack"] .store__tag{font-size:19px}
+  [data-brand="oranje-snack"] .rows{padding:0 18px}
+  [data-brand="oranje-snack"] .row{--ph:84px}
+  [data-brand="oranje-snack"] .row.is-sig{--ph:120px}
 }

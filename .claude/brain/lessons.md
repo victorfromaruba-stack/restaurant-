@@ -5,6 +5,8 @@ session doesn't pay for them again. One entry: date, what happens, what to do.
 Newest on top. When a lesson turns into a rule everyone must follow, move it into
 CLAUDE.md and delete it here.
 
+- 2026-10-09 · Browsers break lines after a hyphen or en dash ("stir-/fry", "dine-/in", "35–/50") and `hyphens:none` doesn't stop it. order-app.js `keep()` wraps such words in `<span class="nw">`; use it for any new name or sentence on screen. Never put that span straight inside a flex box next to loose text (a chip's `inline-flex` span ate the space: "Coca-ColaZero"): wrap the label or use plain `esc()` there.
+- 2026-10-09 · The restaurant SVG logos had padding and background plates in their viewBox, so they sat indented from the text under them. They're trimmed to their ink now; a new logo needs the same (measure with getBBox in Chromium, drop the full-size background rect).
 - 2026-10-09 · With `.nojekyll`, GitHub Pages serves every file in the repo, dot-folders included: /restaurant-/CLAUDE.md and /.claude/brain/victor.md answer 200 on the live site. Anything in the repo is public twice (GitHub and the site). Write internal notes knowing that until the repo is private.
 - 2026-10-09 · Public files the restaurant pages load (shared/site.json, shared/lang/*.json) also leak: old phrases like "Also tonight from our kitchen" stayed in the language files after the code stopped using them. `build/lang_keys.py --prune` removes them, and `--check` now fails on them.
 - 2026-10-08 · A subagent with fresh eyes (first-time customer at 11 PM, screenshots only, no edits) found 8 real problems after 0 fail from check.py, incl. a one-card rail wasting the first screen and the same dish twice via a bundle picture. Worth one run after any big pass.

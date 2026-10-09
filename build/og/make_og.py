@@ -2,7 +2,7 @@
 (its signature dish, so the picture matches the tagline) and one for the Order Aruba home page.
 Never anything about a shared kitchen.
 Run from the repo folder: python3 build/og/make_og.py (it serves the repo itself, see qa/local_server.py).
-Uses each menu.json's name, tagline, color, mark and hero, and the hours in shared/site.json."""
+Uses each menu.json's logo, sign colours, tagline and hero, and the hours in shared/site.json."""
 import asyncio, json, os, sys
 from playwright.async_api import async_playwright
 
@@ -21,43 +21,47 @@ o, c = site["hours"]["mon"]
 HOURS = f"{t12(o)}–{t12(c)}"
 FEE = "ƒ%g" % (site["deliveryFee"] / 100)
 
-def ink(hex_):
+def lum(hex_):
     h = hex_.lstrip("#"); r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
-    return "#0B1D3A" if (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 else "#FFFFFF"
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255
 
 HEAD = f"""<!doctype html><html><head><meta charset="utf-8"><base href="{BASE}">
 <link rel="stylesheet" href="shared/order.css"><style>
-html,body{{margin:0;width:1200px;height:630px;overflow:hidden;background:#0B1D3A}}
+html,body{{margin:0;width:1200px;height:630px;overflow:hidden;background:#15130F}}
 .c{{position:relative;display:flex;width:1200px;height:630px}}
-.ph{{flex:none;width:690px;height:630px;object-fit:cover}}
-.side{{flex:1;display:flex;flex-direction:column;padding:44px 40px 36px}}
-.mk{{width:96px;height:96px;border-radius:22px;object-fit:cover;box-shadow:0 8px 22px rgba(0,0,0,.22)}}
-.nm{{margin:30px 0 0;font:900 92px/.88 var(--font);font-stretch:62%;text-transform:uppercase}}
-.tg{{margin:16px 0 0;font:500 25px/1.3 var(--font)}}
-.ft{{margin-top:auto;display:flex;justify-content:space-between;font:800 19px/1 var(--font);text-transform:uppercase;letter-spacing:.03em}}
-.hm{{display:grid;grid-template-columns:560px 1fr;width:1200px;height:630px}}
-.hl{{display:flex;flex-direction:column;padding:48px 44px 44px 52px;color:#FFF4DF}}
-.lg{{font:900 24px/1 var(--font);font-stretch:70%;text-transform:uppercase;color:#FFF4DF}}.lg b{{color:#FFC93C}}
-.h1{{margin:44px 0 0;font:900 150px/.84 var(--font);font-stretch:62%;text-transform:uppercase}}
-.sub{{margin:26px 0 0;font:500 29px/1.3 var(--font);color:#A9B6CC}}.sub b{{color:#FFF4DF}}
+.ph{{flex:none;width:660px;height:630px;object-fit:cover}}
+.side{{flex:1;display:flex;flex-direction:column;padding:52px 46px 40px;box-shadow:inset 0 0 0 14px var(--g),inset 0 0 0 18px var(--line)}}
+.wm{{display:block;width:auto;height:auto;max-width:100%;max-height:150px;object-fit:contain;object-position:left center;margin-top:18px}}
+.tg{{margin:30px 0 0;font:600 34px/1.25 var(--font);text-wrap:balance}}
+.ft{{margin-top:auto;display:flex;justify-content:space-between;font:600 21px/1 var(--font);opacity:.85}}
+.hm{{display:grid;grid-template-columns:560px 1fr;width:1200px;height:630px;color:#F4EEE3}}
+.hl{{display:flex;flex-direction:column;padding:48px 44px 44px 52px}}
+.lg{{display:flex;align-items:center;gap:14px;font:800 30px/1 var(--font);letter-spacing:-.01em}}
+.lg i{{display:grid;place-items:center;width:58px;height:42px;border:2.5px solid currentColor;border-radius:8px;font:800 20px/1 var(--font);font-stretch:85%;font-style:normal;letter-spacing:.05em}}
+.h1{{margin:56px 0 0;font:700 92px/1 var(--font);letter-spacing:-.02em}}
+.sub{{margin:22px 0 0;font:500 29px/1.3 var(--font);color:#ADA698}}.sub b{{color:#F4EEE3}}
 .sg{{margin-top:auto;align-self:flex-start;display:flex;align-items:center;gap:14px;padding:10px 16px;border:3px solid #FFC93C;border-radius:12px;color:#FFC93C;text-transform:uppercase;box-shadow:0 0 26px rgba(255,201,60,.3)}}
 .sg b{{font:900 40px/.9 var(--font);font-stretch:62%;letter-spacing:.05em;text-shadow:0 0 8px rgba(255,201,60,.8)}}.sg span{{font:800 16px/1.15 var(--font);font-stretch:75%;letter-spacing:.08em}}
 .grid{{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;padding:10px 10px 10px 0}}
-.grid img{{width:100%;height:100%;object-fit:cover;border-radius:14px}}
+.grid img{{width:100%;height:100%;object-fit:cover;border-radius:6px}}
 </style></head><body>"""
 
 def brand_html(b):
-    m = menus[b]; col = m["color"]; fg = ink(col)
+    """The restaurant's own sign (its wordmark on its own ground, framed) beside its house dish. A dish whose
+    picture is hidden on the site ("hidePhoto") isn't on the card either: then the menu's "hero" picture."""
+    m = menus[b]; sign = m.get("sign") or {}
+    ground = sign.get("ground", m["color"]); line = sign.get("line", "transparent")
+    fg = "#15130F" if lum(ground) > 0.5 else "#F4EEE3"
     sig = next((i for i in m["items"] if i.get("style") == "signature"), None)   # the tagline is about this dish
-    pic = sig["img"] if sig else m["hero"]
-    return HEAD + f"""<div class="c"><img class="ph" src="{pic}"><div class="side" style="background:{col};color:{fg}">
-<img class="mk" src="{m['mark']}"><h1 class="nm">{m['name']}</h1><p class="tg">{m['tagline']}</p>
+    pic = sig["img"] if sig and not sig.get("hidePhoto") else m["hero"]
+    return HEAD + f"""<div class="c"><img class="ph" src="{pic}"><div class="side" style="--g:{ground};--line:{line};background:{ground};color:{fg}">
+<img class="wm" src="{m['logo']}" alt=""><p class="tg">{m['tagline']}</p>
 <div class="ft"><span>Order Aruba</span><span>{HOURS}</span></div></div></div></body></html>"""
 
 def home_html():
     pics = [menus[b]["hero"] for b in ids[:4]]
-    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg">Order Aruba</div>
-<div class="h1">Bon<br>nochi.</div><p class="sub">Late-night food, delivered.<br><b>{FEE} delivery, 10 PM to 2 AM.</b></p>
+    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg"><i>OA</i>Order Aruba</div>
+<div class="h1">Bon nochi.</div><p class="sub">Late-night food, delivered.<br><b>{FEE} delivery, {t12(o)} to {t12(c)}.</b></p>
 <div class="sg"><b>Open</b><span>{t12(o)}<br>to {t12(c)}</span></div></div>
 <div class="grid">{''.join(f'<img src="{p}">' for p in pics)}</div></div></body></html>"""
 
