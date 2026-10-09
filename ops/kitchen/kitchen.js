@@ -777,7 +777,7 @@
     var named = dish ? no + ' (' + dish + ')' : no;
     return [
       { k: 'Confirm', t: hi + no + (timed ? ' is booked for ' + o.time + '.' : ' is confirmed.') +
-          (pickup ? ' We\u2019ll message you when it\u2019s ready for pickup.' : timed ? '' : ' It\u2019s with you in about 35\u201350 min.') + total },
+          (pickup ? ' We\u2019ll message you when it\u2019s ready for pickup.' : timed ? '' : ' It\u2019s with you in about 45\u201360 min.') + total },
       { k: 'Cooking', t: no + ' is on the stove now' + (dish ? ': ' + dish + '.' : '.') },
       { k: pickup ? 'Ready for pickup' : 'On the way', t: pickup ? named + ' is ready for pickup. See you soon!' : named + ' is on the way. See you in a few minutes!' },
       { k: 'Sold out', t: 'Sorry, one dish in ' + (o.no ? 'order #' + o.no : 'your order') + ' is sold out tonight. Can we swap it for something else?' }

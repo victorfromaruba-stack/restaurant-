@@ -153,6 +153,9 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 .row__inc{margin:6px 0 0;font:600 14px/1.4 var(--body);color:var(--ink);max-width:30rem}
 .row__flags{margin:6px 0 0;font:600 13px/1.3 var(--font);color:var(--muted)}
 .fl+.fl::before{content:" \00B7  "}
+.fl--peanut,.fl--shrimp{display:inline-block;margin:2px 6px 2px 0;padding:3px 8px;border-radius:4px;background:#B3261E;color:#fff;font:800 13px/1.25 var(--font);letter-spacing:.01em}
+.fl--peanut::after,.fl--shrimp::after{content:none}.fl+.fl--peanut::before,.fl+.fl--shrimp::before,.fl--peanut+.fl::before,.fl--shrimp+.fl::before{content:none}
+.order__mix{margin:14px 0 6px;font:500 15px/1.4 var(--font)}
 /* the picture column: the picture, then the + box under it, both against the outer edge */
 .row__side{grid-area:side;display:flex;flex-direction:column;align-items:flex-end;gap:10px;min-width:0}
 .row__media{position:relative;width:var(--ph);height:var(--ph-h,var(--ph))}

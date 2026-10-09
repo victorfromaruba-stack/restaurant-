@@ -2606,7 +2606,7 @@
    "name": "Smash burger combo (burger + fries)",
    "img": "../../smash-shack/assets/dishes/co.webp",
    "kind": "main",
-   "price": 2150,
+   "price": 1895,
    "allergens": [
     "dairy",
     "gluten",

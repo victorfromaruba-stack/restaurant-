@@ -944,6 +944,10 @@
         }).join("") + "</div>" + (SITE.payment ? '<p class="field__help">' + esc(clean(tr(SITE.payment))) + "</p>" : "") +
         err("pay", tr("Pick how you\u2019ll pay.")) + "</fieldset>" : "") +
       "</form>";
+    if (inMix(HERE) || brandsInCart().some(inMix)) {
+      html += '<p class="order__mix">' + keep(tr("Order from several restaurants at once.")) + " <b>" +
+        keep(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b></p>";
+    }
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
       '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
@@ -1208,7 +1212,7 @@
     // the app's delivery line, said as the app's ("Order Aruba delivers until 2 AM"), then the restaurant's own sign: its
     // wordmark, its line, a small framed picture. Closed: an unlit sign, like the home page's, when it opens in amber,
     // and no delivery time (so the line stays one line)
-    var app = SITE.name || "", says = st.open && !st.last && app;   // "Order Aruba delivers until 2 AM · ƒ5 · 35–50 min"
+    var app = SITE.name || "", says = st.open && !st.last && app;   // "Order Aruba delivers until 2 AM · ƒ5 · 45–60 min"
     var html = '<div class="strip' + (st.open ? "" : " strip--closed") + '"><ul class="facts">' +
           '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") +
             esc(says ? tr("{app} delivers until {time}", { app: app, time: st.close }) : st.label) + "</li>" +
