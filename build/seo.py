@@ -39,13 +39,12 @@ def common(b):
         "acceptsReservations": False,
         "address": {"@type": "PostalAddress", "addressCountry": "AW"},
         "areaServed": [{"@type": "Place", "name": a + ", Aruba"} for a in site["areas"]],
-        "openingHoursSpecification": hours(),
     }
 
 def home_ld():
     org = {"@type": "Organization", "@id": BASE + "#app", "name": site.get("name", "Order Aruba"), "url": BASE,
            "image": BASE + "shared/og/home.jpg", "telephone": phone(None),
-           "description": "Late-night food delivery in Aruba, 10 PM to 2 AM, ordered on WhatsApp.",
+           "description": "Late-night food delivery in Aruba from 10 PM, ordered on WhatsApp.",
            "areaServed": [{"@type": "Place", "name": a + ", Aruba"} for a in site["areas"]]}
     return {"@context": "https://schema.org", "@graph": [
         {"@type": "WebSite", "@id": BASE + "#site", "name": site.get("name", "Order Aruba"), "url": BASE, "publisher": {"@id": BASE + "#app"}}, org]}

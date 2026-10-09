@@ -1,9 +1,6 @@
 {
  "_about": "Español. Edit the right-hand side only. The left side is the English the site shows; {words} in braces must stay.",
- "Open until {time}": "Abierto hasta las {time}",
  "Language": "Idioma",
- "Last orders {time}": "Últimos pedidos {time}",
- "until {time}": "hasta las {time}",
  "Opens tonight {time}": "Abre esta noche a las {time}",
  "Opens today {time}": "Abre hoy a las {time}",
  "Opens tomorrow night {time}": "Abre mañana por la noche a las {time}",
@@ -46,7 +43,6 @@
  "Open WhatsApp again": "Abrir WhatsApp de nuevo",
  "Start a new order": "Empezar un pedido nuevo",
  "Edit this order": "Editar este pedido",
- "Last orders have passed for tonight.": "Ya pasó la hora de los últimos pedidos de esta noche.",
  "We’re closed.": "Estamos cerrados.",
  "Order now for later and we confirm when we open.": "Pide ahora para más tarde y te confirmamos cuando abramos.",
  "Drinks": "Bebidas",
@@ -152,10 +148,7 @@
  "WhatsApp opens with your order already written out. Just press send.": "WhatsApp se abre con tu pedido ya escrito. Solo pulsa enviar.",
  "We reply to confirm": "Te respondemos para confirmar",
  "Delivery takes about {eta}.": "La entrega tarda unos {eta}.",
- "Open every night from {open} to {close}.": "Abierto todas las noches de {open} a {close}.",
- "Open today {hours}.": "Hoy abierto {hours}.",
  "Closed today.": "Hoy cerrado.",
- "Last orders at {time}.": "Últimos pedidos a las {time}.",
  "Share this dish": "Comparte este plato",
  "Link copied": "Enlace copiado",
  "Questions? WhatsApp us on {number}.": "¿Preguntas? Escríbenos por WhatsApp al {number}.",
@@ -202,5 +195,7 @@
  "Fried in shared oil.": "Frito en aceite compartido.",
  "From other restaurants · same order, still one {fee} delivery": "De otros restaurantes · mismo pedido, sigue siendo una entrega de {fee}",
  "You order here and send it on WhatsApp. We reply to confirm.": "Pides aquí y mandas el pedido por WhatsApp. Te respondemos para confirmar.",
- "{app} delivers until {time}": "{app} entrega hasta las {time}"
+ "Open now": "Abierto ahora",
+ "Late night from {time}": "Tarde en la noche, desde las {time}",
+ "Every night from {time}.": "Todas las noches desde las {time}."
 }
