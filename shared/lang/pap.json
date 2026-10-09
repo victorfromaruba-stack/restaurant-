@@ -196,11 +196,11 @@
  "Order from several restaurants at once.": "Pidi di varios restaurant na mes momento.",
  "From one restaurant or several, in one order.": "Di un restaurant of di varios, den un orden.",
  "Delivery is {fee} per order, even with dishes from several restaurants.": "Entrega ta {fee} pa orden, aunke bo pidi di varios restaurant.",
- "Add dishes from any of them to the same order: still one {fee} delivery.": "Agrega cuminda di cualkier di nan na mes orden: ainda un entrega di {fee}.",
  "Your order: {names}": "Bo orden: {names}",
  "Pre-order for tonight": "Pre-orden pa awe nochi",
  "May contain traces of {list}.": "Por tin rastro di {list}.",
  "Fried in shared oil.": "Frita den mesun azeta.",
  "From other restaurants · same order, still one {fee} delivery": "Di otro restaurant · mes orden, ainda un entrega di {fee}",
- "You order here and send it on WhatsApp. We reply to confirm.": "Bo ta ordena aki y manda e orden riba WhatsApp. Nos ta contesta pa confirma."
+ "You order here and send it on WhatsApp. We reply to confirm.": "Bo ta ordena aki y manda e orden riba WhatsApp. Nos ta contesta pa confirma.",
+ "{app} delivers until {time}": "{app} ta entregá te {time}"
 }

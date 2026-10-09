@@ -57,7 +57,8 @@
     "sesame",
     "shellfish"
    ],
-   "fried": true
+   "fried": true,
+   "hidePhoto": true
   },
   {
    "id": "fr",

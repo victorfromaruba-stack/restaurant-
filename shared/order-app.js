@@ -1,8 +1,6 @@
 /* Order Aruba: a late-night delivery app, like Uber Eats. The home page lists the restaurants; each
    restaurant page is its own shop. Restaurants marked "mix" in site.json share one order and one
    delivery fee (the app's perk, like DoorDash's Double Dash); any other restaurant has its own order.
-   Customers must believe each restaurant is its own business: nothing here ever says or hints that
-   they share a kitchen.
    Menus live in <restaurant>/menu.json. Shop settings (WhatsApp number, hours, areas, delivery fee,
    which restaurants are open) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
    No framework, no build step. */
@@ -133,6 +131,7 @@
   var SITE = null;
   var MENU = {};          // id -> loaded menu (sync access)
   var pending = {};       // id -> promise
+  var failed = {};        // id -> true when its menu didn't load
   function getJSON(p) {
     return fetch(path(p), { cache: "no-cache" }).then(function (r) {
       if (!r.ok) throw new Error(p + " " + r.status);
@@ -147,9 +146,10 @@
         m.byId = {};
         m.items.forEach(function (it) { m.byId[it.id] = it; });
         MENU[id] = m;
-        refreshLines(id);
+        delete failed[id];
+        if (KEY) refreshLines(id);   // before setOrder() there is no order to refresh yet: boot does it then
         return m;
-      });
+      }, function (err) { failed[id] = true; delete pending[id]; throw err; });
     }
     return pending[id];
   }
@@ -159,6 +159,11 @@
   function setOrder() {
     if (inMix(HERE)) { KEY = MIX_KEY; LAST_KEY = MIX_LAST; ALLOWED = mixGroup(); }
     else { KEY = "order." + HERE + ".v1"; LAST_KEY = "last." + HERE + ".v1"; ALLOWED = [HERE]; }
+  }
+  /* a dish can't be ordered when it's sold out, and a family deal can't when one of the dishes inside it is */
+  function isOut(menu, item) {
+    if (!item || item.soldOut) return true;
+    return (item.includes || []).some(function (id) { var x = menu && menu.byId[id]; return !!(x && x.soldOut); });
   }
   function brandStatus(id) {
     var b = (SITE.brands || []).filter(function (x) { return x.id === id; })[0];
@@ -184,7 +189,7 @@
     if (c <= o) c += 24 * 60;
     return { o: o, c: c };
   }
-  /* Last orders: site.json "lastOrder" (e.g. "01:30"). New orders stop then; the kitchen finishes what it has. */
+  /* Last orders: site.json "lastOrder" (e.g. "01:30"). New orders stop then; orders already in still go out. */
   function cutFor(w) {
     if (!w) return w;
     var cut = w.c;
@@ -195,7 +200,7 @@
     }
     return { o: w.o, c: w.c, cut: cut };
   }
-  function kitchenStatus() {
+  function shopStatus() {
     var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
     var wins = [];
     var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
@@ -206,7 +211,7 @@
       if (now >= x.o && now < x.cut) {
         var left = x.cut - now, hasCut = x.cut < x.c;
         var last = left <= 30 && hasCut;
-        return { open: true, soon: left <= 30, lastOrder: hasCut ? clock(x.cut) : "",
+        return { open: true, soon: left <= 30, lastOrder: hasCut ? clock(x.cut) : "", last: last, close: clock(x.c),
           label: last ? tr("Last orders {time}", { time: clock(x.cut) }) : tr("Open until {time}", { time: clock(x.c) }),
           sub: last ? tr("Last orders {time}", { time: clock(x.cut) }) : tr("until {time}", { time: clock(x.c) }) };
       }
@@ -259,11 +264,13 @@
   function writeStore(s, silent) {
     s.updated = Date.now();
     memState = s;
-    try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* private mode: keep in memory */ }
+    try { if (KEY) localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* private mode: keep in memory */ }
     if (!silent) emit();
   }
   var state = null;
-  function S() { if (!state) { state = readStore(); tidy(state); } return state; }
+  function S() { if (!state) reload(); return state; }
+  /* read the order again (page start, another tab, back from WhatsApp), with the same tidying as the first read */
+  function reload() { state = readStore(); tidy(state); return state; }
   /* one line per can, whichever restaurant it was added from */
   function isDrinkLine(l) { return l.dr || /^(ck|cz|sp)$/.test(l.id); }
   function tidy(s) {
@@ -282,7 +289,7 @@
   /* the sent order is already saved as "Order again"; empty the bag and forget its number */
   function retire(s) { s.lines = []; s.no = ""; s.sentAt = 0; s.note = ""; s.when = ""; }
   function commit() { writeStore(state); }
-  window.addEventListener("storage", function (e) { if (e.key === KEY) { state = readStore(); emit(); } });
+  window.addEventListener("storage", function (e) { if (KEY && e.key === KEY) { reload(); emit(); } });
 
   function lineKey(b, id, o) {
     var parts = Object.keys(o || {}).sort().map(function (g) {
@@ -338,7 +345,7 @@
   var freshStart = false;
   function addItem(b, id, opts, qty) {
     var menu = MENU[b], item = menu && menu.byId[id];
-    if (!item || item.soldOut || brandStatus(b) !== "open" || ALLOWED.indexOf(b) < 0) return null;
+    if (!item || isOut(menu, item) || brandStatus(b) !== "open" || ALLOWED.indexOf(b) < 0) return null;
     var o = normOpts(item, opts || {});
     var drink = item.kind === "drink";
     var k = drink ? "drink|" + id : lineKey(b, id, o);
@@ -380,7 +387,8 @@
       if (l.n !== item.name || l.p !== p || l.gone) { l.n = item.name; l.p = p; l.gone = false; changed = true; }
       l.d = describe(item, o);
       if (item.includes) l.inc = includesNames(menu, item);
-      l.soldOut = !!item.soldOut;
+      var out = isOut(menu, item);
+      if (!!l.soldOut !== out) { l.soldOut = out; changed = true; }
     });
     if (changed) commit();
   }
@@ -432,7 +440,7 @@
   /* Time choices run from 30 min after opening (or 45 min from now) until last orders, never the closing minute itself. */
   function timeSlots() {
     var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
-    var st = kitchenStatus(), win = null, prefix = "";
+    var st = shopStatus(), win = null, prefix = "";
     function endOf(x, shift) { return (x.cut < x.c ? x.cut : x.c - 15) + shift; }
     var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
     if (y && y.cut > 1440 && now < y.cut - 1440) win = { o: y.o - 1440, end: endOf(y, -1440) };
@@ -447,7 +455,7 @@
   }
   /* closed, with time slots left tonight: what's ordered now is a pre-order for tonight */
   function preOrder() {
-    if (kitchenStatus().open) return "";
+    if (shopStatus().open) return "";
     var ts = timeSlots();
     return ts.slots.length && !/^Tomorrow /.test(ts.slots[0].v) ? tr("Pre-order for tonight") : "";
   }
@@ -464,7 +472,7 @@
     else out.push("*" + brandName(brands[0] || HERE) + " order* #" + orderNo());
     out.push("Delivery · " + (s.area ? s.area + (s.area === OTHER ? " (please confirm)" : "") : "area not set"));
     out.push("Time: " + (validWhen() || "As soon as possible"));
-    if (!kitchenStatus().open) out.push("Pre-order: sent while you were closed");
+    if (!shopStatus().open) out.push("Pre-order: sent while you were closed");
     out.push("");
     function put(l) {
       out.push(l.q + " × " + l.n + " — " + money(l.q * l.p));
@@ -565,8 +573,9 @@
     setTimeout(function () { rec.wrap.remove(); }, reduce ? 0 : 220);
     if (!openSheets.length) BODY.classList.remove("oa-lock");
     if (rec.onClose) rec.onClose();
-    if (rec.last && rec.last.focus) rec.last.focus({ preventScroll: true });
-    paintBar();
+    paintBar();   // first: the order bar comes back, so focus can go back to it
+    var back = rec.last && rec.last.focus && document.contains(rec.last) && rec.last.offsetParent !== null ? rec.last : $(".bag");
+    if (back && back.offsetParent !== null) back.focus({ preventScroll: true });
   }
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && openSheets.length) closeSheet();
@@ -622,15 +631,15 @@
      + sits in the same place and the words keep one measure). Each restaurant's stylesheet gives the row its own
      type, colours and rules. */
   function rowHTML(b, item) {
-    var n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut, pic = hasPic(item);
+    var out = isOut(MENU[b], item), n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !out, pic = hasPic(item);
     var cls = "row" + (item.style === "signature" ? " is-sig" : item.style === "bundle" ? " is-bundle" : "") +
-      (item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "") + (pic ? "" : " row--np") + (item.soldOut ? " is-out" : "");
+      (item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "") + (pic ? "" : " row--np") + (out ? " is-out" : "");
     var inc = item.includes ? includesNames(MENU[b], item).join(", ") : "";
     return '<article class="' + cls + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
-      '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
+      '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (out ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
       '<div class="row__text">' +
         '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
-        (item.soldOut ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
+        (out ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
         (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") +
         (inc ? '<p class="row__inc">' + keep(inc) + "</p>" : "") +
         (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
@@ -668,7 +677,7 @@
   function openDish(b, id) {
     var menu = MENU[b], item = menu && menu.byId[id];
     if (!item) return;
-    var orderable = brandStatus(b) === "open" && !item.soldOut;
+    var out = isOut(menu, item), orderable = brandStatus(b) === "open" && !out;
     var o = normOpts(item, {}), qty = 1;
     var groups = (item.options || []).map(function (g) {
       var type = g.type === "one" ? "radio" : "checkbox";
@@ -680,7 +689,7 @@
         }).join("") + "</div></fieldset>";
     }).join("");
     var pairs = (item.kind === "side" || item.kind === "drink") ? [] :
-      menu.items.filter(function (i) { return (i.kind === "side" || i.kind === "drink") && !i.soldOut; }).slice(0, 5);
+      menu.items.filter(function (i) { return (i.kind === "side" || i.kind === "drink") && !isOut(menu, i); }).slice(0, 5);
     var pairHTML = pairs.length && orderable ? '<fieldset class="opt"><legend>' + esc(tr("Goes well with")) + " <span>" + esc(tr("optional")) + '</span></legend><div class="chips">' +
       pairs.map(function (i) {
         return '<label class="chip"><input type="checkbox" name="pair" value="' + esc(i.id) + '"><span><span>' + keep(shortName(i)) + '</span><i class="chip__p">' + addPrice(i.price) + "</i></span></label>";
@@ -702,7 +711,7 @@
         "</div>" +
         '<div class="dish__foot">' +
           (orderable && preOrder() ? '<p class="dish__pre">' + esc(preOrder()) + "</p>" : "") +
-          '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="' + esc(tr("One less")) + '">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="' + esc(tr("One more")) + '">' + ICON.plus + "</button></div>" +
+          (orderable ? '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="' + esc(tr("One less")) + '">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="' + esc(tr("One more")) + '">' + ICON.plus + "</button></div>" : "") +
           '<button type="button" class="btn btn--accent dish__add"' + (orderable ? "" : " disabled") + "></button>" +
         "</div>" +
       "</div>");
@@ -720,9 +729,9 @@
     }
     function paint() {
       o = readOpts();
-      $(".qty__n", node).textContent = qty;
+      var qn = $(".qty__n", node); if (qn) qn.textContent = qty;
       var btn = $(".dish__add", node);
-      if (!orderable) btn.textContent = tr(item.soldOut ? "Sold out today" : "Opening soon");
+      if (!orderable) btn.textContent = tr(out ? "Sold out today" : "Opening soon");
       else {
         var extra = pickedPairs(), n = qty + extra.length;
         btn.innerHTML = "<span>" + esc(n > 1 ? tr("Add {n} items", { n: n }) : tr("Add")) + "</span><span>" + money(unitPrice(item, o) * qty + extra.reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
@@ -779,16 +788,16 @@
       if (!f) return;
       S()[f] = e.target.value;
       writeStore(S(), true);
-      var field = e.target.closest(".field");
-      if (field && field.classList.contains("is-bad") && e.target.value.trim()) field.classList.remove("is-bad");
+      var field = e.target.closest("[data-err]");
+      if (field && field.classList.contains("is-bad") && e.target.value.trim()) setBad(field, false);
       updateSend(node);
       var pre = $(".ticket pre", node); if (pre) pre.textContent = buildMessage();
       paintBar();
     });
     node.addEventListener("change", function (e) {
       var t = e.target;
-      if (t.name === "oa-area") { S().area = t.value; var fa = t.closest(".field"); if (fa) fa.classList.remove("is-bad"); commit(); }
-      if (t.name === "oa-pay") { S().pay = t.value; var fp = t.closest(".field"); if (fp) fp.classList.remove("is-bad"); commit(); }
+      if (t.name === "oa-area") { S().area = t.value; commit(); }   // the re-render clears its mark
+      if (t.name === "oa-pay") { S().pay = t.value; commit(); }
     });
     return node;
   }
@@ -798,30 +807,37 @@
     var brands = brandsInCart();
     return CROSS.filter(function (c) {
       var m = MENU[c[0]], i = m && m.byId[c[1]];
-      return i && !i.soldOut && c[0] !== HERE && ALLOWED.length > 1 && ALLOWED.indexOf(c[0]) >= 0 && brandStatus(c[0]) === "open" && brands.indexOf(c[0]) < 0;
+      return i && !isOut(m, i) && c[0] !== HERE && ALLOWED.length > 1 && ALLOWED.indexOf(c[0]) >= 0 && brandStatus(c[0]) === "open" && brands.indexOf(c[0]) < 0;
     }).slice(0, 4);
   }
   function crossMenus() { return CROSS.map(function (c) { return c[0]; }).filter(function (b) { return b !== HERE && ALLOWED.indexOf(b) >= 0; }); }
-  /* Right under the lines, one compact "anything else?" block, words only: this restaurant's own sides and drinks
-     first, like the till, then a few cheap dishes from the other "mix" restaurants (the app's perk: same order, still
-     one delivery fee), each marked with a small square in its restaurant's colour. */
+  /* Right under the lines, one compact "anything else?" block, words only: this restaurant's own sides, one side from
+     each other restaurant already in the order and the drinks, like the till; then a few cheap dishes from the "mix"
+     restaurants not in it yet (the app's perk: same order, still one delivery fee). A dish from another restaurant
+     carries that restaurant's name under it (and a small square in its colour). */
   function addChip(b, i, other) {
     var m = MENU[b];
     return '<button type="button" class="add' + (other ? " add--other" : "") + '" data-add="' + esc(b + "|" + i.id) + '"' + (other ? ' style="--shop:' + esc(m.color) + '"' : "") +
       ' aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price) + (other ? ", " + m.name : "")) + '">' +
-      '<span class="add__n">' + keep(shortName(i)) + '</span><span class="add__p">' + addPrice(i.price) + "</span></button>";
+      '<span class="add__n">' + keep(shortName(i)) + '</span><span class="add__p">' + addPrice(i.price) + "</span>" +
+      (other ? '<span class="add__b" aria-hidden="true">' + esc(m.name) + "</span>" : "") + "</button>";
   }
   function addBlock() {
     var lines = liveLines(), brands = brandsInCart(), host = brands.indexOf(HERE) >= 0 ? HERE : brands[0];
     var menu = MENU[host], own = "", cross = crossPicks();
+    function sideFrom(b) { return lines.some(function (l) { var m = MENU[l.b], it = m && m.byId[l.id]; return l.b === b && it && it.kind === "side"; }); }
+    function sides(b) { var m = MENU[b]; return m ? m.items.filter(function (i) { return i.kind === "side" && !isOut(m, i); }) : []; }
     if (lines.length && menu && brandStatus(host) === "open") {
-      var hasDrink = drinkLines().length > 0;
-      var hasSide = lines.some(function (l) { var m = MENU[l.b], it = m && m.byId[l.id]; return l.b === host && it && it.kind === "side"; });
-      var picks = [];
-      if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
-      if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
-      if (picks.length) own = '<h3 class="addon__t" id="oa-add-h">' + esc(tr(!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side")) + "</h3>" +
-        '<div class="addon__row">' + picks.map(function (i) { return addChip(host, i, false); }).join("") + "</div>";
+      var chips = [], nSide = 0, nDrink = 0;
+      if (!sideFrom(host)) sides(host).slice(0, 2).forEach(function (i) { chips.push(addChip(host, i, false)); nSide++; });
+      brands.forEach(function (b) {
+        if (b === host || ALLOWED.indexOf(b) < 0 || brandStatus(b) !== "open" || sideFrom(b)) return;
+        var i = sides(b)[0];
+        if (i) { chips.push(addChip(b, i, true)); nSide++; }
+      });
+      if (!drinkLines().length) menu.items.filter(function (i) { return i.kind === "drink" && !isOut(menu, i); }).forEach(function (i) { chips.push(addChip(host, i, false)); nDrink++; });
+      if (chips.length) own = '<h3 class="addon__t" id="oa-add-h">' + esc(tr(nSide && nDrink ? "Add a side or drink" : nDrink ? "Add a drink" : "Add a side")) + "</h3>" +
+        '<div class="addon__row">' + chips.join("") + "</div>";
     }
     var other = cross.length ? '<h3 class="addon__t addon__t--other">' + keep(tr("From other restaurants · same order, still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</h3>" +
       '<div class="addon__row addon__row--other">' + cross.map(function (c) { return addChip(c[0], MENU[c[0]].byId[c[1]], true); }).join("") + "</div>" : "";
@@ -843,7 +859,7 @@
     if (f) f.focus({ preventScroll: true });
   }
   function renderOrder(node) {
-    var s = S(), lines = liveLines(), st = kitchenStatus();
+    var s = S(), lines = liveLines(), st = shopStatus();
     var had = document.activeElement && node.contains(document.activeElement) && document.activeElement !== node;
     var fKey = had ? focusKey(document.activeElement) : null;
     var html = "";
@@ -877,8 +893,12 @@
       if (g.t) html += '<h3 class="lines__brand' + (g.b ? "" : " lines__brand--drinks") + '"' + (g.b && MENU[g.b] ? ' style="--shop:' + esc(MENU[g.b].color) + '"' : "") + ">" + esc(g.t) + "</h3>";
       html += '<ul class="lines">' + g.lines.map(function (l) {
         var extra = (l.inc && l.inc.length ? l.inc.join(", ") : "") + (l.inc && l.d && l.d.length ? " · " : "") + (l.d || []).join(" · ");
-        var it = MENU[l.b] && MENU[l.b].byId[l.id];   // a small picture per line, so the order can be checked at a glance
-        return '<li class="line">' + (it ? thumbImg(it, ' class="line__pic" loading="lazy" decoding="async"') : "") +
+        var m = MENU[l.b], it = m && m.byId[l.id];   // a small picture per line, so the order can be checked at a glance
+        // no picture (a drink, or a dish shown without one): the restaurant's mark, or an empty box for a can, so the words line up
+        var pic = it && hasPic(it) ? thumbImg(it, ' class="line__pic" loading="lazy" decoding="async"')
+          : m && !isDrinkLine(l) ? '<img class="line__pic line__pic--mark" src="' + esc(path(m.mark)) + '" alt="" width="192" height="192" loading="lazy" decoding="async">'
+          : '<span class="line__pic line__pic--none" aria-hidden="true"></span>';
+        return '<li class="line">' + pic +
           '<div class="line__main"><p class="line__n">' + keep(l.n) + "</p>" +
           (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
           (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
@@ -897,25 +917,32 @@
     html += '<label class="field"><span class="field__l">' + esc(tr(ts.asap ? "When" : "Tonight at")) + '</span><span class="select"><select id="oa-when" data-f="when">' + whenOpts.join("") + "</select></span></label>";
     // closed: say so right at the time choice, where it matters
     if (!st.open) html += '<p class="note note--warn">' + keep(tr(st.finishing ? "Last orders have passed for tonight." : "We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
-    html += '<fieldset class="field field--areas" id="oa-f-area"><legend>' + esc(tr("Delivery area")) + '</legend><div class="chips">' +
+    // after a Send that found gaps, every field still missing says so (and keeps saying so through a re-render)
+    var bad = node._tried ? missing() : {};
+    function errAttrs(f, extra) {
+      var ids = (extra ? [extra] : []).concat(bad[f] ? ["oa-" + f + "-err"] : []);
+      return (bad[f] ? ' aria-invalid="true"' : "") + (ids.length ? ' aria-describedby="' + ids.join(" ") + '"' : "");
+    }
+    function err(f, text) { return '<p class="field__err" id="oa-' + f + '-err">' + esc(text) + "</p>"; }
+    html += '<fieldset class="field field--areas' + (bad.area ? " is-bad" : "") + '" id="oa-f-area" data-err="area"><legend>' + esc(tr("Delivery area")) + '</legend><div class="chips">' +
         areas.map(function (a) {
-          return '<label class="chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + "><span>" + esc(tr(a)) + "</span></label>";
-        }).join("") + '</div><p class="field__err">' + esc(tr("Pick your area.")) + "</p>" +
+          return '<label class="chip"><input type="radio" name="oa-area" value="' + esc(a) + '"' + (s.area === a ? " checked" : "") + errAttrs("area") + "><span>" + esc(tr(a)) + "</span></label>";
+        }).join("") + "</div>" + err("area", tr("Pick your area.")) +
         (s.area === OTHER ? '<p class="note note--warn">' + esc(tr(OTHER_NOTE)) + "</p>" : "") + "</fieldset>" +
-        '<label class="field" id="oa-f-addr"><span class="field__l">' + esc(tr("Address or landmark")) + "</span>" +
-        '<textarea id="oa-addr" data-f="addr" rows="2" maxlength="160" autocomplete="street-address" aria-describedby="oa-addr-help">' + esc(s.addr) + "</textarea>" +
-        '<span class="field__help" id="oa-addr-help">' + esc(tr("Street and house number, or a landmark. House colour helps the driver.")) + "</span>" +
-        '<span class="field__err">' + esc(tr("Add an address for the driver.")) + "</span></label>";
-    html += '<label class="field" id="oa-f-name"><span class="field__l">' + esc(tr("Name")) + "</span>" +
-      '<input id="oa-name" data-f="name" type="text" maxlength="40" autocomplete="name" value="' + esc(s.name) + '">' +
-      '<span class="field__err">' + esc(tr("Add your name.")) + "</span></label>" +
+        '<div class="field' + (bad.addr ? " is-bad" : "") + '" id="oa-f-addr" data-err="addr"><label class="field__l" for="oa-addr">' + esc(tr("Address or landmark")) + "</label>" +
+        '<textarea id="oa-addr" data-f="addr" rows="2" maxlength="160" autocomplete="street-address"' + errAttrs("addr", "oa-addr-help") + ">" + esc(s.addr) + "</textarea>" +
+        '<p class="field__help" id="oa-addr-help">' + esc(tr("Street and house number, or a landmark. House colour helps the driver.")) + "</p>" +
+        err("addr", tr("Add an address for the driver.")) + "</div>";
+    html += '<div class="field' + (bad.name ? " is-bad" : "") + '" id="oa-f-name" data-err="name"><label class="field__l" for="oa-name">' + esc(tr("Name")) + "</label>" +
+      '<input id="oa-name" data-f="name" type="text" maxlength="40" autocomplete="name" value="' + esc(s.name) + '"' + errAttrs("name") + ">" +
+      err("name", tr("Add your name.")) + "</div>" +
       '<label class="field"><span class="field__l">' + esc(tr("Note")) + " <em>" + esc(tr("optional")) + "</em></span>" +
       '<textarea id="oa-note" data-f="note" rows="2" maxlength="160" placeholder="' + esc(tr("Allergies, gate code")) + '">' + esc(s.note) + "</textarea></label>" +
-      (payOptions().length ? '<fieldset class="field field--areas" id="oa-f-pay"><legend>' + esc(tr("How will you pay?")) + '</legend><div class="chips">' +
+      (payOptions().length ? '<fieldset class="field field--areas' + (bad.pay ? " is-bad" : "") + '" id="oa-f-pay" data-err="pay"><legend>' + esc(tr("How will you pay?")) + '</legend><div class="chips">' +
         payOptions().map(function (p) {
-          return '<label class="chip"><input type="radio" name="oa-pay" value="' + esc(p) + '"' + (s.pay === p ? " checked" : "") + "><span>" + esc(tr(p)) + "</span></label>";
+          return '<label class="chip"><input type="radio" name="oa-pay" value="' + esc(p) + '"' + (s.pay === p ? " checked" : "") + errAttrs("pay") + "><span>" + esc(tr(p)) + "</span></label>";
         }).join("") + "</div>" + (SITE.payment ? '<p class="field__help">' + esc(clean(tr(SITE.payment))) + "</p>" : "") +
-        '<p class="field__err">' + esc(tr("Pick how you\u2019ll pay.")) + "</p></fieldset>" : "") +
+        err("pay", tr("Pick how you\u2019ll pay.")) + "</fieldset>" : "") +
       "</form>";
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
@@ -930,21 +957,41 @@
     wireSend(node);
     if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-send]");
   }
+  /* which checkout details are still missing */
+  function missing() {
+    var s = S(), out = {};
+    if (!s.area) out.area = true;
+    if (!clean(s.addr)) out.addr = true;
+    if (!clean(s.name)) out.name = true;
+    if (payOptions().length && payOptions().indexOf(s.pay) < 0) out.pay = true;
+    return out;
+  }
+  /* mark one field as missing (or not): the red text shows, its control is marked invalid and points at that text */
+  function setBad(field, bad) {
+    if (!field) return;
+    var f = field.getAttribute("data-err"), id = "oa-" + f + "-err";
+    field.classList.toggle("is-bad", bad);
+    $$("input,textarea", field).forEach(function (c) {
+      var ids = (c.getAttribute("aria-describedby") || "").split(/\s+/).filter(function (x) { return x && x !== id; });
+      if (bad) { ids.push(id); c.setAttribute("aria-invalid", "true"); } else c.removeAttribute("aria-invalid");
+      if (ids.length) c.setAttribute("aria-describedby", ids.join(" ")); else c.removeAttribute("aria-describedby");
+    });
+  }
   function validate(node) {
-    var s = S(), first = null;
-    function mark(id, bad) {
-      var f = document.getElementById(id);
-      if (!f) return;
-      f.classList.toggle("is-bad", bad);
-      if (bad && !first) first = f;
-    }
-    mark("oa-f-area", !s.area);
-    mark("oa-f-addr", !clean(s.addr));
-    mark("oa-f-name", !clean(s.name));
-    if (payOptions().length) mark("oa-f-pay", payOptions().indexOf(s.pay) < 0);
+    var bad = missing(), first = null;
+    node._tried = true;
+    ["area", "addr", "name", "pay"].forEach(function (f) {
+      var field = $('[data-err="' + f + '"]', node);
+      if (!field) return;
+      setBad(field, !!bad[f]);
+      if (bad[f] && !first) first = field;
+    });
     if (first) {
       first.scrollIntoView({ behavior: "smooth", block: "center" });
-      var inp = $("input,textarea", first); if (inp && inp.type !== "radio") inp.focus({ preventScroll: true });
+      // the first missing field gets the focus (in a group of choices: the picked one, else the first), so a screen
+      // reader says which detail is missing and why
+      var inp = $("input:checked", first) || $("input,textarea", first);
+      if (inp) inp.focus({ preventScroll: true });
       toast(tr("Fill in the missing details"));
       return false;
     }
@@ -1039,9 +1086,9 @@
     var after = parts[1] || "", stop = /^[^\s]*/.exec(after)[0];   // the full stop stays with the number
     return esc(parts[0]) + '<span class="nw"><a href="' + esc(waLink("Hi! ")) + '" target="_blank" rel="noopener">' + esc(waNumber()) + "</a>" + esc(stop) + "</span>" + esc(after.slice(stop.length));
   }
-  /* the end of a restaurant page: ordering, the fee, delivery only, hours, areas and the number, in one paragraph */
+  /* the end of a restaurant page: ordering, the fee, delivery only, hours and areas in one paragraph (the number under it) */
   function endNoteHTML() {
-    return keep(tr("You order here and send it on WhatsApp. We reply to confirm.") + " " + howNote()) + " " + deliverToHTML() + " " + contactHTML();
+    return keep(tr("You order here and send it on WhatsApp. We reply to confirm.") + " " + howNote()) + " " + deliverToHTML();
   }
   /* "Pictures are illustrations. Prices in Aruban florin (ƒ)." in that order everywhere; "(ƒ)." never ends up alone */
   function footNote(note) {
@@ -1096,7 +1143,8 @@
       if (count()) openOrder();
       return;
     }
-    var m = /[#&]d=([^&]+)/.exec(location.hash), id = m && decodeURIComponent(m[1]);
+    var m = /[#&]d=([^&]+)/.exec(location.hash), id = null;
+    try { id = m && decodeURIComponent(m[1]); } catch (e) { id = null; }   // a link cut off in a chat ("#d=%E0%A4%A"): ignore it
     if (!id || !MENU[HERE] || !MENU[HERE].byId[id]) return;
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
     openDish(HERE, id);
@@ -1127,7 +1175,7 @@
     if (hello) hello.textContent = hr >= 5 && hr < 12 ? "Bon dia." : hr >= 12 && hr < 18 ? "Bon tardi." : "Bon nochi.";
     var sign = $("[data-oa-sign]");
     if (!sign) return;
-    var st = kitchenStatus();
+    var st = shopStatus();
     var html = st.open ? "<b>" + esc(tr("Open")) + "</b><span>" + esc(st.sub) + "</span>" : "<b>" + esc(tr("Closed")) + "</b><span>" + esc(st.label) + "</span>";
     if (sign._html === html) return;   // only touch it when it changes, so screen readers don't repeat it every minute
     sign._html = html;
@@ -1139,7 +1187,7 @@
 
   /* ---------------------------------------------------------------- restaurant page */
   function renderBrand() {
-    var b = HERE, menu = MENU[b], status = brandStatus(b), st = kitchenStatus();
+    var b = HERE, menu = MENU[b], status = brandStatus(b), st = shopStatus();
     setAccent(menu.color);
     var main = $("#oa-main");
     var feat = menu.items.filter(function (i) { return i.style === "signature" || i.style === "bundle"; });
@@ -1157,12 +1205,15 @@
       out.list.push({ id: s.id, title: s.title, kicker: s.kicker, klang: s.klang, items: carry.concat(s.items) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
     var cover = coverPick(menu, feat);
-    // the app's delivery line (Order Aruba's), then the restaurant's own sign: its wordmark, its line, a small framed picture
-    // open: the hours in bold; closed: an unlit sign, like the home page's, and when it opens in amber
+    // the app's delivery line, said as the app's ("Order Aruba delivers until 2 AM"), then the restaurant's own sign: its
+    // wordmark, its line, a small framed picture. Closed: an unlit sign, like the home page's, when it opens in amber,
+    // and no delivery time (so the line stays one line)
+    var app = SITE.name || "", says = st.open && !st.last && app;   // "Order Aruba delivers until 2 AM · ƒ5 · 35–50 min"
     var html = '<div class="strip' + (st.open ? "" : " strip--closed") + '"><ul class="facts">' +
-          '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") + esc(st.label) + "</li>" +
-          "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
-          "<li>" + esc(SITE.eta || "") + "</li>" +
+          '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") +
+            esc(says ? tr("{app} delivers until {time}", { app: app, time: st.close }) : st.label) + "</li>" +
+          "<li>" + esc(says ? shortMoney(SITE.deliveryFee) : tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
+          (st.open && SITE.eta ? "<li>" + esc(SITE.eta) + "</li>" : "") +
         "</ul></div>" +
       '<header class="store' + (cover ? "" : " store--plain") + '">' +
         '<h1 class="store__name" id="store-name"><img class="store__logo" src="' + esc(path(menu.logo)) + '" alt="" decoding="async">' +
@@ -1184,7 +1235,9 @@
     // people arriving from a shared dish link land here too, so the page ends with how ordering works, in one paragraph
     // (the three steps are on the home page)
     html += '<section class="sec how how--brief" aria-labelledby="h-how"><h2 class="sec__t" id="h-how">' + esc(tr("How ordering works")) + "</h2>" +
-      '<p class="areas" data-oa-endnote>' + endNoteHTML() + "</p></section>";
+      '<p class="areas" data-oa-endnote>' + endNoteHTML() + "</p>" +
+      // the number on its own line, so its tap area never covers "Ask us" just above it
+      '<p class="areas" data-oa-contact>' + contactHTML() + "</p></section>";
     html += '<footer class="pfoot"><p>' + footNote(menu.imageNote) + "</p>" +
       '<a class="pfoot__all" href="' + path("index.html") + '">' + esc(tr("All restaurants")) + "</a>" + langSwitch() + "</footer>";
     main.innerHTML = html;
@@ -1197,9 +1250,8 @@
         var box = $("#oa-also");
         var cards = others.filter(function (x) { return MENU[x]; }).map(plateHTML).join("");
         if (!box || !cards) return;
-        var mixed = others.some(function (x) { return ALLOWED.indexOf(x) >= 0; });
+        // (the one-order perk is said once on this page, in How ordering works, and again in the order itself)
         box.innerHTML = '<h2 class="sec__t" id="h-also">' + esc(tr("More on {app}", { app: SITE.name || "" })) + "</h2>" +
-          (mixed ? '<p class="also__sub">' + keep(tr("Add dishes from any of them to the same order: still one {fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</p>" : "") +
           '<div class="plates">' + cards + "</div>";
         box.hidden = false;
       });
@@ -1249,7 +1301,7 @@
     feat.forEach(function (i) { (i.includes || []).forEach(function (x) { inside.push(x); }); });
     var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && hasPic(i) && featIds.indexOf(i.id) < 0 && inside.indexOf(i.id) < 0; });
     var named = menu.cover && menu.byId[menu.cover];
-    var pick = (hasPic(named) ? named : null) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0];
+    var pick = (hasPic(named) ? named : null) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !isOut(menu, i); })[0] || pool[0];
     return pick ? pick.img : "";
   }
   /* On a phone the cover is a small still. Where it's big (wide screens) it plays the menu's short silent loop,
@@ -1280,13 +1332,25 @@
   function later(fn) { if ("requestIdleCallback" in window) requestIdleCallback(fn, { timeout: 2500 }); else setTimeout(fn, 600); }
 
   /* ---------------------------------------------------------------- order again (this restaurant's last sent order) */
-  function lastOrder() {
+  function lastSent() {
     try {
       var l = JSON.parse(localStorage.getItem(LAST_KEY));
-      if (!l || !Array.isArray(l.lines) || Date.now() - l.at > 60 * 864e5) return null;
-      var lines = l.lines.filter(function (x) { var m = MENU[x.b], i = m && m.byId[x.id]; return ALLOWED.indexOf(x.b) >= 0 && i && !i.soldOut && brandStatus(x.b) === "open"; });
-      return lines.length ? lines : null;
+      return l && Array.isArray(l.lines) && Date.now() - l.at <= 60 * 864e5 ? l : null;
     } catch (e) { return null; }
+  }
+  /* the restaurants in the last sent order: their menus load first, so "Order again" shows all of it */
+  function lastBrands() {
+    var l = lastSent(), out = [];
+    (l ? l.lines : []).forEach(function (x) { if (ALLOWED.indexOf(x.b) >= 0 && out.indexOf(x.b) < 0) out.push(x.b); });
+    return out;
+  }
+  function lastOrder() {
+    var l = lastSent();
+    if (!l) return null;
+    // a menu still on its way: wait for it (a menu that didn't load leaves its dishes out)
+    if (lastBrands().some(function (b) { return !MENU[b] && !failed[b]; })) return null;
+    var lines = l.lines.filter(function (x) { var m = MENU[x.b], i = m && m.byId[x.id]; return ALLOWED.indexOf(x.b) >= 0 && i && !isOut(m, i) && brandStatus(x.b) === "open"; });
+    return lines.length ? lines : null;
   }
   function paintAgain() {
     var box = $("#oa-again");
@@ -1294,7 +1358,7 @@
     var lines = liveLines().length ? null : lastOrder();
     if (!lines) { box.hidden = true; return; }
     var sum = lines.reduce(function (t, x) { var i = MENU[x.b].byId[x.id]; return t + unitPrice(i, normOpts(i, x.o || {})) * x.q; }, 0);
-    var names = lines.map(function (x) { return x.q + " \u00d7 " + MENU[x.b].byId[x.id].name; });
+    var names = lines.map(function (x) { return x.q + "\u00a0\u00d7\u00a0" + MENU[x.b].byId[x.id].name; });   // "1 × Chicken" never splits
     var pic = lines.map(function (x) { return MENU[x.b].byId[x.id]; }).filter(hasPic)[0];
     var html = '<div class="again__card' + (pic ? "" : " again__card--np") + '">' + (pic ? thumbImg(pic, ' loading="lazy"') : "") +
       '<div class="again__body"><h2 class="again__t">' + esc(tr("Order again")) + '</h2><p class="again__items">' + keep(names.join(", ")) + "</p>" +
@@ -1320,11 +1384,13 @@
     return mains.length ? Math.min.apply(null, mains.map(function (i) { return i.price; })) : 0;
   }
   /* the restaurant's dish picture on the home page ("hero" in menu.json: the dish its line is about), only while a
-     dish on the menu has that picture, it isn't sold out and the picture matches the dish. Otherwise a photo before a drawing. */
+     dish on the menu has that picture, it isn't sold out and the picture matches the dish. Otherwise a photo before a drawing.
+     "hero": false = no dish picture at all (no true picture of the dish its line is about yet): just its sign. */
   function heroImg(m) {
+    if (m.hero === false) return "";
     var hero = m.hero && m.items.filter(function (i) { return i.img === m.hero; })[0];
-    if (hero && !hero.soldOut && hasPic(hero)) return hero.img;
-    var pool = m.items.filter(function (i) { return !i.soldOut && hasPic(i) && i.kind !== "side" && i.style !== "bundle"; });
+    if (hero && !isOut(m, hero) && hasPic(hero)) return hero.img;
+    var pool = m.items.filter(function (i) { return !isOut(m, i) && hasPic(i) && i.kind !== "side" && i.style !== "bundle"; });
     var alt = pool.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || pool[0];
     return alt ? alt.img : "";
   }
@@ -1341,9 +1407,9 @@
     var m = MENU[b];
     if (!m) return "";
     var img = heroImg(m);
-    // the cuisine label only when the restaurant's own line doesn't already say it ("Chinese takeout, …")
-    var label = new RegExp("\\b" + m.cuisine + "\\b", "i").test(m.tagline || "") ? "" : "<b>" + esc(tr(m.cuisine)) + "</b>";
-    return '<a class="shop' + (brandStatus(b) !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" data-shop="' + esc(b) + '" href="' + path(b + "/index.html") + '" style="' + signStyle(m) + '">' +
+    // the cuisine label on every row, so the five rows read alike
+    var label = "<b>" + esc(tr(m.cuisine)) + "</b>";
+    return '<a class="shop' + (brandStatus(b) !== "open" ? " is-soon" : "") + (img ? "" : " shop--np") + '" id="shop-' + esc(b) + '" data-shop="' + esc(b) + '" href="' + path(b + "/index.html") + '" style="' + signStyle(m) + '">' +
       '<span class="shop__sign"><img class="shop__logo" src="' + esc(path(m.logo)) + '" alt="" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
       (img ? '<span class="shop__pic"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="" width="360" height="360" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async"></span>' : "") +
       '<span class="shop__txt"><h3 class="shop__name">' + esc(m.name) + "</h3>" +
@@ -1450,7 +1516,7 @@
           ids.forEach(function (b) {
             var m = MENU[b];
             if (!m || brandStatus(b) !== "open") return;
-            m.items.filter(function (i) { return i.style === style && !i.soldOut; }).forEach(function (i) { picks.push([b, i]); });
+            m.items.filter(function (i) { return i.style === style && !isOut(m, i); }).forEach(function (i) { picks.push([b, i]); });
           });
         });
         start.innerHTML = picks.map(function (p) { return linkRowHTML(p[0], p[1], true); }).join("");
@@ -1471,11 +1537,11 @@
   /* home page dish lines (search results, "Start with these") open the dish on its own restaurant's page */
   function dishLink(b, item) { return path(b + "/#d=" + encodeURIComponent(item.id)); }
   function linkRowHTML(b, item, short) {
-    var m = MENU[b], pic = hasPic(item);
-    return '<a class="row row--link' + (short ? " row--start" : "") + (pic ? "" : " row--np") + (item.soldOut ? " is-out" : "") + '" href="' + esc(dishLink(b, item)) + '" data-shop="' + esc(b) + '" style="--shop:' + esc(m.color) + '">' +
+    var m = MENU[b], pic = hasPic(item), out = isOut(m, item);
+    return '<a class="row row--link' + (short ? " row--start" : "") + (pic ? "" : " row--np") + (out ? " is-out" : "") + '" href="' + esc(dishLink(b, item)) + '" data-shop="' + esc(b) + '" style="--shop:' + esc(m.color) + '">' +
       '<div class="row__text"><p class="row__brand">' + esc(m.name) + "</p>" +
         '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
-        (item.soldOut ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
+        (out ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
         (!short && item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") + "</div>" +
       '<div class="row__media' + (pic ? "" : " row__media--mark") + '">' + (pic ? thumbImg(item, ' loading="lazy" decoding="async"') :
         '<img src="' + esc(path(m.mark)) + '" alt="" width="192" height="192" loading="lazy" decoding="async">') + "</div></a>";
@@ -1487,14 +1553,17 @@
     function row(key, keep) {
       var o = null;
       try { o = JSON.parse(localStorage.getItem(key)); } catch (e) { o = null; }
-      if (!o || !Array.isArray(o.lines) || o.sentAt || Date.now() - (o.updated || 0) > SENT_KEEP) return "";
+      if (!o || !Array.isArray(o.lines)) return "";
+      // an unsent order from hours ago is forgotten here; a sent one stays for 3 hours, like on its restaurant's page
+      if (o.sentAt ? Date.now() - o.sentAt > SENT_KEEP : Date.now() - (o.updated || 0) > SENT_KEEP) return "";
       var lines = o.lines.filter(function (l) { return !l.gone && l.q > 0 && keep.indexOf(l.b) >= 0 && MENU[l.b]; });
       if (!lines.length) return "";
       var bs = []; lines.forEach(function (l) { if (bs.indexOf(l.b) < 0 && !isDrinkLine(l)) bs.push(l.b); });
       if (!bs.length) bs = [lines[0].b];
       var n = lines.reduce(function (t, l) { return t + l.q; }, 0), sum = lines.reduce(function (t, l) { return t + l.q * l.p; }, 0);
       return '<a class="mine__row" href="' + esc(path(bs[0] + "/#o")) + '" style="--shop:' + esc(MENU[bs[0]].color) + '"><span class="mine__t">' +
-        esc(tr("Your order: {names}", { names: listAnd(bs.map(function (b) { return MENU[b].name; })) })) + '</span><span class="mine__d">' + esc(plural(n, "item", "items")) + " \u00b7 " + money(sum) + "</span></a>";
+        esc(tr("Your order: {names}", { names: listAnd(bs.map(function (b) { return MENU[b].name; })) })) + '</span><span class="mine__d">' +
+        esc(o.sentAt ? tr("Sent: see order") : plural(n, "item", "items") + " \u00b7 " + money(sum)) + "</span></a>";
     }
     var mix = mixGroup();
     var rows = row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row("order." + b + ".v1", [b]); }).join("");
@@ -1524,13 +1593,17 @@
     // settings, this restaurant's menu and the words all load at the same time
     Promise.all([loadSite(), loadMenu(HERE), loadLang()]).then(function () {
       setOrder();
-      menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });   // fresh names and prices for the other restaurants' lines
-      state = readStore();
+      reload();
+      // this restaurant's menu came in before the order was known: now its lines get today's prices and sold-out marks
+      Object.keys(MENU).forEach(function (b) { refreshLines(b); });
+      menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });   // and the other restaurants' lines, as their menus come in
       translatePage();
       return importHash().then(function () {
         fillCommon();
         setInterval(fillCommon, 60000);
         renderBrand(); openFromHash(); window.addEventListener("hashchange", openFromHash);
+        // "Order again" waits for the menus of every restaurant in the last sent order, then shows all of it
+        if (lastBrands().some(function (x) { return !MENU[x]; })) Promise.all(lastBrands().map(function (x) { return loadMenu(x).catch(function () {}); })).then(paintAgain);
         $$("[data-oa-open-order]").forEach(function (b) { b.addEventListener("click", function (e) { e.preventDefault(); openOrder(); }); });
         setupIAB();
         paintBar();
@@ -1538,7 +1611,7 @@
           paintBar(); repaintCards();
           if (orderSheet && orderSheet.node) renderOrder(orderSheet.node);
         });
-        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { state = readStore(); emit(); } });
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { reload(); emit(); } });
         BODY.classList.add("oa-ready");
         later(registerSW);
       });
@@ -1552,7 +1625,7 @@
   window.OrderApp = {
     buildMessage: buildMessage, checkoutLink: checkoutLink, addItem: addItem, setLineQty: setLineQty,
     count: count, subtotal: subtotal, fee: fee, total: total, state: function () { return S(); },
-    clear: clearOrder, loadMenu: loadMenu, kitchenStatus: function () { return kitchenStatus(); },
+    clear: clearOrder, loadMenu: loadMenu, shopStatus: function () { return shopStatus(); },
     _set: function (patch) { var s = S(); Object.keys(patch).forEach(function (k) { s[k] = patch[k]; }); commit(); }
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();

@@ -18,10 +18,10 @@ body[data-brand="taco-brava"]{
 [data-brand="taco-brava"] .cover{border:4px solid var(--cream);border-radius:3px;background:var(--cream)}
 [data-brand="taco-brava"] .store .note{background:#1B1514;color:var(--cream)}
 
-/* section titles: painted letters with a pink brush stroke under them */
+/* section titles: painted letters with a square-ended pink stripe under them, painted to the edge */
 [data-brand="taco-brava"] .sec{padding-top:30px}
 [data-brand="taco-brava"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-bottom:6px;font:400 22px/1.1 var(--display);color:var(--cream)}
-[data-brand="taco-brava"] .sec__t::after{content:"";flex-basis:100%;max-width:64px;height:6px;margin-top:8px;background:var(--pink);border-radius:1px 4px 2px 3px}
+[data-brand="taco-brava"] .sec__t::after{content:"";flex-basis:100%;height:4px;margin-top:9px;background:var(--pink)}
 [data-brand="taco-brava"] .sec__k{display:inline;font:400 22px/1.1 var(--display);color:var(--cream)}
 [data-brand="taco-brava"] .sec__k~.sec__n{font:600 14px/1.2 var(--font);color:var(--muted)}
 
@@ -42,7 +42,7 @@ body[data-brand="taco-brava"]{
 @media (max-width:359px){
   [data-brand="taco-brava"] .row{--ph:72px}
   [data-brand="taco-brava"] .row.is-sig .row__price{font-size:17px}
-  [data-brand="taco-brava"] .store__tag{font-size:17.5px}
+  /* the line stays at 19px bold even here: white on the pink wall needs large text to read (4.3:1) */
 }
 @media (min-width:760px){
   [data-brand="taco-brava"] .store{--logo-h:64px;padding-block:34px 36px}

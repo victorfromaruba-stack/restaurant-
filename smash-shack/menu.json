@@ -11,8 +11,8 @@
  "tagline": "Thin patties, smashed hard on the flat-top",
  "intro": "Smash cheeseburgers with two thin beef patties, or four on the double, plus crispy chicken sandwiches, tenders and loaded fries.",
  "logo": "shared/logos/smash-shack.svg",
- "mark": "shared/logos/smash-shack-mark.webp",
- "hero": "smash-shack/assets/dishes/cc.webp",
+ "mark": "shared/logos/smash-shack-mark.svg",
+ "hero": false,
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {

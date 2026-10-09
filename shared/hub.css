@@ -47,6 +47,8 @@
 .shop__sign{grid-area:sign;height:72px}
 .shop__logo{max-height:42px}
 .shop__pic{grid-area:pic;width:72px;height:72px}
+/* no true picture of the dish its line is about yet: the sign takes the whole width */
+.shop--np{grid-template-areas:"sign sign" "txt txt"}
 .shop__pic img{width:100%;height:100%;object-fit:cover;border-radius:4px;background:var(--app-2)}
 .is-soon .shop__pic img{filter:grayscale(.85);opacity:.6}
 .shop__txt{grid-area:txt;display:grid;gap:3px;min-width:0}
@@ -63,8 +65,10 @@
 .row--link .row__media{grid-area:media;grid-row:1;grid-column:1}
 .row--link .row__text{grid-area:text;grid-row:1;grid-column:2}
 .row--link .row__media img{border-radius:4px}
-/* a dish without a picture: the restaurant's own mark in the picture's place, so the words still line up */
+/* a dish without a picture: the restaurant's own mark in the picture's place, so the words still line up; Smash
+   Shack's on its black sign with the mustard edge, like its sign in the list above */
 .row__media--mark img{object-fit:contain}
+.row--link[data-shop="smash-shack"] .row__media--mark img{outline:1.5px solid #FFC72C;outline-offset:-1.5px;border-radius:2px}
 .row--link .row__desc{font-size:14px}
 .row--start{--ph:60px;padding:12px 0}
 .row--start .row__brand{margin-bottom:4px}
@@ -92,6 +96,7 @@
   .hero .search{grid-column:2;grid-row:2/4;align-self:end}
   .hsec{padding-top:40px}
   .shop{grid-template-columns:248px minmax(0,1fr) 88px;grid-template-areas:"sign txt pic";column-gap:24px;align-items:center;padding:16px 0}
+  .shop--np{grid-template-areas:"sign txt txt"}
   .shop__sign{height:84px}
   .shop__logo{max-height:48px}
   .shop__pic{width:88px;height:88px}

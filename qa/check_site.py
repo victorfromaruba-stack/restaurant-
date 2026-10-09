@@ -30,6 +30,8 @@ brands = [b["id"] for b in site["brands"]]
 menus = {b: json.load(open(os.path.join(ROOT, b, "menu.json"), encoding="utf-8")) for b in brands}
 for b, m in menus.items():
     for key in ("logo", "mark", "hero"):
+        if key == "hero" and m.get(key) is False:   # "hero": false = no dish picture on the home page, just the sign
+            continue
         check(os.path.exists(os.path.join(ROOT, m[key])), f"{b} {key} file exists ({m[key]})")
     if m.get("video"):
         for k in ("src", "poster"):
@@ -119,6 +121,23 @@ pub = ["index.html", "404.html", "sw.js", "shared/site.json", "shared/order.css"
 for f in pub:
     bad = talk(open(os.path.join(ROOT, f), encoding="utf-8").read())
     check(not bad, f"{f} says nothing about a shared kitchen" + (f": {bad}" if bad else ""))
+# Comments in public files are public too (View Source): none may talk about a kitchen behind the restaurants, a
+# ghost kitchen, or what customers should "believe". Found 9 Oct 2026 in order-app.js and sw.js.
+COMMENT_TALK = re.compile(r"kitchen|ghost|believe", re.I)
+def comments(path, text):
+    if path.endswith(".json"):
+        return [text]   # no comments in JSON: its "_help" notes are read the same way
+    found = re.findall(r"/\*.*?\*/", text, re.S) + re.findall(r"<!--.*?-->", text, re.S)
+    if path.endswith((".js", ".html")):
+        found += re.findall(r"(?<![:\\\w\"'])//[^\n]*", text)
+    return found
+pub_code = pub + ["manifest.webmanifest"] + [f"{b}/style.css" for b in brands] + [f"{b}/manifest.webmanifest" for b in brands]
+for f in pub_code:
+    fp = os.path.join(ROOT, f)
+    if not os.path.exists(fp):
+        continue
+    bad = sorted({w.lower() for c in comments(f, open(fp, encoding="utf-8").read()) for w in COMMENT_TALK.findall(c)})
+    check(not bad, f"{f}: no comment or note talks about a kitchen behind it" + (f": {bad}" if bad else ""))
 for b in brands:
     html = open(os.path.join(ROOT, b, "index.html"), encoding="utf-8").read()
     others = [x for x in brands if x != b and (x + "/" in html or names[x] in html)]
@@ -213,6 +232,44 @@ async def main():
             n, f = await pg.evaluate("[OrderApp.count(), OrderApp.fee()]")
             check(n == 2 and f == 500, f"Dushi Wok + Taco Brava end up in one order with one ƒ5 delivery (items {n}, fee {f})")
             await pg.evaluate("OrderApp.clear()")
+        # an order kept from earlier gets today's menu on the restaurant's own page: a dish sold out since then is
+        # flagged and blocks Send, a new price is used (found 9 Oct 2026: only other restaurants' pages refreshed it)
+        if "dushi-wok" in brands and is_open.get("dushi-wok"):
+            ctx2 = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+            p2 = await ctx2.new_page()
+            await p2.route("https://wa.me/**", lambda r: r.abort())
+            await p2.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
+            await p2.evaluate("OrderApp.clear()")
+            await p2.evaluate("OrderApp.addItem('dushi-wok','lm',{},1); OrderApp.addItem('dushi-wok','pk',{},1); OrderApp._set({area:'Noord', addr:'Palm Beach 12', name:'Ana', pay:'Cash'})")
+            dw = json.loads(json.dumps(menus["dushi-wok"]))
+            for it in dw["items"]:
+                if it["id"] == "lm": it["soldOut"] = True
+                if it["id"] == "pk": it["price"] = 9999
+            await p2.route("**/dushi-wok/menu.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(dw)))
+            await p2.reload(wait_until="networkidle")
+            lines = await p2.evaluate("OrderApp.state().lines.map(l => [l.id, l.p, !!l.soldOut])")
+            check(["lm", 1650, True] in lines and ["pk", 9999, False] in lines, f"an order kept from earlier gets today's sold-out marks and prices on the same restaurant's page ({lines})")
+            await p2.click(".bar__btn"); await p2.wait_for_timeout(400)
+            warn = await p2.evaluate("(document.querySelector('.oa-sheet__panel') || {}).innerText || ''")
+            ft = await p2.evaluate("!!document.querySelector('.line__d--warn')")
+            check(ft and "Sold out today" in warn, "the order sheet says the sold-out dish must go")
+            await p2.click(".oa-sheet [data-send]"); await p2.wait_for_timeout(700)
+            sent = await p2.evaluate("OrderApp.state().sentAt")
+            check(not sent, "Send is blocked while a sold-out dish is in the order")
+            # the family deal holds lo mein: sold out with it, in the menu and when adding
+            row_out = await p2.evaluate("!!document.querySelector('[data-b=\"dushi-wok\"][data-id=\"ft\"].is-out') && !document.querySelector('[data-b=\"dushi-wok\"][data-id=\"ft\"] .plus')")
+            added = await p2.evaluate("!!OrderApp.addItem('dushi-wok','ft',{},1)")
+            check(row_out and not added, "a family deal is sold out when a dish inside it is")
+            await p2.evaluate("OrderApp.clear()")
+            # "Order again" after an order from two restaurants shows both, on either restaurant's page
+            await p2.unroute("**/dushi-wok/menu.json*")
+            await p2.evaluate("localStorage.setItem('orderaruba.last.v1', JSON.stringify({at: Date.now(), lines: [{b:'dushi-wok', id:'fr', q:1, o:{}}, {b:'taco-brava', id:'bt', q:1, o:{}}]}))")
+            for page in ("dushi-wok", "taco-brava"):
+                await p2.goto(BASE + page + "/index.html", wait_until="networkidle"); await p2.wait_for_timeout(500)
+                again = (await p2.evaluate("(document.querySelector('#oa-again:not([hidden])') || {}).innerText || ''")).replace("\xa0", " ")
+                check("Chicken fried rice" in again and "Birria tacos" in again, f"Order again on {page} has the dishes from both restaurants" + ("" if "Birria" in again and "fried rice" in again else f": {again!r}"))
+            await p2.evaluate("localStorage.removeItem('orderaruba.last.v1')")
+            await ctx2.close()
         # the chef app reads each ticket back: same lines, prices, totals and payment for the customer receipt
         await pg.goto(BASE + "ops/kitchen/index.html", wait_until="networkidle")
         for smp, (title, br, lines, meta) in zip(out, [x for x in SAMPLES if runs(x)]):

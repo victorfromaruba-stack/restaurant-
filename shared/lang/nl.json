@@ -196,11 +196,11 @@
  "Order from several restaurants at once.": "Bestel bij meerdere restaurants tegelijk.",
  "From one restaurant or several, in one order.": "Bij één restaurant of meerdere, in één bestelling.",
  "Delivery is {fee} per order, even with dishes from several restaurants.": "Bezorgen kost {fee} per bestelling, ook met gerechten van meerdere restaurants.",
- "Add dishes from any of them to the same order: still one {fee} delivery.": "Voeg gerechten van elk van hen toe aan dezelfde bestelling: nog steeds één keer {fee} bezorgen.",
  "Your order: {names}": "Je bestelling: {names}",
  "Pre-order for tonight": "Vooruit bestellen voor vanavond",
  "May contain traces of {list}.": "Kan sporen bevatten van {list}.",
  "Fried in shared oil.": "Gefrituurd in gedeelde olie.",
  "From other restaurants · same order, still one {fee} delivery": "Van andere restaurants · zelfde bestelling, nog steeds één keer {fee} bezorgen",
- "You order here and send it on WhatsApp. We reply to confirm.": "Je bestelt hier en stuurt de bestelling via WhatsApp. Wij antwoorden om te bevestigen."
+ "You order here and send it on WhatsApp. We reply to confirm.": "Je bestelt hier en stuurt de bestelling via WhatsApp. Wij antwoorden om te bevestigen.",
+ "{app} delivers until {time}": "{app} bezorgt tot {time}"
 }

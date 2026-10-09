@@ -196,11 +196,11 @@
  "Order from several restaurants at once.": "Pide de varios restaurantes a la vez.",
  "From one restaurant or several, in one order.": "De un restaurante o de varios, en un solo pedido.",
  "Delivery is {fee} per order, even with dishes from several restaurants.": "La entrega cuesta {fee} por pedido, aunque pidas de varios restaurantes.",
- "Add dishes from any of them to the same order: still one {fee} delivery.": "Añade platos de cualquiera de ellos al mismo pedido: sigue siendo una entrega de {fee}.",
  "Your order: {names}": "Tu pedido: {names}",
  "Pre-order for tonight": "Pedido anticipado para esta noche",
  "May contain traces of {list}.": "Puede contener trazas de {list}.",
  "Fried in shared oil.": "Frito en aceite compartido.",
  "From other restaurants · same order, still one {fee} delivery": "De otros restaurantes · mismo pedido, sigue siendo una entrega de {fee}",
- "You order here and send it on WhatsApp. We reply to confirm.": "Pides aquí y mandas el pedido por WhatsApp. Te respondemos para confirmar."
+ "You order here and send it on WhatsApp. We reply to confirm.": "Pides aquí y mandas el pedido por WhatsApp. Te respondemos para confirmar.",
+ "{app} delivers until {time}": "{app} entrega hasta las {time}"
 }

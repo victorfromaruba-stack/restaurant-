@@ -63,7 +63,8 @@ def brand_html(b):
 
 def home_html():
     hidden = {i["img"] for m in menus.values() for i in m["items"] if i.get("hidePhoto")}
-    pics = [menus[b]["hero"] for b in ids if menus[b]["hero"] not in hidden][:4]
+    # "hero": false = that restaurant has no true picture of the dish its line is about yet: no panel for it
+    pics = [menus[b]["hero"] for b in ids if menus[b].get("hero") and menus[b]["hero"] not in hidden][:4]
     return HEAD + f"""<div class="hm"><div class="hl"><div class="lg"><img src="shared/icons/app-192.png" alt="">Order Aruba</div>
 <div class="h1">Bon nochi.</div><p class="sub">Late-night food, delivered.<br><b>{FEE} delivery, {t12(o)} to {t12(c)}.</b></p>
 <div class="sg"><b>Open</b><span>{t12(o)}<br>to {t12(c)}</span></div></div>

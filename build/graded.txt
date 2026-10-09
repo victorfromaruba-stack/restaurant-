@@ -22,8 +22,8 @@ oranje-snack/assets/art/fs.webp 0fe4c28d6133e657
 oranje-snack/assets/art/kr.webp 9f52442f7c356fef
 oranje-snack/assets/art/mx.webp 2c089e790cb18f7e
 oranje-snack/assets/art/st.webp f7c1b39a5a227ba2
-oranje-snack/video/cover.mp4 9aa6cd5cf6df0075
-oranje-snack/video/cover.webp 8e9a2d97ab076b09
+oranje-snack/video/cover.mp4 b637c88f60c96099
+oranje-snack/video/cover.webp 2ecca52aa6a9bdf6
 smash-shack/assets/dishes/cc.webp 58bf8fd28e82a4ce
 smash-shack/assets/dishes/co.webp a23669ef2176e39f
 smash-shack/assets/dishes/ct.webp 8f672cd4e8b43eb0
