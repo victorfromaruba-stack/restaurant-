@@ -1,6 +1,8 @@
 # Pidi driver, v2 notes
 
-v1 is done without a server. These notes are the plan only. No Supabase project was created, no account was opened, and nothing here costs money yet. Do not put a service-role key, a Google key, or a signing key in this repo. The repo is public.
+9 Oct 2026: Victor changed the plan. WhatsApp ordering goes away once v2 is connected. The prepared system is in `/driver/v2/` (SQL, driver sign-in, status page, setup, and the prompt for the kitchen and the checkout). It is not live. v1 stays the driver app until he connects Supabase. Do not merge that work early. Where this file disagrees with `/driver/v2/README.md`, the README wins.
+
+No Supabase project was created, no account was opened, and nothing here costs money. Do not put a service-role key, a signing key, or a PIN in this repo. The repo is public.
 
 ## Why a backend is the next step
 
@@ -12,7 +14,7 @@ A run link is enough for one dispatcher and one driver on one phone. It cannot:
 - keep the cash count when the driver changes phones
 - wake a locked phone with a new offer
 
-WhatsApp stays. The customer still sends the ticket to +297 747 7794. The database sits beside that, it does not replace it.
+v1 still sends the ticket to +297 747 7794. v2 replaces that send with a database row. Do not switch v1 over until the project exists.
 
 ## Supabase
 
