@@ -68,10 +68,12 @@ h1,h2,h3{margin:0;font-weight:700;line-height:1.15}
 
 /* ---------- top bar (Order Aruba) */
 .top{position:sticky;top:0;z-index:30;background:var(--app);border-bottom:1px solid var(--app-rule)}
-.top__in{max-width:880px;margin:0 auto;height:56px;display:flex;align-items:center;gap:6px;padding:0 6px 0 16px}
-body[data-page="brand"] .top__in{max-width:752px;padding-left:4px}
-.logo{display:flex;align-items:center;gap:9px;min-height:44px;text-decoration:none;font:800 18px/1 var(--font);letter-spacing:-.01em;flex:none}
-.logo__mk{display:grid;place-items:center;width:34px;height:25px;border:1.5px solid currentColor;border-radius:5px;font:800 12px/1 var(--font);font-stretch:85%;letter-spacing:.05em}
+/* one width on every page (the restaurant pages' column plus its margins), so the mark, the back link and the bag
+   never move when you go from the home page to a restaurant and back */
+.top__in{max-width:752px;margin:0 auto;height:56px;display:flex;align-items:center;gap:6px;padding:0 6px 0 4px}
+/* the app's own icon (its lit OA sign on the night), where the back arrow sits on a restaurant page */
+.logo{display:flex;align-items:center;gap:3px;min-height:44px;text-decoration:none;font:800 18px/1 var(--font);letter-spacing:-.01em;flex:none}
+.logo__icon{width:34px;height:34px;border-radius:7px;flex:none}
 .top__back{display:flex;align-items:center;gap:2px;min-width:44px;height:44px;padding:0 10px 0 4px;text-decoration:none;font:600 15px/1 var(--font);flex:none;border-radius:6px}
 .top__back svg{width:24px;height:24px;flex:none}
 .top__app{white-space:nowrap}
@@ -106,6 +108,9 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 .strip{padding-block:8px;background:var(--app);border-bottom:1px solid var(--app-rule)}
 .strip .facts{font-size:14px}
 .strip .facts__status{color:var(--app-ink);font-weight:700}
+/* closed: an unlit sign, like the home page's, and the opening time in amber */
+.strip .facts__status.is-closed{color:#F2B84B}
+.unlit{display:inline-block;margin-right:4px;padding:1px 6px 0;border:1.5px solid #5A5347;border-radius:4px;color:#A29A8A;font:800 12px/16px var(--font);font-stretch:75%;letter-spacing:.08em;text-transform:uppercase;vertical-align:1px}
 /* the restaurant's own sign: wordmark, its line, a small framed picture beside the line */
 .store{--cw:116px;--logo-h:52px;display:grid;grid-template-columns:minmax(0,1fr) var(--cw);grid-template-areas:"name name" "tag cover" "note note";column-gap:16px;align-items:center;padding-block:20px 22px}
 .store--plain{grid-template-columns:minmax(0,1fr);grid-template-areas:"name" "tag" "note"}
@@ -125,33 +130,37 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 .sec__t{margin:0 0 4px;font:700 20px/1.15 var(--display);color:var(--ink)}
 .sec__k{display:block;font:600 13.5px/1.3 var(--body);color:var(--muted)}
 
-/* ---------- menu rows, set like a printed menu: the name, a dotted line, the price on the name's last line, the
-   whole description under it; the + box right under the price (the words flow around it), a small picture beside */
+/* ---------- menu rows, set like a printed menu. The words: the name, then the price on its own line under it on a
+   phone; where the words' column is wide enough, the price on the name's line across a dotted line (never wider than
+   a printed menu's measure). Beside the words, one column of the same width on every row of the list: the small
+   picture, and the + box right under it, so every + sits in the same place and the descriptions keep one measure. */
 .rows{display:flex;flex-direction:column}
-.row{--ph:76px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--ph);grid-template-areas:"text media";column-gap:14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}
-.row--np{grid-template-columns:minmax(0,1fr);grid-template-areas:"text"}
+.row{--ph:76px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--ph);grid-template-areas:"text side";column-gap:14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}
 .rows>.row:last-child{border-bottom:0}
 .row__open{position:absolute;inset:0;z-index:1;border:0;background:transparent;border-radius:0;padding:0}
-.row__text{grid-area:text;min-width:0;display:flow-root}
-.row__head{display:flex;align-items:flex-end;align-items:last baseline}
-.row__name{flex:0 1 auto;margin:0;font:var(--name-w) var(--name-size)/1.25 var(--name);color:var(--name-ink,var(--ink));text-wrap:pretty}
-.row__lead{flex:1 1 12px;min-width:12px;margin:0 7px;border-bottom:var(--lead) var(--lead-ink);position:relative;top:-.28em}
+.row__text{grid-area:text;min-width:0;container:row/inline-size}
+.row__head{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.row__name{margin:0;font:var(--name-w) var(--name-size)/1.25 var(--name);color:var(--name-ink,var(--ink));text-wrap:pretty}
+.row__lead{display:none;flex:1 1 12px;min-width:12px;margin:0 7px;border-bottom:var(--lead) var(--lead-ink);position:relative;top:-.28em}
 .row__price{flex:none;margin:0;font:700 16px/1.25 var(--body);color:var(--price);font-variant-numeric:tabular-nums;white-space:nowrap}
+@container row (min-width:360px){
+  .row__head{flex-direction:row;align-items:flex-end;align-items:last baseline;gap:0;max-width:30rem}
+  .row__name{flex:0 1 auto}
+  .row__lead{display:block}
+}
 .row__brand{margin:0 0 3px;font:600 12.5px/1.2 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .row__out{margin:4px 0 0;color:var(--bad);font:700 14px/1.3 var(--font)}
-.row__desc{margin:6px 0 0;color:var(--muted);font-size:14.5px;line-height:1.45;max-width:58ch}
-.row__inc{margin:6px 0 0;font:600 14px/1.4 var(--body);color:var(--ink);max-width:58ch}
+.row__desc{margin:6px 0 0;color:var(--muted);font-size:14.5px;line-height:1.45;max-width:30rem}
+.row__inc{margin:6px 0 0;font:600 14px/1.4 var(--body);color:var(--ink);max-width:30rem}
 .row__flags{margin:6px 0 0;font:600 13px/1.3 var(--font);color:var(--muted)}
 .fl+.fl::before{content:" \00B7  "}
-.row__media{grid-area:media;position:relative;width:var(--ph);height:var(--ph)}
+/* the picture column: the picture, then the + box under it, both against the outer edge */
+.row__side{grid-area:side;display:flex;flex-direction:column;align-items:flex-end;gap:10px;min-width:0}
+.row__media{position:relative;width:var(--ph);height:var(--ph-h,var(--ph))}
 .row__media img{width:100%;height:100%;object-fit:cover;border-radius:var(--r);background:var(--g2)}
 .row.is-out .row__media img{filter:grayscale(1);opacity:.5}
 .row.is-out .row__name{color:var(--muted)}
-.row__act{position:relative;z-index:2;float:right;margin:8px 0 2px 12px}
-/* a line with no words under it (the drinks): the box sits on the line itself */
-.row--line .row__text{display:flex;align-items:center;gap:12px}
-.row--line .row__head{flex:1;min-width:0}
-.row--line .row__act{float:none;margin:0;flex:none}
+.row__act{position:relative;z-index:2}
 /* the + box: a square, like the box on a paper order pad; the number goes in it once the dish is in the order */
 .plus{position:relative;width:44px;height:44px;padding:0;border:1.5px solid var(--add-line);border-radius:4px;background:var(--add-bg);color:var(--add-ink);display:grid;place-items:center}
 .plus svg{width:18px;height:18px}
@@ -161,14 +170,13 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 .plus.has-n .plus__n{display:block;font:800 17px/1 var(--font);font-variant-numeric:tabular-nums}
 .plus.pop{animation:pop .3s ease}
 @keyframes pop{40%{transform:scale(1.1)}}
-/* the house dish and the family deal: a slightly bigger picture and name, never across the page */
-.row.is-sig,.row.is-bundle{--ph:100px}
+/* the house dish and the family deal: a bigger name and a taller picture, never a wider one */
+.row.is-sig,.row.is-bundle{--ph-h:calc(var(--ph) * 1.3)}
 .row.is-sig .row__name,.row.is-bundle .row__name{font-size:calc(var(--name-size) + 3px)}
-/* drinks: a plain line of words */
-.rows--drinks .row{padding:8px 0}
+/* drinks: a plain line of words, the + in the same place as on the food */
+.rows--drinks .row{padding:8px 0;align-items:center}
 .rows--drinks .row__name{font-weight:500}
-@media (max-width:399px){.row__lead{flex-basis:8px;min-width:8px;margin:0 5px}}
-@media (max-width:359px){.row{--ph:68px;column-gap:12px}.row.is-sig,.row.is-bundle{--ph:80px}}
+@media (max-width:359px){.row{--ph:68px;column-gap:12px}}
 
 /* order again: this restaurant's last sent order, one tap */
 .again{padding-top:20px}
@@ -196,8 +204,14 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .langs button+button::before{content:"\00B7";position:absolute;left:-3px;color:var(--app-muted);font-weight:400}
 .langs button[aria-pressed="true"]{color:var(--app-ink);font-weight:800;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
 
-/* each restaurant's sign: its wordmark on its own ground, in a frame of its own colour */
-.shop__sign,.plate__sign{display:flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:4px;background:var(--sign,var(--app-2));box-shadow:inset 0 0 0 4px var(--sign,var(--app-2)),inset 0 0 0 5.5px var(--sign-line,var(--app-rule))}
+/* each restaurant's sign: its wordmark on its own ground, with an edge of its own: the pink wall is flat, the black
+   griddle has a mustard hairline (so it shows on the night), the cream menu card a gold one inside, the white tile
+   its orange fascia, the menu board is lit */
+.shop__sign,.plate__sign{display:flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:3px;background:var(--sign,var(--app-2))}
+[data-shop="smash-shack"] .shop__sign,[data-shop="smash-shack"] .plate__sign{border-radius:2px;box-shadow:inset 0 0 0 1.5px #FFC72C}
+[data-shop="nonnas-night-in"] .shop__sign,[data-shop="nonnas-night-in"] .plate__sign{border-radius:2px;box-shadow:inset 0 0 0 4px var(--sign),inset 0 0 0 5px #C9A227}
+[data-shop="oranje-snack"] .shop__sign,[data-shop="oranje-snack"] .plate__sign{border-radius:2px;box-shadow:inset 0 -5px 0 #E86A17}
+[data-shop="dushi-wok"] .shop__sign,[data-shop="dushi-wok"] .plate__sign{border-radius:4px;box-shadow:0 0 0 1px #FFFFFF,0 0 10px rgba(255,246,222,.28)}
 .shop__logo,.plate__logo{width:auto;height:auto;max-width:100%}
 .is-soon .shop__sign,.is-soon .plate__sign{filter:grayscale(.85);opacity:.6}
 .meta{font:500 14.5px/1.35 var(--font);color:var(--app-muted)}
@@ -218,8 +232,11 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .how__steps li::before{content:counter(step);position:absolute;left:0;top:-1px;width:28px;height:28px;border:1.5px solid var(--app-field);border-radius:5px;display:grid;place-items:center;font:700 14px/1 var(--font);color:var(--app-ink)}
 .how__steps b{color:var(--app-ink);font-weight:700}
 .how__note{margin:20px 0 0;color:var(--app-muted);font-size:14.5px;line-height:1.5;max-width:68ch}
-.areas{margin:18px 0 0;color:var(--app-muted);font-size:14.5px;line-height:1.9;max-width:68ch}
-.areas a{display:inline-block;color:var(--app-ink);font-weight:700;line-height:20px;white-space:nowrap;text-underline-offset:3px;padding:12px 0;margin:-12px 0}
+.areas{margin:12px 0 0;color:var(--app-muted);font-size:14.5px;line-height:1.5;max-width:68ch}
+.areas a{position:relative;color:var(--app-ink);font-weight:700;white-space:nowrap;text-underline-offset:3px}
+.areas a::after{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:44px;transform:translateY(-50%)}
+/* the end of a restaurant page: how ordering works in one paragraph */
+.how--brief .areas{margin-top:8px;font-size:15px;max-width:62ch}
 
 /* ---------- order bar (the app's) */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:10px 12px calc(12px + var(--safe-b));pointer-events:none}
@@ -252,6 +269,8 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 @media (min-width:720px){
   .oa-sheet{align-items:center;padding:24px}
   .oa-sheet__panel{border-radius:8px;max-height:88vh;transform:translateY(24px);opacity:0;transition:transform .22s,opacity .22s}
+  /* the dish's picture never pushes "Goes well with" off the screen */
+  .oa-sheet .dish__media{aspect-ratio:auto;height:min(40vh,340px)}
   .oa-sheet.is-open .oa-sheet__panel{opacity:1}
 }
 @media (prefers-reduced-motion:reduce){
@@ -276,7 +295,8 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .dish__desc{margin:12px 0 0;font-size:16px;line-height:1.5}
 .dish__inc{margin:10px 0 0;padding-left:20px}
 .dish__allergens{margin:12px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
-.dish__foot{position:sticky;bottom:0;display:flex;gap:12px;align-items:center;padding:12px 20px calc(12px + var(--safe-b));background:var(--g);border-top:1px solid var(--line)}
+.dish__foot{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 20px calc(12px + var(--safe-b));background:var(--g);border-top:1px solid var(--line)}
+.dish__pre{flex-basis:100%;margin:0 0 -4px;font:700 14px/1.3 var(--font);color:var(--muted)}
 .dish__add{flex:1;justify-content:space-between}
 .opt{border:0;margin:22px 0 0;padding:0}
 .opt legend{padding:0;margin-bottom:10px;font:700 16px/1.2 var(--font)}
@@ -289,6 +309,7 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .chip input:checked+span{background:var(--chip-on-bg);color:var(--chip-on-ink);box-shadow:inset 0 0 0 1.5px var(--chip-on-bg)}
 .chip input:checked+span::before{content:"";width:6px;height:11px;border:solid currentColor;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translateY(-2px);margin-right:9px}
 .chip input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+.chip__p{margin-left:6px;font-style:normal;font-weight:500;font-variant-numeric:tabular-nums}
 
 /* qty */
 .qty{display:inline-flex;align-items:center;gap:0;border-radius:4px;box-shadow:inset 0 0 0 1.5px var(--field-line);flex:none}
@@ -312,18 +333,18 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .line__d{margin:2px 0 0;font-size:14px;line-height:1.35;color:var(--muted)}
 .line__d--warn{color:#B3261E;font-weight:700}
 .line__t{margin:3px 0 0;font:500 14.5px/1 var(--font);color:var(--ink);font-variant-numeric:tabular-nums}
-/* the perk, right under the lines: one row of small tiles from the other restaurants */
-.xsell{margin:16px 0 0}
-.xsell__t{margin:0;font:700 14.5px/1.3 var(--font)}
-.xsell__s{display:block;font:500 13.5px/1.35 var(--font);color:var(--muted)}
-.xsell__row{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;margin-top:10px}
-.tile{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;padding:0 0 2px;border:0;background:none;color:var(--ink);text-align:center}
-.tile__pic{width:64px;height:64px;flex:none;object-fit:cover;border-radius:3px;background:var(--line)}
-.tile--np::before{content:"";width:64px;height:64px;flex:none;border-radius:3px;background:var(--shop);opacity:.16}
-.tile__n{font:600 13px/1.25 var(--font);text-wrap:balance}
-.tile__p{display:inline-flex;align-items:center;min-height:26px;padding:0 7px;border:1.5px solid var(--field-line);border-radius:3px;font:700 13px/1 var(--font);font-variant-numeric:tabular-nums;white-space:nowrap}
-@media (hover:hover){.tile:hover .tile__p{background:var(--ink);color:var(--g);border-color:var(--ink)}}
-@media (max-width:359px){.xsell__row .tile:nth-child(n+4){display:none}}
+/* "anything else?", right under the lines: words only, one compact block. This restaurant's sides and drinks first,
+   then a few dishes from the other restaurants, each with a small square in its restaurant's colour */
+.addon{margin:14px 0 0}
+.addon__t{margin:0 0 8px;font:700 14.5px/1.3 var(--font)}
+.addon__t--other{margin-top:14px;font-weight:600;color:var(--muted)}
+.addon__row{display:flex;flex-wrap:wrap;gap:6px}
+.add{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 9px;border:1.5px solid var(--field-line);border-radius:4px;background:transparent;color:var(--ink);text-align:left;white-space:nowrap}
+.add::after{content:"";position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+.add--other::before{content:"";width:9px;height:9px;flex:none;background:var(--shop);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.add__n{font:600 14px/1.2 var(--font)}
+.add__p{font:600 13.5px/1.2 var(--font);color:var(--muted);font-variant-numeric:tabular-nums}
+@media (hover:hover){.add:hover{border-color:var(--ink)}}
 .form{margin-top:20px;display:flex;flex-direction:column;gap:18px}
 .field{display:flex;flex-direction:column;gap:7px;border:0;margin:0;padding:0;min-width:0}
 .field legend{font:700 15px/1.2 var(--font);margin-bottom:10px;padding:0}
@@ -341,15 +362,6 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .select select{width:100%;height:48px;padding:0 40px 0 13px;border-radius:4px;border:1.5px solid var(--field-line);background:var(--g2);color:var(--ink);font:600 16px/1 var(--font);-webkit-appearance:none;appearance:none;text-overflow:ellipsis}
 .select::after{content:"";position:absolute;right:16px;top:50%;width:8px;height:8px;border:solid var(--muted);border-width:0 2.5px 2.5px 0;transform:translateY(-70%) rotate(45deg);pointer-events:none}
 .select select:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
-/* "anything else?": this restaurant's sides and drinks, one line each */
-.sugg{margin:20px 0 0}
-.sugg__t{margin:0 0 8px;font:700 15px/1.25 var(--font)}
-.sugg__row{display:flex;flex-wrap:wrap;gap:8px}
-.sugg__i{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 12px 0 10px;border:1.5px solid var(--field-line);border-radius:4px;background:transparent;color:var(--ink);text-align:left;white-space:nowrap}
-.sugg__i::before{content:"+";font:700 18px/1 var(--font);width:12px;text-align:center}
-.sugg__n{font:600 14.5px/1.2 var(--font)}
-.sugg__p{font:500 14px/1.2 var(--font);color:var(--muted);font-variant-numeric:tabular-nums}
-@media (hover:hover){.sugg__i:hover{border-color:var(--ink)}}
 /* the money, set like a printed bill */
 .sum{margin:22px 0 0;padding:8px 0 0;border-top:1.5px solid var(--ink)}
 .sum div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:15.5px}
@@ -358,7 +370,12 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .sum__total{margin-top:6px;padding-top:10px!important;border-top:1.5px dashed var(--field-line)}
 .sum__total dt,.sum__total dd{color:var(--ink);font:800 20px/1.1 var(--font)}
 .ticket{margin:14px 0 0}
-.ticket summary{display:flex;align-items:center;min-height:44px;cursor:pointer;font:600 14.5px/1.3 var(--font);color:var(--muted)}
+/* "Preview the message": reads as a link, with a chevron that turns when it's open */
+.ticket summary{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;list-style:none;font:600 14.5px/1.3 var(--font);color:var(--ink)}
+.ticket summary::-webkit-details-marker{display:none}
+.ticket summary span{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.ticket summary::after{content:"";width:7px;height:7px;margin:-3px 0 0 2px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .15s}
+.ticket[open] summary::after{margin-top:3px;transform:rotate(-135deg)}
 .ticket pre{margin:4px 0 0;padding:14px;background:var(--paper-2);color:#1E1E1E;font:13px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:break-word;border-top:2px dashed var(--line);border-bottom:2px dashed var(--line)}
 .order__hint{margin:12px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted);text-align:center;text-wrap:pretty}
 .order__send{position:sticky;bottom:0;z-index:2;margin:12px -20px 0;padding:12px 20px calc(12px + var(--safe-b));background:var(--g);border-top:1px solid var(--line)}
@@ -367,7 +384,20 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .order__send .sm{display:none}
 @media (max-width:359px){
   .order{padding-left:16px;padding-right:16px}
-  .sheet__head{margin:0 -16px;padding-left:16px}
+  .sheet__head{margin:0 -16px;padding:4px 8px 4px 16px}
+  /* the smallest phones: no line pictures, tighter add block, so "When" is on the first screen */
+  .line__pic{display:none}
+  .line{padding:8px 0}
+  .lines__brand{margin-top:12px}
+  .addon{margin-top:12px}
+  .addon__t--other{margin-top:12px}
+  .add{min-height:36px;padding:0 8px}
+  .add__n{font-size:13.5px}
+  .add__p{font-size:13px}
+  .addon__row--other .add:nth-child(n+2){display:none}
+  .sheet__panel--order{max-height:100vh;max-height:100dvh;border-radius:0}
+  .order__send{padding-top:8px;padding-bottom:calc(8px + var(--safe-b))}
+  .order__send .btn{min-height:48px}
   .order__send{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
   .order__send .btn{font-size:15.5px;gap:8px;padding-left:14px;padding-right:14px}
   .select select{font-size:15px;padding-left:11px;padding-right:34px}
@@ -395,7 +425,7 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 @keyframes skel{to{opacity:.5}}
 @media (prefers-reduced-motion:reduce){.oa-skel div{animation:none}}
 
-/* ---------- wide screens: one centred column, the picture beside the words, the + right after the price */
+/* ---------- wide screens: one centred column, the picture column on the left */
 @media (min-width:760px){
   .store{--cw:300px;--logo-h:72px;grid-template-areas:"name cover" "tag cover" "note note";column-gap:40px;align-items:center;padding-block:32px}
   .store--plain{grid-template-areas:"name" "tag" "note"}
@@ -403,7 +433,7 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
   .store__tag{align-self:start;font-size:19px}
   .cover{aspect-ratio:16/10}
   .sec{padding-top:34px}
-  .row{--ph:92px;grid-template-columns:var(--ph) minmax(0,1fr);grid-template-areas:"media text";column-gap:20px;padding:18px 0}
-  .row--np{grid-template-columns:minmax(0,1fr);grid-template-areas:"text"}
-  .row.is-sig,.row.is-bundle{--ph:132px}
+  /* the picture column moves to the left: the picture, and the + under it like the tick box on an order pad */
+  .row{--ph:92px;grid-template-columns:var(--ph) minmax(0,1fr);grid-template-areas:"side text";column-gap:20px;padding:18px 0}
+  .row__side{align-items:flex-start}
 }

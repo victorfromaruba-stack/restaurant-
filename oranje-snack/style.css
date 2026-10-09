@@ -12,8 +12,8 @@ body[data-brand="oranje-snack"]{
   --add-bg:#1B2A4A;--add-ink:#FFFFFF;--add-line:#1B2A4A;--add-on-bg:#E86A17;--add-on-ink:#141414;
   --lead:2px dotted;--lead-ink:#B3BAC6;--focus:#1B2A4A;--bad:#B3261E;
 }
-/* the tiled wall */
-[data-brand="oranje-snack"] .page{background-color:#F6F7F5;background-image:linear-gradient(#E3E6EA 1px,transparent 1px),linear-gradient(90deg,#E3E6EA 1px,transparent 1px);background-size:30px 30px;background-position:-1px -1px}
+/* the tiled wall: big white tiles with a faint grout line, so it reads as a wall and not as graph paper */
+[data-brand="oranje-snack"] .page{background-color:#F7F8F6;background-image:linear-gradient(#E9ECEE 2px,transparent 2px),linear-gradient(90deg,#E9ECEE 2px,transparent 2px);background-size:64px 64px;background-position:-1px -1px}
 /* the front: the sign on the tiles, the line, the picture in the board's frame, the orange fascia under it */
 [data-brand="oranje-snack"] .store{--logo-h:54px;padding-block:20px 22px;border-bottom:10px solid var(--oranje)}
 [data-brand="oranje-snack"] .store__tag{font:600 17px/1.35 var(--font);color:var(--navy)}
@@ -25,10 +25,9 @@ body[data-brand="oranje-snack"]{
 [data-brand="oranje-snack"] .sec__k{display:inline;font:inherit;color:var(--oranje-ink)}
 [data-brand="oranje-snack"] .sec__k~.sec__n{font:600 14px/1.2 var(--font);color:var(--muted)}
 
-/* the price board: white, a navy frame, each price on a yellow strip on the name's line */
+/* the price board: white, a navy frame, each price on a yellow strip */
 [data-brand="oranje-snack"] .rows{padding:0 12px;background:#FFFFFF;border:3px solid var(--navy);border-radius:4px}
 [data-brand="oranje-snack"] .row{--ph:72px;padding:14px 0}
-[data-brand="oranje-snack"] .row.is-sig{--ph:84px}
 [data-brand="oranje-snack"] .row__media img{border-radius:2px}
 [data-brand="oranje-snack"] .row__price{padding:2px 7px;background:var(--mayo);border-radius:2px;font:800 15.5px/1.25 var(--font);color:var(--navy)}
 [data-brand="oranje-snack"] .row.is-sig .row__name{font:900 20px/1.1 var(--display);color:var(--navy)}
@@ -45,7 +44,6 @@ body[data-brand="oranje-snack"]{
   [data-brand="oranje-snack"] .store{--logo-h:46px}
   [data-brand="oranje-snack"] .rows{padding:0 10px}
   [data-brand="oranje-snack"] .row{--ph:64px}
-  [data-brand="oranje-snack"] .row.is-sig{--ph:64px}
   [data-brand="oranje-snack"] .row.is-sig .row__name{font-size:18px}
   [data-brand="oranje-snack"] .row__price{font-size:14.5px;padding:2px 6px}
   [data-brand="oranje-snack"] .sec__t{font-size:24px}
@@ -55,5 +53,4 @@ body[data-brand="oranje-snack"]{
   [data-brand="oranje-snack"] .store__tag{font-size:19px}
   [data-brand="oranje-snack"] .rows{padding:0 18px}
   [data-brand="oranje-snack"] .row{--ph:84px}
-  [data-brand="oranje-snack"] .row.is-sig{--ph:120px}
 }

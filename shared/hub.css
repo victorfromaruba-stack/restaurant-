@@ -1,11 +1,12 @@
 /* Order Aruba home: the app's list of restaurants. Builds on shared/order.css. The app stays quiet so each
    restaurant's own sign carries the colour, and the OPEN sign is the one loud thing. One centred column. */
-.home{max-width:880px;margin:0 auto;padding:0 16px calc(56px + var(--safe-b))}
+/* the same width as a restaurant page (and as the top bar) */
+.home{max-width:752px;margin:0 auto;padding:0 16px calc(56px + var(--safe-b))}
 .hero{padding:22px 0 4px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .hero__row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .hero h1{font:700 30px/1.1 var(--font);letter-spacing:-.015em}
-.hero__sub{margin:0;font-size:16.5px;line-height:1.4;color:var(--app-muted);text-wrap:pretty}
-.hero__sub b{color:var(--app-ink);font-weight:700}
+.hero__sub{margin:0;font-size:16.5px;line-height:1.4;color:var(--app-muted);text-wrap:balance}
+.hero__sub b{display:inline-block;color:var(--app-ink);font-weight:700}
 .hero__facts{margin-top:-4px;font-size:14.5px}
 @media (max-width:359px){.hero h1{font-size:26px}}
 
@@ -62,6 +63,8 @@
 .row--link .row__media{grid-area:media;grid-row:1;grid-column:1}
 .row--link .row__text{grid-area:text;grid-row:1;grid-column:2}
 .row--link .row__media img{border-radius:4px}
+/* a dish without a picture: the restaurant's own mark in the picture's place, so the words still line up */
+.row__media--mark img{object-fit:contain}
 .row--link .row__desc{font-size:14px}
 .row--start{--ph:60px;padding:12px 0}
 .row--start .row__brand{margin-bottom:4px}
@@ -80,8 +83,6 @@
 .hfoot p{margin:0}
 
 @media (min-width:760px){
-  .home{padding-left:24px;padding-right:24px}
-  .top__in{padding-left:24px;padding-right:14px}
   .hero{padding-top:40px;grid-template-columns:minmax(0,1fr) 380px;column-gap:40px;align-items:end}
   .hero__row{grid-column:1/-1}
   .hero h1{font-size:42px}

@@ -46,8 +46,11 @@
     if (!hasPic(item)) return "";
     return '<img src="' + esc(path(thumb(item.img))) + '" data-full="' + esc(path(item.img)) + '" alt="" width="360" height="360"' + attrs + ">";
   }
-  /* names and lines on screen wrap only between words: "stir-fry", "flat-top" and "35–50" never split at the dash */
-  function keep(s) { return esc(s).replace(/(\S+[-\u2013]\S+)/g, '<span class="nw">$1</span>'); }
+  /* names and lines on screen wrap only between words: "stir-fry", "flat-top" and "35–50" never split at the dash,
+     and a count like "(3)" stays on the line of the word before it */
+  function keep(s) { return esc(s).replace(/ (\(\d+\))/g, "\u00a0$1").replace(/(\S+[-\u2013]\S+)/g, '<span class="nw">$1</span>'); }
+  /* an add-on's price, the same everywhere: "+ ƒ3.00" */
+  function addPrice(c) { return "+\u00a0" + money(c); }
   function shortName(i) { return i.name.replace(/ \(can\)$/, "").replace(/ \(side\)$/, ""); }
   // a missing thumbnail falls back to the full picture instead of a broken image
   document.addEventListener("error", function (e) {
@@ -442,6 +445,12 @@
     }
     return { asap: st.open, slots: slots };
   }
+  /* closed, with time slots left tonight: what's ordered now is a pre-order for tonight */
+  function preOrder() {
+    if (kitchenStatus().open) return "";
+    var ts = timeSlots();
+    return ts.slots.length && !/^Tomorrow /.test(ts.slots[0].v) ? tr("Pre-order for tonight") : "";
+  }
   function validWhen() {
     var s = S(), ts = timeSlots();
     if (s.when && ts.slots.some(function (x) { return x.v === s.when; })) return s.when;
@@ -574,14 +583,17 @@
   function flagText(item) {
     return (item.flags || []).map(function (f) { return '<span class="fl fl--' + esc(f) + '">' + esc(tr(FLAG_NAMES[f] || f)) + "</span>"; }).join("");
   }
-  /* What the recipe contains, plus the honest part: the kitchen handles the big allergens, so traces are possible. */
+  /* What the recipe contains, then the honest part: traces of the other big allergens are possible, and fried
+     food shares the oil. */
+  var TRACES = ["gluten", "egg", "dairy", "soy", "sesame", "peanut", "shellfish"];
   function allergenLine(item) {
     if (item.kind === "drink") return "";
-    var base = !item.allergens || !item.allergens.length ? tr("No major allergens in the recipe.") :
-      tr("Contains {list}.", { list: item.allergens.map(function (a) { return tr(ALLERGEN_NAMES[a] || a); }).join(", ") });
-    return base + " " + tr(item.fried
-      ? "We fry in shared oil, and our kitchen also handles gluten, egg, milk, soy, sesame, peanuts and shellfish, so traces are possible."
-      : "Our kitchen also handles gluten, egg, milk, soy, sesame, peanuts and shellfish, so traces are possible.");
+    var has = item.allergens || [];
+    var names = function (list) { return listAnd(list.map(function (a) { return tr(ALLERGEN_NAMES[a] || a); })); };
+    var others = TRACES.filter(function (a) { return has.indexOf(a) < 0; });
+    return [has.length ? tr("Contains {list}.", { list: names(has) }) : tr("No major allergens in the recipe."),
+      others.length ? tr("May contain traces of {list}.", { list: names(others) }) : "",
+      item.fried ? tr("Fried in shared oil.") : ""].filter(Boolean).join(" ");
   }
   function inkFor(hex) {
     var h = String(hex || "").replace("#", "");
@@ -604,26 +616,27 @@
       '<span class="plus__n" aria-hidden="true">' + (n || "") + "</span></button>";
   }
 
-  /* A menu row, set like a printed menu: the name, a dotted line and the price on the name's last line, the whole
-     description under it, a small picture beside it and the + box under the picture (or beside the price when there's
-     no picture). Each restaurant's stylesheet gives the row its own type, colours and rules. */
+  /* A menu row, set like a printed menu: the name, then the price (on its own line on a phone; across a dotted line
+     where the column is wide), the whole description under it. Beside it, one column of the same width on every row
+     of the list: the small picture, and the + box right under it (rows without a picture keep the column, so every
+     + sits in the same place and the words keep one measure). Each restaurant's stylesheet gives the row its own
+     type, colours and rules. */
   function rowHTML(b, item) {
     var n = itemCount(b, item.id), orderable = brandStatus(b) === "open" && !item.soldOut, pic = hasPic(item);
-    var words = !!(item.desc && item.kind !== "drink") || !!item.includes || !!(item.flags && item.flags.length) || !!item.soldOut;
     var cls = "row" + (item.style === "signature" ? " is-sig" : item.style === "bundle" ? " is-bundle" : "") +
-      (item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "") + (pic ? "" : " row--np") + (words ? "" : " row--line") + (item.soldOut ? " is-out" : "");
+      (item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "") + (pic ? "" : " row--np") + (item.soldOut ? " is-out" : "");
     var inc = item.includes ? includesNames(MENU[b], item).join(", ") : "";
     return '<article class="' + cls + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
       '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (item.soldOut ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
       '<div class="row__text">' +
         '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
-        (orderable ? '<div class="row__act">' + plusBtn(item, n) + "</div>" : "") +
         (item.soldOut ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
         (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") +
-        (inc ? '<p class="row__inc">' + esc(inc) + "</p>" : "") +
+        (inc ? '<p class="row__inc">' + keep(inc) + "</p>" : "") +
         (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
       "</div>" +
-      (pic ? '<div class="row__media">' + thumbImg(item, ' loading="lazy" decoding="async"') + "</div>" : "") + "</article>";
+      '<div class="row__side">' + (pic ? '<div class="row__media">' + thumbImg(item, ' loading="lazy" decoding="async"') + "</div>" : "") +
+        (orderable ? '<div class="row__act">' + plusBtn(item, n) + "</div>" : "") + "</div></article>";
   }
   function repaintCards() {
     if (MENU[HERE]) paintAgain();
@@ -663,14 +676,14 @@
         g.choices.map(function (c) {
           var on = g.type === "one" ? o[g.id] === c.id : false;
           return '<label class="chip"><input type="' + type + '" name="g-' + esc(g.id) + '" value="' + esc(c.id) + '"' + (on ? " checked" : "") + ">" +
-            "<span>" + esc(c.label) + (c.price ? " +" + shortMoney(c.price) : "") + "</span></label>";
+            "<span><span>" + esc(c.label) + "</span>" + (c.price ? '<i class="chip__p">' + addPrice(c.price) + "</i>" : "") + "</span></label>";
         }).join("") + "</div></fieldset>";
     }).join("");
     var pairs = (item.kind === "side" || item.kind === "drink") ? [] :
       menu.items.filter(function (i) { return (i.kind === "side" || i.kind === "drink") && !i.soldOut; }).slice(0, 5);
     var pairHTML = pairs.length && orderable ? '<fieldset class="opt"><legend>' + esc(tr("Goes well with")) + " <span>" + esc(tr("optional")) + '</span></legend><div class="chips">' +
       pairs.map(function (i) {
-        return '<label class="chip"><input type="checkbox" name="pair" value="' + esc(i.id) + '"><span>' + esc(shortName(i)) + " +" + shortMoney(i.price) + "</span></label>";
+        return '<label class="chip"><input type="checkbox" name="pair" value="' + esc(i.id) + '"><span><span>' + keep(shortName(i)) + '</span><i class="chip__p">' + addPrice(i.price) + "</i></span></label>";
       }).join("") + "</div></fieldset>" : "";
     var inc = item.includes ? '<ul class="dish__inc">' + includesNames(menu, item).map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "";
     var pic = hasPic(item);
@@ -688,6 +701,7 @@
           groups + pairHTML +
         "</div>" +
         '<div class="dish__foot">' +
+          (orderable && preOrder() ? '<p class="dish__pre">' + esc(preOrder()) + "</p>" : "") +
           '<div class="qty qty--lg"><button type="button" class="qty__b" data-q="-1" aria-label="' + esc(tr("One less")) + '">' + ICON.minus + '</button><span class="qty__n" aria-live="polite">1</span><button type="button" class="qty__b" data-q="1" aria-label="' + esc(tr("One more")) + '">' + ICON.plus + "</button></div>" +
           '<button type="button" class="btn btn--accent dish__add"' + (orderable ? "" : " disabled") + "></button>" +
         "</div>" +
@@ -749,7 +763,7 @@
       if (a) {
         var p = a.getAttribute("data-add").split("|");
         var line = addItem(p[0], p[1], {}, 1);
-        if (line) { toast(addedMsg(tr("{name} added", { name: line.n }))); bump(); }
+        if (line) { freshStart = false; bump(); }   // no toast here: the new line in the order says it
         return;
       }
       if (e.target.closest("[data-copy]")) {
@@ -788,36 +802,30 @@
     }).slice(0, 4);
   }
   function crossMenus() { return CROSS.map(function (c) { return c[0]; }).filter(function (b) { return b !== HERE && ALLOWED.indexOf(b) >= 0; }); }
-  /* the app's perk, right under the lines: one row of small tiles from the other "mix" restaurants */
-  function crossTiles() {
-    var other = crossPicks();
-    if (!other.length) return "";
-    return '<section class="xsell" aria-labelledby="oa-xsell-h"><h3 class="xsell__t" id="oa-xsell-h">' + esc(tr("Add from another restaurant")) +
-      ' <span class="xsell__s">' + esc(tr("Same order, still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</span></h3>" +
-      '<div class="xsell__row">' + other.map(function (c) {
-        var m = MENU[c[0]], i = m.byId[c[1]];
-        return '<button type="button" class="tile' + (hasPic(i) ? "" : " tile--np") + '" data-add="' + esc(c[0] + "|" + i.id) + '" style="--shop:' + esc(m.color) + '" aria-label="' +
-          esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price) + ", " + m.name) + '">' +
-          (hasPic(i) ? thumbImg(i, ' class="tile__pic" loading="lazy" decoding="async"') : "") +
-          '<span class="tile__n">' + keep(shortName(i)) + '</span><span class="tile__p">+ ' + money(i.price) + "</span></button>";
-      }).join("") + "</div></section>";
+  /* Right under the lines, one compact "anything else?" block, words only: this restaurant's own sides and drinks
+     first, like the till, then a few cheap dishes from the other "mix" restaurants (the app's perk: same order, still
+     one delivery fee), each marked with a small square in its restaurant's colour. */
+  function addChip(b, i, other) {
+    var m = MENU[b];
+    return '<button type="button" class="add' + (other ? " add--other" : "") + '" data-add="' + esc(b + "|" + i.id) + '"' + (other ? ' style="--shop:' + esc(m.color) + '"' : "") +
+      ' aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price) + (other ? ", " + m.name : "")) + '">' +
+      '<span class="add__n">' + keep(shortName(i)) + '</span><span class="add__p">' + addPrice(i.price) + "</span></button>";
   }
-  /* "anything else?" at the end, like the till: this restaurant's own sides and drinks as one-line chips */
-  function ownChips() {
+  function addBlock() {
     var lines = liveLines(), brands = brandsInCart(), host = brands.indexOf(HERE) >= 0 ? HERE : brands[0];
-    var menu = MENU[host];
-    if (!lines.length || !menu || brandStatus(host) !== "open") return "";
-    var hasDrink = drinkLines().length > 0;
-    var hasSide = lines.some(function (l) { var m = MENU[l.b], it = m && m.byId[l.id]; return l.b === host && it && it.kind === "side"; });
-    var picks = [];
-    if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
-    if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
-    if (!picks.length) return "";
-    return '<section class="sugg" aria-labelledby="oa-sugg-h"><h3 class="sugg__t" id="oa-sugg-h">' + esc(tr(!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side")) + "</h3>" +
-      '<div class="sugg__row">' + picks.map(function (i) {
-        return '<button type="button" class="sugg__i" data-add="' + esc(host + "|" + i.id) + '" aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price)) + '">' +
-          '<span class="sugg__n">' + keep(shortName(i)) + '</span><span class="sugg__p">' + money(i.price) + "</span></button>";
-      }).join("") + "</div></section>";
+    var menu = MENU[host], own = "", cross = crossPicks();
+    if (lines.length && menu && brandStatus(host) === "open") {
+      var hasDrink = drinkLines().length > 0;
+      var hasSide = lines.some(function (l) { var m = MENU[l.b], it = m && m.byId[l.id]; return l.b === host && it && it.kind === "side"; });
+      var picks = [];
+      if (!hasSide) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "side" && !i.soldOut; }).slice(0, 2));
+      if (!hasDrink) picks = picks.concat(menu.items.filter(function (i) { return i.kind === "drink" && !i.soldOut; }));
+      if (picks.length) own = '<h3 class="addon__t" id="oa-add-h">' + esc(tr(!hasDrink && !hasSide ? "Add a side or drink" : !hasDrink ? "Add a drink" : "Add a side")) + "</h3>" +
+        '<div class="addon__row">' + picks.map(function (i) { return addChip(host, i, false); }).join("") + "</div>";
+    }
+    var other = cross.length ? '<h3 class="addon__t addon__t--other">' + keep(tr("From other restaurants · same order, still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</h3>" +
+      '<div class="addon__row addon__row--other">' + cross.map(function (c) { return addChip(c[0], MENU[c[0]].byId[c[1]], true); }).join("") + "</div>" : "";
+    return own || other ? '<section class="addon" aria-label="' + esc(tr("Add a side or drink")) + '">' + own + other + "</section>" : "";
   }
   /* keep keyboard focus on the same control after the order re-renders */
   function focusKey(n) {
@@ -880,7 +888,7 @@
           '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="' + esc(tr("One more {name}", { name: l.n })) + '">' + ICON.plus + "</button></div></li>";
       }).join("") + "</ul>";
     });
-    html += crossTiles();
+    html += addBlock();
     var areas = (SITE.areas || []).concat([OTHER]);
     html += '<form class="form" novalidate onsubmit="return false">';
     var ts = timeSlots(), when = validWhen();
@@ -909,11 +917,10 @@
         }).join("") + "</div>" + (SITE.payment ? '<p class="field__help">' + esc(clean(tr(SITE.payment))) + "</p>" : "") +
         '<p class="field__err">' + esc(tr("Pick how you\u2019ll pay.")) + "</p></fieldset>" : "") +
       "</form>";
-    html += ownChips();
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
       '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
-    html += '<details class="ticket"><summary>' + esc(tr("Preview the message")) + "</summary><pre>" + esc(buildMessage()) + "</pre></details>";
+    html += '<details class="ticket"><summary><span>' + esc(tr("Preview the message")) + "</span></summary><pre>" + esc(buildMessage()) + "</pre></details>";
     html += '<p class="order__hint">' + esc(payLine()) + tr("Opens WhatsApp with your order typed out. Press <b>Send</b> there.") +
       (waNum() ? " " + esc(tr("It goes to {app} on WhatsApp, {number}.", { app: SITE.name || "us", number: waNumber() })) : "") + "</p>" +
       '<button type="button" class="link" data-copy>' + esc(tr("Copy the order instead")) + "</button>" +
@@ -984,7 +991,7 @@
     if (!n) return;
     var stale = Date.now() - (S().updated || 0) > 2 * 3600 * 1000;
     $(".bar__count", bar).textContent = n;
-    $(".bar__label", bar).textContent = tr(S().sentAt ? "Sent: see order" : stale ? "Continue order" : "View order");
+    $(".bar__label", bar).textContent = S().sentAt ? tr("Sent: see order") : preOrder() || tr(stale ? "Continue order" : "View order");
     // food only here; the delivery fee is added at checkout
     $(".bar__total", bar).textContent = money(subtotal());
     $("button", bar).setAttribute("aria-label", tr("View order: {items}, {total} before delivery", { items: plural(n, "item", "items"), total: money(subtotal()) }));
@@ -1013,10 +1020,12 @@
     setHTML("[data-oa-contact]", contactHTML());
     setHTML("[data-oa-how]", howSteps());
     setHTML("[data-oa-how-note]", keep(howNote()));
+    setHTML("[data-oa-endnote]", endNoteHTML());
+    setHTML("[data-oa-foot]", footNote());
   }
   function deliverToHTML() {
     return keep(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + keep(tr("Elsewhere?")) +
-      ' <a data-oa-ask href="' + esc(waLink("Hi! Do you deliver to my area? I’m in ")) + '" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.";
+      ' <span class="nw"><a data-oa-ask href="' + esc(waLink("Hi! Do you deliver to my area? I’m in ")) + '" target="_blank" rel="noopener">' + esc(tr("Ask us")) + "</a>.</span>";
   }
   /* the restaurant's real WhatsApp number, written out, so people can see who they're ordering from */
   function waNumber() {
@@ -1027,13 +1036,21 @@
   function contactHTML() {
     if (!waNum()) return "";
     var parts = tr("Questions? WhatsApp us on {number}.", { number: "\u0000" }).split("\u0000");
-    return esc(parts[0]) + '<a href="' + esc(waLink("Hi! ")) + '" target="_blank" rel="noopener">' + esc(waNumber()) + "</a>" + esc(parts[1] || "");
+    var after = parts[1] || "", stop = /^[^\s]*/.exec(after)[0];   // the full stop stays with the number
+    return esc(parts[0]) + '<span class="nw"><a href="' + esc(waLink("Hi! ")) + '" target="_blank" rel="noopener">' + esc(waNumber()) + "</a>" + esc(stop) + "</span>" + esc(after.slice(stop.length));
+  }
+  /* the end of a restaurant page: ordering, the fee, delivery only, hours, areas and the number, in one paragraph */
+  function endNoteHTML() {
+    return keep(tr("You order here and send it on WhatsApp. We reply to confirm.") + " " + howNote()) + " " + deliverToHTML() + " " + contactHTML();
+  }
+  /* "Pictures are illustrations. Prices in Aruban florin (ƒ)." in that order everywhere; "(ƒ)." never ends up alone */
+  function footNote(note) {
+    return esc(tr(note || "Pictures are illustrations.") + " " + tr("Prices in Aruban florin (ƒ).")).replace(/ \(ƒ\)/, "\u00a0(ƒ)");
   }
   function howSteps() {
     var steps = [
-      PAGE === "hub" && mixGroup().length > 1 ? [tr("Pick your dishes"), tr("From one restaurant or several, in one order.")]
-        : PAGE === "hub" ? [tr("Pick a restaurant"), tr("Each restaurant is its own order. Tap + on what you want.")]
-        : [tr("Pick your dishes"), tr("Tap + to add a dish, or open it for choices like no onion.")],
+      mixGroup().length > 1 ? [tr("Pick your dishes"), tr("From one restaurant or several, in one order.")]
+        : [tr("Pick a restaurant"), tr("Each restaurant is its own order. Tap + on what you want.")],
       [tr("Send it on WhatsApp"), tr("WhatsApp opens with your order already written out. Just press send.")],
       [tr("We reply to confirm"), clean((SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
     ];
@@ -1141,8 +1158,9 @@
     }, { list: [], carry: null }).list;
     var cover = coverPick(menu, feat);
     // the app's delivery line (Order Aruba's), then the restaurant's own sign: its wordmark, its line, a small framed picture
-    var html = '<div class="strip"><ul class="facts">' +
-          '<li class="facts__status' + (st.open ? " is-open" : "") + '">' + esc(st.label) + "</li>" +
+    // open: the hours in bold; closed: an unlit sign, like the home page's, and when it opens in amber
+    var html = '<div class="strip' + (st.open ? "" : " strip--closed") + '"><ul class="facts">' +
+          '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") + esc(st.label) + "</li>" +
           "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
           "<li>" + esc(SITE.eta || "") + "</li>" +
         "</ul></div>" +
@@ -1163,11 +1181,11 @@
     if (lead.length) html += section("featured", tr("Start here"), lead);
     secs.forEach(function (s) { html += section(s.id, tr(s.title), s.items, s.kicker, s.klang); });
     html += '<section class="sec also" id="oa-also" aria-labelledby="h-also" hidden></section>';
-    // people arriving from a shared dish link land here first, so the page explains ordering too
-    html += '<section class="sec how" aria-labelledby="h-how"><h2 class="sec__t" id="h-how">' + esc(tr("How ordering works")) + "</h2>" +
-      '<ol class="how__steps" data-oa-how>' + howSteps() + '</ol><p class="how__note" data-oa-how-note>' + keep(howNote()) + "</p>" +
-      '<p class="areas" data-oa-deliver-to>' + deliverToHTML() + '</p><p class="areas" data-oa-contact>' + contactHTML() + "</p></section>";
-    html += '<footer class="pfoot"><p>' + esc(tr(menu.imageNote) + " " + tr("Prices in Aruban florin (ƒ).")) + "</p>" +
+    // people arriving from a shared dish link land here too, so the page ends with how ordering works, in one paragraph
+    // (the three steps are on the home page)
+    html += '<section class="sec how how--brief" aria-labelledby="h-how"><h2 class="sec__t" id="h-how">' + esc(tr("How ordering works")) + "</h2>" +
+      '<p class="areas" data-oa-endnote>' + endNoteHTML() + "</p></section>";
+    html += '<footer class="pfoot"><p>' + footNote(menu.imageNote) + "</p>" +
       '<a class="pfoot__all" href="' + path("index.html") + '">' + esc(tr("All restaurants")) + "</a>" + langSwitch() + "</footer>";
     main.innerHTML = html;
     wireVideo(main);
@@ -1230,7 +1248,8 @@
     var featIds = feat.map(function (i) { return i.id; }), inside = [];
     feat.forEach(function (i) { (i.includes || []).forEach(function (x) { inside.push(x); }); });
     var pool = menu.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && hasPic(i) && featIds.indexOf(i.id) < 0 && inside.indexOf(i.id) < 0; });
-    var pick = (menu.cover && menu.byId[menu.cover]) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0];
+    var named = menu.cover && menu.byId[menu.cover];
+    var pick = (hasPic(named) ? named : null) || pool.filter(function (i) { return i.img.indexOf("/art/") < 0 && !i.soldOut; })[0] || pool[0];
     return pick ? pick.img : "";
   }
   /* On a phone the cover is a small still. Where it's big (wide screens) it plays the menu's short silent loop,
@@ -1278,7 +1297,7 @@
     var names = lines.map(function (x) { return x.q + " \u00d7 " + MENU[x.b].byId[x.id].name; });
     var pic = lines.map(function (x) { return MENU[x.b].byId[x.id]; }).filter(hasPic)[0];
     var html = '<div class="again__card' + (pic ? "" : " again__card--np") + '">' + (pic ? thumbImg(pic, ' loading="lazy"') : "") +
-      '<div class="again__body"><h2 class="again__t">' + esc(tr("Order again")) + '</h2><p class="again__items">' + esc(names.join(", ")) + "</p>" +
+      '<div class="again__body"><h2 class="again__t">' + esc(tr("Order again")) + '</h2><p class="again__items">' + keep(names.join(", ")) + "</p>" +
       '<button type="button" class="btn btn--accent again__btn" data-again><span>' + esc(tr("Add all")) + "</span><span>" + money(sum) + "</span></button></div></div>";
     if (box._html === html && !box.hidden) return;
     box._html = html; box.innerHTML = html;
@@ -1290,8 +1309,14 @@
     });
   }
   /* ---------------------------------------------------------------- home page (the app: every restaurant, each its own shop) */
+  /* "From ƒ…": the cheapest dish in the restaurant's main section (menu.json "mainSection", else the house dish's
+     section) or the house dish itself, so a burger place starts at its cheapest burger, not at a side of fries */
   function fromPrice(m) {
-    var mains = m.items.filter(function (i) { return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle"; });
+    var sig = m.items.filter(function (i) { return i.style === "signature"; })[0];
+    var sec = m.mainSection || (sig && sig.section);
+    var mains = m.items.filter(function (i) {
+      return i.kind !== "drink" && i.kind !== "side" && i.style !== "bundle" && (!sec || i.section === sec || i.style === "signature");
+    });
     return mains.length ? Math.min.apply(null, mains.map(function (i) { return i.price; })) : 0;
   }
   /* the restaurant's dish picture on the home page ("hero" in menu.json: the dish its line is about), only while a
@@ -1316,17 +1341,19 @@
     var m = MENU[b];
     if (!m) return "";
     var img = heroImg(m);
+    // the cuisine label only when the restaurant's own line doesn't already say it ("Chinese takeout, …")
+    var label = new RegExp("\\b" + m.cuisine + "\\b", "i").test(m.tagline || "") ? "" : "<b>" + esc(tr(m.cuisine)) + "</b>";
     return '<a class="shop' + (brandStatus(b) !== "open" ? " is-soon" : "") + '" id="shop-' + esc(b) + '" data-shop="' + esc(b) + '" href="' + path(b + "/index.html") + '" style="' + signStyle(m) + '">' +
       '<span class="shop__sign"><img class="shop__logo" src="' + esc(path(m.logo)) + '" alt="" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
       (img ? '<span class="shop__pic"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="" width="360" height="360" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async"></span>' : "") +
       '<span class="shop__txt"><h3 class="shop__name">' + esc(m.name) + "</h3>" +
-        '<span class="meta"><b>' + esc(tr(m.cuisine)) + "</b>" + fromLine(b, m) + "</span>" +
+        '<span class="meta">' + label + fromLine(b, m) + "</span>" +
         '<span class="shop__tag">' + keep(m.tagline || "") + "</span></span></a>";
   }
   /* "More on Order Aruba" at the end of a restaurant page: small plates, the sign and two facts */
   function plateHTML(b) {
     var m = MENU[b];
-    return '<a class="plate' + (brandStatus(b) !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '" style="' + signStyle(m) + '">' +
+    return '<a class="plate' + (brandStatus(b) !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '" data-shop="' + esc(b) + '" style="' + signStyle(m) + '">' +
       '<span class="plate__sign"><img class="plate__logo" src="' + esc(path(m.logo)) + '" alt="' + esc(m.name) + '" loading="lazy" decoding="async"></span>' +
       '<span class="meta plate__txt"><b>' + esc(tr(m.cuisine)) + "</b>" + fromLine(b, m) + "</span></a>";
   }
@@ -1450,7 +1477,8 @@
         '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
         (item.soldOut ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
         (!short && item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") + "</div>" +
-      (pic ? '<div class="row__media">' + thumbImg(item, ' loading="lazy" decoding="async"') + "</div>" : "") + "</a>";
+      '<div class="row__media' + (pic ? "" : " row__media--mark") + '">' + (pic ? thumbImg(item, ' loading="lazy" decoding="async"') :
+        '<img src="' + esc(path(m.mark)) + '" alt="" width="192" height="192" loading="lazy" decoding="async">') + "</div></a>";
   }
   /* an order already started at a restaurant: a way back to it from the home page */
   function paintMine(ids) {

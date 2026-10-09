@@ -15,8 +15,9 @@ body[data-brand="smash-shack"]{
   --add-bg:transparent;--add-ink:#F5F1E8;--add-line:#F5F1E8;--add-on-bg:#FFC72C;--add-on-ink:#111111;
   --lead:2px dotted;--lead-ink:#5C5850;--focus:#FFC72C;
 }
-/* the counter: wordmark on black, the line typed out, the picture in a mustard frame, then a strip of deli paper */
+/* the counter: wordmark on black, the line typed out, then a strip of deli paper. No picture up here */
 [data-brand="smash-shack"] .store{--logo-h:72px;grid-template-areas:"name name" "tag cover" "note note" "trim trim";padding-block:18px 0}
+[data-brand="smash-shack"] .store--plain{grid-template-areas:"name" "tag" "note" "trim"}
 [data-brand="smash-shack"] .store__tag{font:500 14.5px/1.5 var(--type);color:var(--ink);text-wrap:pretty}
 [data-brand="smash-shack"] .cover{border:2px solid var(--mustard);border-radius:2px}
 [data-brand="smash-shack"] .store::after{content:"";grid-area:trim;height:14px;margin:22px calc(-1 * max(16px, 50vw - 360px)) 0;background:var(--checker)}
@@ -35,7 +36,7 @@ body[data-brand="smash-shack"]{
   -webkit-mask:conic-gradient(from -45deg at bottom,transparent,#000 1deg 89deg,transparent 90deg) 50% / 14px 100%;
   mask:conic-gradient(from -45deg at bottom,transparent,#000 1deg 89deg,transparent 90deg) 50% / 14px 100%
 }
-[data-brand="smash-shack"] .row{grid-template-columns:minmax(0,1fr);grid-template-areas:"text";padding:15px 0 14px;border-bottom:1.5px dashed var(--line)}
+[data-brand="smash-shack"] .row{--ph:44px;padding:15px 0 14px;border-bottom:1.5px dashed var(--line)}
 [data-brand="smash-shack"] .row__media{display:none}
 [data-brand="smash-shack"] .row__name{text-transform:uppercase;letter-spacing:.01em;line-height:1.08}
 [data-brand="smash-shack"] .row__price{font:500 16px/1.2 var(--type)}
@@ -68,14 +69,15 @@ body[data-brand="smash-shack"]{
   [data-brand="smash-shack"] .store__tag{font-size:13.5px}
   [data-brand="smash-shack"] .sec__t{font-size:26px}
   [data-brand="smash-shack"] .rows{padding-left:12px;padding-right:12px}
-  [data-brand="smash-shack"] .row{--name-size:19px}
+  [data-brand="smash-shack"] .row{--name-size:19px;--ph:44px}
   [data-brand="smash-shack"] .row.is-sig .row__name{font-size:23px}
   [data-brand="smash-shack"] .row__price{font-size:15px}
 }
 @media (min-width:760px){
   [data-brand="smash-shack"] .store{--logo-h:96px;grid-template-areas:"name cover" "tag cover" "note note" "trim trim";padding-block:28px 0}
+  [data-brand="smash-shack"] .store--plain{grid-template-areas:"name" "tag" "note" "trim"}
   [data-brand="smash-shack"] .store::after{margin-top:28px}
   [data-brand="smash-shack"] .store__tag{font-size:16px}
   [data-brand="smash-shack"] .rows{padding:6px 24px 22px}
-  [data-brand="smash-shack"] .row{--name-size:23px}
+  [data-brand="smash-shack"] .row{--name-size:23px;--ph:44px}
 }

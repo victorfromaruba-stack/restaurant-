@@ -16,8 +16,6 @@ nonnas-night-in/assets/dishes/cp.webp 78d1d0c273592d98
 nonnas-night-in/assets/dishes/gb.webp fc80e08f2f73ca61
 nonnas-night-in/assets/dishes/pa.webp eb361c3ee4967e8f
 nonnas-night-in/assets/dishes/sm.webp 42144c0dcd3d9d81
-nonnas-night-in/video/cover.mp4 647bec2e773f8b91
-nonnas-night-in/video/cover.webp b5e36a8fd0a7b9ac
 oranje-snack/assets/art/bb.webp d30a241693b9ca1a
 oranje-snack/assets/art/fk.webp d1543fdc07b995a7
 oranje-snack/assets/art/fs.webp 0fe4c28d6133e657
@@ -34,8 +32,6 @@ smash-shack/assets/dishes/fs.webp 517faec5afc6c874
 smash-shack/assets/dishes/lf.webp 274c2357b37163e4
 smash-shack/assets/dishes/sc-hero.webp cd476b0a40a2aa02
 smash-shack/assets/dishes/sc.webp cd476b0a40a2aa02
-smash-shack/video/cover.mp4 3e4845f67af6e75d
-smash-shack/video/cover.webp bfea0fa6bb5d3ef1
 taco-brava/assets/art/gt.webp db56e4e306798c18
 taco-brava/assets/dishes/bb.webp bd3853c291d684f3
 taco-brava/assets/dishes/bn.webp 0b4c234d00d08f99

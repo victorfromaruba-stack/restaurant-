@@ -52,6 +52,14 @@ for b, m in menus.items():
           f"{b} sells Coke, Coke Zero and Sprite as separate ƒ3 items")
     mains = [i for i in m["items"] if i.get("kind") not in ("drink",)]
     check(6 <= len(mains) <= 9, f"{b} has a tight menu ({len(mains)} food items)")
+    # a dish whose picture doesn't match its words ("hidePhoto") shows no picture anywhere: not as the home page
+    # picture ("hero"), not as the restaurant's cover, not on a link card
+    hidden = {i["img"]: i["id"] for i in m["items"] if i.get("hidePhoto")}
+    cov = m.get("cover")
+    check(m["hero"] not in hidden and not (isinstance(cov, str) and cov in hidden.values()),
+          f"{b} hero and cover are never a hidden picture" + (f": {m['hero'] if m['hero'] in hidden else cov}" if m["hero"] in hidden or cov in hidden.values() else ""))
+    if m.get("mainSection"):
+        check(m["mainSection"] in secs, f"{b} mainSection is a real section")
 # Allergens on the site must cover what the kitchen's own recipe cards put in the dish (ops/kitchen/kitchen-data.json).
 # Found 8 Oct 2026: tenders in buttermilk brine, sesame garnish and oyster sauce were missing from the site.
 ALLERGEN_WORDS = {
@@ -221,7 +229,8 @@ async def main():
             if not sig:
                 continue
             await pg.goto(BASE + f"{bid}/#d={sig['id']}", wait_until="networkidle")
-            got = await pg.evaluate("(document.querySelector('.dish__name') || {}).textContent || ''")
+            # (a count like "(3)" is kept on its word's line with a no-break space)
+            got = (await pg.evaluate("(document.querySelector('.dish__name') || {}).textContent || ''")).replace("\xa0", " ")
             check(got == sig["name"], f"{bid}/#d={sig['id']} opens {sig['name']}" + ("" if got == sig["name"] else f": got {got!r}"))
         await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen

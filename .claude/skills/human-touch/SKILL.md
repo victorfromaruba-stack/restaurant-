@@ -84,7 +84,7 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    the app's perk. But nothing a customer can see or load may say or hint that they share
    a kitchen or an owner. Delivery only.
    check.py and `qa/check_site.py` fail on it. Honest stays honest: the allergen line
-   still says the restaurant's kitchen handles the big allergens, and we never claim
+   still says traces of the other big allergens are possible (and fried food shares the oil), and we never claim
    the restaurants are independent or "local partners" either. We just don't say more.
 9. **Ordering keeps working.** After any change: `qa/check_site.py` = 0 problems. If you
    changed taglines or menus, also run `python3 build/seo.py` and

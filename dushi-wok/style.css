@@ -8,7 +8,7 @@ body[data-brand="dushi-wok"]{
   --g:#FBF8F1;--g2:#FFFFFF;--ink:#1C1A17;--muted:#58534C;--line:#E2DACB;--field-line:#8C857A;
   --acc:#0F7B6C;--acc-ink:#FFFFFF;--price:#B3221F;--r:4px;
   --display:"Fredoka",var(--font);--name:"Fredoka",var(--font);--name-w:600;--name-size:18px;
-  --chip-bg:#FFFFFF;--chip-ink:#1C1A17;--chip-line:#A39B8C;--chip-on-bg:#0F7B6C;--chip-on-ink:#FFFFFF;
+  --chip-bg:#FFFFFF;--chip-ink:#1C1A17;--chip-line:#8C857A;--chip-on-bg:#0F7B6C;--chip-on-ink:#FFFFFF;
   --add-bg:#FFFFFF;--add-ink:#C62828;--add-line:#C62828;--add-on-bg:#C62828;--add-on-ink:#FFFFFF;
   --lead:2px dotted;--lead-ink:#CDC3B1;--focus:#1C1A17;--bad:#B3261E;
 }
@@ -17,14 +17,17 @@ body[data-brand="dushi-wok"]{
 [data-brand="dushi-wok"] .store__tag{font:600 17px/1.3 var(--display);color:var(--jade)}
 [data-brand="dushi-wok"] .cover{border:2px solid var(--jade);border-bottom-width:5px;border-radius:4px}
 
-/* section titles are the board's jade header strips */
-[data-brand="dushi-wok"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:8px 12px 6px;margin-bottom:2px;background:var(--jade);color:#FFFFFF;border-bottom:3px solid var(--red);border-radius:4px 4px 0 0;font:600 19px/1.15 var(--display)}
-[data-brand="dushi-wok"] .sec__k{display:inline;color:#FFFFFF;font:600 14px/1.2 var(--display)}
+/* section titles: jade letters over a thin red rule; the first one is the board's jade header strip */
+[data-brand="dushi-wok"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:0 0 7px;margin-bottom:2px;color:var(--jade);border-bottom:1.5px solid var(--red);font:600 21px/1.15 var(--display)}
+[data-brand="dushi-wok"] .sec:not(.sec ~ .sec) .sec__t{padding:8px 12px 6px;background:var(--jade);color:#FFFFFF;border-bottom:3px solid var(--red);border-radius:4px 4px 0 0;font-size:19px}
+[data-brand="dushi-wok"] .sec__k{display:inline;color:inherit;font:600 14px/1.2 var(--display)}
 
-/* numbered like the board over the counter; the price sits on the name's line in red */
+/* numbered like the board over the counter: the red number hangs in the margin, so the name, the price and the
+   words under it all start on one line */
 [data-brand="dushi-wok"] .page{counter-reset:dish}
 [data-brand="dushi-wok"] .rows:not(.rows--drinks) .row{counter-increment:dish}
-[data-brand="dushi-wok"] .rows:not(.rows--drinks) .row__name::before{content:counter(dish);display:inline-grid;place-items:center;min-width:24px;height:24px;margin-right:9px;padding:0 4px;background:var(--red);color:#FFFFFF;border-radius:3px;font:600 14px/1 var(--display);vertical-align:3px}
+[data-brand="dushi-wok"] .rows:not(.rows--drinks) .row__text{position:relative;padding-left:34px}
+[data-brand="dushi-wok"] .rows:not(.rows--drinks) .row__text::before{content:counter(dish);position:absolute;left:0;top:0;display:grid;place-items:center;min-width:24px;height:24px;padding:0 4px;background:var(--red);color:#FFFFFF;border-radius:3px;font:600 14px/1 var(--display)}
 [data-brand="dushi-wok"] .row__price{font:600 17px/1.25 var(--display)}
 [data-brand="dushi-wok"] .row__inc{font-family:var(--display);font-weight:600;color:var(--jade)}
 [data-brand="dushi-wok"] .rows--drinks .row__name{font-size:16.5px}

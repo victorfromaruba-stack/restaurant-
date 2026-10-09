@@ -9,10 +9,10 @@
   "line": "#FFC72C"
  },
  "tagline": "Thin patties, smashed hard on the flat-top",
- "intro": "Thin patties smashed hard on the flat-top for crispy edges. Cooked to order in Aruba.",
+ "intro": "Smash cheeseburgers with two thin beef patties, or four on the double, plus crispy chicken sandwiches, tenders and loaded fries.",
  "logo": "shared/logos/smash-shack.svg",
  "mark": "shared/logos/smash-shack-mark.webp",
- "hero": "smash-shack/assets/dishes/ds.webp",
+ "hero": "smash-shack/assets/dishes/cc.webp",
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -165,7 +165,8 @@
       }
      ]
     }
-   ]
+   ],
+   "hidePhoto": true
   },
   {
    "id": "cc",
@@ -302,9 +303,5 @@
    "kind": "drink"
   }
  ],
- "video": {
-  "src": "smash-shack/video/cover.mp4",
-  "poster": "smash-shack/video/cover.webp"
- },
- "cover": "ds"
+ "cover": false
 }
