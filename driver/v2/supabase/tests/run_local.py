@@ -138,6 +138,69 @@ def new_public_names(before, after):
     return fresh
 
 
+def supabase_defaults(conn):
+    """Hosted Supabase grants anon and authenticated execute on new functions and all on new tables."""
+    q(conn, """
+        do $role$ begin
+          if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+            create role authenticated nologin noinherit;
+          end if;
+        end $role$
+    """)
+    q(conn, "alter default privileges in schema public grant execute on functions to anon, authenticated")
+    q(conn, "alter default privileges in schema public grant all on tables to anon, authenticated")
+
+
+ALLOWED = [
+    "pidi_ping()",
+    "pidi_place_order(jsonb)",
+    "pidi_order_status(text)",
+    "pidi_kitchen_login(text)",
+    "pidi_kitchen_feed(text)",
+    "pidi_kitchen_accept(text,uuid)",
+    "pidi_kitchen_set_status(text,uuid,text)",
+    "pidi_kitchen_mark_ready(text,uuid,text)",
+    "pidi_kitchen_cancel(text,uuid)",
+    "pidi_kitchen_transfer_paid(text,uuid)",
+    "pidi_driver_login(text,text)",
+    "pidi_driver_set_online(text,boolean)",
+    "pidi_driver_offers(text)",
+    "pidi_driver_accept(text,uuid)",
+    "pidi_driver_decline(text,uuid)",
+    "pidi_driver_run(text)",
+    "pidi_driver_picked_up(text,uuid)",
+    "pidi_driver_delivered(text,uuid)",
+    "pidi_driver_location(text,numeric,numeric)",
+    "pidi_admin_add_driver(text,text,text,text)",
+    "pidi_admin_set_kitchen_pin(text,text)",
+    "pidi_admin_list_drivers(text)",
+    "pidi_admin_remove_driver(text,uuid)",
+]
+
+
+def privileges(conn):
+    rows = q(conn, """
+        select replace(p.oid::regprocedure::text, 'public.', ''),
+               has_function_privilege('anon', p.oid, 'execute'),
+               has_function_privilege('authenticated', p.oid, 'execute')
+        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public' and p.proname like 'pidi\\_%' escape '\\'
+    """)
+    allowed = {sig.replace(" ", "") for sig in ALLOWED}
+    leaks = [(sig, anon, auth) for sig, anon, auth in rows
+             if auth or (anon and sig.replace(" ", "") not in allowed)]
+    missing = sorted(allowed - {sig.replace(" ", "") for sig, anon, _auth in rows if anon})
+    tables = q(conn, """
+        select c.relname, r.rolname
+        from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        cross join (values ('anon'), ('authenticated')) r(rolname)
+        where n.nspname = 'public' and c.relkind = 'r' and c.relname like 'pidi\\_%' escape '\\'
+          and (has_table_privilege(r.rolname, c.oid, 'select') or has_table_privilege(r.rolname, c.oid, 'insert')
+               or has_table_privilege(r.rolname, c.oid, 'update') or has_table_privilege(r.rolname, c.oid, 'delete'))
+    """)
+    return leaks, missing, tables
+
+
 def static_sql():
     text = SQL_PATH.read_text(encoding="utf-8")
     banned = [
@@ -187,6 +250,7 @@ def seed_when_placeholder_replaced():
           end if;
         end $role$
     """)
+    supabase_defaults(conn)
     replaced = SQL_PATH.read_text(encoding="utf-8").replace("PUT_8_DIGIT_ADMIN_PIN", pin)
     cur = conn.cursor()
     cur.execute(replaced)
@@ -234,6 +298,7 @@ def main():
           end if;
         end $role$
     """)
+    supabase_defaults(conn)
     q(conn, """
         create schema if not exists auth;
         create table auth.users (id uuid primary key, email text);
@@ -271,6 +336,10 @@ def main():
     bad_names = [item for item in fresh if item[0] != "public" or not item[1].startswith("pidi_")]
     check("new relations are public.pidi_ only", not bad_names, str(bad_names))
     check("five restaurants", scalar(conn, "select count(*) from public.pidi_restaurants") == 5)
+    leaks, missing, tables = privileges(conn)
+    check("anon runs only the app's functions, authenticated none", not leaks, str(leaks))
+    check("anon runs every app function", not missing, str(missing))
+    check("anon and authenticated have no rights on pidi_ tables", not tables, str(tables))
     check("no admin PIN stored by the paste", scalar(conn, "select value from public.pidi_settings where key = 'admin_pin_hash'") is None)
     check("unset admin PIN raises a notice", any("Admin PIN was not set" in note for note in conn.notices), " ".join(conn.notices)[-400:])
 
@@ -589,6 +658,87 @@ def main():
     grouped = next((order for order in feed["orders"] if str(order["id"]) == str(bag["order_id"])), None)
     names = sorted(group["restaurant"] for group in (grouped or {}).get("restaurants") or [])
     check("kitchen feed groups by restaurant", names == ["Oranje Snack", "Smash Shack"], str(names))
+
+    same_a = place_items([{"restaurant": "dushi-wok", "name": "Rice", "qty": 2, "price_cents": 1500}],
+                         phone="2975990094", name="Twice TEST")
+    body = {"name": "Twice TEST", "phone": "2975990093", "area": "Noord", "address": "TEST", "pay": "transfer",
+            "client_token": "test-client-token-1", "test": True,
+            "items": [{"restaurant": "dushi-wok", "name": "Rice", "qty": 2, "price_cents": 1500}]}
+    once = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
+    again = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
+    conn.commit()
+    check("same client token returns the same order", once["order_id"] == again["order_id"] and same_a["order_id"] != once["order_id"])
+    check("status tells the customer how they pay", once.get("pay") == "transfer" and once.get("transfer_status") == "awaiting", str(once))
+
+    q(conn, "reset role")
+    q(conn, "update public.pidi_settings set value = 'reject' where key = 'hours_mode'")
+    tonight = scalar(conn, """
+        select ((date_trunc('day', now() at time zone 'America/Aruba')
+                 + case when (now() at time zone 'America/Aruba')::time < time '23:00'
+                        then interval '23 hours' else interval '47 hours' end)
+                at time zone 'America/Aruba')::text
+    """)
+    afternoon = scalar(conn, """
+        select ((date_trunc('day', now() at time zone 'America/Aruba')
+                 + case when (now() at time zone 'America/Aruba')::time < time '15:00'
+                        then interval '15 hours' else interval '39 hours' end)
+                at time zone 'America/Aruba')::text
+    """)
+    conn.commit()
+    q(conn, "set role anon")
+    pre = dict(body, client_token=None, due_at=tonight, phone="2975990092")
+    pre_row = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(pre)])
+    conn.commit()
+    check("a pre-order for 11 PM tonight is taken in any hour", bool(pre_row.get("order_id")), str(pre_row))
+    ok, detail = explodes(conn, "select public.pidi_place_order(%s::jsonb)",
+                          [json.dumps(dict(pre, due_at=afternoon))], "late night from 10 PM")
+    check("a delivery time in the afternoon is refused", ok, detail)
+    conn.commit()
+    q(conn, "reset role")
+    q(conn, "update public.pidi_settings set value = 'flag' where key = 'hours_mode'")
+    conn.commit()
+    q(conn, "set role anon")
+
+    near = place_items([{"restaurant": "nonnas-night-in", "name": "Penne", "qty": 2, "price_cents": 1400}],
+                       phone="2975990091", name="Near TEST")
+    for step in ("accepted", "cooking", "ready"):
+        if step == "accepted":
+            q(conn, "select public.pidi_kitchen_accept(%s, %s)", [kitchen["token"], near["order_id"]])
+        else:
+            q(conn, "select public.pidi_kitchen_set_status(%s, %s, %s)", [kitchen["token"], near["order_id"], step])
+    conn.commit()
+    q(conn, "reset role")
+    shared = scalar(conn, """
+        select count(*) from public.pidi_run_orders a join public.pidi_run_orders b on a.run_id = b.run_id
+        where a.order_id = %s and b.order_id = %s
+    """, [bag["order_id"], near["order_id"]])
+    conn.commit()
+    check("a nearby ready order joins the offered run", shared == 1)
+    q(conn, "set role anon")
+    gone_bag = scalar(conn, "select public.pidi_kitchen_cancel(%s, %s)", [kitchen["token"], bag["order_id"]])
+    conn.commit()
+    q(conn, "reset role")
+    near_runs = q(conn, """
+        select r.status::text, (select count(*) from public.pidi_run_orders x where x.run_id = r.id)
+        from public.pidi_run_orders ro join public.pidi_runs r on r.id = ro.run_id where ro.order_id = %s
+    """, [near["order_id"]])
+    bag_left = scalar(conn, "select count(*) from public.pidi_run_orders where order_id = %s", [bag["order_id"]])
+    conn.commit()
+    check("cancel takes the order off its run", gone_bag.get("status") == "cancelled" and bag_left == 0, str(gone_bag))
+    check("the other order is offered again on its own", near_runs == [("offered", 1)], str(near_runs))
+    q(conn, "set role anon")
+    told = scalar(conn, "select public.pidi_order_status(%s)", [bag["public_token"]])
+    check("the customer sees Cancelled", told["label"] == "Cancelled", str(told.get("label")))
+    ok, detail = explodes(conn, "select public.pidi_kitchen_cancel(%s, %s)", [kitchen["token"], first["order_id"]], "driver has this order")
+    check("a delivered order cannot be cancelled", ok, detail)
+    ok, detail = explodes(conn, "select public.pidi_kitchen_cancel(%s, %s)", ["x" * 64, near["order_id"]], "sign in again")
+    check("cancel needs a kitchen session", ok, detail)
+    paid = scalar(conn, "select public.pidi_kitchen_transfer_paid(%s, %s)", [kitchen["token"], once["order_id"]])
+    conn.commit()
+    check("transfer can be marked received", paid.get("transfer_status") == "paid")
+    ok, detail = explodes(conn, "select public.pidi_kitchen_transfer_paid(%s, %s)", [kitchen["token"], first["order_id"]], "not a bank transfer")
+    check("a cash order is not a transfer", ok, detail)
+    conn.commit()
     listed = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
     blob = json.dumps(listed)
     check("driver list has no PIN hash", listed.get("ok") is True and "pin_hash" not in blob and "$2" not in blob, blob[:240])
