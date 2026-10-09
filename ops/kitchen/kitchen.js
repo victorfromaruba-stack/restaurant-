@@ -626,27 +626,20 @@
     var open = loadOrders().filter(function (o) { return !o.closed; });
     var pc = countTicks('prep'), cc = countTicks('close');
     main.innerHTML = '<div class="home-grid">' +
+      '<a class="big-mode live" href="#/live"><b>Orders</b><span>New orders from the app come in here by themselves</span>' +
+      '<span class="count" id="liveCount"></span></a>' +
       '<a class="big-mode prep" href="#/prep"><b>Prep</b><span>Night before, morning, before you open</span>' +
       '<span class="count">' + pc.done + ' of ' + pc.total + ' done today</span></a>' +
-      '<a class="big-mode cook" href="#/cook"><b>Cook an order</b><span>Paste the WhatsApp order or pick dishes</span>' +
+      '<a class="big-mode cook" href="#/cook"><b>Cook an order</b><span>Pick dishes, or paste an order</span>' +
       (open.length ? '<span class="count">' + open.length + ' open order' + (open.length > 1 ? 's' : '') + '</span>' : '') + '</a>' +
       '<a class="big-mode close" href="#/close"><b>Close up</b><span>Cool down, label, throw away, clean</span>' +
       '<span class="count">' + cc.done + ' of ' + cc.total + ' done today</span></a>' +
       '<a class="big-mode books" href="#/receipts"><b>Receipts</b>' +
       '<span>Bought something? Take a photo of the shop receipt. It goes into Book Keeper.</span></a>' +
       '<a class="big-mode menu" href="#/menu"><b>Menu</b><span>Sold out, prices, photos, new dishes on the website</span></a>' +
-      '</div>' +
-      '<div class="home-foot" id="oldScreens" hidden><h2>Old screens</h2><div class="old-links">' +
-      '<a href="../chef.html">Chef hub</a><a href="../checklist.html">Shopping checklist</a>' +
-      '<a href="../buyer.html">Buyer list</a><a href="../recipes.html">Plate receipts</a></div></div>';
+      '</div>';
     foot.innerHTML = '';
-    // The old screens hold costs and buyer prices, so they only exist on the private copy (not the public site).
-    try {
-      fetch('../chef.html', { method: 'HEAD', cache: 'no-store' }).then(function (r) {
-        var el = document.getElementById('oldScreens');
-        if (el && r.ok) el.hidden = false;
-      }, function () {});
-    } catch (e) { /* no fetch: keep hidden */ }
+    if (window.KitchenLive) window.KitchenLive.count(document.getElementById('liveCount'));
   }
   function countTicks(list) {
     var t = getTicks(list), total = 0, done = 0;
@@ -787,7 +780,7 @@
           (pickup ? ' We\u2019ll message you when it\u2019s ready for pickup.' : timed ? '' : ' It\u2019s with you in about 35\u201350 min.') + total },
       { k: 'Cooking', t: no + ' is on the stove now' + (dish ? ': ' + dish + '.' : '.') },
       { k: pickup ? 'Ready for pickup' : 'On the way', t: pickup ? named + ' is ready for pickup. See you soon!' : named + ' is on the way. See you in a few minutes!' },
-      { k: 'Sold out', t: 'Sorry, one dish in ' + no.toLowerCase().replace('your order', 'your order') + ' is sold out tonight. Can we swap it for something else?' }
+      { k: 'Sold out', t: 'Sorry, one dish in ' + (o.no ? 'order #' + o.no : 'your order') + ' is sold out tonight. Can we swap it for something else?' }
     ];
   }
   function replyBlock(o) {
@@ -812,7 +805,7 @@
     if (o.pay && o.pay !== '-') {   // the website ticket says "Pay: Cash" or "Pay: Bank transfer"
       var bank = /bank|transfer/i.test(o.pay);
       h += '<div class="pay' + (bank ? ' pay--bank' : '') + '">' + (bank ? 'Pays by bank transfer · check it came in'
-        : /cash/i.test(o.pay) ? 'Pays cash ' + (o.mode === 'Pickup' ? 'at pickup' : 'to the driver') + (o.total ? ' · \u0192' + esc(o.total) : '') : 'Pays: ' + esc(o.pay)) + '</div>';
+        : /cash/i.test(o.pay) ? 'Pays cash ' + (o.mode === 'Pickup' ? 'at pickup' : 'to the driver') + (o.total ? ' · <span class="fl">\u0192' + esc(o.total) + '</span>' : '') : 'Pays: ' + esc(o.pay)) + '</div>';
     }
     if (o.name) h += '<div class="who">' + esc(o.name) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div>';
     if (o.address) h += '<div class="addr">' + esc(o.address) + '</div>';
@@ -1043,6 +1036,7 @@
     else if (r[0] === 'ready') screenReady(r[1]);
     else if (r[0] === 'menu' && window.KitchenMenu) window.KitchenMenu.show(r.slice(1));
     else if (r[0] === 'receipts' && window.KitchenBooks) window.KitchenBooks.show(r.slice(1));
+    else if (r[0] === 'live' && window.KitchenLive) window.KitchenLive.show(r.slice(1));
     else screenHome();
     if (keepScroll === true && route === lastRoute) main.scrollTop = y;
     else if (!/^(prep|close)/.test(route)) main.scrollTop = 0;
@@ -1250,7 +1244,10 @@
 
   // for menu-editor.js and books.js (loaded after this file)
   window.__kitchenUI = { esc: esc, main: main, foot: foot, store: store, toast: toast, setBar: setBar, go: go,
-    openSheet: openSheet, closeSheet: closeSheet, render: render };
+    openSheet: openSheet, closeSheet: closeSheet, render: render,
+    // for live.js: app orders become cook-along orders on this phone
+    parseOrder: parseOrder, putOrder: putOrder, loadOrders: loadOrders,
+    brand: function (id) { return BRAND[id] || null; }, photo: photo, clock: clock };
 
   // test hook (read-only helpers)
   window.__kitchen = {
