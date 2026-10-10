@@ -539,5 +539,10 @@ async def main():
         await b.close()
 asyncio.run(main())
 print(f"(order database: {len(db_calls)} request(s) answered by QA's fake, none reached the real one: {sorted(set(db_calls))})")
+# the staff screens (kitchen Orders, driver app) against fake database answers only: qa/check_staff.py
+staff = subprocess.run([sys.executable, os.path.join(ROOT, "qa/check_staff.py")], capture_output=True, text=True)
+staff_fails = [l for l in staff.stdout.splitlines() if l.startswith("FAIL ")]
+check(staff.returncode == 0, "staff screens pass qa/check_staff.py (kitchen Orders and the driver app, fake database answers)" +
+      ("" if staff.returncode == 0 else ":\n" + ("\n".join(staff_fails) or (staff.stdout + staff.stderr)[-1500:])))
 print(f"\n{len(fails)} problem(s)")
 sys.exit(1 if fails else 0)

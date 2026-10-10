@@ -799,13 +799,16 @@
     toast('Copied. Pick the customer\u2019s chat in WhatsApp and send.');
   });
   function orderHead(o, noMode) {
-    var h = '<div class="ohead">' + (noMode ? '' : '<div class="mode">' + esc(o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery or pickup: not in message') + '</div>');
+    var h = '<div class="ohead' + (o.test ? ' is-test' : '') + '">' + (o.test ? '<span class="badge badge--test">TEST order · not a real customer</span>' : '') +
+      (noMode ? '' : '<div class="mode">' + esc(o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery or pickup: not in message') + '</div>');
     if (o.time) h += '<div class="when' + (/possible|asap/i.test(o.time) ? '' : ' when--set') + '">' + (/possible|asap/i.test(o.time) ? 'As soon as possible' : 'Ready for ' + esc(o.time)) + '</div>';
     if (o.preorder) h += '<span class="badge">PRE-ORDER · sent while closed</span>';
-    if (o.pay && o.pay !== '-') {   // the website ticket says "Pay: Cash" or "Pay: Bank transfer"
-      var bank = /bank|transfer/i.test(o.pay);
-      h += '<div class="pay' + (bank ? ' pay--bank' : '') + '">' + (bank ? 'Pays by bank transfer · check it came in'
-        : /cash/i.test(o.pay) ? 'Pays cash ' + (o.mode === 'Pickup' ? 'at pickup' : 'to the driver') + (o.total ? ' · <span class="fl">\u0192' + esc(o.total) + '</span>' : '') : 'Pays: ' + esc(o.pay)) + '</div>';
+    if (o.pay && o.pay !== '-') {   // the website ticket says "Pay: Cash", "Pay: Cash in US dollars" or "Pay: Bank transfer"
+      var bank = /bank|transfer/i.test(o.pay), usd = /dollar|\busd\b|\bus\$/i.test(o.pay);
+      var sum = o.total ? ' · <span class="fl">\u0192' + esc(o.total) + '</span>' + (usd ? ' total' : '') : '';
+      h += '<div class="pay' + (bank ? ' pay--bank' : '') + '">' + (bank ? (/came in|\bpaid\b/i.test(o.pay) ? 'Paid by bank transfer · it came in' : 'Pays by bank transfer · check it came in')
+        : usd ? 'Pays in US dollars ' + (o.mode === 'Pickup' ? 'at pickup' : 'to the driver') + sum
+        : /cash/i.test(o.pay) ? 'Pays cash ' + (o.mode === 'Pickup' ? 'at pickup' : 'to the driver') + sum : 'Pays: ' + esc(o.pay)) + '</div>';
     }
     if (o.name) h += '<div class="who">' + esc(o.name) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div>';
     if (o.address) h += '<div class="addr">' + esc(o.address) + '</div>';

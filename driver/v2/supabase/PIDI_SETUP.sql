@@ -848,13 +848,15 @@ begin
     raise exception 'RATE_LIMIT';
   end if;
 
-  -- A short number per service night (noon to noon, Aruba time): "Order 14".
+  -- A short number per service night (noon to noon, Aruba time): "Order 14". Counted by the
+  -- night the order is delivered, so a pre-order placed in the morning joins tonight's numbers.
   perform pg_advisory_xact_lock(hashtext('pidi-night-no'));
   select coalesce(max(o.night_no), 0) + 1 into v_night
   from public.pidi_orders o
-  where o.created_at > now() - interval '36 hours'
-    and ((o.created_at at time zone 'America/Aruba') - interval '12 hours')::date
-      = ((now() at time zone 'America/Aruba') - interval '12 hours')::date;
+  where o.due_at > v_due - interval '36 hours'
+    and o.due_at < v_due + interval '36 hours'
+    and ((o.due_at at time zone 'America/Aruba') - interval '12 hours')::date
+      = ((v_due at time zone 'America/Aruba') - interval '12 hours')::date;
 
   token := public.pidi_new_token();
   insert into public.pidi_orders (
@@ -1585,7 +1587,10 @@ begin
             'area', o.area,
             'pay', o.pay,
             'pays_in_usd', o.pays_in_usd,
+            'transfer_status', o.transfer_status,
             'night_no', o.night_no,
+            'due_at', o.due_at,
+            'created_at', o.created_at,
             'fee_cents', o.fee_cents,
             'total_cents', o.food_cents + o.fee_cents
           ) order by ro.stop_index), '[]'::jsonb)
@@ -1721,6 +1726,8 @@ begin
         'pays_with_cents', o.pays_with_cents,
         'pays_in_usd', o.pays_in_usd,
         'night_no', o.night_no,
+        'due_at', o.due_at,
+        'created_at', o.created_at,
         'change_due_cents', o.change_due_cents,
         'transfer_status', o.transfer_status,
         'bags', (

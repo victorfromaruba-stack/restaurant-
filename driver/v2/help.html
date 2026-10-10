@@ -9,10 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Pidi">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <title>Pidi driver</title>
+  <title>Pidi help</title>
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="icon" href="../brand/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="../brand/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/app.css">
   <link rel="stylesheet" href="v2.css">
@@ -20,10 +19,18 @@
 <body>
   <header class="top">
     <a href="index.html"><img class="wordmark" src="../brand/wordmark.svg" alt="Pidi"></a>
-    <a class="help-link" href="help.html">Help</a>
+    <a class="help-link" href="index.html">Home</a>
   </header>
-  <main id="screen"></main>
-  <div class="dock"><div id="dock"></div></div>
-  <script type="module" src="js/home.js"></script>
+  <main>
+    <h1>Help</h1>
+    <p>Hand the food over at the door. Don't go inside.</p>
+    <p>If a place feels wrong, leave.</p>
+    <div class="row">
+      <a class="btn" href="tel:911">Call 911</a>
+      <a class="btn secondary" href="tel:100">Police 100</a>
+    </div>
+    <p><a class="btn" href="https://wa.me/2977477794?text=I%20need%20help%20on%20a%20Pidi%20run.">WhatsApp +297 747 7794</a></p>
+    <p class="quiet">If the screen locks, the phone stops sharing from the browser. In WhatsApp, use the paperclip, then Location, then Share live location.</p>
+  </main>
 </body>
 </html>

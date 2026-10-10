@@ -1,5 +1,5 @@
 /* One run from the database. Pickup, then each drop. */
-import { clear, client, el, loadConfig, mapsHref, message, money, savedToken, wazeHref } from "./client.js";
+import { clear, client, deliverAt, el, loadConfig, mapsHref, message, money, orderNo, savedToken, wazeHref } from "./client.js";
 
 const main = document.getElementById("screen");
 const dock = document.getElementById("dock");
@@ -22,8 +22,15 @@ function deliveryNote(cents) {
 function cashBox(stop) {
   const box = el("div", { class: "money" });
   if (stop.pay === "transfer") {
-    box.appendChild(el("p", { class: "kicker", text: "Awaiting transfer" }));
+    box.appendChild(el("p", { class: "kicker", text: stop.transfer_status === "paid" ? "Paid by bank transfer" : "Awaiting transfer" }));
     box.appendChild(el("p", { class: "figure", text: "Don't collect cash" }));
+    return box;
+  }
+  if (stop.pays_in_usd) {
+    // The customer pays in US dollars: the driver tells the amount. No florin change line.
+    box.appendChild(el("p", { class: "kicker", text: "Collect in US dollars" }));
+    box.appendChild(el("p", { class: "figure", text: money(stop.total_cents) + " total" }));
+    box.appendChild(el("p", { class: "small", text: "You tell the customer the amount in dollars. " + deliveryNote(stop.fee_cents) + "." }));
     return box;
   }
   box.appendChild(el("p", { class: "kicker", text: "Collect" }));
@@ -82,6 +89,7 @@ function paint() {
     const pickup = run.pickup || {};
     if (pickup.name) main.appendChild(el("p", { class: "place", text: pickup.name }));
     stops.forEach((stop) => {
+      if (orderNo(stop)) main.appendChild(el("h2", { class: "stop-no", text: orderNo(stop) + (stop.name ? " · " + stop.name : "") }));
       const bags = stop.bags && stop.bags.length ? stop.bags : [{ restaurant: stop.restaurant, items: stop.items || [] }];
       bags.forEach((bag) => {
         main.appendChild(el("p", { class: "kicker", text: bag.restaurant }));
@@ -101,9 +109,10 @@ function paint() {
     dock.appendChild(el("a", { class: "btn", href: "index.html", text: "Back" }));
     return;
   }
-  main.appendChild(el("p", { class: "quiet", text: "Drop " + drop.stop_index + " of " + stops.length }));
+  main.appendChild(el("p", { class: "quiet", text: "Drop " + drop.stop_index + " of " + stops.length + (orderNo(drop) ? " · " + orderNo(drop) : "") }));
   main.appendChild(el("h1", { text: drop.name }));
   if (drop.area) main.appendChild(el("p", { class: "place", text: drop.area }));
+  if (deliverAt(drop)) main.appendChild(el("p", { class: "due", text: deliverAt(drop) }));
   main.appendChild(cashBox(drop));
   main.appendChild(actions(drop, true));
   if (drop.address) main.appendChild(el("p", { text: drop.address }));

@@ -1,6 +1,6 @@
 # Pidi v2
 
-Not live. The driver app people use today is still `/driver/` (v1). Do not merge this until a test order has gone through. Do not link v2 from v1.
+Since 10 Oct 2026 `/driver/` opens v2: the old v1 pages (`index.html`, `run.html`, `cash.html`, `dispatch.html`, `help.html`) only send the phone on to `v2/` (keeping `?…` and `#…`), and the installed app starts at `v2/`. The v1 scripts stay in the repo, unused. `driver/v2/status/` sends an old customer link on to `/order/`. Merge this to `main` only after a TEST order has gone through end to end. `qa/check_staff.py` tests the staff screens with fake database answers.
 
 This talks to the live bookkeeping database at `https://cdkopyphjvfxjqhasrae.supabase.co`. The only change to that database is one paste. It creates `pidi_` tables and functions in `public` and does not touch bookkeeping tables, auth, storage, roles, or extensions.
 
@@ -45,3 +45,9 @@ python3 driver/v2/supabase/tests/run_local.py
 ```
 
 Needs local Postgres. It does not call Supabase. It applies the file twice, checks a dummy bookkeeping table is unchanged, then runs the order as the `anon` role.
+
+## Database changes made for these screens (10 Oct 2026, live)
+
+1. **"Deliver at" for drivers.** `pidi_driver_offers` and `pidi_driver_run` send `due_at` and `created_at`.
+2. **Paid transfers on an offer.** `pidi_driver_offers` sends `transfer_status`, so an offer says paid or awaiting.
+3. **One order number per night.** `night_no` counts by the night the order is *due* (`due_at`, noon to noon, Aruba time), so a pre-order placed in the morning joins tonight's numbers.

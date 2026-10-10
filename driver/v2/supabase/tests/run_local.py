@@ -556,6 +556,8 @@ def main():
     offers_bea = scalar(conn, "select public.pidi_driver_offers(%s)", [login_bea["token"]])
     conn.commit()
     check("a stale offer is re-offered", len(offers_ari) == 1 and offers_ari[0]["offer_id"] != old_ari and len(offers_bea) == 1 and offers_bea[0]["offer_id"] != old_bea)
+    check("an offer's stops carry the due time and order time",
+          all(s.get("due_at") and s.get("created_at") for s in offers_ari[0]["stops"]), str(offers_ari)[:300])
 
     results = []
 
@@ -596,6 +598,9 @@ def main():
     won = run_ari or run_bea
     check("the other driver cannot read the run", (run_ari is None) != (run_bea is None))
     check("the run has two stops", won is not None and len(won["stops"]) == 2)
+    check("each stop carries its night number, due time and order time",
+          won is not None and all(s.get("night_no") and s.get("due_at") and s.get("created_at") for s in won["stops"]),
+          str(won)[:300])
     check(
         "pickup lists a bag per restaurant",
         all(len(stop.get("bags") or []) == 1 and stop.get("fee_cents") == 500 for stop in won["stops"]),
@@ -825,6 +830,14 @@ def main():
     check("busy adds 15 minutes to the promise", busy.get("busy_min") == 15 and state.get("busy_min") == 15
           and slow["eta_min"] == usd["eta_min"] + 15 and slow["eta_max"] == usd["eta_max"] + 15, str(state))
     check("night numbers count up", slow["night_no"] == usd["night_no"] + 1, f'{usd["night_no"]} {slow["night_no"]}')
+    # A pre-order placed before noon (yesterday's service night) for tonight joins tonight's numbers.
+    q(conn, "reset role")
+    q(conn, "update public.pidi_orders set created_at = now() - interval '20 hours', night_no = 50 where id = %s", [slow["order_id"]])
+    conn.commit()
+    q(conn, "set role anon")
+    joined = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(dict(good, phone="2975990085"))])
+    conn.commit()
+    check("night number follows the delivery night, not the order time", joined["night_no"] == 51, str(joined.get("night_no")))
     ok, detail = explodes(conn, "select public.pidi_kitchen_set_busy(%s, 7)", [kitchen["token"]], "0, 15 or 30")
     check("busy only takes 0, 15 or 30", ok, detail)
     ok, detail = explodes(conn, "select public.pidi_kitchen_set_busy(%s, 15)", ["x" * 64], "sign in again")
