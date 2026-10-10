@@ -9,10 +9,12 @@
   "line": "#FFC72C"
  },
  "tagline": "Thin patties, smashed hard on the flat-top",
+ "line": "Thin patties, smashed hard",
  "intro": "Smash cheeseburgers with two thin beef patties, or four on the double, plus crispy chicken sandwiches, tenders and loaded fries.",
  "logo": "shared/logos/smash-shack.svg",
  "mark": "shared/logos/smash-shack-mark.svg",
  "hero": false,
+ "rail": "lf",
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -41,7 +43,9 @@
    "style": "signature",
    "desc": "Two thin smashed beef patties with cheddar, lettuce, tomato, onion, pickles, ketchup and mayo on a toasted bun.",
    "img": "smash-shack/assets/dishes/sc-hero.webp",
+   "ph": "#836C4F",
    "hidePhoto": true,
+   "plate": "Smash",
    "allergens": [
     "dairy",
     "gluten",
@@ -82,13 +86,114 @@
    ]
   },
   {
+   "id": "cc",
+   "section": "mains",
+   "name": "Crispy chicken sandwich",
+   "price": 1750,
+   "desc": "Crispy floured chicken on a burger bun with lettuce, mayo and pickles.",
+   "img": "smash-shack/assets/dishes/cc.webp",
+   "ph": "#8E7858",
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "fried": true,
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "pickles",
+       "label": "No pickles"
+      },
+      {
+       "id": "mayo",
+       "label": "No mayo"
+      },
+      {
+       "id": "lettuce",
+       "label": "No lettuce"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lf",
+   "section": "mains",
+   "name": "Loaded fries (cheddar sauce, beef, scallion)",
+   "price": 1195,
+   "desc": "Fries layered with melted cheddar and ground beef, finished with sour cream and scallion.",
+   "img": "smash-shack/assets/dishes/lf.webp",
+   "ph": "#917C5F",
+   "allergens": [
+    "dairy"
+   ],
+   "fried": true,
+   "options": [
+    {
+     "id": "leave",
+     "label": "Leave out",
+     "type": "many",
+     "choices": [
+      {
+       "id": "scallion",
+       "label": "No scallion"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ct",
+   "section": "mains",
+   "name": "Chicken tenders & fries",
+   "price": 1550,
+   "desc": "Crispy chicken tenders with fries and ketchup.",
+   "img": "smash-shack/assets/dishes/ct.webp",
+   "ph": "#B19475",
+   "allergens": [
+    "gluten",
+    "egg",
+    "dairy"
+   ],
+   "fried": true,
+   "options": [
+    {
+     "id": "dip",
+     "label": "Dip",
+     "type": "one",
+     "default": "ketchup",
+     "choices": [
+      {
+       "id": "ketchup",
+       "label": "Ketchup"
+      },
+      {
+       "id": "mayo",
+       "label": "Mayo"
+      },
+      {
+       "id": "ketchup-and-mayo",
+       "label": "Ketchup + mayo"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "co",
    "section": "mains",
    "name": "Smash burger combo (burger + fries)",
    "price": 1895,
    "desc": "Smash cheeseburger with a side of fries.",
    "img": "smash-shack/assets/dishes/co.webp",
+   "ph": "#7E6240",
    "hidePhoto": true,
+   "plate": "Combo",
    "allergens": [
     "dairy",
     "gluten",
@@ -136,6 +241,7 @@
    "price": 2600,
    "desc": "Four thin smashed beef patties with cheddar, onion, pickles, ketchup and mayo on a toasted bun.",
    "img": "smash-shack/assets/dishes/ds.webp",
+   "ph": "#A48E74",
    "allergens": [
     "dairy",
     "gluten",
@@ -166,103 +272,8 @@
      ]
     }
    ],
-   "hidePhoto": true
-  },
-  {
-   "id": "cc",
-   "section": "mains",
-   "name": "Crispy chicken sandwich",
-   "price": 1750,
-   "desc": "Crispy floured chicken on a burger bun with lettuce, mayo and pickles.",
-   "img": "smash-shack/assets/dishes/cc.webp",
-   "allergens": [
-    "gluten",
-    "egg",
-    "dairy"
-   ],
-   "fried": true,
-   "options": [
-    {
-     "id": "leave",
-     "label": "Leave out",
-     "type": "many",
-     "choices": [
-      {
-       "id": "pickles",
-       "label": "No pickles"
-      },
-      {
-       "id": "mayo",
-       "label": "No mayo"
-      },
-      {
-       "id": "lettuce",
-       "label": "No lettuce"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "ct",
-   "section": "mains",
-   "name": "Chicken tenders & fries",
-   "price": 1550,
-   "desc": "Crispy chicken tenders with fries and ketchup.",
-   "img": "smash-shack/assets/dishes/ct.webp",
-   "allergens": [
-    "gluten",
-    "egg",
-    "dairy"
-   ],
-   "fried": true,
-   "options": [
-    {
-     "id": "dip",
-     "label": "Dip",
-     "type": "one",
-     "default": "ketchup",
-     "choices": [
-      {
-       "id": "ketchup",
-       "label": "Ketchup"
-      },
-      {
-       "id": "mayo",
-       "label": "Mayo"
-      },
-      {
-       "id": "ketchup-and-mayo",
-       "label": "Ketchup + mayo"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "lf",
-   "section": "mains",
-   "name": "Loaded fries (cheddar sauce, beef, scallion)",
-   "price": 1195,
-   "desc": "Fries layered with melted cheddar and ground beef, finished with sour cream and scallion.",
-   "img": "smash-shack/assets/dishes/lf.webp",
-   "allergens": [
-    "dairy"
-   ],
-   "fried": true,
-   "options": [
-    {
-     "id": "leave",
-     "label": "Leave out",
-     "type": "many",
-     "choices": [
-      {
-       "id": "scallion",
-       "label": "No scallion"
-      }
-     ]
-    }
-   ]
+   "hidePhoto": true,
+   "plate": "Double"
   },
   {
    "id": "fs",
@@ -272,6 +283,7 @@
    "kind": "side",
    "desc": "A side of crispy fries.",
    "img": "smash-shack/assets/dishes/fs.webp",
+   "ph": "#A99475",
    "allergens": [],
    "fried": true
   },

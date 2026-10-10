@@ -1439,19 +1439,27 @@
     setAccent(menu.color);
     var main = $("#oa-main");
     var feat = menu.items.filter(function (i) { return i.style === "signature" || i.style === "bundle"; });
-    // two house dishes (a family deal and the house dish) open the menu as "Start here"; one just leads its own section
-    var lead = feat.length >= 2 ? feat : [];
+    // "Start here" opens the menu only for two or more featured dishes whose pictures don't repeat each other: each one
+    // shown with its own true picture, none of them inside another one's bundle picture. Otherwise there is no rail
+    // (Dushi Wok's Family Table picture holds its fried rice, so its fried rice simply leads the page)
+    var lead = feat.length >= 2 && feat.every(function (i) {
+      return hasPic(i) && !feat.some(function (j) { return j !== i && (j.img === i.img || (j.includes || []).indexOf(i.id) >= 0); });
+    }) ? feat : [];
     var leadIds = lead.map(function (i) { return i.id; });
     var secs = menu.sections.map(function (s) {
-      var items = menu.items.filter(function (i) { return i.section === s.id && leadIds.indexOf(i.id) < 0; });
-      return { id: s.id, title: s.title, items: items.filter(function (i) { return i.style === "signature"; }).concat(items.filter(function (i) { return i.style !== "signature"; })) };
+      return { id: s.id, title: s.title, items: rowOrder(menu.items.filter(function (i) { return i.section === s.id && leadIds.indexOf(i.id) < 0; })) };
     }).filter(function (s) { return s.items.length; });
-    // without "Start here", a section that only holds the house dish ("Signature") isn't a section: that dish leads the next one
+    // without "Start here", a section that only holds the house dish ("Signature") isn't a section: that dish joins the next one
     secs = secs.reduce(function (out, s, n) {
       var carry = out.carry || [];
-      if (!lead.length && s.items.every(function (i) { return i.style; }) && n < secs.length - 1) { out.carry = carry.concat(s.items); return out; }
-      out.list.push({ id: s.id, title: s.title, items: carry.concat(s.items) }); out.carry = null; return out;
+      if (!lead.length && s.items.every(function (i) { return i.style === "signature"; }) && n < secs.length - 1) { out.carry = carry.concat(s.items); return out; }
+      out.list.push({ id: s.id, title: s.title, items: rowOrder(carry.concat(s.items)) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
+    // the first row of the page always has a true picture
+    var top = !lead.length && secs[0] ? secs[0].items : [];
+    for (var k = 0; k < top.length && !hasPic(top[0]); k++) {
+      if (hasPic(top[k]) && top[k].kind !== "drink") { top.unshift(top.splice(k, 1)[0]); break; }
+    }
     var cover = coverPick(menu, feat);
     // the facts (open, delivery time, this restaurant's fee, the food minimum) are in the Pidi bar above; here the
     // restaurant's sign: its wordmark, its line, a small framed picture
@@ -1527,6 +1535,16 @@
     }
   }
 
+  /* A section's rows in menu.json order, except the house dish: it leads its section when it has a true picture. One
+     shown without its picture ("hidePhoto", a type plate until a real photo) takes the first place after the rows with
+     pictures at the top of the section, so a page never opens on a dish with no photo (Smash Shack: crispy chicken,
+     loaded fries and tenders first, then the cheeseburger). */
+  function rowOrder(items) {
+    var sig = items.filter(function (i) { return i.style === "signature"; }), rest = items.filter(function (i) { return i.style !== "signature"; });
+    var n = 0;
+    while (n < rest.length && hasPic(rest[n])) n++;
+    return sig.filter(hasPic).concat(rest.slice(0, n), sig.filter(function (i) { return !hasPic(i); }), rest.slice(n));
+  }
   /* cover picture, or a short silent loop when the menu has one (never for reduce-motion or data saver) */
   function quietMode() {
     var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1634,6 +1652,14 @@
     var pool = m.items.filter(function (i) { return !isOut(m, i) && hasPic(i) && i.kind !== "side" && i.style !== "bundle"; });
     var alt = pool.filter(function (i) { return i.img.indexOf("/art/") < 0; })[0] || pool[0];
     return alt ? alt.img : "";
+  }
+  /* the restaurant's dish in "Start with these" on the home page: menu.json "rail", never the same picture as its card
+     below ("hero") and never a dish shown without its picture. Sold out tonight: the next dish with its own true picture. */
+  function railPick(m) {
+    var card = heroImg(m);
+    function ok(i) { return !!i && hasPic(i) && !isOut(m, i) && i.img !== card && i.style !== "bundle" && i.kind !== "side"; }
+    var r = m.rail && m.byId[m.rail];
+    return ok(r) ? r : m.items.filter(ok)[0] || null;
   }
   function signStyle(m) {
     return "--shop:" + esc(m.color) + (m.sign ? ";--sign:" + esc(m.sign.ground || "") + ";--sign-line:" + esc(m.sign.line || "transparent") : "");
@@ -1751,14 +1777,11 @@
     return Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
       var start = $("#oa-rail"), list = $("#oa-list");
       if (start) {
-        // one house dish per restaurant first, family deals after: a short printed list, each opens on the page of the restaurant it's from
+        // "Start with these": one dish per restaurant (menu.json "rail"), each opening on the page of the restaurant it's from
         var picks = [];
-        ["signature", "bundle"].forEach(function (style) {
-          ids.forEach(function (b) {
-            var m = MENU[b];
-            if (!m || brandStatus(b) !== "open") return;
-            m.items.filter(function (i) { return i.style === style && !isOut(m, i); }).forEach(function (i) { picks.push([b, i]); });
-          });
+        ids.forEach(function (b) {
+          var m = MENU[b], i = m && brandStatus(b) === "open" && railPick(m);
+          if (i) picks.push([b, i]);
         });
         start.innerHTML = picks.map(function (p) { return linkRowHTML(p[0], p[1], true); }).join("");
       }

@@ -9,11 +9,14 @@
   "line": "#1B2A4A"
  },
  "tagline": "Dutch snackbar: bitterballen, kroket, frikandel",
+ "line": "Bitterballen, kroket, frikandel",
  "intro": "Bitterballen with curry mayo, beef kroket with mustard, frikandel special and fries with mayo, plus chicken saté with peanut sauce.",
  "logo": "shared/logos/oranje-snack.svg",
  "mark": "shared/logos/oranje-snack-mark.webp",
  "hero": "oranje-snack/assets/art/mx.webp",
+ "rail": "bb",
  "imageNote": "Pictures are illustrations.",
+ "cover": "st",
  "sections": [
   {
    "id": "snacks",
@@ -41,6 +44,7 @@
    "style": "signature",
    "desc": "Eight crispy beef ragout balls with dots of curry mayo and parsley.",
    "img": "oranje-snack/assets/art/bb.webp",
+   "ph": "#5C4E41",
    "allergens": [
     "gluten",
     "dairy",
@@ -78,6 +82,7 @@
    "price": 1150,
    "desc": "Two crisp beef croquettes, cut on a bias, with a smear of mustard.",
    "img": "oranje-snack/assets/art/kr.webp",
+   "ph": "#614A36",
    "allergens": [
     "gluten",
     "dairy",
@@ -111,6 +116,7 @@
    "price": 995,
    "desc": "A split frikandel topped with mayo, curry ketchup and chopped onion.",
    "img": "oranje-snack/assets/art/fk.webp",
+   "ph": "#504B4A",
    "allergens": [
     "gluten",
     "egg"
@@ -148,6 +154,7 @@
    "price": 1895,
    "desc": "Four bitterballen, a kroket, half a frikandel and fries, with mayo and mustard.",
    "img": "oranje-snack/assets/art/mx.webp",
+   "ph": "#644E39",
    "allergens": [
     "gluten",
     "dairy",
@@ -166,6 +173,7 @@
    "price": 1650,
    "desc": "Three charred chicken skewers with warm peanut sauce, cucumber and shallot.",
    "img": "oranje-snack/assets/art/st.webp",
+   "ph": "#675645",
    "allergens": [
     "peanut",
     "soy"
@@ -211,6 +219,7 @@
    "kind": "side",
    "desc": "Hot fries with a swirl of mayo and cracked pepper.",
    "img": "oranje-snack/assets/art/fs.webp",
+   "ph": "#5F503F",
    "allergens": [
     "egg"
    ],
@@ -265,9 +274,5 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ],
- "video": {
-  "src": "oranje-snack/video/cover.mp4",
-  "poster": "oranje-snack/video/cover.webp"
- }
+ ]
 }

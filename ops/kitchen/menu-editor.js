@@ -104,10 +104,24 @@
       return encode(full, 'image/webp', 0.8).then(function (b) {
         var webp = b && b.type === 'image/webp';
         return Promise.all([webp ? b : encode(full, 'image/jpeg', 0.82), encode(sq, webp ? 'image/webp' : 'image/jpeg', webp ? 0.76 : 0.8)]).then(function (bs) {
-          return Promise.all([blob64(bs[0]), blob64(bs[1])]).then(function (x) { return { ext: webp ? 'webp' : 'jpg', full: x[0], thumb: x[1], preview: full.toDataURL('image/jpeg', 0.8) }; });
+          return Promise.all([blob64(bs[0]), blob64(bs[1])]).then(function (x) { return { ext: webp ? 'webp' : 'jpg', full: x[0], thumb: x[1], preview: full.toDataURL('image/jpeg', 0.8), ph: average(full) }; });
         });
       });
     });
+  }
+  /* The photo's average colour ("#7A5B3C"): the website shows it in the picture's box while the picture loads.
+     The plain mean of every pixel, the same as build/thumbs.py works it out. */
+  function average(cv) {
+    var d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, t = [0, 0, 0], n = d.length / 4;
+    for (var i = 0; i < d.length; i += 4) { t[0] += d[i]; t[1] += d[i + 1]; t[2] += d[i + 2]; }
+    return '#' + t.map(function (v) { return ('0' + Math.round(v / n).toString(16)).slice(-2); }).join('').toUpperCase();
+  }
+  /* "ph" goes right after "img", where build/thumbs.py puts it, so a save changes one line, not the dish's layout */
+  function setPh(it, ph) {
+    var keys = Object.keys(it), vals = {};
+    keys.forEach(function (k) { vals[k] = it[k]; delete it[k]; });
+    keys.forEach(function (k) { if (k !== 'ph') it[k] = vals[k]; if (k === 'img') it.ph = ph; });
+    if (!('ph' in it)) it.ph = ph;
   }
   function thumbOf(img) { return img.replace(/([^/]+)$/, 'thumbs/$1'); }
   /* Save the photo. Same file name as before when possible, so every screen that shows this dish updates. */
@@ -311,7 +325,7 @@
       if (clash) { UI.toast('There’s already a dish called ' + clash.name + '.', 3500); return; }
       var item = id ? menu.items.filter(function (i) { return i.id === id; })[0] : { id: newId(menu, f.name), img: '' };
       var msg = 'Menu (kitchen app): ' + menu.name + ' · ' + (id ? 'changed ' : 'new dish ') + f.name;
-      var picStep = pics ? savePictures(brand, item, pics, msg) : Promise.resolve(item.img), newPhoto = !!pics;
+      var picStep = pics ? savePictures(brand, item, pics, msg) : Promise.resolve(item.img), newPhoto = !!pics, ph = pics && pics.ph;
       saving(picStep.then(function (imgPath) {
         return updateJson(brand + '/menu.json', function (m) {
           var it = id ? m.items.filter(function (i) { return i.id === id; })[0] : null;
@@ -328,6 +342,7 @@
           // "hidePhoto": the old picture didn't match the words, so the site showed the dish without one.
           // A new photo of the real dish replaces it, so the site shows the picture again.
           if (newPhoto) delete it.hidePhoto;
+          if (newPhoto && ph) setPh(it, ph);
         }, msg);
       }), function () { UI.go('#/menu/' + brand); });
     },

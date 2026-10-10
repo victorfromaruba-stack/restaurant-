@@ -9,10 +9,12 @@
   "line": "#FBEBD0"
  },
  "tagline": "Birria tacos with a cup of consommé to dip",
+ "line": "Birria tacos, consommé to dip",
  "intro": "Birria tacos filled with slow-braised beef and mozzarella, with a cup of consommé to dip, plus ground beef street tacos, quesadillas and nachos.",
  "logo": "shared/logos/taco-brava.svg",
  "mark": "shared/logos/taco-brava-mark.webp",
  "hero": "taco-brava/assets/dishes/bt-hero.webp",
+ "rail": "cq",
  "mainSection": "mains",
  "imageNote": "Pictures are illustrations.",
  "sections": [
@@ -42,6 +44,7 @@
    "style": "signature",
    "desc": "Three flour-tortilla tacos filled with slow-braised beef, melted mozzarella, onion and cilantro, served with a cup of consommé and lime.",
    "img": "taco-brava/assets/dishes/bt-hero.webp",
+   "ph": "#B6997B",
    "allergens": [
     "dairy",
     "gluten"
@@ -71,6 +74,7 @@
    "price": 1450,
    "desc": "Three soft tacos with seasoned ground beef, onion, cilantro and salsa.",
    "img": "taco-brava/assets/art/gt.webp",
+   "ph": "#6D5C46",
    "allergens": [
     "gluten"
    ],
@@ -115,6 +119,7 @@
    "price": 2050,
    "desc": "Flour tortilla stuffed with chicken, rice, black beans, cheddar, salsa, cream and lettuce.",
    "img": "taco-brava/assets/dishes/lb.webp",
+   "ph": "#B38B6E",
    "allergens": [
     "dairy",
     "gluten"
@@ -140,7 +145,8 @@
      ]
     }
    ],
-   "hidePhoto": true
+   "hidePhoto": true,
+   "plate": "Burrito"
   },
   {
    "id": "cq",
@@ -149,6 +155,7 @@
    "price": 1600,
    "desc": "Flour tortilla with chicken, cheddar, mozzarella, peppers and onion, served with salsa and cream.",
    "img": "taco-brava/assets/dishes/cq.webp",
+   "ph": "#705B44",
    "allergens": [
     "dairy",
     "gluten"
@@ -178,6 +185,7 @@
    "price": 2000,
    "desc": "Crispy fried tortilla chips topped with spiced ground beef, cheddar, black beans, peppers, salsa and cream.",
    "img": "taco-brava/assets/dishes/bn.webp",
+   "ph": "#72604F",
    "allergens": [
     "dairy",
     "gluten"
@@ -223,6 +231,7 @@
    "price": 2150,
    "desc": "Rice bowl with chicken, black beans, lettuce, tomato, salsa, cheddar, lime and cilantro.",
    "img": "taco-brava/assets/dishes/bb.webp",
+   "ph": "#877860",
    "allergens": [
     "dairy"
    ],
@@ -247,7 +256,8 @@
      ]
     }
    ],
-   "hidePhoto": true
+   "hidePhoto": true,
+   "plate": "Bowl"
   },
   {
    "id": "st",
@@ -256,6 +266,7 @@
    "price": 2250,
    "desc": "Three flour-tortilla tacos with crispy shrimp, cabbage, lime cream, cilantro and garlic.",
    "img": "taco-brava/assets/dishes/st.webp",
+   "ph": "#7C6C50",
    "allergens": [
     "shellfish",
     "gluten",
@@ -303,6 +314,7 @@
    "kind": "side",
    "desc": "Crispy fried tortilla chips with house salsa.",
    "img": "taco-brava/assets/dishes/cs.webp",
+   "ph": "#6C533C",
    "allergens": [
     "gluten"
    ],
@@ -336,5 +348,5 @@
    "kind": "drink"
   }
  ],
- "cover": false
+ "cover": "st"
 }

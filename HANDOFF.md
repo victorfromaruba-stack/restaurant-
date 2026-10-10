@@ -28,7 +28,7 @@ An independent review was run on 8 Oct 2026. Every fix below is in `shared/order
 | 24 | Hours were typed into the home page by hand | **Done in code.** `data-oa-hours-t` and `data-oa-hours-d` fill from site.json. **index.html doesn't use them yet.** |
 | 25 | The bar total added the ƒ5 fee before the customer chose delivery; "Add 2" counted wrong with extras | **Done.** The bar shows the food total, and the button counts extras ("Add 3 items"). |
 | — | Payment method never stated | **Done in code.** Optional `"payment"` in site.json shows above Send. **Ask Victor how customers pay (cash ƒ / US$ / card?). Don't guess.** |
-| — | Video covers | **Done in code.** Add `"video": {"src": "...mp4", "poster": "...webp"}` to a menu.json and the cover plays as a silent loop with a pause button. It is skipped when the phone has reduce-motion or data saver on. |
+| — | Video covers | **Retired 10 Oct 2026.** The Pidi design uses a still cover picture per restaurant (menu.json `cover`); the `video` fields are gone from the menus. The old `*/video/cover.mp4` files stay until the new covers ship, then they can be deleted. |
 
 ## Session 2 (8 Oct 2026): all nine next steps are done
 One commit per step on `audit-fixes`; `qa/check_site.py` reports 0 problems. Victor got phone screenshots after each step.

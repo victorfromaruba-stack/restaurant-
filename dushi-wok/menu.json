@@ -9,16 +9,14 @@
   "line": "#0F7B6C"
  },
  "tagline": "Chinese takeout, straight off the wok",
+ "line": "Straight off the wok",
  "intro": "Wok-tossed chicken fried rice, lo mein in soy and oyster sauce, sweet & sour crunch chicken and soy-garlic wings, with egg rolls on the side.",
  "logo": "shared/logos/dushi-wok.svg",
  "mark": "shared/logos/dushi-wok-mark.webp",
  "hero": "dushi-wok/assets/dishes/lm.webp",
+ "rail": "fr",
  "imageNote": "Pictures are illustrations.",
  "sections": [
-  {
-   "id": "family",
-   "title": "Family deal"
-  },
   {
    "id": "signature",
    "title": "Signature"
@@ -26,6 +24,10 @@
   {
    "id": "wok",
    "title": "Wok mains"
+  },
+  {
+   "id": "family",
+   "title": "Family deal"
   },
   {
    "id": "sides",
@@ -38,29 +40,6 @@
  ],
  "items": [
   {
-   "id": "ft",
-   "section": "family",
-   "name": "Family Table",
-   "price": 4250,
-   "style": "bundle",
-   "desc": "Three wok mains in one order. Enough for the table.",
-   "includes": [
-    "fr",
-    "ss",
-    "lm"
-   ],
-   "img": "dushi-wok/assets/dishes/ft.webp",
-   "allergens": [
-    "gluten",
-    "egg",
-    "soy",
-    "sesame",
-    "shellfish"
-   ],
-   "fried": true,
-   "hidePhoto": true
-  },
-  {
    "id": "fr",
    "section": "signature",
    "name": "Chicken fried rice",
@@ -68,6 +47,7 @@
    "style": "signature",
    "desc": "Chicken, rice, egg, onion, scallion and garlic, tossed with soy sauce.",
    "img": "dushi-wok/assets/dishes/fr.webp",
+   "ph": "#5D503C",
    "allergens": [
     "egg",
     "soy",
@@ -103,6 +83,7 @@
    "price": 1600,
    "desc": "Chicken in a flour-and-egg coating with peppers and onion in a ketchup-based sweet & sour sauce, served with rice.",
    "img": "dushi-wok/assets/dishes/ss.webp",
+   "ph": "#5D4D42",
    "allergens": [
     "gluten",
     "egg",
@@ -150,6 +131,7 @@
    "price": 1650,
    "desc": "Egg noodles with chicken, cabbage, onion, scallion and garlic in soy and oyster sauce.",
    "img": "dushi-wok/assets/dishes/lm.webp",
+   "ph": "#504538",
    "allergens": [
     "gluten",
     "egg",
@@ -182,6 +164,7 @@
    "price": 1450,
    "desc": "Pork with peppers, onion, garlic and ginger in soy and oyster sauce, served with rice.",
    "img": "dushi-wok/assets/dishes/pk.webp",
+   "ph": "#4A4642",
    "allergens": [
     "soy",
     "gluten",
@@ -215,6 +198,7 @@
    "price": 1900,
    "desc": "Shrimp, rice, egg, garlic and scallion, tossed with soy sauce.",
    "img": "dushi-wok/assets/dishes/sh.webp",
+   "ph": "#725D42",
    "allergens": [
     "shellfish",
     "egg",
@@ -249,6 +233,7 @@
    "price": 1900,
    "desc": "Crispy floured chicken wings with a soy-garlic glaze and scallion.",
    "img": "dushi-wok/assets/dishes/wg.webp",
+   "ph": "#42362D",
    "allergens": [
     "soy",
     "gluten",
@@ -286,6 +271,29 @@
    ]
   },
   {
+   "id": "ft",
+   "section": "family",
+   "name": "Family Table",
+   "price": 4250,
+   "style": "bundle",
+   "desc": "Three wok mains in one order. Enough for the table.",
+   "includes": [
+    "fr",
+    "ss",
+    "lm"
+   ],
+   "img": "dushi-wok/assets/dishes/ft.webp",
+   "ph": "#6C5338",
+   "allergens": [
+    "gluten",
+    "egg",
+    "soy",
+    "sesame",
+    "shellfish"
+   ],
+   "fried": true
+  },
+  {
    "id": "er",
    "section": "sides",
    "name": "Egg rolls (2)",
@@ -293,6 +301,7 @@
    "kind": "side",
    "desc": "Two crispy rolls filled with cabbage and pork.",
    "img": "dushi-wok/assets/dishes/er.webp",
+   "ph": "#372E25",
    "allergens": [
     "gluten",
     "egg",
@@ -331,9 +340,5 @@
    "kind": "drink"
   }
  ],
- "video": {
-  "src": "dushi-wok/video/cover.mp4",
-  "poster": "dushi-wok/video/cover.webp"
- },
- "cover": "pk"
+ "cover": "wg"
 }

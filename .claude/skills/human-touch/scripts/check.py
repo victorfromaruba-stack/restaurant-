@@ -121,12 +121,14 @@ def site_copy():
     for b in site["brands"]:
         m = json.loads((ROOT / b["id"] / "menu.json").read_text(encoding="utf-8"))
         where = b["id"] + "/menu.json"
-        for k in ("name", "tagline", "cuisine", "imageNote"):
+        for k in ("name", "tagline", "line", "cuisine", "imageNote"):   # "line": the band line under the wordmark
             if m.get(k):
                 items.append((where + " " + k, m[k]))
         items += [(where + " section", s["title"]) for s in m["sections"]]
         for it in m["items"]:
             items += [(where + " " + it["id"], it["name"]), (where + " " + it["id"], it.get("desc", ""))]
+            if it.get("plate"):   # the type-plate word on a dish without a true picture
+                items.append((where + " " + it["id"] + " plate", it["plate"]))
             for o in it.get("options", []):
                 items.append((where + " " + it["id"] + " option", o.get("label", "")))
                 items += [(where + " " + it["id"] + " option", c.get("label", "")) for c in o.get("choices", [])]
@@ -147,7 +149,7 @@ def file_copy(paths):
                     items.append((p, v))
                 elif isinstance(v, dict):
                     # (site.json "hours" and "lastOrder" are logic, not words a customer reads)
-                    [walk(x) for k, x in v.items() if k not in ("img", "src", "poster", "id", "color", "logo", "mark", "hero", "hours", "lastOrder")]
+                    [walk(x) for k, x in v.items() if k not in ("img", "src", "poster", "id", "color", "logo", "mark", "hero", "rail", "cover", "ph", "hours", "lastOrder")]
                 elif isinstance(v, list):
                     [walk(x) for x in v]
             walk(json.loads(src))
@@ -278,15 +280,17 @@ def image_findings():
                 continue
             if cover and (near(cover, f["img"]) or near(f["img"], cover)):
                 out.append(("FAIL", b["id"] + "/index.html", f"the cover ({cover.split('/')[-1]}) is the same picture as Featured “{f['name']}” right under it: the same photo twice on one screen is a stock-site tell"))
-        # Home page: the restaurant card (menu "hero") against the same restaurant's dishes in the Signature rail.
+        # Home page: the restaurant card (menu "hero") against the same restaurant's dish in "Start with these" (menu "rail").
         hero = m.get("hero")
         if hero in {i["img"] for i in m["items"] if i.get("hidePhoto")}:
             out.append(("FAIL", b["id"] + "/menu.json", f"\"hero\" is the picture of a dish whose picture is hidden (it doesn't match its words): pick another dish's picture"))
-        for f in feat:
-            if f.get("hidePhoto"):
-                continue
-            if hero and (hero == f["img"] or near(hero, f["img"])):
-                out.append(("WARN", "index.html", f"{m['name']}'s restaurant card shows the same photo as “{f['name']}” in the dish rail above it: give the card a different dish (menu.json \"hero\")"))
+        rail = next((i for i in m["items"] if i["id"] == m.get("rail")), None)
+        if rail is None:
+            out.append(("FAIL", b["id"] + "/menu.json", f"\"rail\" ({m.get('rail')!r}) names none of its dishes: home's \"Start with these\" needs one"))
+        elif rail.get("hidePhoto"):
+            out.append(("FAIL", b["id"] + "/menu.json", f"\"rail\" is “{rail['name']}”, whose picture is hidden (it doesn't match its words): pick a dish with a true picture"))
+        elif hero and (hero == rail["img"] or near(hero, rail["img"])):
+            out.append(("FAIL", "index.html", f"{m['name']}'s restaurant card shows the same photo as “{rail['name']}” in the dish rail above it: give the rail another dish (menu.json \"rail\"), or the card (\"hero\", with Victor's OK)"))
     return out
 
 

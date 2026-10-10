@@ -14,6 +14,8 @@ from PIL import Image, ImageChops, ImageStat
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "qa"))
 from local_server import start
+sys.path.insert(0, os.path.join(ROOT, "build"))
+import thumbs   # the same average colour build/thumbs.py writes into the menus
 BASE = start()
 fails = []
 def square_sample(path):
@@ -35,11 +37,8 @@ for b, m in menus.items():
         if key == "hero" and m.get(key) is False:   # "hero": false = no dish picture on the home page, just the sign
             continue
         check(os.path.exists(os.path.join(ROOT, m[key])), f"{b} {key} file exists ({m[key]})")
-    if m.get("video"):
-        for k in ("src", "poster"):
-            check(os.path.exists(os.path.join(ROOT, m["video"][k])), f"{b} cover video {k} exists ({m['video'][k]})")
-        src = os.path.join(ROOT, m["video"]["src"])
-        check(not os.path.exists(src) or os.path.getsize(src) <= 1.5 * 1024 * 1024, f"{b} cover video is under 1.5 MB")
+    # covers are a still dish picture (brief 4.2, 4.3): no cover loop any more
+    check("video" not in m, f"{b} has no cover video (the cover is a still picture)")
     # section names are only ever shown in the visitor's language (Victor, 9 Oct 2026: no small translations beside them)
     check(all(set(sec) <= {"id", "title"} for sec in m["sections"]), f"{b} sections carry only id and title (no second-language names)")
     ids = [i["id"] for i in m["items"]]
@@ -66,6 +65,50 @@ for b, m in menus.items():
           f"{b} hero and cover are never a hidden picture" + (f": {m['hero'] if m['hero'] in hidden else cov}" if m["hero"] in hidden or cov in hidden.values() else ""))
     if m.get("mainSection"):
         check(m["mainSection"] in secs, f"{b} mainSection is a real section")
+    # ---- the menu data the "Lights On" pages draw from (brief 4.3, 4.4)
+    by_id = {i["id"]: i for i in m["items"]}
+    true_pic = lambda i: bool(i and i.get("img") and not i.get("hidePhoto") and i.get("kind") != "drink")
+    feat_ids = [i["id"] for i in m["items"] if i.get("style") in ("signature", "bundle")]
+    in_bundle = [x for i in m["items"] for x in i.get("includes", [])]
+    # a tap option where exactly one is picked ("one") always starts on a choice, so a quick + never sends half a dish
+    for it in m["items"]:
+        for g in it.get("options", []):
+            if g.get("type") == "one":
+                ok = g.get("default") in [c["id"] for c in g.get("choices", [])]
+                check(ok, f"{b}/{it['id']} option “{g.get('label', g['id'])}” (pick one) has a default that is one of its choices" + ("" if ok else f": {g.get('default')!r}"))
+    # the band line under the wordmark: one line, 32 characters or fewer
+    line = m.get("line")
+    check(isinstance(line, str) and 0 < len(line) <= 32, f"{b} has a band line (\"line\") of 32 characters or fewer: {line!r}")
+    # the dish in home's "Start with these": its own true picture, never the same picture as the restaurant's card ("hero")
+    rail = by_id.get(m.get("rail"))
+    check(rail is not None and rail.get("style") != "bundle" and rail.get("kind") not in ("drink", "side"), f"{b} \"rail\" names one of its dishes ({m.get('rail')!r})")
+    if rail:
+        check(true_pic(rail), f"{b} rail dish {rail['id']} is shown with its own true picture (no hidePhoto)")
+        same = m.get("hero") and (rail["img"] == m["hero"] or (os.path.exists(os.path.join(ROOT, m["hero"])) and
+               open(os.path.join(ROOT, rail["img"]), "rb").read() == open(os.path.join(ROOT, m["hero"]), "rb").read()))
+        check(not same, f"{b} rail picture ({rail['img']}) is not the restaurant card's picture (\"hero\")")
+    # a dish without a true picture shows a type plate with its key word ("plate")
+    for it in m["items"]:
+        if it.get("hidePhoto") and it.get("kind") != "drink":
+            p = it.get("plate")
+            check(isinstance(p, str) and 0 < len(p) <= 12 and " " not in p.strip(), f"{b}/{it['id']} has no true picture, so it has a type-plate word (\"plate\"): {p!r}")
+    # the cover: a dish lower on the menu with its own true picture, never a featured dish or one inside a bundle picture
+    if isinstance(cov, str):
+        c = by_id.get(cov)
+        check(true_pic(c) and cov not in feat_ids and cov not in in_bundle,
+              f"{b} cover {cov} is a dish with its true picture, not featured and not inside a bundle picture")
+    else:
+        check(cov is False, f"{b} \"cover\" is a dish id or false ({cov!r})")
+    # each dish picture's average colour ("ph"), shown in its box while it loads (build/thumbs.py writes it)
+    for it in m["items"]:
+        if it.get("kind") == "drink" or not os.path.exists(os.path.join(ROOT, it["img"])):
+            continue
+        ph = it.get("ph", "")
+        ok = bool(re.match(r"^#[0-9A-F]{6}$", ph))
+        if ok:
+            want = thumbs.average(it["img"])
+            ok = max(abs(int(ph[k:k + 2], 16) - int(want[k:k + 2], 16)) for k in (1, 3, 5)) <= 12
+        check(ok, f"{b}/{it['id']} has its picture's average colour (\"ph\" {ph!r}; else run: python3 build/thumbs.py --ph)")
 # Allergens on the site must cover what the kitchen's own recipe cards put in the dish (ops/kitchen/kitchen-data.json).
 # Found 8 Oct 2026: tenders in buttermilk brine, sesame garnish and oyster sauce were missing from the site.
 ALLERGEN_WORDS = {
@@ -102,6 +145,10 @@ def keys_in(v):
         return set(v) | {k for x in v.values() for k in keys_in(x)}
     return {k for x in v for k in keys_in(x)} if isinstance(v, list) else set()
 check(not any("partner" in k.lower() for k in keys_in(site)), "no partner flag in site.json (a fee is just a number)")
+# the old cover loops stay out of the offline cache: never precached, never cached on the way through (brief 4.4.3)
+sw = open(os.path.join(ROOT, "sw.js"), encoding="utf-8").read()
+core = re.search(r"var CORE = \[(.*?)\];", sw, re.S)
+check(bool(core) and ".mp4" not in core.group(1) and "/\\.mp4$/i.test(url.pathname)" in sw, "sw.js never stores a video (not in CORE, skipped when fetched)")
 lang = subprocess.run([sys.executable, os.path.join(ROOT, "build/lang_keys.py"), "--check"], capture_output=True, text=True)
 seo = subprocess.run([sys.executable, os.path.join(ROOT, "build/seo.py"), "--check"], capture_output=True, text=True)
 check(seo.returncode == 0, "Google listing data matches site.json and the menus (else run: python3 build/seo.py)" + ("" if seo.returncode == 0 else ": " + seo.stdout.strip()))
@@ -418,6 +465,50 @@ async def main():
             # (a count like "(3)" is kept on its word's line with a no-break space)
             got = (await pg.evaluate("(document.querySelector('.dish__name') || {}).textContent || ''")).replace("\xa0", " ")
             check(got == sig["name"], f"{bid}/#d={sig['id']} opens {sig['name']}" + ("" if got == sig["name"] else f": got {got!r}"))
+        # The order of the rows (brief 4.4): every page opens on a dish with its own true picture; Smash Shack opens on
+        # its three true photos, then the type plates; Dushi Wok has no "Start here" (its Family Table picture holds the
+        # fried rice), so the fried rice leads and the Family deal comes after the wok mains.
+        # Then, scrolling one visible screen at a time at the heights phones really show, a cover and its own row are
+        # never in view together, and neither are a bundle's picture and the rows of the dishes inside it.
+        ROWS = """() => [...document.querySelectorAll('#oa-main .sec article.row')].map(r => {
+            const b = r.getBoundingClientRect(); return [r.dataset.id, b.top + scrollY, b.bottom + scrollY]; })"""
+        COVER = """() => { const c = document.querySelector('#oa-main .cover'); if (!c) return null;
+            const b = c.getBoundingClientRect(); return [b.top + scrollY, b.bottom + scrollY]; }"""
+        for (vw, vh) in ((390, 664), (375, 548), (360, 560)):
+            cx = await b.new_context(viewport={"width": vw, "height": vh}, is_mobile=True, has_touch=True, service_workers="block")
+            await no_database(cx)
+            pv = await cx.new_page()
+            for bid in brands:
+                m = menus[bid]
+                await pv.goto(BASE + f"{bid}/index.html", wait_until="networkidle")
+                await pv.evaluate("document.fonts.ready"); await pv.wait_for_timeout(200)
+                rows, cover = await pv.evaluate(ROWS), await pv.evaluate(COVER)
+                order = [r[0] for r in rows]
+                where = f"{bid} at {vw}x{vh}"
+                if vw == 390:
+                    first = m["items"][[i["id"] for i in m["items"]].index(order[0])] if order else None
+                    check(bool(first) and first.get("img") and not first.get("hidePhoto") and first.get("kind") != "drink",
+                          f"{bid}: the first row of the page has a true picture ({order[:1]})")
+                    if bid == "smash-shack":
+                        check(order[:6] == ["cc", "lf", "ct", "sc", "co", "ds"], f"Smash Shack opens on its true photos, then the type plates ({order[:6]})")
+                    if bid == "dushi-wok":
+                        secs = await pv.evaluate("[...document.querySelectorAll('#oa-main .sec[id]')].map(s => s.id)")
+                        ok = "featured" not in secs and order[:1] == ["fr"] and "wok" in secs and "family" in secs and secs.index("family") == secs.index("wok") + 1
+                        check(ok, f"Dushi Wok: no Start here, the fried rice leads, the Family deal right after the wok mains ({secs}, first {order[:1]})")
+                pos = {r[0]: (r[1], r[2]) for r in rows}
+                pairs = []
+                if isinstance(m.get("cover"), str) and cover and m["cover"] in pos:
+                    pairs.append(("the cover", tuple(cover), m["cover"], pos[m["cover"]]))
+                elif isinstance(m.get("cover"), str):
+                    check(False, f"{where}: the cover and its own row are both on the page ({m['cover']}, cover shown: {bool(cover)})")
+                for it in m["items"]:
+                    if it.get("includes") and it["id"] in pos and not it.get("hidePhoto"):
+                        pairs += [(f"the {it['name']} picture", pos[it["id"]], x, pos[x]) for x in it["includes"] if x in pos]
+                total = await pv.evaluate("document.documentElement.scrollHeight")
+                for what, (a0, a1), rid, (r0, r1) in pairs:
+                    clash = [y for y in range(0, int(total), vh) if a0 < y + vh and a1 > y and r0 < y + vh and r1 > y]
+                    check(not clash, f"{where}: {what} and the {rid} row are never on one screen" + (f" (screen from {clash[0]} px)" if clash else ""))
+            await cx.close()
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]
         first_run = [x for x in SAMPLES if runs(x)][0]
