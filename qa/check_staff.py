@@ -17,7 +17,7 @@ from playwright.async_api import async_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "qa"))
-from local_server import start
+from local_server import start, serve_stoppable
 BASE = start()
 SHOTS = os.environ.get("STAFF_SHOTS", "")
 DB_HOST = "cdkopyphjvfxjqhasrae.supabase.co"
@@ -37,7 +37,8 @@ DRIVER_SESSION = "qa-fake-driver-session-0000"
 A, B, C = "00000000-0000-4000-8000-0000000000a1", "00000000-0000-4000-8000-0000000000b2", "00000000-0000-4000-8000-0000000000c3"
 def item(name, qty, cents): return {"name": name, "qty": qty, "price_cents": cents}
 FEED = {"orders": [
-    # C: a bank-transfer pre-order for 1:00 AM, accepted, not due yet (start at 12:00 AM = due minus its 60 min)
+    # C: a bank-transfer pre-order for 1:00 AM, accepted, not due yet (start at 11:45 PM = due minus the usual 60 min
+    #    and tonight's 15 busy minutes)
     {"id": C, "status": "accepted", "name": "Carla", "phone": "297 599 0003", "area": "Santa Cruz", "address": "Near the church, green house",
      "note": None, "pay": "transfer", "food_cents": 3390, "fee_cents": 500, "total_cents": 3890, "pays_with_cents": None,
      "change_due_cents": None, "transfer_status": "awaiting", "outside_hours": False, "test": False,
@@ -177,7 +178,8 @@ async def kitchen(b, w, h, deep):
     head = await text(pg, ".lv-later h2")
     check(head == ["Later tonight"], f"{tag} the group is called Later tonight")
     c = (await text(pg, ".lv-later .lv-card .ohead"))[0] if later else ""
-    check(re.search(r"Deliver at 1:00\sAM", c) and re.search(r"Start cooking at 12:00\sAM", c), f"{tag} pre-order says Deliver at 1:00 AM and Start cooking at 12:00 AM (Aruba time): {c[:160]!r}")
+    check(re.search(r"Deliver at 1:00\sAM", c) and re.search(r"Start cooking at 11:45\sPM", c),
+          f"{tag} pre-order says Deliver at 1:00 AM and Start cooking at 11:45 PM (usual 60 min + 15 busy, Aruba time): {c[:160]!r}")
     cards = await text(pg, ".lv-card .ohead")
     check(re.search(r"Came in 11:22\sPM · 8 min ago", cards[0]) is not None, f"{tag} Order 12 shows when it came in (11:22 PM Aruba): {cards[0][:80]!r}")
     check("Deliver at" not in cards[0] and "Deliver at" not in cards[1], f"{tag} as-soon-as-possible orders show no delivery time")
@@ -192,14 +194,16 @@ async def kitchen(b, w, h, deep):
     check(tests == ["TEST"] and test_card == [False, True, False], f"{tag} only the TEST order carries the TEST mark: {test_card}")
     warn = await text(pg, ".lv-price")
     where = await pg.evaluate("Array.from(document.querySelectorAll('.lv-card')).map(c => c.querySelectorAll('.lv-price').length)")
-    check(warn == ["Check the price: ƒ1.00 here, the menu says ƒ16.95."] and where == [0, 1, 0],
+    check(warn == ["Check the price: ƒ1.00 here, the menu now says ƒ16.95."] and where == [0, 1, 0],
           f"{tag} the edited price gets one red line on its card, options priced right elsewhere: {warn} {where}")
     bad_li = await text(pg, ".lv-bad")
     check(len(bad_li) == 1 and bad_li[0].startswith("1 × Smash cheeseburger"), f"{tag} the warning sits under the dish it is about: {bad_li}")
     seg = await pg.evaluate("Array.from(document.querySelectorAll('.lv-segb')).map(b => [b.textContent, b.getAttribute('aria-pressed')])")
     check(seg == [["Normal", "false"], ["+15 min", "true"], ["+30 min", "false"]], f"{tag} Kitchen busy? shows +15 min from the feed: {seg}")
-    busy_line = (await text(pg, ".lv-busy-p"))[0]
-    check("later delivery time" in busy_line or "min later" in busy_line, f"{tag} the busy switch says what it does: {busy_line!r}")
+    busy_line = await text(pg, ".lv-busy-p")
+    check(not busy_line, f"{tag} with orders to cook, Kitchen busy? is one row (the lit choice says what is on): {busy_line}")
+    wide = await pg.evaluate("(() => { const m = document.querySelector('#main'); return [m.scrollWidth, m.clientWidth]; })()")
+    check(wide[0] <= wide[1], f"{tag} the Orders list doesn't scroll sideways: {wide}")
     await shot(pg, f"kitchen-orders-{w}x{h}.png")
     await shot(pg, f"kitchen-first-screen-{w}x{h}.png", full=False)
     if deep:
@@ -217,12 +221,47 @@ async def kitchen(b, w, h, deep):
         await pg.wait_for_function("Array.from(document.querySelectorAll('.lv-card .pay')).some(e => /came in/.test(e.textContent))")
         check(fake.named("pidi_kitchen_transfer_paid") == [{"session": KITCHEN_SESSION, "order_id": C}], f"{tag} The transfer came in marks that order")
         check(await pg.locator(f"[data-live='paid'][data-id='{C}']").count() == 0, f"{tag} the transfer button goes once it came in")
-        # at 12:05 AM the pre-order is due: it moves up to the orders to cook now
+        # Cook step by step keeps the delivery time, US dollars and TEST
+        await pg.click(f".lv-card [data-live='cook'][data-id='{C}']")
+        await pg.wait_for_selector(".order-wrap .ohead")
+        head = (await text(pg, ".order-wrap .ohead"))[0]
+        reply = (await text(pg, ".reply"))[0]
+        check(re.search(r"Ready for 1:00\sAM", head) and re.search(r"booked for 1:00\sAM", reply) and "Paid by bank transfer" in head,
+              f"{tag} the pre-order's cook screen says Ready for 1:00 AM and Paid by bank transfer, the Confirm reply booked for 1:00 AM: {head[:120]!r} / {reply[:90]!r}")
+        await shot(pg, f"kitchen-cook-preorder-{w}x{h}.png", full=False)
+        await pg.goto(BASE + "ops/kitchen/index.html#/live")
+        await pg.wait_for_selector(f".lv-card [data-live='cook'][data-id='{B}']")
+        await pg.click(f".lv-card [data-live='cook'][data-id='{B}']")
+        await pg.wait_for_selector(".order-wrap .ohead")
+        head = (await text(pg, ".order-wrap .ohead"))[0]
+        check("TEST order" in head and re.search(r"Pays in US dollars to the driver · ƒ43\.95 total", head) and "Pays cash" not in head,
+              f"{tag} the TEST US-dollar order's cook screen says TEST and Pays in US dollars: {head[:140]!r}")
+        await shot(pg, f"kitchen-cook-test-usd-{w}x{h}.png", full=False)
+        await pg.goto(BASE + "ops/kitchen/index.html#/live")
+        await pg.wait_for_selector(".lv-card .lv-price", timeout=15000)
+        # a price changed in the Menu tile tonight: the lines that matched before stay clean, a new order is checked
+        # against the new price
+        osm = json.load(open(os.path.join(ROOT, "oranje-snack/menu.json"), encoding="utf-8"))
+        for it in osm["items"]:
+            if it["name"] == "Bitterballen (8)": it["price"] += 100
+        await pg.route("**/oranje-snack/menu.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(osm)))
+        # at 12:05 AM the pre-order is due: it moves up to the orders to cook now (and the menus are read again)
         await ctx.clock.set_fixed_time(datetime(2026, 10, 11, 0, 5, tzinfo=AW))
-        await pg.evaluate("window.KitchenLive.show()")
+        async with pg.expect_response(lambda r: "oranje-snack/menu.json" in r.url):
+            await pg.evaluate("window.KitchenLive.show()")
         await pg.wait_for_timeout(300)
+        # a new order after the change, at the old price
+        state["orders"].append(dict(copy.deepcopy(FEED["orders"][1]), id="00000000-0000-4000-8000-0000000000e5", night_no=15, created_at=ago(-20), due_at=ago(-20),
+            busy_min=state["orders"][0]["busy_min"],
+            restaurants=[{"restaurant": "Oranje Snack", "slug": "oranje-snack", "food_cents": 1295, "ready": False, "items": [item("Bitterballen (8) · Dip: Mustard", 1, 1295)]}]))
+        await pg.evaluate("window.KitchenLive.show()")
+        await pg.wait_for_function("document.querySelectorAll('.lv-price').length >= 2", timeout=10000)
         nos = await text(pg, ".lv-no")
         check(await pg.locator(".lv-later").count() == 0 and "Order 11" in nos, f"{tag} at 12:05 AM the pre-order is with the orders to cook now: {nos}")
+        per = await pg.evaluate("Array.from(document.querySelectorAll('.lv-card')).map(c => [c.querySelector('.lv-no').textContent, Array.from(c.querySelectorAll('.lv-price')).map(e => e.textContent)])")
+        per = dict(per)
+        check(per.get("Order 12") == [] and per.get("Order 15") == ["Check the price: ƒ12.95 here, the menu now says ƒ13.95."] and len(per.get("Order 13", [])) == 1,
+              f"{tag} after a price change tonight, Order 12 (right when it came in) stays clean and a new order is checked: {per}")
         # no orders open: the busy minutes come from the public state
         state["orders"] = []
         public_busy["v"] = 15
@@ -231,6 +270,8 @@ async def kitchen(b, w, h, deep):
         await pg2.wait_for_selector(".lv-empty")
         await pg2.wait_for_function("(document.querySelector('.lv-segb.on') || {}).textContent === '+15 min'", timeout=10000)
         check(True, f"{tag} with no orders open, Kitchen busy? reads +15 min from the public state")
+        line = await text(pg2, ".lv-busy-p")
+        check(line and "15 min later" in line[0], f"{tag} with nothing to cook, a sentence says what the busy switch is doing: {line}")
         await pg2.close()
         # an option with an extra price: the menu here charges ƒ1.50 for jalapeños (the live menu doesn't, yet)
         tb = json.load(open(os.path.join(ROOT, "taco-brava/menu.json"), encoding="utf-8"))
@@ -249,7 +290,7 @@ async def kitchen(b, w, h, deep):
         await pg3.wait_for_selector(".lv-card .lv-price", timeout=15000)
         await pg3.wait_for_timeout(300)
         warn = await text(pg3, ".lv-items li")
-        want = [None, "Check the price: ƒ20.00 here, the menu says ƒ21.50.", "Check this dish: it is not on the Taco Brava menu."]
+        want = [None, "Check the price: ƒ20.00 here, the menu now says ƒ21.50.", "Check this dish: it is not on the Taco Brava menu."]
         got = [(re.search(r"Check .*$", w) or [None])[0] for w in warn]
         check(got == want, f"{tag} an option's extra price counts; a dish not on the menu is flagged: {got}")
         await pg3.close()
@@ -258,6 +299,50 @@ async def kitchen(b, w, h, deep):
             check(False, f"{tag} {name} carried the kitchen session")
     check(not fake.stray, f"{tag} nothing else went to the database or the internet" + (f": {fake.stray}" if fake.stray else ""))
     check(not await pg.evaluate("window.__sockets.length"), f"{tag} no live connection opened")
+    check(not errs, f"{tag} no page errors" + (f": {errs}" if errs else ""))
+    await ctx.close()
+
+# ================================================================== kitchen: the edges
+MAPS = "https://www.google.com/maps/place/12%C2%B033'31.2%22N+70%C2%B002'41.9%22W/@12.5586667,-70.0449722,17z/data=!3m1"
+async def kitchen_edges(b, w, h):
+    """One new one-dish order (a Google Maps link as its address), an afternoon pre-order for tonight (a Maps link as
+    its note) and a pre-order for tomorrow night, taken tonight."""
+    one = lambda slug, rest, it: [{"restaurant": rest, "slug": slug, "food_cents": it["price_cents"], "ready": False, "items": [it]}]
+    base = dict(FEED["orders"][1], busy_min="0", note=None)
+    state = {"orders": [
+        dict(base, id="00000000-0000-4000-8000-0000000000a6", night_no=16, status="new", address=MAPS, note="Ring twice",
+             pays_with_cents=5000, food_cents=1295, total_cents=1795, change_due_cents=3205,
+             restaurants=one("oranje-snack", "Oranje Snack", item("Bitterballen (8) · Dip: Mustard", 1, 1295))),
+        dict(base, id="00000000-0000-4000-8000-0000000000a7", night_no=17, status="accepted", name="Pre", note=MAPS,
+             created_at=at(datetime(2026, 10, 10, 16, 5, tzinfo=AW)), due_at=at(datetime(2026, 10, 11, 1, 30, tzinfo=AW)),
+             restaurants=one("taco-brava", "Taco Brava", item("Coca-Cola (can)", 1, 300))),
+        dict(base, id="00000000-0000-4000-8000-0000000000a8", night_no=18, status="accepted", name="Sunday",
+             created_at=ago(30), due_at=at(datetime(2026, 10, 11, 22, 30, tzinfo=AW)),
+             restaurants=one("taco-brava", "Taco Brava", item("Coca-Cola (can)", 1, 300)))]}
+    fake = Fake({"pidi_kitchen_feed": lambda a: ok(copy.deepcopy(state)),
+                 "pidi_public_state": lambda a: ok({"ok": True, "busy_min": 0, "eta_min": 45, "eta_max": 60})})
+    init = "localStorage.setItem('pidi.kitchen.session', JSON.stringify({ token: '%s', expires_at: '2099-01-01T00:00:00Z' }));" % KITCHEN_SESSION
+    ctx = await new_ctx(b, fake, w, h, init)
+    pg = await ctx.new_page()
+    errs = []
+    pg.on("pageerror", lambda e: errs.append(str(e)))
+    tag = f"[kitchen edges {w}x{h}]"
+    await pg.goto(BASE + "ops/kitchen/index.html#/live")
+    await pg.wait_for_selector(".lv-later .lv-card", timeout=15000)
+    await pg.wait_for_timeout(600)
+    fold = await pg.evaluate("""(() => { const c = document.querySelector('.lv-card'), r = s => c.querySelector(s).getBoundingClientRect().bottom;
+      return [innerHeight, Math.round(r('.lv-items li')), Math.round(r("[data-live='accept']"))]; })()""")
+    check(fold[2] <= fold[0], f"{tag} a new one-dish order shows its dish and the whole Accept button on the first screen (screen, dish, Accept bottoms): {fold}")
+    wide = await pg.evaluate("(() => { const m = document.querySelector('#main'); return [m.scrollWidth, m.clientWidth]; })()")
+    check(wide[0] <= wide[1], f"{tag} a Google Maps link as address or note doesn't push the list sideways: {wide}")
+    heads = await text(pg, ".lv-card .ohead")
+    check(re.search(r"Came in 4:05\sPM · 7 hours ago", heads[1]) is not None, f"{tag} an afternoon pre-order says 7 hours ago, not 445 min: {heads[1][:60]!r}")
+    check(re.search(r"Deliver Sunday night at 10:30\sPM", heads[2]) and re.search(r"Start cooking Sunday night at 9:30\sPM", heads[2]),
+          f"{tag} a pre-order for tomorrow night names the night: {heads[2][:120]!r}")
+    check(await text(pg, ".lv-later h2") == ["Pre-orders for later"], f"{tag} with a pre-order for another night the group is Pre-orders for later")
+    await shot(pg, f"kitchen-edges-first-{w}x{h}.png", full=False)
+    await shot(pg, f"kitchen-edges-{w}x{h}.png")
+    check(not fake.stray, f"{tag} nothing else went to the database or the internet" + (f": {fake.stray}" if fake.stray else ""))
     check(not errs, f"{tag} no page errors" + (f": {errs}" if errs else ""))
     await ctx.close()
 
@@ -297,6 +382,11 @@ async def driver(b, w, h, deep):
     dock = await text(pg, "#dock button")
     seen = await pg.evaluate("(() => { const b = document.querySelector('#dock button'); const r = b && b.getBoundingClientRect(); return !!r && r.bottom <= innerHeight && r.top >= 0; })()")
     check(dock == ["Accept"] and seen, f"{tag} with one offer, Accept is the big button on the first screen: {dock}")
+    # the offers don't carry transfer_status (the run does): an offer never says "Awaiting" for a transfer
+    lines = await pg.evaluate("""import('%sdriver/v2/js/client.js').then(m => [m.collectLine({ pay: 'transfer', total_cents: 3890 }),
+      m.collectLine({ pay: 'transfer', transfer_status: 'awaiting' }), m.collectLine({ pay: 'transfer', transfer_status: 'paid' })])""" % BASE)
+    check(lines == ["Bank transfer. Don't collect cash.", "Awaiting transfer. Don't collect cash.", "Paid by bank transfer. Don't collect cash."],
+          f"{tag} a transfer on an offer says Bank transfer; the run says awaiting or paid: {lines}")
     await shot(pg, f"driver-offer-{w}x{h}.png", full=False)
     if deep:
         await pg.click("#dock button:has-text('Accept')")
@@ -351,15 +441,60 @@ async def redirects(b):
     check(not fake.stray, "the old addresses sent nothing to the database" + (f": {fake.stray}" if fake.stray else ""))
     await ctx.close()
 
+# ================================================================== the driver app offline
+async def offline(p):
+    """The driver app's service worker with the server gone: pages it has open, old links, a page it never saved.
+    None may loop (it did: the old index.html, served in place of a missing page, forwards to v2/ relative to it)."""
+    base, srv = serve_stoppable()
+    # the database's name points nowhere in this browser: nothing can reach the real one
+    b = await p.chromium.launch(args=[f"--host-resolver-rules=MAP {DB_HOST} 127.0.0.1:9"])
+    fake = Fake({"pidi_ping": lambda a: ok({"ok": True}), "pidi_driver_offers": lambda a: ok([]), "pidi_driver_set_online": lambda a: ok()})
+    async def handle(route):
+        try:
+            await fake.handle(route)
+        except Exception:   # the server is gone
+            try: await route.abort()
+            except Exception: pass
+    ctx = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
+    await ctx.add_init_script(NO_SOCKETS)
+    await ctx.route("**/*", handle)
+    pg = await ctx.new_page()
+    await pg.goto(base + "driver/v2/")
+    try:
+        await pg.wait_for_function("navigator.serviceWorker && navigator.serviceWorker.controller", timeout=15000)
+    except Exception:
+        check(False, "the driver app's offline cache starts on /driver/v2/")
+    srv.shutdown(); srv.server_close()
+    for target, end in [("driver/v2/", "driver/v2/"), ("driver/v2/?x=1#y", "driver/v2/?x=1#y"), ("driver/?x=1#y", "driver/v2/?x=1#y"),
+                        # (v2's run page with nobody signed in goes on to the v2 home screen by itself)
+                        ("driver/run.html#abc", "driver/v2/index.html"), ("driver/install/", "driver/install/"), ("driver/v2/status/", "driver/v2/")]:
+        navs = []
+        def seen(f): navs.append(f.url) if f == pg.main_frame else None
+        pg.on("framenavigated", seen)
+        try:
+            await pg.goto(base + target, timeout=5000)
+        except Exception:
+            pass
+        await pg.wait_for_timeout(1500)
+        pg.remove_listener("framenavigated", seen)
+        last = (navs[-1] if navs else pg.url).replace(base, "")
+        check(len(navs) <= 3 and last == end and not any("v2/v2" in u for u in navs),
+              f"offline, /{target} ends on /{end} without going round in circles ({len(navs)} page loads: {[u.replace(base, '/') for u in navs][:4]})")
+    check(not fake.stray, "the offline driver app sent nothing to the database" + (f": {fake.stray}" if fake.stray else ""))
+    await b.close()
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
         await kitchen(b, 390, 844, True)
         await kitchen(b, 360, 640, False)
+        await kitchen_edges(b, 390, 844)
+        await kitchen_edges(b, 360, 640)
         await driver(b, 390, 844, True)
         await driver(b, 360, 640, True)
         await redirects(b)
         await b.close()
+        await offline(p)
 
 asyncio.run(main())
 print(f"\n{len(fails)} problem(s) on the staff screens")

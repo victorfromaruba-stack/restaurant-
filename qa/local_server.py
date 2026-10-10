@@ -54,6 +54,14 @@ def start():
     return f"http://127.0.0.1:{server.server_address[1]}/"
 
 
+def serve_stoppable():
+    """One more server of this repo on a free port, for a check that takes it away to test offline: (base, server).
+    server.shutdown() stops it."""
+    server = _Server(("127.0.0.1", 0), functools.partial(_Quiet, directory=ROOT))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return f"http://127.0.0.1:{server.server_address[1]}/", server
+
+
 if __name__ == "__main__":   # by hand, to click around: python3 qa/local_server.py [port]
     os.environ.pop("QA_BASE", None)
     os.environ["QA_PORT"] = sys.argv[1] if len(sys.argv) > 1 else "8462"
