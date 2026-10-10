@@ -2,10 +2,12 @@
 (qa/local_server.py), so there is no server to start first. QA_BASE=<url> checks another server instead.
 Checks every menu image exists, every page loads with no errors, and builds the WhatsApp sample
 messages in qa/wa-samples.json from the real ordering code, testing the owner's rules.
-Order Aruba is a delivery app, like Uber Eats (Victor, 9 Oct 2026): the home page lists the restaurants,
-and customers must believe each one is its own business. Nothing may say or hint that they share a
-kitchen. Restaurants marked "mix" in site.json share one order and one ƒ5 delivery (the app's perk);
-any other restaurant keeps its own order."""
+Pidi (site.json "name") is a delivery app, like Uber Eats: the home page lists the restaurants, and
+customers must believe each one is its own business. Nothing may say or hint that they share a kitchen
+or an owner. Restaurants marked "mix" in site.json go in one order with one delivery fee (the app's perk).
+Pidi's locked rules are checked in every public file and on every rendered page: the old name never
+appears, no closing time is shown (only "Late night from 10 PM"), and no "partner", "sister", "own
+restaurant", "our restaurants" or "charged". It never calls the real order database."""
 import asyncio, json, os, re, subprocess, sys
 from playwright.async_api import async_playwright
 from PIL import Image, ImageChops, ImageStat
@@ -86,7 +88,20 @@ if os.path.exists(kdata):
             check(not missing, f"{b}/{it['id']} lists every allergen its recipe card uses" + (f": missing {missing}" if missing else ""))
 tb = {i["id"]: i for i in menus["taco-brava"]["items"]}
 check(tb["bt"]["price"] == 2700, "Birria tacos stay at ƒ27.00")
-check(site["deliveryFee"] == 500, "Delivery fee is ƒ5.00")
+check(site["deliveryFee"] == 500, "Delivery fee is ƒ5.00 (the fallback for a restaurant without its own fee)")
+# site.json, the way the order database reads it (build contract, brief Appendix C10)
+check(site.get("name") == "Pidi", f"the app is called Pidi in site.json (got {site.get('name')!r})")
+check(site.get("minFood") == 2400, "food minimum is ƒ24 on the whole order (minFood 2400)")
+check(isinstance(site.get("etaMin"), int) and isinstance(site.get("etaMax"), int) and 0 < site["etaMin"] < site["etaMax"] and "eta" not in site,
+      f"delivery time is two numbers, etaMin and etaMax, with no text version ({site.get('etaMin')}–{site.get('etaMax')})")
+check(all(isinstance(b.get("fee"), int) and b["fee"] > 0 for b in site["brands"]), "every restaurant has its own delivery fee in cents")
+check(all(b["fee"] == 500 for b in site["brands"] if b["id"] in ("dushi-wok", "taco-brava", "smash-shack", "nonnas-night-in", "oranje-snack")),
+      "the five restaurants each have a ƒ5 fee")
+def keys_in(v):
+    if isinstance(v, dict):
+        return set(v) | {k for x in v.values() for k in keys_in(x)}
+    return {k for x in v for k in keys_in(x)} if isinstance(v, list) else set()
+check(not any("partner" in k.lower() for k in keys_in(site)), "no partner flag in site.json (a fee is just a number)")
 lang = subprocess.run([sys.executable, os.path.join(ROOT, "build/lang_keys.py"), "--check"], capture_output=True, text=True)
 seo = subprocess.run([sys.executable, os.path.join(ROOT, "build/seo.py"), "--check"], capture_output=True, text=True)
 check(seo.returncode == 0, "Google listing data matches site.json and the menus (else run: python3 build/seo.py)" + ("" if seo.returncode == 0 else ": " + seo.stdout.strip()))
@@ -146,10 +161,72 @@ for b in brands:
     check(not others and "parentOrganization" not in html, f"{b}/index.html (title, Google data) stands on its own" + (f": mentions {others}" if others else ""))
 check(not os.path.exists(os.path.join(ROOT, "cart.html")), "no shared cart page: each restaurant is its own order")
 
+# ---- Pidi's locked rules in every public file (brief "Locked rules" 1-3, 10 Oct 2026)
+# Public: whatever GitHub Pages serves that a phone loads. Skipped: notes and tools that no customer page loads (.claude/,
+# CLAUDE.md and the other Markdown notes, ops/ the chef app, driver/ the driver app, build/ and qa/ scripts).
+SKIP_DIRS = {".git", ".github", ".claude", "ops", "driver", "build", "qa", "node_modules"}
+def public_files(exts):
+    found = []
+    for d, dirs, files in os.walk(ROOT):
+        dirs[:] = sorted(x for x in dirs if x not in SKIP_DIRS and not (d == ROOT and x.startswith(".")))
+        found += [os.path.relpath(os.path.join(d, f), ROOT) for f in sorted(files) if f.endswith(exts)]
+    return found
+OLD_NAME = re.compile(r"order\s*aruba|orderaruba", re.I)
+# the old storage and cache names, read once so a phone's saved order moves to the new names (nobody loses a cart)
+LEGACY = {"shared/order-app.js": ('"orderaruba.cart.v2"', '"orderaruba.last.v1"', '"orderaruba.lang.v1"'), "sw.js": ('"orderaruba-"',)}
+CLOSING = re.compile(r"\b2(:00)?\s?AM\b|\b02:00\b|\buntil 2\b|\btill 2\b|\btot 2\b|\bhasta las 2\b", re.I)
+BANNED = re.compile(r"\bpartner|\bown restaurant|\bour restaurants\b|\bsister|\bcharged\b", re.I)
+def closing(text):
+    return sorted({m.group(0) for m in CLOSING.finditer(text)})
+def banned(text):
+    return sorted({m.group(0).lower() for m in BANNED.finditer(text)})
+def read(f):
+    return open(os.path.join(ROOT, f), encoding="utf-8").read()
+# 1. the old name, anywhere a phone can load it (pages, code, styles, menus, language files, manifests, Google data)
+for f in public_files((".html", ".js", ".css", ".json", ".webmanifest", ".xml", ".txt", ".svg")):
+    t = read(f)
+    for legacy in LEGACY.get(f, ()):
+        t = t.replace(legacy, "")
+    hits = sorted({m.group(0) for m in OLD_NAME.finditer(t)})
+    check(not hits, f"{f} never says the old name" + (f": {hits}" if hits else ""))
+# 2. no "partner", "own restaurant", "our restaurants", "sister" or "charged" in a customer file (comments are public too)
+for f in public_files((".html", ".js", ".css", ".json", ".webmanifest")):
+    bad = banned(read(f))
+    check(not bad, f"{f} has no partner/sister/own-restaurant/charged wording" + (f": {bad}" if bad else ""))
+# 3. no closing time in screen text: every phrase the code shows (build/lang_keys.py), the language files, the menus,
+#    site.json's words (its hours and lastOrder are logic, not text), the pages (titles, descriptions, Google data), manifests
+sys.path.insert(0, os.path.join(ROOT, "build"))
+import lang_keys
+texts = [("order-app.js / pages: " + k, k) for k in lang_keys.keys()]
+for code in ("pap", "nl", "es"):
+    texts += [(f"shared/lang/{code}.json: {k}", v) for k, v in json.load(open(os.path.join(ROOT, "shared/lang", code + ".json"), encoding="utf-8")).items()]
+def strings(v, where, skip=()):
+    if isinstance(v, str):
+        return [(where, v)]
+    if isinstance(v, dict):
+        return [x for k, y in v.items() if k not in skip for x in strings(y, where, skip)]
+    return [x for y in v for x in strings(y, where, skip)] if isinstance(v, list) else []
+texts += strings(site, "shared/site.json", skip=("hours", "lastOrder"))
+texts += [x for b in brands for x in strings(menus[b], f"{b}/menu.json")]
+texts += [(f, read(f)) for f in public_files((".html", ".webmanifest"))]
+for where, t in texts:
+    hit = closing(t)
+    check(not hit, f"no closing time in {where[:70]}" + (f": {hit}" if hit else ""))
+
+db_calls = []
+async def no_database(ctx):
+    """QA never reaches the real order database: every /rest/v1/ request is answered here (contexts block service
+    workers, so page.route sees every request) and noted, and no real order can ever be created."""
+    async def fake(route):
+        db_calls.append(route.request.url.split("/rest/v1/")[-1])
+        await route.fulfill(status=200, content_type="application/json", body="null")
+    await ctx.route("**/rest/v1/**", fake)
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
-        ctx = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
+        ctx = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+        await no_database(ctx)
         pg = await ctx.new_page()
         errs = []
         pg.on("pageerror", lambda e: errs.append(f"page error: {e}"))
@@ -165,6 +242,10 @@ async def main():
             await pg.wait_for_timeout(300)
             broken = await pg.evaluate("Array.from(document.images).filter(i => i.complete && i.naturalWidth === 0).map(i => i.src)")
             check(not errs and not broken, f"{url} loads with no errors or broken images" + (f": {errs + broken}" if errs or broken else ""))
+            if not url.startswith("ops/"):
+                txt = await pg.evaluate("document.body.innerText + ' ' + document.title")
+                bad = closing(txt) + banned(txt) + sorted({m.group(0) for m in OLD_NAME.finditer(txt)})
+                check(not bad, f"{url} on screen: no closing time, no old name, no partner/sister wording" + (f": {bad}" if bad else ""))
         out = []
         for title, br, lines, meta in [x for x in SAMPLES if runs(x)]:
             await pg.goto(BASE + br + "/index.html", wait_until="networkidle")
@@ -225,21 +306,30 @@ async def main():
         if rail:
             await pg.goto(BASE + rail[0], wait_until="networkidle"); await pg.wait_for_timeout(400)
             check(await pg.evaluate("!!document.querySelector('.dish__name')"), f"tapping a home dish card opens it on {rail[0].split('/')[0]}'s page")
-        # the mix restaurants share one order: started on one, it's the same order on the next
-        if "dushi-wok" in mix and "taco-brava" in mix:
-            await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
-            await pg.evaluate("OrderApp.clear()"); await pg.evaluate("OrderApp.addItem('dushi-wok','fr',{},1)")
-            await pg.goto(BASE + "taco-brava/index.html", wait_until="networkidle")
-            await pg.evaluate("OrderApp.loadMenu('taco-brava').then(() => OrderApp.addItem('taco-brava','bt',{},1))")
+        # the mix restaurants share one order: started on one, it's the same order on the next (two that are open now)
+        pair = [b for b in mix if is_open.get(b)][:2]
+        check(len(pair) == 2, f"two mix restaurants are open to test one order across them ({pair})")
+        if len(pair) == 2:
+            one, two = ([next(i["id"] for i in menus[x]["items"] if i.get("kind") != "drink" and not i.get("soldOut")) for x in pair])
+            await pg.goto(BASE + pair[0] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("OrderApp.clear()"); await pg.evaluate("([b,i]) => OrderApp.addItem(b,i,{},1)", [pair[0], one])
+            await pg.goto(BASE + pair[1] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("([b,i]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,{},1))", [pair[1], two])
             n, f = await pg.evaluate("[OrderApp.count(), OrderApp.fee()]")
-            check(n == 2 and f == 500, f"Dushi Wok + Taco Brava end up in one order with one ƒ5 delivery (items {n}, fee {f})")
+            want = max(next(x["fee"] for x in site["brands"] if x["id"] == b) for b in pair)
+            check(n == 2 and f == want, f"{names[pair[0]]} + {names[pair[1]]} end up in one order with one delivery fee, the higher of theirs (items {n}, fee {f}, want {want})")
             await pg.evaluate("OrderApp.clear()")
         # an order kept from earlier gets today's menu on the restaurant's own page: a dish sold out since then is
         # flagged and blocks Send, a new price is used (found 9 Oct 2026: only other restaurants' pages refreshed it)
-        if "dushi-wok" in brands and is_open.get("dushi-wok"):
+        # (it runs on a copy of site.json with every restaurant open, so it doesn't depend on who is open tonight)
+        if "dushi-wok" in brands and "taco-brava" in brands:
             ctx2 = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+            await no_database(ctx2)
             p2 = await ctx2.new_page()
             await p2.route("https://wa.me/**", lambda r: r.abort())
+            all_open = json.loads(json.dumps(site))
+            for x in all_open["brands"]: x["status"] = "open"
+            await p2.route("**/shared/site.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(all_open)))
             await p2.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
             await p2.evaluate("OrderApp.clear()")
             await p2.evaluate("OrderApp.addItem('dushi-wok','lm',{},1); OrderApp.addItem('dushi-wok','pk',{},1); OrderApp._set({area:'Noord', addr:'Palm Beach 12', name:'Ana', pay:'Cash'})")
@@ -265,13 +355,43 @@ async def main():
             await p2.evaluate("OrderApp.clear()")
             # "Order again" after an order from two restaurants shows both, on either restaurant's page
             await p2.unroute("**/dushi-wok/menu.json*")
-            await p2.evaluate("localStorage.setItem('orderaruba.last.v1', JSON.stringify({at: Date.now(), lines: [{b:'dushi-wok', id:'fr', q:1, o:{}}, {b:'taco-brava', id:'bt', q:1, o:{}}]}))")
+            await p2.evaluate("localStorage.setItem('pidi.last.v1', JSON.stringify({at: Date.now(), lines: [{b:'dushi-wok', id:'fr', q:1, o:{}}, {b:'taco-brava', id:'bt', q:1, o:{}}]}))")
             for page in ("dushi-wok", "taco-brava"):
                 await p2.goto(BASE + page + "/index.html", wait_until="networkidle"); await p2.wait_for_timeout(500)
                 again = (await p2.evaluate("(document.querySelector('#oa-again:not([hidden])') || {}).innerText || ''")).replace("\xa0", " ")
                 check("Chicken fried rice" in again and "Birria tacos" in again, f"Order again on {page} has the dishes from both restaurants" + ("" if "Birria" in again and "fried rice" in again else f": {again!r}"))
-            await p2.evaluate("localStorage.removeItem('orderaruba.last.v1')")
+            await p2.evaluate("localStorage.removeItem('pidi.last.v1')")
             await ctx2.close()
+        # the app was renamed on 10 Oct 2026: a phone with an order, an "Order again" or a language saved under the old
+        # names keeps them (moved once to the new names, the old ones removed); a newer order is never overwritten
+        ctx3 = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+        await no_database(ctx3)
+        p3 = await ctx3.new_page()
+        open_one = next((x for x in mix if is_open.get(x)), None)
+        if open_one:
+            dish = next(i for i in menus[open_one]["items"] if i.get("kind") != "drink" and not i.get("soldOut"))
+            await p3.goto(BASE + open_one + "/index.html", wait_until="networkidle")
+            await p3.evaluate("([b,i]) => { OrderApp.clear(); OrderApp.addItem(b,i,{},2); }", [open_one, dish["id"]])
+            await p3.evaluate("""([b,i]) => { const cart = localStorage.getItem('pidi.cart.v1'); localStorage.clear();
+                localStorage.setItem('orderaruba.cart.v2', cart); localStorage.setItem('orderaruba.lang.v1', 'nl');
+                localStorage.setItem('orderaruba.last.v1', JSON.stringify({at: Date.now(), lines: [{b, id: i, q: 1, o: {}}]}));
+                localStorage.setItem('last.' + b + '.v1', '{"at":1,"lines":[]}'); }""", [open_one, dish["id"]])
+            await p3.reload(wait_until="networkidle"); await p3.wait_for_timeout(400)
+            n, lang, left = await p3.evaluate("""() => [OrderApp.count(), document.documentElement.lang,
+                Object.keys(localStorage).filter(k => /^orderaruba|^(order|last)\\./.test(k))]""")
+            moved = await p3.evaluate("['pidi.cart.v1', 'pidi.lang.v1', 'pidi.last.v1', 'pidi.last.' + %s + '.v1'].map(k => localStorage.getItem(k) !== null)" % json.dumps(open_one))
+            again = await p3.evaluate("(JSON.parse(localStorage.getItem('pidi.last.v1') || '{}').lines || []).map(l => l.id)")
+            check(n == 2 and lang == "nl" and all(moved) and not left and again == [dish["id"]],
+                  f"an order, Order again and the language saved under the old names move to the new ones (items {n}, lang {lang}, moved {moved}, old keys left {left})")
+            await p3.evaluate("() => { localStorage.setItem('orderaruba.cart.v2', JSON.stringify({v: 2, lines: []})); }")
+            await p3.reload(wait_until="networkidle")
+            n2, old = await p3.evaluate("[OrderApp.count(), localStorage.getItem('orderaruba.cart.v2')]")
+            check(n2 == 2 and old is None, f"an old saved order never overwrites a newer one (items {n2})")
+            await p3.evaluate("OrderApp.clear()"); await p3.reload(wait_until="networkidle"); await p3.wait_for_timeout(400)
+            shown = (await p3.evaluate("(document.querySelector('#oa-again:not([hidden])') || {}).innerText || ''")).replace("\xa0", " ")
+            check(dish["name"] in shown, f"Order again saved under the old name shows on {open_one}" + ("" if dish["name"] in shown else f": {shown!r}"))
+            await p3.evaluate("localStorage.clear()")
+        await ctx3.close()
         # the chef app reads each ticket back: same lines, prices, totals and payment for the customer receipt
         await pg.goto(BASE + "ops/kitchen/index.html", wait_until="networkidle")
         for smp, (title, br, lines, meta) in zip(out, [x for x in SAMPLES if runs(x)]):
@@ -291,18 +411,22 @@ async def main():
             # (a count like "(3)" is kept on its word's line with a no-break space)
             got = (await pg.evaluate("(document.querySelector('.dish__name') || {}).textContent || ''")).replace("\xa0", " ")
             check(got == sig["name"], f"{bid}/#d={sig['id']} opens {sig['name']}" + ("" if got == sig["name"] else f": got {got!r}"))
-        await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]
+        first_run = [x for x in SAMPLES if runs(x)][0]
+        await pg.goto(BASE + first_run[1] + "/index.html", wait_until="networkidle")
         for code in ("pap", "nl", "es"):
-            await pg.evaluate("c => localStorage.setItem('orderaruba.lang.v1', c)", code)
+            await pg.evaluate("c => localStorage.setItem('pidi.lang.v1', c)", code)
             for url in ["index.html"] + [f"{x}/index.html" for x in brands]:
                 errs.clear()
                 await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
                 check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))
-            await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
+                txt = await pg.evaluate("document.body.innerText + ' ' + document.title")
+                bad = closing(txt) + banned(txt) + sorted({m.group(0) for m in OLD_NAME.finditer(txt)})
+                check(not bad, f"[{code}] {url} on screen: no closing time, no old name, no partner/sister wording" + (f": {bad}" if bad else ""))
+            title, br, lines, meta = first_run
+            await pg.goto(BASE + br + "/index.html", wait_until="networkidle")
             await pg.evaluate("OrderApp.clear()")
-            title, br, lines, meta = SAMPLES[0]
             for (lb, iid, opts, q) in lines:
                 await pg.evaluate("([b,i,o,q]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,o,q))", [lb, iid, opts, q])
             await pg.evaluate("m => OrderApp._set(m)", meta)
@@ -311,10 +435,11 @@ async def main():
             norm = lambda t: re.sub(r"^Time: .*$", "Time:", re.sub(r"#\S+", "#", t), flags=re.M)
             check(time_ok and norm(msg) == norm(en_msg), f"[{code}] WhatsApp ticket is the same English text")
             await pg.evaluate("OrderApp.clear()")
-        await pg.evaluate("localStorage.removeItem('orderaruba.lang.v1')")
+        await pg.evaluate("localStorage.removeItem('pidi.lang.v1')")
         json.dump({"_about": "Real WhatsApp messages produced by shared/order-app.js. Regenerate with python3 qa/check_site.py.",
                    "samples": out}, open(os.path.join(ROOT, "qa/wa-samples.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         await b.close()
 asyncio.run(main())
+print(f"(order database: {len(db_calls)} request(s) answered by QA's fake, none reached the real one: {sorted(set(db_calls))})")
 print(f"\n{len(fails)} problem(s)")
 sys.exit(1 if fails else 0)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Count the tells that make Order Aruba look or read machine-made.
+"""Count the tells that make Pidi look or read machine-made, and guard Pidi's locked rules.
 
     python3 .claude/skills/human-touch/scripts/check.py            # the whole customer site
     python3 .claude/skills/human-touch/scripts/check.py --show     # also print every line of copy it read
@@ -10,9 +10,13 @@ shared/order-app.js, the rendered menu fields and site.json. The chef app is
 skipped (staff screen, different rules).
 
   FAIL  breaks a rule we don't bend: em dashes, generator words, invented proof,
-        emoji, the same picture twice on one screen. Exit code 1.
+        emoji, the same picture twice on one screen, and Pidi's locked rules: the old
+        app name anywhere public, a closing time on screen or in the language files
+        (only "Late night from 10 PM"), "partner", "sister", "own restaurant", "our
+        restaurants" or "charged" in a customer file. Exit code 1.
   WARN  worth a look: formula copy repeated across restaurants, staccato triads,
-        pill shapes everywhere, gradients. Exit code stays 0.
+        pill shapes everywhere, gradients, words set in all capitals outside the two
+        capitals faces (Bungee, Anton). Exit code stays 0.
 
 It counts what can be counted. Whether a photo looks generated, or a page
 looks like every other delivery app, needs eyes: run shoot.py and look.
@@ -112,9 +116,8 @@ def site_copy():
             items += [(page, t) for t in html_text(p.read_text(encoding="utf-8"))]
     app = ROOT / "shared/order-app.js"
     items += [("shared/order-app.js", t) for t in js_strings(app.read_text(encoding="utf-8"))]
-    for k in ("eta", "deliveryTime", "payment"):
-        if isinstance(site.get(k), str):
-            items.append(("shared/site.json " + k, site[k]))
+    if isinstance(site.get("payment"), str):
+        items.append(("shared/site.json payment", site["payment"]))
     for b in site["brands"]:
         m = json.loads((ROOT / b["id"] / "menu.json").read_text(encoding="utf-8"))
         where = b["id"] + "/menu.json"
@@ -143,7 +146,8 @@ def file_copy(paths):
                 if isinstance(v, str):
                     items.append((p, v))
                 elif isinstance(v, dict):
-                    [walk(x) for k, x in v.items() if k not in ("img", "src", "poster", "id", "color", "logo", "mark", "hero")]
+                    # (site.json "hours" and "lastOrder" are logic, not words a customer reads)
+                    [walk(x) for k, x in v.items() if k not in ("img", "src", "poster", "id", "color", "logo", "mark", "hero", "hours", "lastOrder")]
                 elif isinstance(v, list):
                     [walk(x) for x in v]
             walk(json.loads(src))
@@ -155,7 +159,7 @@ def file_copy(paths):
 
 def names():
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
-    out = {"Order Aruba"}
+    out = {site["name"]}
     for b in site["brands"]:
         m = json.loads((ROOT / b["id"] / "menu.json").read_text(encoding="utf-8"))
         out |= {m["name"]} | {i["name"] for i in m["items"]}
@@ -308,13 +312,13 @@ def css_findings():
     return out
 
 
-# Order Aruba is the delivery app (like Uber Eats) and may be named; a shared kitchen or owner may not
+# Pidi is the delivery app (like Uber Eats) and may be named; a shared kitchen or owner may not
 LEAKS = ("one kitchen", "shared kitchen", "same kitchen", "from our kitchen", "our other restaurant", "sister restaurant",
          "all five", "kitchen order")
 
 
 def leak_findings(items):
-    """Victor, 9 Oct 2026: Order Aruba is a delivery app like Uber, and customers must believe each restaurant
+    """Victor, 9 Oct 2026: the app (Pidi) is a delivery app like Uber, and customers must believe each restaurant
     is its own business. Copy that hints at a shared kitchen, or names another restaurant in one's own menu, is a FAIL."""
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
     names = {}
@@ -334,14 +338,128 @@ def leak_findings(items):
     return out
 
 
+# ---------------------------------------------------------------- Pidi's locked rules (brief, 10 Oct 2026)
+# Public: whatever GitHub Pages serves that a phone loads. Not checked: notes and tools no customer page loads
+# (.claude/, CLAUDE.md and the other Markdown notes, ops/ the chef app, driver/ the driver app, build/, qa/).
+SKIP_DIRS = {".git", ".github", ".claude", "ops", "driver", "build", "qa", "node_modules"}
+PUBLIC = (".html", ".js", ".css", ".json", ".webmanifest", ".xml", ".txt", ".svg")
+CUSTOMER = (".html", ".js", ".css", ".json", ".webmanifest")
+OLD_NAME = re.compile(r"order\s*aruba|orderaruba", re.I)
+# the old storage and cache names, read once so a phone's saved order moves to the new names (nobody loses a cart)
+LEGACY = {"shared/order-app.js": ('"orderaruba.cart.v2"', '"orderaruba.last.v1"', '"orderaruba.lang.v1"'), "sw.js": ('"orderaruba-"',)}
+# a closing time: only "Late night from 10 PM" until the permit is confirmed (site.json hours and lastOrder are logic)
+CLOSING = re.compile(r"\b2(:00)?\s?AM\b|\b02:00\b|\buntil 2\b|\btill 2\b|\btot 2\b|\bhasta las 2\b", re.I)
+# five restaurants, each its own business: nothing calls one a partner, a sister, "own" or "ours"; nothing is charged
+OWNER_WORDS = re.compile(r"\bpartner|\bown restaurant|\bour restaurants\b|\bsister|\bcharged\b", re.I)
+CAPS_FACES = ("Bungee", "Anton")   # capitals faces by design (Taco Brava, Smash Shack): the capitals rule lets them through
+
+
+def public_files(exts):
+    found = []
+    for d, dirs, files in __import__("os").walk(ROOT):
+        dirs[:] = sorted(x for x in dirs if x not in SKIP_DIRS and not (Path(d) == ROOT and x.startswith(".")))
+        found += [Path(d, f).relative_to(ROOT).as_posix() for f in sorted(files) if f.endswith(exts)]
+    return found
+
+
+def site_words():
+    """site.json is loaded by every phone: all its words count, except the hours and lastOrder values (logic)."""
+    site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
+    out = []
+    def walk(v, key=""):
+        if key in ("hours", "lastOrder"):
+            return
+        if isinstance(v, str):
+            out.append(("shared/site.json " + key, v))
+        elif isinstance(v, dict):
+            [walk(x, k) for k, x in v.items()]
+        elif isinstance(v, list):
+            [walk(x, key) for x in v]
+    walk(site)
+    return out
+
+
+def locked_findings(items, files=None):
+    out = []
+    raw_public = files if files else public_files(PUBLIC)
+    for f in raw_public:
+        p = ROOT / f if not Path(f).is_absolute() else Path(f)
+        if not p.exists() or not str(p).endswith(PUBLIC):
+            continue
+        rel = p.resolve().relative_to(ROOT).as_posix() if str(p.resolve()).startswith(str(ROOT)) else str(p)
+        t = p.read_text(encoding="utf-8", errors="replace")
+        for legacy in LEGACY.get(rel, ()):
+            t = t.replace(legacy, "")
+        for m in sorted({m.group(0) for m in OLD_NAME.finditer(t)}):
+            out.append(("FAIL", rel, f"says “{m}”: the app is Pidi (site.json name) everywhere a customer can see or load"))
+        if rel.endswith(CUSTOMER):
+            for m in sorted({m.group(0).lower() for m in OWNER_WORDS.finditer(t)}):
+                out.append(("FAIL", rel, f"says “{m}”: each restaurant is its own business, never a partner, a sister, “own” or “ours”, and nothing is charged"))
+        if rel.endswith((".html", ".webmanifest")):   # titles, descriptions, link cards, Google data
+            for m in sorted({m.group(0) for m in CLOSING.finditer(t)}):
+                out.append(("FAIL", rel, f"“{m}”: no closing time anywhere a customer looks, only “Late night from 10 PM”"))
+    texts = list(items)
+    if not files:
+        texts += site_words()
+        for code in ("pap", "nl", "es"):
+            lf = ROOT / "shared/lang" / (code + ".json")
+            if lf.exists():
+                texts += [(f"shared/lang/{code}.json", k + " = " + v) for k, v in json.loads(lf.read_text(encoding="utf-8")).items()]
+    for where, t in texts:
+        for m in sorted({m.group(0) for m in CLOSING.finditer(t)}):
+            out.append(("FAIL", where, f"“{m}” in “{t[:60]}”: no closing time on screen, only “Late night from 10 PM”"))
+        for m in sorted({m.group(0).lower() for m in OWNER_WORDS.finditer(t)}):
+            out.append(("FAIL", where, f"“{m}” in “{t[:60]}”: never partner, sister, own restaurant, our restaurants or charged"))
+    return out
+
+
+def caps_findings():
+    """Words set in all capitals read as a template (brief 3.3). Bungee and Anton are capitals faces by design, so a
+    rule that sets them is fine; the OPEN sign is a neon sign on purpose. Everything else: a WARN to look at."""
+    out = []
+    base = (ROOT / "shared/order.css").read_text(encoding="utf-8")
+    def nocomment(src):   # comments blanked out, same length, so positions still give the right line
+        return re.sub(r"/\*.*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), src, flags=re.S)
+    def rules(src):
+        return [(m.start(1) + len(m.group(1)) - len(m.group(1).lstrip()), m.group(1).strip(), m.group(2))
+                for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", nocomment(src))]
+    def tokens(src):
+        return dict(re.findall(r"(--[\w-]+)\s*:\s*([^;}]+)", nocomment(src)))
+    for css in [ROOT / "shared/order.css", ROOT / "shared/hub.css"] + sorted(ROOT.glob("*/style.css")):
+        if css.parent.name in SKIP_DIRS:
+            continue
+        src = css.read_text(encoding="utf-8")
+        toks = {**tokens(base), **tokens(src)}
+        mine = rules(src)
+        for at, sel, body in mine:
+            if "uppercase" not in body or re.search(r"\.(sign|unlit|sg)\b", sel):
+                continue
+            font = re.search(r"font(?:-family)?\s*:([^;]+)", body)
+            if not font:   # the font comes from another rule for the same element
+                last = (re.findall(r"\.[\w-]+", sel) or [""])[-1]
+                for _, s2, b2 in mine[::-1] + rules(base)[::-1]:
+                    f2 = re.search(r"font(?:-family)?\s*:([^;]+)", b2)
+                    if f2 and last and (re.findall(r"\.[\w-]+", s2) or [""])[-1] == last:
+                        font = f2
+                        break
+            face = font.group(1) if font else ""
+            for _ in range(5):
+                face = re.sub(r"var\((--[\w-]+)(?:,([^()]*))?\)", lambda m: toks.get(m.group(1), m.group(2) or ""), face)
+            if any(f in face for f in CAPS_FACES):
+                continue
+            line = src.count("\n", 0, at) + 1
+            out.append(("WARN", f"{css.relative_to(ROOT)}:{line}", f"all capitals on {sel[-48:]}: sentence case, unless it's set in a capitals face ({', '.join(CAPS_FACES)})"))
+    return out
+
+
 def main(argv):
     show = "--show" in argv
     files = [a for a in argv if not a.startswith("--")]
     ok = allowed()
     items = file_copy(files) if files else site_copy()
-    found = copy_findings(items, ok) + leak_findings(items)
+    found = copy_findings(items, ok) + leak_findings(items) + locked_findings(items, files)
     if not files:
-        found += formula_findings() + image_findings() + css_findings()
+        found += formula_findings() + image_findings() + css_findings() + caps_findings()
     if show:
         for w, t in items:
             print(f"  {w}: {t}")

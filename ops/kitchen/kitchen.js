@@ -916,12 +916,12 @@
     lines.forEach(function (l) { var b = l.brandId && BRAND[l.brandId]; if (b && !/drink/i.test(l.raw) && brands.indexOf(b.name) < 0) brands.push(b.name); });
     var sub = o.subtotalC != null ? o.subtotalC : lines.reduce(function (t, l) { return t + l.price; }, 0);
     var fee = o.feeC != null ? o.feeC : 0;
-    // like a delivery app's receipt: Order Aruba on top, the restaurant under it, and that restaurant's WhatsApp number
+    // like a delivery app's receipt: the app (Pidi) on top, the restaurant under it, and that restaurant's WhatsApp number
     var one = o.brandId && BRAND[o.brandId] ? o.brandId : null;
     if (!one) lines.forEach(function (l) { if (!one && l.brandId && BRAND[l.brandId] && !/drink/i.test(l.raw)) one = l.brandId; });
     var conf = one && (SITE.brands || []).filter(function (b) { return b.id === one; })[0];
     if (!brands.length && one) brands = [BRAND[one].name];
-    return { no: o.no || '', when: o.created, brands: brands, biz: SITE.name || 'Order Aruba',
+    return { no: o.no || '', when: o.created, brands: brands, biz: SITE.name || 'Pidi',
       wa: (conf && conf.whatsapp) || SITE.whatsapp || '', mode: o.mode ? o.mode + (o.mode === 'Delivery' && o.area ? ' \u00b7 ' + o.area.replace(/\s*\(please confirm\)/i, '') : '') : '',
       name: o.name || '', lines: lines.map(function (l) { return { q: l.qty, n: l.raw, p: l.price, d: (l.includes || []).concat(l.mods || []) }; }),
       sub: sub, fee: fee, feeLabel: o.mode === 'Pickup' ? 'Pickup' : 'Delivery', total: o.totalC != null ? o.totalC : sub + fee,

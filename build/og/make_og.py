@@ -1,8 +1,9 @@
 """Link preview cards (shared/og/*.jpg, 1200x630) from the live menus and pictures: one per restaurant
-(its signature dish, so the picture matches the tagline) and one for the Order Aruba home page.
-Never anything about a shared kitchen.
+(its signature dish, so the picture matches the tagline) and one for the app's home page (site.json "name",
+with the Pidi wordmark from shared/brand/). Never anything about a shared kitchen, and never a closing time:
+only when it opens ("Late night from 10 PM").
 Run from the repo folder: python3 build/og/make_og.py (it serves the repo itself, see qa/local_server.py).
-Uses each menu.json's logo, sign colours, tagline and hero, and the hours in shared/site.json."""
+Uses each menu.json's logo, sign colours, tagline and hero, and the hours and areas in shared/site.json."""
 import asyncio, json, os, sys
 from playwright.async_api import async_playwright
 
@@ -17,9 +18,10 @@ menus = {b: json.load(open(os.path.join(ROOT, b, "menu.json"), encoding="utf-8")
 def t12(hhmm):
     h, m = map(int, hhmm.split(":")); ap = "PM" if h >= 12 else "AM"; h = h % 12 or 12
     return f"{h}{':%02d' % m if m else ''} {ap}"
-o, c = site["hours"]["mon"]
-HOURS = f"{t12(o)}–{t12(c)}"
-FEE = "ƒ%g" % (site["deliveryFee"] / 100)
+NAME = site["name"]
+OPENS = t12(site["hours"]["mon"][0])
+HOURS = f"Late night from {OPENS}"
+AREAS = f'{site["areas"][0]} to {site["areas"][-1]}' if len(site["areas"]) > 1 else "".join(site["areas"])
 
 def lum(hex_):
     h = hex_.lstrip("#"); r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
@@ -38,7 +40,7 @@ html,body{{margin:0;width:1200px;height:630px;overflow:hidden;background:#15130F
 .hm{{display:grid;grid-template-columns:560px 1fr;width:1200px;height:630px;color:#F4EEE3}}
 .hl{{display:flex;flex-direction:column;padding:48px 44px 44px 52px}}
 .lg{{display:flex;align-items:center;gap:14px;font:800 30px/1 var(--font);letter-spacing:-.01em}}
-.lg img{{width:52px;height:52px;border-radius:12px}}
+.lg img{{display:block;width:auto;height:50px}}
 .h1{{margin:56px 0 0;font:700 92px/1 var(--font);letter-spacing:-.02em}}
 .sub{{margin:22px 0 0;font:500 29px/1.3 var(--font);color:#ADA698}}.sub b{{color:#F4EEE3}}
 .sg{{margin-top:auto;align-self:flex-start;display:flex;align-items:center;gap:14px;padding:10px 16px;border:3px solid #FFC93C;border-radius:12px;color:#FFC93C;text-transform:uppercase;box-shadow:0 0 26px rgba(255,201,60,.3)}}
@@ -59,15 +61,15 @@ def brand_html(b):
     photo = f'<img class="ph" src="{pic}">' if pic else ""
     return HEAD + f"""<div class="c">{photo}<div class="side{'' if pic else ' solo'}" style="--g:{ground};--line:{line};background:{ground};color:{fg}">
 <img class="wm" src="{m['logo']}" alt=""><p class="tg">{m['tagline']}</p>
-<div class="ft"><span>Order Aruba</span><span>{HOURS}</span></div></div></div></body></html>"""
+<div class="ft"><span>{NAME}</span><span>{HOURS}</span></div></div></div></body></html>"""
 
 def home_html():
     hidden = {i["img"] for m in menus.values() for i in m["items"] if i.get("hidePhoto")}
     # "hero": false = that restaurant has no true picture of the dish its line is about yet: no panel for it
     pics = [menus[b]["hero"] for b in ids if menus[b].get("hero") and menus[b]["hero"] not in hidden][:4]
-    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg"><img src="shared/icons/app-192.png" alt="">Order Aruba</div>
-<div class="h1">Bon nochi.</div><p class="sub">Late-night food, delivered.<br><b>{FEE} delivery, {t12(o)} to {t12(c)}.</b></p>
-<div class="sg"><b>Open</b><span>{t12(o)}<br>to {t12(c)}</span></div></div>
+    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg"><img src="shared/brand/wordmark.svg" alt="{NAME}"></div>
+<div class="h1">Bon nochi.</div><p class="sub">Late-night food, delivered.<br><b>{AREAS}.</b></p>
+<div class="sg"><b>Open</b><span>Late night<br>from {OPENS}</span></div></div>
 <div class="grid">{''.join(f'<img src="{p}">' for p in pics)}</div></div></body></html>"""
 
 async def main():

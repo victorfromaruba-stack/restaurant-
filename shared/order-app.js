@@ -1,8 +1,8 @@
-/* Order Aruba: a late-night delivery app, like Uber Eats. The home page lists the restaurants; each
-   restaurant page is its own shop. Restaurants marked "mix" in site.json share one order and one
-   delivery fee (the app's perk, like DoorDash's Double Dash); any other restaurant has its own order.
-   Menus live in <restaurant>/menu.json. Shop settings (WhatsApp number, hours, areas, delivery fee,
-   which restaurants are open) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
+/* Pidi: a late-night delivery app, like Uber Eats. The app's name is site.json "name". The home page lists
+   the restaurants; each restaurant page is a shop of its own. Restaurants marked "mix" in site.json go in one
+   order with one delivery fee (the app's perk, like DoorDash's Double Dash): the highest "fee" among the
+   restaurants in it. Menus live in <restaurant>/menu.json. App settings (WhatsApp number, hours, areas, fees,
+   delivery time, which restaurants are open) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
    No framework, no build step. */
 (function () {
   "use strict";
@@ -12,7 +12,7 @@
   var PAGE = BODY.getAttribute("data-page") || "";
   var HERE = BODY.getAttribute("data-brand") || "";
   var KEY = "", LAST_KEY = "", ALLOWED = [];   // set by setOrder() once site.json is in
-  var MIX_KEY = "orderaruba.cart.v2", MIX_LAST = "orderaruba.last.v1";
+  var MIX_KEY = "pidi.cart.v1", MIX_LAST = "pidi.last.v1";
   var MAX_QTY = 20;
   var OTHER = "Other area";
   var OTHER_NOTE = "Outside our usual area. We\u2019ll confirm on WhatsApp if we can reach you, and the fee.";
@@ -64,8 +64,21 @@
      at the bottom of each page. Translations live in shared/lang/<code>.json ({"English text": "translation"});
      anything missing shows in English. The WhatsApp ticket, menu names and descriptions stay in English. */
   var LANGS = ["en", "pap", "nl", "es"];
-  var LANG_KEY = "orderaruba.lang.v1";
+  var LANG_KEY = "pidi.lang.v1";
   var WORDS = {};
+  /* The app was renamed (10 Oct 2026). A phone that saved an order, an "Order again" or a language under the
+     old names gets them moved to the new ones once, so nobody loses a cart: the old key is read only while the
+     new one is missing, then removed. */
+  var OLD_KEYS = { "pidi.cart.v1": "orderaruba.cart.v2", "pidi.last.v1": "orderaruba.last.v1", "pidi.lang.v1": "orderaruba.lang.v1" };
+  function moveKey(to, from) {
+    try {
+      var old = localStorage.getItem(from);
+      if (old === null) return;
+      if (localStorage.getItem(to) === null) localStorage.setItem(to, old);
+      localStorage.removeItem(from);
+    } catch (e) { /* private mode */ }
+  }
+  Object.keys(OLD_KEYS).forEach(function (k) { moveKey(k, OLD_KEYS[k]); });
   function pickLang() {
     try { var saved = localStorage.getItem(LANG_KEY); if (LANGS.indexOf(saved) >= 0) return saved; } catch (e) { /* private mode */ }
     var list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
@@ -138,7 +151,7 @@
       return r.json();
     });
   }
-  function loadSite() { return getJSON("shared/site.json").then(function (s) { SITE = s; return s; }); }
+  function loadSite() { return getJSON("shared/site.json").then(function (s) { SITE = s; moveBrandKeys(); return s; }); }
   function loadMenu(id) {
     if (MENU[id]) return Promise.resolve(MENU[id]);
     if (!pending[id]) {
@@ -158,7 +171,15 @@
   function inMix(b) { return mixGroup().indexOf(b) >= 0; }
   function setOrder() {
     if (inMix(HERE)) { KEY = MIX_KEY; LAST_KEY = MIX_LAST; ALLOWED = mixGroup(); }
-    else { KEY = "order." + HERE + ".v1"; LAST_KEY = "last." + HERE + ".v1"; ALLOWED = [HERE]; }
+    else { KEY = orderKey(HERE); LAST_KEY = "pidi.last." + HERE + ".v1"; ALLOWED = [HERE]; }
+  }
+  /* a restaurant's own order, for one outside the mix (before 10 Oct 2026: "order.<id>.v1" and "last.<id>.v1") */
+  function orderKey(b) { return "pidi.order." + b + ".v1"; }
+  function moveBrandKeys() {
+    (SITE.brands || []).forEach(function (b) {
+      moveKey(orderKey(b.id), "order." + b.id + ".v1");
+      moveKey("pidi.last." + b.id + ".v1", "last." + b.id + ".v1");
+    });
   }
   /* a dish can't be ordered when it's sold out, and a family deal can't when one of the dishes inside it is */
   function isOut(menu, item) {
@@ -243,12 +264,12 @@
     s.lines = s.lines.filter(function (l) { return ALLOWED.indexOf(l.b) >= 0; });
     return s;
   }
-  /* For a few hours on 9 Oct 2026 every restaurant had its own order (order.<id>.v1). A mix restaurant's
-     unsent lines from then join the shared order once, and the old key goes. */
+  /* For a few hours on 9 Oct 2026 every restaurant had an order of its own (now pidi.order.<id>.v1). A mix
+     restaurant's unsent lines from then join the mix order once, and the old key goes. */
   function absorb(s) {
     try {
       ALLOWED.forEach(function (b) {
-        var k = "order." + b + ".v1", o = JSON.parse(localStorage.getItem(k));
+        var k = orderKey(b), o = JSON.parse(localStorage.getItem(k));
         if (!o) return;
         localStorage.removeItem(k);
         if (!Array.isArray(o.lines) || o.sentAt || s.sentAt) return;
@@ -395,7 +416,25 @@
   function count() { return liveLines().reduce(function (n, l) { return n + l.q; }, 0); }
   function itemCount(b, id) { return liveLines().reduce(function (n, l) { return n + (l.b === b && l.id === id ? l.q : 0); }, 0); }
   function subtotal() { return liveLines().reduce(function (n, l) { return n + l.q * l.p; }, 0); }
-  function fee() { return count() > 0 ? SITE.deliveryFee : 0; }
+  /* Delivery: each restaurant has a fee in site.json ("fee", in cents; "deliveryFee" for one without), and an
+     order pays one fee, the highest among the restaurants in it. */
+  function feeOf(b) {
+    var x = (SITE.brands || []).filter(function (y) { return y.id === b; })[0];
+    return x && typeof x.fee === "number" ? x.fee : SITE.deliveryFee;
+  }
+  function fee() { return count() > 0 ? Math.max.apply(null, brandsInCart().map(feeOf).concat([0])) : 0; }
+  /* the fee when every restaurant on the app has the same one, else 0: then the words say "one delivery fee" */
+  function flatFee() {
+    var fs = (SITE.brands || []).filter(function (b) { return b.status !== "hidden"; }).map(function (b) { return feeOf(b.id); });
+    if (!fs.length) return SITE.deliveryFee;
+    return fs.every(function (f) { return f === fs[0]; }) ? fs[0] : 0;
+  }
+  /* the usual delivery time, "45–60 min", from site.json etaMin and etaMax */
+  function etaText() { return SITE.etaMin && SITE.etaMax ? SITE.etaMin + "\u2013" + SITE.etaMax + " min" : ""; }
+  /* "Order from several restaurants at once." goes with this */
+  function oneFeeLine() {
+    return flatFee() ? tr("You pay {fee} delivery once.", { fee: shortMoney(flatFee()) }) : tr("You pay one delivery fee.");
+  }
   function total() { return subtotal() + fee(); }
   /* restaurants with food in the order (drinks don't count unless the order is only drinks), in site.json order */
   function brandsInCart() {
@@ -838,7 +877,8 @@
       if (chips.length) own = '<h3 class="addon__t" id="oa-add-h">' + esc(tr(nSide && nDrink ? "Add a side or drink" : nDrink ? "Add a drink" : "Add a side")) + "</h3>" +
         '<div class="addon__row">' + chips.join("") + "</div>";
     }
-    var other = cross.length ? '<h3 class="addon__t addon__t--other">' + keep(tr("From other restaurants · same order, still one {fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</h3>" +
+    var other = cross.length ? '<h3 class="addon__t addon__t--other">' + keep(flatFee() ? tr("From other restaurants · same order, still one {fee} delivery", { fee: shortMoney(flatFee()) })
+      : tr("From other restaurants · same order, one delivery fee")) + "</h3>" +
       '<div class="addon__row addon__row--other">' + cross.map(function (c) { return addChip(c[0], MENU[c[0]].byId[c[1]], true); }).join("") + "</div>" : "";
     return own || other ? '<section class="addon" aria-label="' + esc(tr("Add a side or drink")) + '">' + own + other + "</section>" : "";
   }
@@ -911,7 +951,7 @@
     var areas = (SITE.areas || []).concat([OTHER]);
     html += '<form class="form" novalidate onsubmit="return false">';
     var ts = timeSlots(), when = validWhen();
-    var whenOpts = (ts.asap ? ['<option value=""' + (when === "" ? " selected" : "") + ">" + esc(tr("As soon as possible ({eta})", { eta: SITE.eta || "" })) + "</option>"] : [])
+    var whenOpts = (ts.asap ? ['<option value=""' + (when === "" ? " selected" : "") + ">" + esc(tr("As soon as possible ({eta})", { eta: etaText() })) + "</option>"] : [])
       .concat(ts.slots.map(function (x) { return '<option value="' + esc(x.v) + '"' + (x.v === when ? " selected" : "") + ">" + esc(x.d) + "</option>"; }));
     html += '<label class="field"><span class="field__l">' + esc(tr(ts.asap ? "When" : "Tonight at")) + '</span><span class="select"><select id="oa-when" data-f="when">' + whenOpts.join("") + "</select></span></label>";
     // closed: say so right at the time choice, where it matters
@@ -944,8 +984,7 @@
         err("pay", tr("Pick how you\u2019ll pay.")) + "</fieldset>" : "") +
       "</form>";
     if (inMix(HERE) || brandsInCart().some(inMix)) {
-      html += '<p class="order__mix">' + keep(tr("Order from several restaurants at once.")) + " <b>" +
-        keep(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b></p>";
+      html += '<p class="order__mix">' + keep(tr("Order from several restaurants at once.")) + " <b>" + keep(oneFeeLine()) + "</b></p>";
     }
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
       "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
@@ -1058,12 +1097,11 @@
   /* ---------------------------------------------------------------- shared bits */
   function setHTML(sel, html) { $$(sel).forEach(function (n) { if (n._html !== html) { n._html = html; n.innerHTML = html; } }); }
   function fillCommon() {
-    $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     setHTML("[data-oa-hero]", mixGroup().length > 1
-      ? keep(tr("Order from several restaurants at once.")) + " <b>" + keep(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>"
-      : esc(tr("Late-night food, delivered.")) + " <b>" + esc(tr("{fee} delivery.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>");
+      ? keep(tr("Order from several restaurants at once.")) + " <b>" + keep(oneFeeLine()) + "</b>"
+      : esc(tr("Late-night food, delivered.")) + (flatFee() ? " <b>" + esc(tr("{fee} delivery.", { fee: shortMoney(flatFee()) })) + "</b>" : ""));
     var ar = SITE.areas || [];
-    setHTML("[data-oa-facts]", [SITE.eta ? tr("Delivery in {eta}", { eta: SITE.eta }) : "", ar.length > 1 ? tr("{from} to {to}", { from: ar[0], to: ar[ar.length - 1] }) : ar.join("")]
+    setHTML("[data-oa-facts]", [etaText() ? tr("Delivery in {eta}", { eta: etaText() }) : "", ar.length > 1 ? tr("{from} to {to}", { from: ar[0], to: ar[ar.length - 1] }) : ar.join("")]
       .filter(Boolean).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join(""));
     paintSign(false);
     setHTML("[data-oa-deliver-to]", deliverToHTML());
@@ -1102,7 +1140,7 @@
       mixGroup().length > 1 ? [tr("Pick your dishes"), tr("From one restaurant or several, in one order.")]
         : [tr("Pick a restaurant"), tr("Each restaurant is its own order. Tap + on what you want.")],
       [tr("Send it on WhatsApp"), tr("WhatsApp opens with your order already written out. Just press send.")],
-      [tr("We reply to confirm"), clean((SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
+      [tr("We reply to confirm"), clean((etaText() ? tr("Delivery takes about {eta}.", { eta: etaText() }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
     ];
     return steps.map(function (s) { return "<li><b>" + keep(s[0]) + ".</b> <span>" + keep(s[1]) + "</span></li>"; }).join("");
   }
@@ -1112,7 +1150,9 @@
     var hours = same ? tr("Every night from {time}.", { time: clock(mins(h[0])) })
       : today ? tr("Late night from {time}", { time: clock(mins(today[0])) }) + "." : tr("Closed today.");
     var many = PAGE === "hub" ? mixGroup().length > 1 : ALLOWED.length > 1;
-    return [tr(many ? "Delivery is {fee} per order, even with dishes from several restaurants." : "Delivery is {fee} per order.", { fee: shortMoney(SITE.deliveryFee) }),
+    var f = PAGE === "hub" || many ? flatFee() : feeOf(HERE);
+    return [f ? tr(many ? "Delivery is {fee} per order, even with dishes from several restaurants." : "Delivery is {fee} per order.", { fee: shortMoney(f) })
+      : tr("You pay one delivery fee, the highest in your order."),
       tr("We only deliver: there\u2019s no pickup or dine-in."), hours].join(" ").trim();
   }
   function setupIAB() {
@@ -1213,8 +1253,8 @@
     var html = '<div class="strip' + (st.open ? "" : " strip--closed") + '"><ul class="facts">' +
           '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") +
             esc(st.label) + "</li>" +
-          "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
-          (st.open && SITE.eta ? "<li>" + esc(SITE.eta) + "</li>" : "") +
+          "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(feeOf(b)) })) + "</li>" +
+          (st.open && etaText() ? "<li>" + esc(etaText()) + "</li>" : "") +
         "</ul></div>" +
       '<header class="store' + (cover ? "" : " store--plain") + '">' +
         '<h1 class="store__name" id="store-name"><img class="store__logo" src="' + esc(path(menu.logo)) + '" alt="" decoding="async">' +
@@ -1245,7 +1285,7 @@
     main.innerHTML = html;
     wireVideo(main);
     paintAgain();
-    // like any delivery app: other restaurants on Order Aruba, at the very end, as small plates. Never in the order itself.
+    // like any delivery app: other restaurants on the app, at the very end, as small plates. Never in the order itself.
     later(function () {
       var others = (SITE.brands || []).filter(function (x) { return x.id !== b && x.status !== "hidden"; }).map(function (x) { return x.id; });
       Promise.all(others.map(function (x) { return loadMenu(x).catch(function () { return null; }); })).then(function () {
@@ -1418,7 +1458,7 @@
         '<span class="meta">' + label + fromLine(b, m) + "</span>" +
         '<span class="shop__tag">' + keep(m.tagline || "") + "</span></span></a>";
   }
-  /* "More on Order Aruba" at the end of a restaurant page: small plates, the sign and two facts */
+  /* "More on Pidi" (the app's name) at the end of a restaurant page: small plates, the sign and two facts */
   function plateHTML(b) {
     var m = MENU[b];
     return '<a class="plate' + (brandStatus(b) !== "open" ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '" data-shop="' + esc(b) + '" style="' + signStyle(m) + '">' +
@@ -1512,7 +1552,7 @@
     Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
       var start = $("#oa-rail"), list = $("#oa-list");
       if (start) {
-        // one house dish per restaurant first, family deals after: a short printed list, each opens on its own restaurant's page
+        // one house dish per restaurant first, family deals after: a short printed list, each opens on the page of the restaurant it's from
         var picks = [];
         ["signature", "bundle"].forEach(function (style) {
           ids.forEach(function (b) {
@@ -1536,7 +1576,7 @@
     });
   }
 
-  /* home page dish lines (search results, "Start with these") open the dish on its own restaurant's page */
+  /* home page dish lines (search results, "Start with these") open the dish on the page of the restaurant it's from */
   function dishLink(b, item) { return path(b + "/#d=" + encodeURIComponent(item.id)); }
   function linkRowHTML(b, item, short) {
     var m = MENU[b], pic = hasPic(item), out = isOut(m, item);
@@ -1568,7 +1608,7 @@
         esc(o.sentAt ? tr("Sent: see order") : plural(n, "item", "items") + " \u00b7 " + money(sum)) + "</span></a>";
     }
     var mix = mixGroup();
-    var rows = row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row("order." + b + ".v1", [b]); }).join("");
+    var rows = row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row(orderKey(b), [b]); }).join("");
     box.innerHTML = rows;
     box.hidden = !rows;
   }

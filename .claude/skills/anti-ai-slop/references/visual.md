@@ -8,7 +8,7 @@ type, its own marks); remove the generator defaults around it.
 | Purple-to-pink or indigo gradients, gradient text, "aurora" blobs | The default palette of every generated landing page | Flat colours from the brand. A dark scrim over a photo is the one gradient that earns its place |
 | Sparkle star icons (✦, ✨, a four-point star) | It is the icon of AI products; people read it as "a bot made this" | The business's own mark, a wordmark, or nothing |
 | Glass cards: blur, transparency, glowing borders and shadows | Generator default, and it muddies the text | Solid surfaces separated by a hairline or a tint |
-| Pills on everything: badges, chips, info tags, buttons | The app-template look. Chips that can't be tapped pretend to be buttons | Pills only for things you tap. Facts as one plain line: "Open until 2 AM · ƒ5 delivery" |
+| Pills on everything: badges, chips, info tags, buttons | The app-template look. Chips that can't be tapped pretend to be buttons | Pills only for things you tap. Facts as one plain line: "Late night from 10 PM · ƒ5 delivery" |
 | Emoji as icons (🚀 🍹 🔥 ✅) | Placeholder-grade; renders differently on every phone | A word, or a simple drawn icon where it helps a tap |
 | "Why choose us": three identical cards with an icon, a title and a sentence | The single most templated section on the web | Say the one thing that's true in a sentence, or show a number |
 | Testimonials carousel, star rows, "Trusted by" logo strip | Usually invented, always suspected | Real quotes only, with permission. Nothing is better than fake |

@@ -1,4 +1,4 @@
-/* Order Aruba: the app's own look (top bar, delivery line, order ticket, end of page, footer) in Archivo on a
+/* Pidi: the app's own look (top bar, delivery line, order ticket, end of page, footer) in Archivo on a
    warm night black, and the skeleton every restaurant page shares. Each restaurant loads its own stylesheet
    (<restaurant>/style.css) that sets the restaurant tokens below (--g ground, --ink, --display font ...) and gives
    its header, section titles and menu rows its own type, colours and rules. The app's parts switch back to the
@@ -7,7 +7,7 @@
 @font-face{font-family:"Archivo";src:url(fonts/archivo-florin.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap;unicode-range:U+0192}
 :root{
   color-scheme:dark;
-  /* Order Aruba */
+  /* Pidi */
   --app:#15130F;      /* a street at 1 AM */
   --app-2:#1F1C17;    /* raised parts */
   --app-3:#2C2822;    /* quiet buttons */
@@ -40,7 +40,7 @@
   --lead:2px dotted;--lead-ink:#5A5348;--focus:var(--sodium);
   color:var(--ink);font-family:var(--font)
 }
-/* the order: Order Aruba's paper ticket */
+/* the order: the app's paper ticket */
 .sheet__panel--order{
   --g:var(--paper);--g2:var(--paper-2);--ink:var(--paper-ink);--muted:var(--paper-muted);--line:var(--paper-rule);--field-line:var(--paper-field);
   --acc:var(--paper-ink);--acc-ink:var(--paper);--price:var(--paper-ink);--r:4px;
@@ -66,17 +66,18 @@ h1,h2,h3{margin:0;font-weight:700;line-height:1.15}
 .oa-skip{position:absolute;left:-9999px;top:8px;z-index:100;background:var(--app-ink);color:var(--app);padding:10px 14px;border-radius:6px}
 .oa-skip:focus{left:8px}
 
-/* ---------- top bar (Order Aruba) */
+/* ---------- top bar (Pidi) */
 .top{position:sticky;top:0;z-index:30;background:var(--app);border-bottom:1px solid var(--app-rule)}
 /* one width on every page (the restaurant pages' column plus its margins), so the mark, the back link and the bag
    never move when you go from the home page to a restaurant and back */
 .top__in{max-width:752px;margin:0 auto;height:56px;display:flex;align-items:center;gap:6px;padding:0 6px 0 4px}
-/* the app's own icon (its lit OA sign on the night), where the back arrow sits on a restaurant page */
-.logo{display:flex;align-items:center;gap:3px;min-height:44px;text-decoration:none;font:800 18px/1 var(--font);letter-spacing:-.01em;flex:none}
-.logo__icon{width:34px;height:34px;border-radius:7px;flex:none}
+/* the app's name, where the back arrow sits on a restaurant page: 16px from the edge */
+.logo{display:flex;align-items:center;gap:3px;min-height:44px;padding:0 8px 0 12px;text-decoration:none;font:800 18px/1 var(--font);letter-spacing:-.01em;flex:none}
+/* the Pidi wordmark (shared/brand/wordmark.svg, trimmed to its ink) */
+.logo__wm{display:block;width:auto;height:24px;flex:none}
 .top__back{display:flex;align-items:center;gap:2px;min-width:44px;height:44px;padding:0 10px 0 4px;text-decoration:none;font:600 15px/1 var(--font);flex:none;border-radius:6px}
 .top__back svg{width:24px;height:24px;flex:none}
-.top__app{white-space:nowrap}
+.top__app{display:block;width:auto;height:18px;margin-left:2px;flex:none}
 body.past-name .top__app{display:none}
 .top__title{flex:1;min-width:0;font:700 17px/1 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s}
 body.past-name .top__title{opacity:1;transform:none}
@@ -94,7 +95,7 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 .tabs a{display:flex;align-items:center;justify-content:center;min-width:44px;text-decoration:none;color:var(--app-muted);font:600 14.5px/1 var(--font);border-bottom:2px solid transparent;padding-top:2px;white-space:nowrap}
 .tabs a.on{color:var(--app-ink);border-bottom-color:var(--app-ink)}
 
-/* ---------- a line of facts, "Open until 2 AM · ƒ5 delivery · 35–50 min": each fact stays in one piece, and a
+/* ---------- a line of facts, "Open now · ƒ5 delivery · 45–60 min": each fact stays in one piece, and a
    dot that would start a new line is clipped off, so separators never dangle */
 .facts,.meta{list-style:none;margin:0 0 0 -15px;padding:0;display:flex;flex-wrap:wrap;clip-path:inset(0 0 0 15px)}
 .facts>li,.meta>*{position:relative;padding-left:15px;white-space:nowrap}
@@ -104,7 +105,7 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 /* ---------- restaurant page: the skeleton every restaurant styles its own way */
 .page{padding:0;overflow-x:clip}
 .page>*{padding-inline:max(16px,calc(50% - 360px))}
-/* the app's delivery line, right under the bar: one Order Aruba fact, the same on every restaurant */
+/* the app's delivery line, right under the bar: one fact about the app, the same on every restaurant */
 .strip{padding-block:8px;background:var(--app);border-bottom:1px solid var(--app-rule)}
 .strip .facts{font-size:14px}
 .strip .facts__status{color:var(--app-ink);font-weight:700}
@@ -218,7 +219,7 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
 .meta{font:500 14.5px/1.35 var(--font);color:var(--app-muted)}
 .meta b{color:var(--app-ink);font-weight:700}
 .meta .soon{color:var(--warn-ink)}
-/* "More on Order Aruba": small plates, about 90px, the sign and two facts */
+/* "More on Pidi": small plates, about 90px, the sign and two facts */
 .plates{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:14px}
 .plate{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:center;min-height:60px;text-decoration:none;color:inherit}
 .plate__sign{height:58px;padding:8px 12px}

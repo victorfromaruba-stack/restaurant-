@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Phone screenshots of the customer site, the way a hungry customer sees it at 11 PM.
 
-    python3 .claude/skills/human-touch/scripts/shoot.py                   # -> /tmp/order-aruba-shots/
+    python3 .claude/skills/human-touch/scripts/shoot.py                   # -> /tmp/pidi-shots/
     python3 .claude/skills/human-touch/scripts/shoot.py --out before/     # keep a set to compare with later
     python3 .claude/skills/human-touch/scripts/shoot.py --closed          # 2 PM: closed, pre-orders
     python3 .claude/skills/human-touch/scripts/shoot.py --width 320       # the smallest phones
+    python3 .claude/skills/human-touch/scripts/shoot.py --height 664      # what a phone shows with its browser bars
 
 Serves the repo itself for the run (qa/local_server.py), so there is no server to start
 first; --base shoots another server instead (e.g. the live site). Clock is pinned to an open
@@ -62,9 +63,11 @@ async def main(a):
     notes = []
     async with async_playwright() as p:
         br = await p.chromium.launch()
-        ctx = await br.new_context(viewport={"width": a.width, "height": 844 if a.width > 360 else 640},
+        ctx = await br.new_context(viewport={"width": a.width, "height": a.height or (844 if a.width > 360 else 640)},
                                    device_scale_factor=2, service_workers="block", locale=a.lang)
         await ctx.add_init_script(CLOCK % (CLOSED if a.closed else OPEN))
+        # screenshots never reach the real order database (service workers are blocked, so this sees every request)
+        await ctx.route("**/rest/v1/**", lambda r: r.fulfill(status=200, content_type="application/json", body="null"))
         page = await ctx.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -113,8 +116,9 @@ async def main(a):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", help="shoot this server instead of serving the repo, e.g. the live site")
-    ap.add_argument("--out", default="/tmp/order-aruba-shots")
+    ap.add_argument("--out", default="/tmp/pidi-shots")
     ap.add_argument("--closed", action="store_true")
     ap.add_argument("--width", type=int, default=390)
+    ap.add_argument("--height", type=int, default=0, help="screen height; real phones with browser bars show 548-664")
     ap.add_argument("--lang", default="en-US", help="phone language, e.g. nl-NL, es-ES, pap-AW")
     asyncio.run(main(ap.parse_args()))

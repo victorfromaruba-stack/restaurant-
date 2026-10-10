@@ -24,9 +24,9 @@ page). Keep that line until every picture is a real one.
 | Tell | Why | What we do |
 |---|---|---|
 | A four-point sparkle star (✦) as the logo or decoration | It is the icon of AI products. Customers have learned it means "a bot made this" | A wordmark, or a mark that comes from us (the OPEN sign, the restaurants' own logos) |
-| Every section title in giant condensed capitals | Every generated "bold food brand" page does this. When everything shouts, nothing does | One loud thing per screen (page title or the OPEN sign). Section titles in sentence case, smaller |
-| Pills on everything: status chips, info chips, filters, options, buttons | The delivery-app template. Chips that can't be tapped pretend to be buttons | Pills only for things you tap. Facts as one plain line: "Open until 2 AM · ƒ5 delivery · 35–50 min" |
-| Generic section names: Featured, Popular, Recommended, Signature dishes | Template labels that say nothing about this kitchen | Names that tell the customer what to do or what's there: "Start with these", "Start here", "Family deal" |
+| Every section title in giant condensed capitals | Every generated "bold food brand" page does this. When everything shouts, nothing does | One loud thing per screen (page title or the OPEN sign). Section titles in sentence case, smaller. Only Taco Brava's Bungee and Smash Shack's Anton are capitals faces, and only in their own slots (wordmark, section titles, type plates); `check.py` warns on capitals anywhere else |
+| Pills on everything: status chips, info chips, filters, options, buttons | The delivery-app template. Chips that can't be tapped pretend to be buttons | Pills only for things you tap. Facts as one plain line: "Open now · ƒ5 delivery · 45–60 min" (never a closing time) |
+| Generic section names: Featured, Popular, Recommended, Signature dishes | Template labels that say nothing about this restaurant | Names that tell the customer what to do or what's there: "Start with these", "Start here", "Family deal" |
 | Identical cards in a perfect grid, everything the same radius | Templates repeat; real places have one big thing and smaller things | Vary scale: one hero, then rows. Same radius is fine, same everything isn't |
 | Glows, gradients, frosted glass as decoration | Generator defaults | Flat night colours. The OPEN sign may glow because it's a neon sign |
 | Fake liveness: "12 people ordering now", countdowns, "only 3 left" | Invented urgency is a lie, and people know the trick | Only real state: open or closed from the hours, sold out from the menu |
@@ -36,7 +36,7 @@ page). Keep that line until every picture is a real one.
 
 | Tell | Why | What we do |
 |---|---|---|
-| Staccato triads: "Hot. Fresh. Fast." | The single most common generated rhythm | Say it once, plainly: "Cooked to order, delivered in 35–50 min." |
+| Staccato triads: "Hot. Fresh. Fast." | The single most common generated rhythm | Say it once, plainly: "Cooked to order, delivered in 45–60 min." |
 | Every restaurant's tagline in the same shape ("A, B & C") | Stamped from one template | Each restaurant its own sentence, about what's true of it |
 | Adjectives instead of facts: delicious, fresh, bold, perfect, mouthwatering | A generator writes them because it knows nothing | Name the ingredient, the cooking, the time: "smashed thin on the flat-top", "with a cup of consommé to dip" |
 | Em dashes | Nobody types one in a WhatsApp or on a menu board | Full stop, comma, or two sentences |

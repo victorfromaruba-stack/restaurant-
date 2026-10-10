@@ -1,4 +1,4 @@
-/* Order Aruba home: the app's list of restaurants. Builds on shared/order.css. The app stays quiet so each
+/* Pidi home: the app's list of restaurants. Builds on shared/order.css. The app stays quiet so each
    restaurant's own sign carries the colour, and the OPEN sign is the one loud thing. One centred column. */
 /* the same width as a restaurant page (and as the top bar) */
 .home{max-width:752px;margin:0 auto;padding:0 16px calc(56px + var(--safe-b))}

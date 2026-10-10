@@ -1,6 +1,6 @@
 ---
 name: human-touch
-description: Make the Order Aruba site (this repo) look and read like a real late-night kitchen in Aruba made it, not a generator. Use it whenever you change, review or add anything a customer sees (pages, menus, dish text, pictures, headings, buttons, colours, icons) and whenever Victor says the site looks fake, AI-made, generic, like a template, cheap, or asks to make it nicer, better or more real, even if he never says "AI". Also use it for the audit in a daily improvement run. Comes with check.py (counts the tells, must say 0 fail) and shoot.py (phone screenshots to look at).
+description: Make the Pidi site (this repo: the Pidi late-night delivery app in Aruba and its five restaurants) look and read like real restaurants on a real app made it, not a generator. Use it whenever you change, review or add anything a customer sees (pages, menus, dish text, pictures, headings, buttons, colours, icons) and whenever Victor says the site looks fake, AI-made, generic, like a template, cheap, or asks to make it nicer, better or more real, even if he never says "AI". Also use it for the audit in a daily improvement run. Comes with check.py (counts the tells, must say 0 fail) and shoot.py (phone screenshots to look at).
 ---
 
 # Human touch
@@ -12,7 +12,7 @@ road. Every dish picture is an illustration for now, so everything around the
 pictures has to carry the trust.
 
 The test for every screen: **would someone hungry in Noord at 11 PM, on a phone,
-believe a real kitchen is behind this?**
+believe real restaurants are behind this, on an app that works?**
 
 ## How to work
 
@@ -49,8 +49,8 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    recipe", "locally sourced", "100s of happy customers". Made-up proof is the
    surest generator tell, and on a public page it's a lie. An empty spot is better.
    Once Victor confirms a fact, add the exact phrase to `allow.txt` and use it.
-2. **True specifics beat adjectives.** "Open till 2 AM", "ƒ5 delivery, Santa Cruz to
-   Noord", "House colour helps the driver", "Pay cash or by bank transfer". A generator
+2. **True specifics beat adjectives.** "Late night from 10 PM" (never a closing time),
+   "ƒ5 delivery, Santa Cruz to Noord", "45–60 min", "House colour helps the driver", "Pay cash or by bank transfer". A generator
    writes "delicious", "fresh", "bold" because it knows nothing. We know the details,
    so we say them. The best source is the kitchen itself: `ops/kitchen/kitchen-data.json`
    holds every dish's recipe card (what goes in, how it's cooked, how it's packed: burger
@@ -66,10 +66,11 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    a real photo of the real box in 30 seconds. A slightly messy real photo earns more
    trust than a perfect generated one. Ask for real photos every time it fits, and
    never put up a generated picture that adds things the description doesn't list.
-5. **Keep the identity, drop the template.** Ours: the night palette, Archivo, the
-   app's OPEN neon sign and "Bon nochi.", each restaurant's own colour, logo and voice,
-   the honest "Pictures are illustrations." The
-   template: sparkle icons, every heading in giant capitals, pills on everything,
+5. **Keep the identity, drop the template.** Ours: the night, the Pidi wordmark and
+   its peach dot, the app's OPEN neon sign and "Bon nochi.", each restaurant's own
+   colour, logo, font and voice, the honest "Pictures are illustrations." The
+   template: sparkle icons, every heading in giant capitals (only Bungee and Anton,
+   Taco Brava's and Smash Shack's capitals faces, may set capitals), pills on everything,
    identical cards, generic section names like "Featured" and "Popular". Change the
    template, keep the identity. A full restyle needs Victor's yes first.
 6. **Write like the person at the counter.** Short, contracted, plain, local.
@@ -78,12 +79,14 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    `shared/lang/pap.json`, `nl.json`, `es.json`; `python3 build/lang_keys.py` lists
    what's missing. Dish names, descriptions, taglines and the WhatsApp ticket stay
    English. Victor checks Papiamento, so keep new Papiamento short and simple.
-8. **Order Aruba is a delivery app, like Uber Eats; each restaurant is its own
-   business** (Victor, 9 Oct 2026). The app may list them together (home page, "More on
-   Order Aruba"), and the five `mix` restaurants share one order and one ƒ5 delivery as
-   the app's perk. But nothing a customer can see or load may say or hint that they share
-   a kitchen or an owner. Delivery only.
-   check.py and `qa/check_site.py` fail on it. Honest stays honest: the allergen line
+8. **Pidi is a delivery app, like Uber Eats; each restaurant is its own business**
+   (Victor, 9 Oct 2026; the app was called Order Aruba until 10 Oct, and that name
+   never appears anywhere public again). The app may list them together (home page,
+   "More on Pidi"), and one order can mix restaurants with one delivery fee as the
+   app's perk. But nothing a customer can see or load may say or hint that they share
+   a kitchen or an owner: never "partner", "sister", "own restaurant", "our
+   restaurants". Delivery only, "Late night from 10 PM" with no closing time, and
+   nothing is ever "charged". check.py and `qa/check_site.py` fail on all of it. Honest stays honest: the allergen line
    still says traces of the other big allergens are possible (and fried food shares the oil), and we never claim
    the restaurants are independent or "local partners" either. We just don't say more.
 9. **Ordering keeps working.** After any change: `qa/check_site.py` = 0 problems. If you
@@ -95,9 +98,9 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
 | File | Use |
 |---|---|
 | `references/tells.md` | what makes a food site look generated, by pictures, layout and copy, with what we do instead |
-| `references/voice.md` | how Order Aruba writes, banned words with reasons, before/after from our pages |
+| `references/voice.md` | how Pidi writes, banned words with reasons, before/after from our pages |
 | `scripts/check.py` | counts copy, picture and style tells across the customer site. `--show` prints all copy it read. Pass files to check just those |
-| `scripts/shoot.py` | phone screenshots (`--closed`, `--width 320`, `--lang nl-NL`, `--out DIR`); flags broken pictures, sideways scroll, repeats on the first screen |
+| `scripts/shoot.py` | phone screenshots (`--closed`, `--width 320 --height 568`, `--lang nl-NL`, `--out DIR`); shoot at the heights phones really show (390x664, 360x560, 320x568), not only 844; flags broken pictures, sideways scroll, repeats on the first screen |
 | `allow.txt` | phrases Victor confirmed as true, so check.py lets them through |
 
 check.py counts what can be counted. It can't see a generated photo or a page that

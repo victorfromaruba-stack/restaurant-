@@ -176,7 +176,6 @@
  "Search all menus": "Buscar en todos los menús",
  "Start with these": "Empieza con estos",
  "Restaurants": "Restaurantes",
- "Order Aruba home": "Inicio de Order Aruba",
  "Search tacos, fried rice, bitterballen": "Busca tacos, arroz frito, bitterballen",
  "Each restaurant is its own order. Tap + on what you want.": "Cada restaurante es su propio pedido. Toca + en lo que quieras.",
  "It goes to {app} on WhatsApp, {number}.": "Va a {app} por WhatsApp, {number}.",
@@ -197,5 +196,8 @@
  "You order here and send it on WhatsApp. We reply to confirm.": "Pides aquí y mandas el pedido por WhatsApp. Te respondemos para confirmar.",
  "Open now": "Abierto ahora",
  "Late night from {time}": "Tarde en la noche, desde las {time}",
- "Every night from {time}.": "Todas las noches desde las {time}."
+ "Every night from {time}.": "Todas las noches desde las {time}.",
+ "You pay one delivery fee.": "Pagas la entrega una sola vez.",
+ "You pay one delivery fee, the highest in your order.": "Pagas un solo costo de entrega: el más alto de tu pedido.",
+ "From other restaurants · same order, one delivery fee": "De otros restaurantes · mismo pedido, una sola entrega"
 }

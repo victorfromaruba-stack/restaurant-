@@ -176,7 +176,6 @@
  "Search all menus": "Zoek in alle menu's",
  "Start with these": "Begin hiermee",
  "Restaurants": "Restaurants",
- "Order Aruba home": "Order Aruba startpagina",
  "Search tacos, fried rice, bitterballen": "Zoek taco's, nasi, bitterballen",
  "Each restaurant is its own order. Tap + on what you want.": "Elk restaurant is een eigen bestelling. Tik op + bij wat je wilt.",
  "It goes to {app} on WhatsApp, {number}.": "Het gaat naar {app} op WhatsApp, {number}.",
@@ -197,5 +196,8 @@
  "You order here and send it on WhatsApp. We reply to confirm.": "Je bestelt hier en stuurt de bestelling via WhatsApp. Wij antwoorden om te bevestigen.",
  "Open now": "Nu open",
  "Late night from {time}": "'s Avonds laat vanaf {time}",
- "Every night from {time}.": "Elke avond vanaf {time}."
+ "Every night from {time}.": "Elke avond vanaf {time}.",
+ "You pay one delivery fee.": "Je betaalt maar één keer bezorging.",
+ "You pay one delivery fee, the highest in your order.": "Je betaalt één keer bezorgkosten: de hoogste in je bestelling.",
+ "From other restaurants · same order, one delivery fee": "Van andere restaurants · zelfde bestelling, één keer bezorgen"
 }

@@ -1,10 +1,12 @@
 {
- "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95). Order Aruba is the delivery app; customers' phones read this file.",
- "name": "Order Aruba",
+ "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas, fees or which restaurants are open. Money in cents (1295 = f12.95). Customers' phones read this file.",
+ "name": "Pidi",
  "whatsapp": "2977477794",
  "whatsappConfirmed": true,
  "deliveryFee": 500,
- "eta": "45–60 min",
+ "minFood": 2400,
+ "etaMin": 45,
+ "etaMax": 60,
  "payment": "We take cash in florins or US dollars, or a bank transfer.",
  "payWith": [
   "Cash",
@@ -54,34 +56,42 @@
   {
    "id": "dushi-wok",
    "status": "soon",
-   "mix": true
+   "mix": true,
+   "fee": 500
   },
   {
    "id": "taco-brava",
    "status": "open",
-   "mix": true
+   "mix": true,
+   "fee": 500
   },
   {
    "id": "smash-shack",
    "status": "open",
-   "mix": true
+   "mix": true,
+   "fee": 500
   },
   {
    "id": "nonnas-night-in",
    "status": "open",
-   "mix": true
+   "mix": true,
+   "fee": 500
   },
   {
    "id": "oranje-snack",
    "status": "open",
-   "mix": true
+   "mix": true,
+   "fee": 500
   }
  ],
  "_status_help": "status can be open, soon (shows 'Opening soon', can't order) or hidden (not on the home page; its own page says it isn't taking orders).",
- "_hours_help": "Each day is [opens, closes] in Aruba time. A closing time earlier than the opening time means after midnight (22:00 to 02:00 = 10 PM until 2 AM the next morning).",
- "_lastOrder_help": "lastOrder: new orders stop at this time (Aruba time); the sign shows Last orders in the final 30 minutes. Remove the line for no cut-off.",
+ "_fee_help": "fee: a restaurant's delivery fee in cents (500 = f5). One order pays one delivery fee, the highest fee among the restaurants in it. deliveryFee is only used for a restaurant without a fee.",
+ "_minFood_help": "minFood: the least food one order needs, in cents, before delivery (2400 = f24).",
+ "_eta_help": "etaMin and etaMax: the usual delivery time in minutes. The site shows them as 45–60 min.",
+ "_hours_help": "Each day is [opens, closes] in Aruba time. A closing time earlier than the opening time means after midnight. Customers only ever see when it opens.",
+ "_lastOrder_help": "lastOrder: new orders stop at this time (Aruba time). It's never shown to customers. Remove the line for no cut-off.",
  "_payWith_help": "payWith: the ways to pay that customers tap at checkout; the choice goes on the WhatsApp ticket as \"Pay: ...\". Remove it to show only the payment sentence.",
  "_payment_help": "payment: one sentence on how to pay. With payWith it shows under the pay choices at checkout and in How ordering works.",
- "_whatsapp_help": "whatsapp: the number orders go to. A restaurant can have its own: add \"whatsapp\": \"297...\" to its line under brands.",
- "_mix_help": "mix: true lets a restaurant share one order and one delivery fee with the other mix restaurants (customers can combine them). A restaurant without it has its own order and its own fee."
+ "_whatsapp_help": "whatsapp: the WhatsApp number customers write to. A restaurant can have its own: add \"whatsapp\": \"297...\" to its line under brands.",
+ "_mix_help": "mix: true lets customers put this restaurant's dishes in one order with the other mix restaurants, with one delivery fee."
 }

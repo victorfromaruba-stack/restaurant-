@@ -1,6 +1,6 @@
 # Restaurants, menus and ordering sites
 
-Learned on a real delivery-kitchen site (Order Aruba, Oct 2026).
+Learned on a real late-night delivery app (Pidi, Aruba, Oct 2026).
 
 ## Where the true details are
 

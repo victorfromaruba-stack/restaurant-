@@ -1,4 +1,4 @@
-# How Order Aruba writes
+# How Pidi writes
 
 The test: **would the person at the counter say it out loud, to a customer, at 11 PM?**
 If not, rewrite it.
@@ -8,8 +8,12 @@ a second language. Short sentences and common words get read right the first tim
 
 ## The rules
 
-- **Facts over adjectives.** We know the hours, the areas, the price, what's in the
-  dish and how it's cooked. Say those. Leave "delicious" to the picture.
+- **Facts over adjectives.** We know when we open, the areas, the price, what's in the
+  dish and how it's cooked. Say those. Leave "delicious" to the picture. Numbers beat
+  adjectives: "ƒ3.55 more food to order", "The driver brings ƒ19.05 change."
+- **Pidi talks like the person at the counter**: short, plain, specific, calm, and says
+  what happens next. It never jokes about money, fees or errors. Restaurants get their
+  own voice in their taglines; Pidi's voice is the same everywhere.
 - **Contract.** We're, it's, don't, you'll. A page with no contractions sounds like a form.
 - **No em dashes.** A full stop or a comma. Two sentences are fine.
 - **Sentence case** for headings and buttons. Buttons say what happens next:
@@ -21,8 +25,15 @@ a second language. Short sentences and common words get read right the first tim
 - **Papiamento is a greeting and a wink, not a translation trick.** A "Bon nochi." or
   "Danki!" works because it's how people talk here. Full Papiamento screens come from
   `shared/lang/pap.json`, which Victor checks.
-- **Each restaurant is its own business.** Never name another restaurant, a shared
-  kitchen, or "Order Aruba" on anything a customer sees (Victor, 9 Oct 2026).
+- **Each restaurant is its own business.** A restaurant's own copy never names another
+  restaurant, and nothing a customer sees names a shared kitchen or an owner (Victor,
+  9 Oct 2026). The app is Pidi (never its old name, Order Aruba). Never "partner",
+  "sister", "own restaurant", "our restaurants" or "our kitchen". A mixed order is
+  "delivered together", never "made together".
+- **Hours: "Late night from 10 PM".** No closing time, no last-orders time, no "until
+  2 AM" anywhere, in any language, until Victor's permit is confirmed.
+- **Nothing is charged on Pidi.** Never "charged" or "waived": "You pay ƒ5 delivery
+  once.", "One ƒ5 delivery for your whole order."
 - **Never invent proof.** No ratings, reviews, years, names, sourcing claims.
 - **Dish descriptions: what's in it, then how it comes.** Ingredients in the order you'd
   see them, then the one detail that matters ("with a cup of consommé", "cut on a
@@ -44,12 +55,18 @@ a second language. Short sentences and common words get read right the first tim
 
 | Before | After |
 |---|---|
-| Hot. Fresh. Fast. | Cooked to order, delivered in 35–50 min. |
+| Hot. Fresh. Fast. | Cooked to order, delivered in 45–60 min. |
 | Three wok mains in one order — enough for the table. | Three wok mains in one order. Enough for the table. |
 | Smash burgers, tenders & loaded fries (and four more taglines in the same shape) | Thin patties, smashed hard on the flat-top |
 | Signature dishes | Start with these |
 | Featured | Start here |
-| Experience the authentic taste of Aruba's best tacos! | Birria tacos with a cup of consommé to dip. Open till 2 AM. |
+| Experience the authentic taste of Aruba's best tacos! | Birria tacos with a cup of consommé to dip. Late night from 10 PM. |
+| Open until 2 AM | Late night from 10 PM |
+| Minimum order not reached | ƒ3.55 more food to order |
+| Great news! Mix and match your favourites! | One ƒ5 delivery for your whole order. |
+| The restaurant couldn't take this order | We couldn't take this order. We're sorry. |
+| Your order is being processed | Dushi Wok and Taco Brava are making your food. |
+| Bestseller / Fan favourite | House dish |
 | Our passionate chefs craft every dish with love. | (nothing, until Victor gives us a true sentence) |
 
 ## Where words live
