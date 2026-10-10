@@ -830,6 +830,14 @@ def main():
     check("busy adds 15 minutes to the promise", busy.get("busy_min") == 15 and state.get("busy_min") == 15
           and slow["eta_min"] == usd["eta_min"] + 15 and slow["eta_max"] == usd["eta_max"] + 15, str(state))
     check("night numbers count up", slow["night_no"] == usd["night_no"] + 1, f'{usd["night_no"]} {slow["night_no"]}')
+    # A pre-order placed before noon (yesterday's service night) for tonight joins tonight's numbers.
+    q(conn, "reset role")
+    q(conn, "update public.pidi_orders set created_at = now() - interval '20 hours', night_no = 50 where id = %s", [slow["order_id"]])
+    conn.commit()
+    q(conn, "set role anon")
+    joined = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(dict(good, phone="2975990085"))])
+    conn.commit()
+    check("night number follows the delivery night, not the order time", joined["night_no"] == 51, str(joined.get("night_no")))
     ok, detail = explodes(conn, "select public.pidi_kitchen_set_busy(%s, 7)", [kitchen["token"]], "0, 15 or 30")
     check("busy only takes 0, 15 or 30", ok, detail)
     ok, detail = explodes(conn, "select public.pidi_kitchen_set_busy(%s, 15)", ["x" * 64], "sign in again")
