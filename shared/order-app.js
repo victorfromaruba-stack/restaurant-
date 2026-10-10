@@ -3,7 +3,64 @@
    order with one delivery fee (the app's perk, like DoorDash's Double Dash): the highest "fee" among the
    restaurants in it. Menus live in <restaurant>/menu.json. App settings (WhatsApp number, hours, areas, fees,
    delivery time, which restaurants are open) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
-   No framework, no build step. */
+   No framework, no build step.
+
+   ---------------------------------------------------------------------------------------------------------------
+   THE API FOR PIDI'S OWN PAGES (checkout/, order/). Stable: those pages are built on it, so change it only by adding.
+   On <body data-page="checkout" data-root="../"> or <body data-page="order" data-root="../"> this script boots in app
+   mode: it loads site.json, the visitor's language and the menus of every restaurant in the cart and in this phone's
+   saved orders, translates [data-t] and [data-t-attr], fills [data-oa-langs] with the language switch, sets
+   <html lang>, and draws nothing else (no cart bar, no sheets). Then OrderApp.ready resolves and "oa:ready" fires on
+   document. The home page and the restaurant pages resolve it too, once they are drawn. Call the rest after ready.
+
+   OrderApp.ready             Promise, resolves when the page's data is in (rejects if site.json can't load)
+   OrderApp.site()            site.json: name, whatsapp, minFood, etaMin, etaMax, areas, brands (status, fee), utcOffset ...
+   OrderApp.menu(b)           a restaurant's loaded menu.json (b = its folder name, "taco-brava"), or null
+   OrderApp.loadMenu(b)       Promise of that menu
+   OrderApp.tr(text, vars)    screen text in the visitor's language: tr("Add {gap} more food", {gap: "ƒ3.50"}). Every
+                              new phrase goes into shared/lang/pap.json, nl.json and es.json (build/lang_keys.py --check)
+   OrderApp.money(c, html)    "ƒ12.95" from cents, a dot decimal in every language. html = true: the same inside
+                              <span aria-hidden="true">, plus a hidden "12.95 florins" a screen reader says instead of "f"
+   OrderApp.lang()            "en" | "pap" | "nl" | "es"
+   OrderApp.clock(m, full)    Aruba clock text for m minutes after midnight: "11:55 PM" in EN ("10 PM" on the hour,
+                              "10:00 PM" with full = true), "23:55" in PAP, NL and ES
+   OrderApp.arubaNow()        {mins, day, h, m, date, ms}: now on the Aruba clock (site.json utcOffset, never the phone's
+                              time zone). mins = minutes since Aruba midnight, day = 0 Sunday .. 6 Saturday, date =
+                              "2026-10-10", ms = Date.now()
+   OrderApp.shopStatus()      {open, label, sub, opensAt, opensIn}: open = an order for as soon as possible goes in
+                              now; else label ("Opens tonight 10 PM"), opensAt (minutes after midnight) and opensIn
+                              (minutes from now). Never a closing time.
+   OrderApp.slots()           [{m, label, iso}]: the 15-minute delivery times the order database accepts for the
+                              coming night, Aruba 22:00 to 01:45 inside site.json hours, each at least
+                              max(15, etaMin - 25) minutes from now (20 today) and within 24 h. m = minutes after
+                              Aruba midnight, label = clock(m, true), iso = the UTC time to send as due_at. While open
+                              it includes times sooner than the usual delivery time: a page may hide those.
+   OrderApp.canOrderNow()     true while an "as soon as possible" order is accepted (Aruba 22:00 until lastOrder)
+   OrderApp.lines()           the cart, newest data from the menus: [{k, b, brand, id, name, title, opts, q, p, img,
+                              drink, soldOut, o}]. k = line key, b = restaurant folder, brand = its name, name = the
+                              ticket text (dish name, then each chosen option after " · ", what pidi_place_order takes
+                              as an item name), title = the dish name for the screen (English, mark it lang="en"),
+                              opts = the chosen option labels, q = quantity, p = unit price in cents with its options,
+                              img = thumbnail address or "", drink = a can, soldOut = can't be ordered now, o = the
+                              option ids (for Order again)
+   OrderApp.food()            food in cents (what the minimum counts)
+   OrderApp.fee()             the one delivery fee: the highest "fee" among the restaurants in the cart (site.json
+                              brands; deliveryFee for one without), 0 when the cart is empty
+   OrderApp.total()           food() + fee()
+   OrderApp.minFood()         site.json minFood (2400 = ƒ24)
+   OrderApp.shortBy()         how much more food the order needs before it can be sent: max(0, minFood() - food())
+   OrderApp.setLineQty(k, q)  change a line's quantity; 0 removes it
+   OrderApp.clear()           empty the cart (the customer's details stay)
+   OrderApp.details()         {name, phone, area, addr, note, pay, paysWith, usd}, kept on this phone in localStorage
+                              "pidi.me.v1" (paysWith in cents or null, usd true/false)
+   OrderApp.saveDetails(p)    merge p into the details and keep them; returns them
+   OrderApp.rememberOrder(r)  after pidi_place_order answers r: keeps {t: r.public_token, at, restaurants (names),
+                              total_cents, pay, lines (the full basket, as lines())} newest first in localStorage
+                              "pidi.orders.v1" (5 at most), and makes that basket the "Order again" basket. It does not
+                              empty the cart: call clear() after it.
+   OrderApp.orders()          that list, newest first
+   OrderApp.onChange(fn)      fn() after every change to the cart (also from another tab)
+   Kept from before, for the restaurant pages and QA: buildMessage, checkoutLink, addItem, count, subtotal, state, _set. */
 (function () {
   "use strict";
 
@@ -32,6 +89,9 @@
     });
   }
   function money(c) { return "ƒ" + (Math.round(c) / 100).toFixed(2); }
+  /* money on screen: screen readers say "ƒ" as "f", so the sign is hidden from them and the words are read instead */
+  function sayMoney(c) { return (Math.round(c) / 100).toFixed(2) + " " + tr("florins"); }
+  function moneyHTML(c) { return '<span aria-hidden="true">' + money(c) + '</span><span class="sr">' + esc(sayMoney(c)) + "</span>"; }
   function shortMoney(c) { return "ƒ" + (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2)); }
   function path(p) { return ROOT + p; }
   /* small square pictures for menu rows (build/thumbs.py makes them) */
@@ -48,7 +108,7 @@
      and a count like "(3)" stays on the line of the word before it */
   function keep(s) { return esc(s).replace(/ (\(\d+\))/g, "\u00a0$1").replace(/(\S+[-\u2013]\S+)/g, '<span class="nw">$1</span>'); }
   /* an add-on's price, the same everywhere: "+ ƒ3.00" */
-  function addPrice(c) { return "+\u00a0" + money(c); }
+  function addPrice(c) { return "+\u00a0" + moneyHTML(c); }
   function shortName(i) { return i.name.replace(/ \(can\)$/, "").replace(/ \(side\)$/, ""); }
   // a missing thumbnail falls back to the full picture instead of a broken image
   document.addEventListener("error", function (e) {
@@ -56,6 +116,16 @@
     if (full) { t.removeAttribute("data-full"); t.src = full; }
   }, true);
   function el(html) { var t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+  /* OrderApp.ready: resolves once the page's data is in (see the API at the top) */
+  var READY_FNS = null;
+  var READY = new Promise(function (res, rej) { READY_FNS = { res: res, rej: rej }; });
+  READY.catch(function () { /* a page that never asked doesn't log it; one that did gets the rejection */ });
+  function ready() {
+    READY_FNS.res(window.OrderApp);
+    try { document.dispatchEvent(new CustomEvent("oa:ready")); } catch (e) { /* very old browser */ }
+  }
+  // iOS only shows :active (the press feedback in pidi.css) on a page that listens for touches
+  document.addEventListener("touchstart", function () {}, { passive: true });
   function clean(s) { return String(s || "").trim().replace(/\s+/g, " "); }
   function plural(n, one, many) { return n + " " + tr(n === 1 ? one : many); }
 
@@ -100,10 +170,12 @@
     if (vars) out = out.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
     return out;
   }
-  /* times on screen: 10 PM in English, 22:00 in the other languages (the ticket always uses 10 PM) */
-  function clock(m) {
-    if (LANG === "en") return fmtTime(m);
-    return String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  /* times on screen: 10 PM in English (10:00 PM with full), 22:00 in the other languages, set by hand: Intl has no
+     Papiamento (the ticket always uses 10 PM) */
+  function clock(m, full) {
+    m = ((Math.round(m) % 1440) + 1440) % 1440;
+    if (LANG === "en") return fmtTime(m, full);
+    return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
   }
   /* the fixed words in the HTML files: data-t on an element (its text), data-t-attr="placeholder,aria-label" */
   function translatePage() {
@@ -170,7 +242,7 @@
   function mixGroup() { return (SITE.brands || []).filter(function (b) { return b.mix; }).map(function (b) { return b.id; }); }
   function inMix(b) { return mixGroup().indexOf(b) >= 0; }
   function setOrder() {
-    if (inMix(HERE)) { KEY = MIX_KEY; LAST_KEY = MIX_LAST; ALLOWED = mixGroup(); }
+    if (!HERE || inMix(HERE)) { KEY = MIX_KEY; LAST_KEY = MIX_LAST; ALLOWED = mixGroup(); }
     else { KEY = orderKey(HERE); LAST_KEY = "pidi.last." + HERE + ".v1"; ALLOWED = [HERE]; }
   }
   /* a restaurant's own order, for one outside the mix (before 10 Oct 2026: "order.<id>.v1" and "last.<id>.v1") */
@@ -192,15 +264,19 @@
   }
 
   /* ---------------------------------------------------------------- hours */
+  /* Aruba time: site.json utcOffset (-4; Aruba has no daylight saving), never the phone's time zone: tourists' phones
+     are often still set to home. awDate() is a Date moved to Aruba's wall clock, read with getUTC*() only. */
+  function awOffset() { return (SITE && typeof SITE.utcOffset === "number" ? SITE.utcOffset : -4) * 3600e3; }
+  function awDate(ms) { return new Date((ms == null ? Date.now() : ms) + awOffset()); }
   function arubaNow() {
-    var n = new Date();
-    return new Date(n.getTime() + (n.getTimezoneOffset() + (SITE.utcOffset || -4) * 60) * 60000);
+    var ms = Date.now(), d = awDate(ms), h = d.getUTCHours(), m = d.getUTCMinutes();
+    return { ms: ms, mins: h * 60 + m, day: d.getUTCDay(), h: h, m: m, date: d.toISOString().slice(0, 10) };
   }
   function mins(hhmm) { var p = hhmm.split(":"); return (+p[0]) * 60 + (+p[1]); }
-  function fmtTime(m) {
+  function fmtTime(m, full) {
     var hh = Math.floor(m / 60) % 24, mm = m % 60, ap = hh >= 12 ? "PM" : "AM";
     hh = hh % 12 || 12;
-    return hh + (mm ? ":" + String(mm).padStart(2, "0") : "") + " " + ap;
+    return hh + (mm || full ? ":" + String(mm).padStart(2, "0") : "") + " " + ap;
   }
   /* Hours can cross midnight: ["22:00","02:00"] = opens 10 PM, closes 2 AM the next morning. */
   function windowFor(dayIdx) {
@@ -222,7 +298,7 @@
     return { o: w.o, c: w.c, cut: cut };
   }
   function shopStatus() {
-    var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
+    var t = arubaNow(), d = t.day, now = t.mins;
     var wins = [];
     var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
     if (y) wins.push({ o: y.o - 1440, c: y.c - 1440, cut: y.cut - 1440 });
@@ -232,21 +308,21 @@
       if (now >= x.o && now < x.cut) {
         // No closing or last-orders time on screen until the permit is confirmed (Victor, 9 Oct): only when we open.
         var opens = clock(((x.o % 1440) + 1440) % 1440);
-        return { open: true, soon: false, lastOrder: "", last: false,
+        return { open: true, soon: false, lastOrder: "", last: false, opensAt: ((x.o % 1440) + 1440) % 1440, opensIn: 0,
           label: tr("Open now"), sub: tr("Late night from {time}", { time: opens }) };
       }
     }
     var finishing = wins.some(function (x) { return now >= x.cut && now < x.c; });
     var res = null;
-    if (w && now < w.o) res = { label: tr(w.o >= 18 * 60 ? "Opens tonight {time}" : "Opens today {time}", { time: clock(w.o) }) };
+    if (w && now < w.o) res = { label: tr(w.o >= 18 * 60 ? "Opens tonight {time}" : "Opens today {time}", { time: clock(w.o) }), opensAt: w.o % 1440, opensIn: w.o - now };
     for (var i = 1; i <= 7 && !res; i++) {
       var n = windowFor(d + i);
       if (n) {
         res = { label: i === 1 ? tr(n.o >= 18 * 60 ? "Opens tomorrow night {time}" : "Opens tomorrow {time}", { time: clock(n.o) })
-          : tr("Opens {day} {time}", { day: tr(DAY_NAMES[(d + i) % 7]), time: clock(n.o) }) };
+          : tr("Opens {day} {time}", { day: tr(DAY_NAMES[(d + i) % 7]), time: clock(n.o) }), opensAt: n.o % 1440, opensIn: n.o + i * 1440 - now };
       }
     }
-    res = res || { label: tr("Closed") };
+    res = res || { label: tr("Closed"), opensAt: null, opensIn: null };
     res.open = false;
     res.finishing = finishing;
     return res;
@@ -420,9 +496,16 @@
      order pays one fee, the highest among the restaurants in it. */
   function feeOf(b) {
     var x = (SITE.brands || []).filter(function (y) { return y.id === b; })[0];
-    return x && typeof x.fee === "number" ? x.fee : SITE.deliveryFee;
+    return x && typeof x.fee === "number" ? x.fee : (SITE.deliveryFee || 0);
   }
-  function fee() { return count() > 0 ? Math.max.apply(null, brandsInCart().map(feeOf).concat([0])) : 0; }
+  /* every restaurant with a line in the order counts, drinks included: the order database takes the highest fee
+     among all the restaurants its items come from */
+  function fee() { var bs = menusInCart(); return bs.length ? Math.max.apply(null, bs.map(feeOf)) : 0; }
+  /* The food minimum (site.json "minFood", 2400 = ƒ24) is on the food of the whole order, before delivery. Under it
+     the order can't be sent yet: the bar and the order say how much more food it needs, never as an error. */
+  function food() { return subtotal(); }
+  function minFood() { return (SITE && SITE.minFood) || 2400; }
+  function shortBy() { return Math.max(0, minFood() - food()); }
   /* the fee when every restaurant on the app has the same one, else 0: then the words say "one delivery fee" */
   function flatFee() {
     var fs = (SITE.brands || []).filter(function (b) { return b.status !== "hidden"; }).map(function (b) { return feeOf(b.id); });
@@ -459,7 +542,7 @@
   function newOrderNo() {
     var t = arubaNow(), r = "";
     for (var i = 0; i < 2; i++) r += NO_CHARS.charAt(Math.floor(Math.random() * NO_CHARS.length));
-    return String(t.getHours()).padStart(2, "0") + String(t.getMinutes()).padStart(2, "0") + "-" + r;
+    return String(t.h).padStart(2, "0") + String(t.m).padStart(2, "0") + "-" + r;
   }
   function orderNo() {
     var s = S();
@@ -477,7 +560,7 @@
   function slotText(m) { m = m % 1440; return m === 0 ? tr("Midnight") : clock(m); }
   /* Time choices run from 30 min after opening (or 45 min from now) until last orders, never the closing minute itself. */
   function timeSlots() {
-    var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
+    var t = arubaNow(), d = t.day, now = t.mins;
     var st = shopStatus(), win = null, prefix = "";
     function endOf(x, shift) { return (x.cut < x.c ? x.cut : x.c - 15) + shift; }
     var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
@@ -501,6 +584,93 @@
     var s = S(), ts = timeSlots();
     if (s.when && ts.slots.some(function (x) { return x.v === s.when; })) return s.when;
     return ts.asap ? "" : (ts.slots[0] ? ts.slots[0].v : "");
+  }
+
+  /* ---------------------------------------------------------------- the in-app order (API, see the top of this file) */
+  /* "As soon as possible" goes in from opening (22:00) until lastOrder, on the Aruba clock: exactly while shopStatus() says open */
+  function canOrderNow() { return !!(SITE && shopStatus().open); }
+  /* The delivery times the order database accepts for a pre-order: every 15 minutes from 22:00 to 01:45 Aruba time,
+     at least max(15, etaMin - 25) minutes from now and no more than 24 hours ahead. Here also only inside site.json's
+     hours for that night, so a night without hours has none. The first night that still has a time is the one shown:
+     at 3 PM that is tonight from 10 PM, at 11:30 PM the rest of tonight, at 1:40 AM the coming night. */
+  var SLOT_FIRST = 22 * 60, SLOT_LAST = 25 * 60 + 45;   // minutes after the night's first midnight: 22:00 .. 01:45
+  function slots() {
+    if (!SITE) return [];
+    var now = Date.now(), aw = awOffset(), lead = Math.max(15, (SITE.etaMin || 45) - 25) * 60000;
+    var d = awDate(now), midnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());   // Aruba midnight, on the moved clock
+    for (var k = -1; k <= 1; k++) {
+      var start = midnight + k * 864e5, w = windowFor(new Date(start).getUTCDay()), out = [];
+      if (!w) continue;
+      var from = Math.ceil(Math.max(w.o, SLOT_FIRST) / 15) * 15, to = Math.min(w.c - 15, SLOT_LAST);
+      for (var m = from; m <= to; m += 15) {
+        var utc = start + m * 60000 - aw;
+        if (utc < now + lead || utc > now + 864e5) continue;
+        out.push({ m: m % 1440, label: clock(m, true), iso: new Date(utc).toISOString() });
+      }
+      if (out.length) return out;
+    }
+    return [];
+  }
+  /* the cart as Pidi's own pages read it */
+  function ticketName(l) { return [l.n].concat(l.d || []).join(" · "); }
+  function lines() {
+    return liveLines().map(function (l) {
+      var m = MENU[l.b], it = m && m.byId[l.id];
+      return { k: l.k, b: l.b, brand: brandName(l.b), id: l.id, name: ticketName(l), title: l.n, opts: (l.d || []).slice(),
+        q: l.q, p: l.p, img: it && hasPic(it) ? path(thumb(it.img)) : "", drink: isDrinkLine(l), soldOut: !!l.soldOut,
+        o: JSON.parse(JSON.stringify(l.o || {})) };
+    });
+  }
+  /* the customer's details, kept on this phone for next time (no account). The first time they come from what the
+     order sheet already remembered (area, address, name) */
+  var ME_KEY = "pidi.me.v1", ORDERS_KEY = "pidi.orders.v1", memMe = null, memOrders = [];
+  function details() {
+    var me = memMe;
+    try { me = JSON.parse(localStorage.getItem(ME_KEY)) || memMe; } catch (e) { /* private mode */ }
+    me = me || {};
+    var s = KEY ? S() : {}, areas = (SITE && SITE.areas) || [];
+    function str(v) { return typeof v === "string" ? v : ""; }
+    var area = me.area != null ? str(me.area) : str(s.area);
+    return { name: me.name != null ? str(me.name) : str(s.name), phone: str(me.phone), area: areas.indexOf(area) >= 0 ? area : "",
+      addr: me.addr != null ? str(me.addr) : str(s.addr), note: str(me.note), pay: str(me.pay),
+      paysWith: typeof me.paysWith === "number" ? me.paysWith : null, usd: !!me.usd };
+  }
+  function saveDetails(patch) {
+    var d = details();
+    Object.keys(patch || {}).forEach(function (k) { if (Object.prototype.hasOwnProperty.call(d, k)) d[k] = patch[k]; });
+    memMe = d;
+    try { localStorage.setItem(ME_KEY, JSON.stringify(d)); } catch (e) { /* private mode: kept for this visit */ }
+    return d;
+  }
+  /* orders placed from this phone, newest first (5 at most), each with its full basket for the status page and Order again */
+  function orders() {
+    try { var a = JSON.parse(localStorage.getItem(ORDERS_KEY)); if (Array.isArray(a)) return a; } catch (e) { /* private mode */ }
+    return memOrders.slice();
+  }
+  function rememberOrder(res) {
+    res = res || {};
+    var ls = lines(), at = Date.parse(res.created_at || "") || Date.now();
+    var names = Array.isArray(res.restaurants) && res.restaurants.length
+      ? res.restaurants.map(function (r) { return r.name || brandName(r.slug); }) : brandsInCart().map(brandName);
+    var rec = { t: String(res.public_token || ""), at: at, restaurants: names,
+      total_cents: typeof res.total_cents === "number" ? res.total_cents : total(), pay: res.pay || details().pay || "", lines: ls };
+    var list = orders().filter(function (o) { return o && o.t !== rec.t; });
+    list.unshift(rec);
+    list = list.slice(0, 5);
+    memOrders = list;
+    try { localStorage.setItem(ORDERS_KEY, JSON.stringify(list)); } catch (e) { /* private mode: kept for this visit */ }
+    // the same basket is the "Order again" basket on the restaurant pages
+    try { localStorage.setItem(LAST_KEY || MIX_LAST, JSON.stringify({ at: at, lines: ls.map(function (l) { return { b: l.b, id: l.id, q: l.q, o: l.o }; }) })); } catch (e) { /* private mode */ }
+    return rec;
+  }
+  /* restaurants in the orders this phone remembers and in its Order again basket: their menus load with the page */
+  function savedBrands() {
+    var out = [];
+    function add(b) { if (b && out.indexOf(b) < 0) out.push(b); }
+    orders().forEach(function (o) { (o && Array.isArray(o.lines) ? o.lines : []).forEach(function (l) { add(l.b); }); });
+    try { var last = JSON.parse(localStorage.getItem(LAST_KEY || MIX_LAST)); (last && Array.isArray(last.lines) ? last.lines : []).forEach(function (l) { add(l.b); }); } catch (e) { /* private mode */ }
+    var known = (SITE.brands || []).map(function (b) { return b.id; });
+    return out.filter(function (b) { return known.indexOf(b) >= 0; });
   }
 
   /* ---------------------------------------------------------------- WhatsApp ticket */
@@ -612,7 +782,7 @@
     if (!openSheets.length) BODY.classList.remove("oa-lock");
     if (rec.onClose) rec.onClose();
     paintBar();   // first: the order bar comes back, so focus can go back to it
-    var back = rec.last && rec.last.focus && document.contains(rec.last) && rec.last.offsetParent !== null ? rec.last : $(".bag");
+    var back = rec.last && rec.last.focus && document.contains(rec.last) && rec.last.offsetParent !== null ? rec.last : $("#oa-bar .bar__btn");
     if (back && back.offsetParent !== null) back.focus({ preventScroll: true });
   }
   document.addEventListener("keydown", function (e) {
@@ -646,7 +816,7 @@
     var h = String(hex || "").replace("#", "");
     if (h.length !== 6) return "#FFFFFF";
     var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#15130F" : "#FFFFFF";
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#12143A" : "#FFFFFF";
   }
   function setAccent(hex) {
     if (!hex) return;
@@ -674,11 +844,11 @@
       (item.kind === "drink" ? " row--drink" : item.kind === "side" ? " row--side" : "") + (pic ? "" : " row--np") + (out ? " is-out" : "");
     var inc = item.includes ? includesNames(MENU[b], item).join(", ") : "";
     return '<article class="' + cls + '" data-b="' + esc(b) + '" data-id="' + esc(item.id) + '">' +
-      '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + money(item.price) + (out ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
+      '<button type="button" class="row__open" data-open aria-label="' + esc(item.name) + ", " + esc(sayMoney(item.price)) + (out ? ", " + esc(tr("Sold out today")) : "") + '"></button>' +
       '<div class="row__text">' +
-        '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
+        '<div class="row__head"><h3 class="row__name" lang="en">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + moneyHTML(item.price) + "</p></div>" +
         (out ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
-        (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") +
+        (item.desc && item.kind !== "drink" ? '<p class="row__desc" lang="en">' + keep(item.desc) + "</p>" : "") +
         (inc ? '<p class="row__inc">' + keep(inc) + "</p>" : "") +
         (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
       "</div>" +
@@ -740,9 +910,9 @@
         '<button type="button" class="x x--float x--share" data-share aria-label="' + esc(tr("Share this dish")) + '">' + ICON.share + "</button>" +
         (pic ? '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' : "") +
         '<div class="dish__body">' +
-          '<h2 class="dish__name" tabindex="-1" data-autofocus>' + keep(item.name) + "</h2>" +
-          '<p class="dish__price">' + money(item.price) + "</p>" +
-          '<p class="dish__desc">' + keep(item.desc) + "</p>" + inc +
+          '<h2 class="dish__name" tabindex="-1" data-autofocus lang="en">' + keep(item.name) + "</h2>" +
+          '<p class="dish__price">' + moneyHTML(item.price) + "</p>" +
+          '<p class="dish__desc" lang="en">' + keep(item.desc) + "</p>" + inc +
           (item.flags && item.flags.length ? '<p class="row__flags">' + flagText(item) + "</p>" : "") +
           (allergenLine(item) ? '<p class="dish__allergens">' + keep(allergenLine(item) + " " + tr("Allergies? Add a note at checkout.")) + "</p>" : "") +
           groups + pairHTML +
@@ -772,7 +942,7 @@
       if (!orderable) btn.textContent = tr(out ? "Sold out today" : "Opening soon");
       else {
         var extra = pickedPairs(), n = qty + extra.length;
-        btn.innerHTML = "<span>" + esc(n > 1 ? tr("Add {n} items", { n: n }) : tr("Add")) + "</span><span>" + money(unitPrice(item, o) * qty + extra.reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
+        btn.innerHTML = "<span>" + esc(n > 1 ? tr("Add {n} items", { n: n }) : tr("Add")) + "</span><span>" + moneyHTML(unitPrice(item, o) * qty + extra.reduce(function (t, i) { return t + i.price; }, 0)) + "</span>";
       }
     }
     node.addEventListener("change", paint);
@@ -813,7 +983,9 @@
         if (line) { freshStart = false; bump(); }   // no toast here: the new line in the order says it
         return;
       }
+      if (e.target.closest("[data-short]")) { moreFood(node); return; }
       if (e.target.closest("[data-copy]")) {
+        if (shortBy()) { moreFood(node); return; }
         if (!validate(node)) return;
         copyText(buildMessage()).then(function (ok) { toast(tr(ok ? "Copied. Paste it in WhatsApp." : "Copy didn’t work here.")); });
         return;
@@ -856,7 +1028,7 @@
   function addChip(b, i, other) {
     var m = MENU[b];
     return '<button type="button" class="add' + (other ? " add--other" : "") + '" data-add="' + esc(b + "|" + i.id) + '"' + (other ? ' style="--shop:' + esc(m.color) + '"' : "") +
-      ' aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + money(i.price) + (other ? ", " + m.name : "")) + '">' +
+      ' aria-label="' + esc(tr("Add {name}", { name: i.name }) + ", " + sayMoney(i.price) + (other ? ", " + m.name : "")) + '">' +
       '<span class="add__n">' + keep(shortName(i)) + '</span><span class="add__p">' + addPrice(i.price) + "</span>" +
       (other ? '<span class="add__b" aria-hidden="true">' + esc(m.name) + "</span>" : "") + "</button>";
   }
@@ -898,7 +1070,7 @@
     if (f) f.focus({ preventScroll: true });
   }
   function renderOrder(node) {
-    var s = S(), lines = liveLines(), st = shopStatus();
+    var s = S(), lines = liveLines(), st = shopStatus(), gap = shortBy();
     var had = document.activeElement && node.contains(document.activeElement) && document.activeElement !== node;
     var fKey = had ? focusKey(document.activeElement) : null;
     var html = "";
@@ -916,7 +1088,7 @@
         '<p class="sent__k">' + esc(tr("Order #{no}", { no: s.no })) + "</p>" +
         "<h3>" + esc(tr("One more step: press Send in WhatsApp")) + "</h3>" +
         "<p>" + tr("Your order is typed out in the chat. Once you press <b>Send</b>, we reply on WhatsApp to confirm it.") + "</p>" +
-        '<a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "<span>" + esc(tr("Open WhatsApp again")) + "</span></a>" +
+        '<a class="btn btn--send blue" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "<span>" + esc(tr("Open WhatsApp again")) + "</span></a>" +
         '<button type="button" class="btn btn--line" data-new>' + esc(tr("Start a new order")) + "</button>" +
         '<button type="button" class="link" data-edit>' + esc(tr("Edit this order")) + "</button></div>";
       wireSend(node);
@@ -938,10 +1110,10 @@
           : m && !isDrinkLine(l) ? '<img class="line__pic line__pic--mark" src="' + esc(path(m.mark)) + '" alt="" width="192" height="192" loading="lazy" decoding="async">'
           : '<span class="line__pic line__pic--none" aria-hidden="true"></span>';
         return '<li class="line">' + pic +
-          '<div class="line__main"><p class="line__n">' + keep(l.n) + "</p>" +
+          '<div class="line__main"><p class="line__n" lang="en">' + keep(l.n) + "</p>" +
           (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
           (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
-          '<p class="line__t">' + money(l.p * l.q) + "</p></div>" +
+          '<p class="line__t">' + moneyHTML(l.p * l.q) + "</p></div>" +
           '<div class="qty"><button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + esc(tr(l.q === 1 ? "Remove {name}" : "One less {name}", { name: l.n })) + '">' + ICON.minus + "</button>" +
           '<span class="qty__n">' + l.q + "</span>" +
           '<button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="1" aria-label="' + esc(tr("One more {name}", { name: l.n })) + '">' + ICON.plus + "</button></div></li>";
@@ -986,15 +1158,18 @@
     if (inMix(HERE) || brandsInCart().some(inMix)) {
       html += '<p class="order__mix">' + keep(tr("Order from several restaurants at once.")) + " <b>" + keep(oneFeeLine()) + "</b></p>";
     }
-    html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
-      "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
-      '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
+    html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + moneyHTML(subtotal()) + "</dd></div>" +
+      "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + moneyHTML(fee()) + "</dd></div>" +
+      '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + moneyHTML(total()) + "</dd></div></dl>";
     html += '<details class="ticket"><summary><span>' + esc(tr("Preview the message")) + "</span></summary><pre>" + esc(buildMessage()) + "</pre></details>";
     html += '<p class="order__hint">' + esc(payLine()) + tr("Opens WhatsApp with your order typed out. Press <b>Send</b> there.") +
       (waNum() ? " " + esc(tr("It goes to {app} on WhatsApp, {number}.", { app: SITE.name || "us", number: waNumber() })) : "") + "</p>" +
-      '<button type="button" class="link" data-copy>' + esc(tr("Copy the order instead")) + "</button>" +
-      '<div class="order__send"><a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
-      '<span class="lg">' + esc(tr("Send on WhatsApp")) + '</span><span class="sm">' + esc(tr("Send order")) + '</span><span class="btn__total">' + money(total()) + "</span></a></div>";
+      (gap ? "" : '<button type="button" class="link" data-copy>' + esc(tr("Copy the order instead")) + "</button>") +
+      // under the food minimum the order can't go yet: the button says how much more food, and takes you to more food
+      '<div class="order__send">' + (gap
+        ? '<button type="button" class="btn btn--short" data-short>' + esc(tr("Add {gap} more food", { gap: money(gap) })) + "</button>"
+        : '<a class="btn btn--send blue" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
+          '<span class="lg">' + esc(tr("Send on WhatsApp")) + '</span><span class="sm">' + esc(tr("Send order")) + '</span><span class="btn__total">' + moneyHTML(total()) + "</span></a>") + "</div>";
     node.innerHTML = html;
     wireSend(node);
     if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-send]");
@@ -1039,6 +1214,13 @@
     }
     return true;
   }
+  /* under the food minimum: the sides and drinks right in the order, or back to the menu */
+  function moreFood(node) {
+    var add = $(".addon", node), first = add && $(".add", add);
+    toast(tr("Add {gap} more food", { gap: money(shortBy()) }));
+    if (first) { add.scrollIntoView({ behavior: "smooth", block: "center" }); first.focus({ preventScroll: true }); }
+    else if (node._mode === "sheet") closeSheet();
+  }
   function updateSend(node) {
     var a = $("[data-send]", node);
     if (a && liveLines().length) a.href = checkoutLink().url;
@@ -1049,6 +1231,7 @@
     updateSend(node);
     a.addEventListener("click", function (e) {
       if (!liveLines().length) { e.preventDefault(); return; }
+      if (!S().sentAt && shortBy()) { e.preventDefault(); moreFood(node); return; }
       if (!S().sentAt && !validate(node)) { e.preventDefault(); return; }
       if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast(tr("Remove the sold-out dish first")); return; }
       if (!S().sentAt) { S().no = newOrderNo(); writeStore(S(), true); }   // number = the minute it's sent
@@ -1063,10 +1246,14 @@
   }
 
   /* ---------------------------------------------------------------- sticky bar */
+  /* The cart bar: Pidi Blue, ordering only. Under the food minimum it says how much more food the order needs and
+     a peach line fills towards the minimum; from there it shows the total with the delivery fee in it. The words
+     and numbers are written before it shows, so it never flashes "0". */
   function ensureBar() {
     var bar = $("#oa-bar");
     if (bar) return bar;
-    bar = el('<div class="bar" id="oa-bar" hidden><button type="button" class="bar__btn"><span class="bar__count"></span><span class="bar__label"></span><span class="bar__total"></span></button></div>');
+    bar = el('<div class="bar" id="oa-bar" hidden><button type="button" class="bar__btn blue"><span class="bar__min" aria-hidden="true"><i></i></span>' +
+      '<span class="bar__count"></span><span class="bar__main"><span class="bar__label"></span><span class="bar__sub"></span></span><span class="bar__total"></span></button></div>');
     BODY.appendChild(bar);
     $("button", bar).addEventListener("click", openOrder);
     return bar;
@@ -1075,15 +1262,20 @@
     var n = count(), bar = ensureBar();
     $$("[data-oa-count]").forEach(function (c) { c.textContent = n; c.hidden = n === 0; });
     if (!bar) return;
-    bar.hidden = !(n > 0 && !openSheets.length);
     BODY.classList.toggle("has-bar", n > 0);
-    if (!n) return;
-    var stale = Date.now() - (S().updated || 0) > 2 * 3600 * 1000;
-    $(".bar__count", bar).textContent = n;
-    $(".bar__label", bar).textContent = S().sentAt ? tr("Sent: see order") : preOrder() || tr(stale ? "Continue order" : "View order");
-    // food only here; the delivery fee is added at checkout
-    $(".bar__total", bar).textContent = money(subtotal());
-    $("button", bar).setAttribute("aria-label", tr("View order: {items}, {total} before delivery", { items: plural(n, "item", "items"), total: money(subtotal()) }));
+    if (n) {
+      var stale = Date.now() - (S().updated || 0) > 2 * 3600 * 1000, gap = S().sentAt ? 0 : shortBy(), btn = $("button", bar);
+      $(".bar__count", bar).textContent = n;
+      $(".bar__label", bar).textContent = S().sentAt ? tr("Sent: see order") : gap ? tr("Add {gap} more food", { gap: money(gap) })
+        : preOrder() || tr(stale ? "Continue order" : "View order");
+      $(".bar__sub", bar).textContent = gap ? "" : tr("incl. {fee} delivery", { fee: shortMoney(fee()) });
+      $(".bar__total", bar).innerHTML = moneyHTML(gap ? food() : total());
+      btn.classList.toggle("is-short", !!gap);
+      btn.style.setProperty("--fill", String(Math.min(1, food() / minFood())));
+      btn.setAttribute("aria-label", gap ? tr("Your order: {items}, {food} of food. Add {gap} more food to order.", { items: plural(n, "item", "items"), food: sayMoney(food()), gap: sayMoney(gap) })
+        : tr("View order: {items}, {total} with delivery", { items: plural(n, "item", "items"), total: sayMoney(total()) }));
+    }
+    bar.hidden = !(n > 0 && !openSheets.length);
   }
   var orderSheet = null;
   function openOrder() {
@@ -1104,12 +1296,26 @@
     setHTML("[data-oa-facts]", [etaText() ? tr("Delivery in {eta}", { eta: etaText() }) : "", ar.length > 1 ? tr("{from} to {to}", { from: ar[0], to: ar[ar.length - 1] }) : ar.join("")]
       .filter(Boolean).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join(""));
     paintSign(false);
+    barFacts();
     setHTML("[data-oa-deliver-to]", deliverToHTML());
     setHTML("[data-oa-contact]", contactHTML());
     setHTML("[data-oa-how]", howSteps());
     setHTML("[data-oa-how-note]", keep(howNote()));
     setHTML("[data-oa-endnote]", endNoteHTML());
     setHTML("[data-oa-foot]", footNote());
+  }
+  /* The Pidi bar's two lines on a restaurant page: "(o) Open · 45–60 min" (closed: "Opens 10 PM · Pre-order"), then
+     this restaurant's own delivery fee and the food minimum, "ƒ5 delivery · ƒ24 minimum". Never a closing time. */
+  function barFacts() {
+    if (!$("[data-oa-bar-facts]")) return;
+    var st = shopStatus(), status = HERE ? brandStatus(HERE) : "open", one;
+    if (status === "soon") one = esc(tr("Opening soon"));
+    else if (status !== "open") one = esc(tr("Not taking orders right now."));
+    else if (st.open) one = '<span class="dot" aria-hidden="true"></span>' + esc(tr("Open")) + (etaText() ? " \u00b7 " + keep(etaText()) : "");
+    else one = esc(st.opensIn != null && st.opensIn < 1440 ? tr("Opens {time}", { time: clock(st.opensAt) }) : st.label) +
+      (preOrder() ? " \u00b7 " + esc(tr("Pre-order")) : "");
+    var two = esc(tr("{fee} delivery", { fee: shortMoney(HERE ? feeOf(HERE) : flatFee()) })) + " \u00b7 " + esc(tr("{min} minimum", { min: shortMoney(minFood()) }));
+    setHTML("[data-oa-bar-facts]", "<span>" + one + "</span><span>" + two + "</span>");
   }
   function deliverToHTML() {
     return keep(tr("We deliver to {areas}.", { areas: listAnd(SITE.areas || []) })) + " " + keep(tr("Elsewhere?")) +
@@ -1146,7 +1352,7 @@
   }
   function howNote() {
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
-    var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().getDay()]];
+    var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().day]];
     var hours = same ? tr("Every night from {time}.", { time: clock(mins(h[0])) })
       : today ? tr("Late night from {time}", { time: clock(mins(today[0])) }) + "." : tr("Closed today.");
     var many = PAGE === "hub" ? mixGroup().length > 1 : ALLOWED.length > 1;
@@ -1213,7 +1419,7 @@
   function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " " + tr("and") + " " + arr[arr.length - 1]; }
   function paintSign(first) {
     // the greeting follows the Aruba clock: Papiamento for morning, afternoon and night
-    var hello = $("[data-oa-hello]"), hr = arubaNow().getHours();
+    var hello = $("[data-oa-hello]"), hr = arubaNow().h;
     if (hello) hello.textContent = hr >= 5 && hr < 12 ? "Bon dia." : hr >= 12 && hr < 18 ? "Bon tardi." : "Bon nochi.";
     var sign = $("[data-oa-sign]");
     if (!sign) return;
@@ -1247,19 +1453,12 @@
       out.list.push({ id: s.id, title: s.title, items: carry.concat(s.items) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
     var cover = coverPick(menu, feat);
-    // the app's delivery line ("Open now · ƒ5 delivery · 45–60 min"), then the restaurant's own sign: its
-    // wordmark, its line, a small framed picture. Closed: an unlit sign, like the home page's, when it opens in amber,
-    // and no delivery time (so the line stays one line)
-    var html = '<div class="strip' + (st.open ? "" : " strip--closed") + '"><ul class="facts">' +
-          '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") +
-            esc(st.label) + "</li>" +
-          "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(feeOf(b)) })) + "</li>" +
-          (st.open && etaText() ? "<li>" + esc(etaText()) + "</li>" : "") +
-        "</ul></div>" +
-      '<header class="store' + (cover ? "" : " store--plain") + '">' +
+    // the facts (open, delivery time, this restaurant's fee, the food minimum) are in the Pidi bar above; here the
+    // restaurant's sign: its wordmark, its line, a small framed picture
+    var html = '<header class="store' + (cover ? "" : " store--plain") + '">' +
         '<h1 class="store__name" id="store-name"><img class="store__logo" src="' + esc(path(menu.logo)) + '" alt="" decoding="async">' +
           '<span class="sr">' + esc(menu.name) + "</span></h1>" +
-        '<p class="store__tag">' + keep(menu.tagline) + "</p>" +
+        '<p class="store__tag" lang="en">' + keep(menu.tagline) + "</p>" +
         (cover ? '<div class="cover">' + coverMedia(menu, cover) + "</div>" : "") +
         (status === "soon" ? '<p class="note note--warn">' + esc(tr("Opening soon. Ordering starts shortly.")) + "</p>" : "") +
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
@@ -1316,7 +1515,7 @@
           });
         }, { rootMargin: "-140px 0px -60% 0px" });
         $$(".sec", main).forEach(function (s) { io.observe(s); });
-        var nameIO = new IntersectionObserver(function (es) { BODY.classList.toggle("past-name", !es[0].isIntersecting); }, { rootMargin: "-60px 0px 0px 0px" });
+        var nameIO = new IntersectionObserver(function (es) { BODY.classList.toggle("past-name", !es[0].isIntersecting); }, { rootMargin: "-44px 0px 0px 0px" });
         nameIO.observe($("#store-name"));
       }
       window.addEventListener("scroll", function () {
@@ -1404,7 +1603,7 @@
     var pic = lines.map(function (x) { return MENU[x.b].byId[x.id]; }).filter(hasPic)[0];
     var html = '<div class="again__card' + (pic ? "" : " again__card--np") + '">' + (pic ? thumbImg(pic, ' loading="lazy"') : "") +
       '<div class="again__body"><h2 class="again__t">' + esc(tr("Order again")) + '</h2><p class="again__items">' + keep(names.join(", ")) + "</p>" +
-      '<button type="button" class="btn btn--accent again__btn" data-again><span>' + esc(tr("Add all")) + "</span><span>" + money(sum) + "</span></button></div></div>";
+      '<button type="button" class="btn btn--accent again__btn" data-again><span>' + esc(tr("Add all")) + "</span><span>" + moneyHTML(sum) + "</span></button></div></div>";
     if (box._html === html && !box.hidden) return;
     box._html = html; box.innerHTML = html;
     box.hidden = false;
@@ -1456,7 +1655,7 @@
       (img ? '<span class="shop__pic"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="" width="360" height="360" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async"></span>' : "") +
       '<span class="shop__txt"><h3 class="shop__name">' + esc(m.name) + "</h3>" +
         '<span class="meta">' + label + fromLine(b, m) + "</span>" +
-        '<span class="shop__tag">' + keep(m.tagline || "") + "</span></span></a>";
+        '<span class="shop__tag" lang="en">' + keep(m.tagline || "") + "</span></span></a>";
   }
   /* "More on Pidi" (the app's name) at the end of a restaurant page: small plates, the sign and two facts */
   function plateHTML(b) {
@@ -1549,7 +1748,7 @@
   function renderHub() {
     var ids = (SITE.brands || []).filter(function (b) { return b.status !== "hidden"; }).map(function (b) { return b.id; });
     paintSign(true);
-    Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
+    return Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
       var start = $("#oa-rail"), list = $("#oa-list");
       if (start) {
         // one house dish per restaurant first, family deals after: a short printed list, each opens on the page of the restaurant it's from
@@ -1582,9 +1781,9 @@
     var m = MENU[b], pic = hasPic(item), out = isOut(m, item);
     return '<a class="row row--link' + (short ? " row--start" : "") + (pic ? "" : " row--np") + (out ? " is-out" : "") + '" href="' + esc(dishLink(b, item)) + '" data-shop="' + esc(b) + '" style="--shop:' + esc(m.color) + '">' +
       '<div class="row__text"><p class="row__brand">' + esc(m.name) + "</p>" +
-        '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
+        '<div class="row__head"><h3 class="row__name" lang="en">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + moneyHTML(item.price) + "</p></div>" +
         (out ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
-        (!short && item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") + "</div>" +
+        (!short && item.desc && item.kind !== "drink" ? '<p class="row__desc" lang="en">' + keep(item.desc) + "</p>" : "") + "</div>" +
       '<div class="row__media' + (pic ? "" : " row__media--mark") + '">' + (pic ? thumbImg(item, ' loading="lazy" decoding="async"') :
         '<img src="' + esc(path(m.mark)) + '" alt="" width="192" height="192" loading="lazy" decoding="async">') + "</div></a>";
   }
@@ -1615,20 +1814,40 @@
 
   /* ---------------------------------------------------------------- boot */
   function boot() {
+    var fail = function (err) {
+      console.error(err);
+      READY_FNS.rej(err);
+      if (PAGE === "checkout" || PAGE === "order") return;   // Pidi's own pages say it their own way
+      ($("#oa-main") || BODY).insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
+    };
+    if (PAGE === "checkout" || PAGE === "order") {
+      // app mode: the data, the words and the language switch, nothing drawn
+      Promise.all([loadSite(), loadLang()]).then(function () {
+        setOrder();
+        reload();
+        translatePage();
+        $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });
+        var need = menusInCart();
+        savedBrands().forEach(function (b) { if (need.indexOf(b) < 0) need.push(b); });
+        return Promise.all(need.map(function (b) { return loadMenu(b).catch(function () { return null; }); }));
+      }).then(function () {
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { reload(); emit(); } });
+        BODY.classList.add("oa-ready");
+        ready();
+      }).catch(fail);
+      return;
+    }
     if (PAGE === "hub") {
       Promise.all([loadSite(), loadLang()]).then(function () {
         translatePage();
         fillCommon();
         setInterval(fillCommon, 60000);
-        renderHub();
         $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });
         setupIAB();
         BODY.classList.add("oa-ready");
         later(registerSW);
-      }).catch(function (err) {
-        console.error(err);
-        ($("#oa-main") || BODY).insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
-      });
+        return renderHub();
+      }).then(ready).catch(fail);
       return;
     }
     if (PAGE !== "brand" || !HERE) return;
@@ -1656,19 +1875,23 @@
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { reload(); emit(); } });
         BODY.classList.add("oa-ready");
         later(registerSW);
+        ready();
       });
-    }).catch(function (err) {
-      console.error(err);
-      var main = $("#oa-main") || BODY;
-      main.insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
-    });
+    }).catch(fail);
   }
 
   window.OrderApp = {
+    // the restaurant pages and QA
     buildMessage: buildMessage, checkoutLink: checkoutLink, addItem: addItem, setLineQty: setLineQty,
     count: count, subtotal: subtotal, fee: fee, total: total, state: function () { return S(); },
     clear: clearOrder, loadMenu: loadMenu, shopStatus: function () { return shopStatus(); },
-    _set: function (patch) { var s = S(); Object.keys(patch).forEach(function (k) { s[k] = patch[k]; }); commit(); }
+    _set: function (patch) { var s = S(); Object.keys(patch).forEach(function (k) { s[k] = patch[k]; }); commit(); },
+    // Pidi's own pages (checkout/, order/): the API at the top of this file
+    ready: READY, site: function () { return SITE; }, menu: function (b) { return MENU[b] || null; },
+    tr: tr, money: function (c, html) { return html ? moneyHTML(c) : money(c); }, lang: function () { return LANG; },
+    clock: function (m, full) { return clock(m, full); }, arubaNow: arubaNow, slots: slots, canOrderNow: canOrderNow,
+    lines: lines, food: food, minFood: minFood, shortBy: shortBy,
+    details: details, saveDetails: saveDetails, rememberOrder: rememberOrder, orders: orders, onChange: onChange
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

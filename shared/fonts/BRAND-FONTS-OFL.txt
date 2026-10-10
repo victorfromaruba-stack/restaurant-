@@ -1,4 +1,4 @@
-Fonts in this folder besides Archivo (each restaurant page loads only its own).
+Fonts in this folder besides Archivo (each restaurant page loads only its own; Pidi's Jakarta and Bricolage load on every page).
 All are from Google Fonts, latin subset, self-hosted. The *-f.woff2 files hold only the florin sign (U+0192)
 cut from the same font's latin-ext subset.
 
@@ -9,6 +9,9 @@ plexmono-500.woff2     IBM Plex Mono Medium. Copyright 2017 IBM Corp. All rights
 playfair-600i.woff2    Playfair Display SemiBold Italic. Copyright 2017 The Playfair Display Project Authors (https://github.com/clauseggers/Playfair-Display), with Reserved Font Name "Playfair Display".
 lora-400.woff2         Lora Regular. Copyright 2011 The Lora Project Authors (https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name "Lora".
 fraunces-900.woff2     Fraunces Black (SOFT 100, WONK 1, opsz 144). Copyright 2020 The Fraunces Project Authors (github.com/undercasetype/Fraunces)
+jakarta-500/700/800.woff2  Plus Jakarta Sans Medium, Bold, ExtraBold (Pidi's own type). Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans).
+                       The jakarta-*-ext.woff2 files are the same weights' latin-ext subset; the pages load them only for the florin sign (U+0192).
+bricolage-800.woff2    Bricolage Grotesque ExtraBold (Pidi's greeting and status headline). Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage).
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

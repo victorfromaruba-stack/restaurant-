@@ -84,6 +84,8 @@ def outputs():
     out = {"index.html": named(with_ld(read("index.html"), home_ld())), "404.html": named(read("404.html")),
            "manifest.webmanifest": manifest()}
     for b in brands: out[b + "/index.html"] = with_ld(read(b + "/index.html"), brand_ld(b))
+    for p in ("checkout/index.html", "order/index.html"):   # Pidi's own pages: "<name> · Checkout" (not in the sitemap)
+        if os.path.exists(os.path.join(ROOT, p)): out[p] = named(read(p))
     urls = [BASE] + [BASE + b + "/" for b in brands]
     out["sitemap.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \
         "".join("  <url><loc>%s</loc></url>\n" % u for u in urls) + "</urlset>\n"

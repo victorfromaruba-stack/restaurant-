@@ -2,25 +2,24 @@
    painted trim, pictures pinned up with a cream border, prices painted in pink. */
 @font-face{font-family:"Bungee";src:url(../shared/fonts/bungee.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Bungee";src:url(../shared/fonts/bungee-f.woff2) format("woff2");font-weight:400;font-display:swap;unicode-range:U+0192}
+/* On Pidi's ink: the pink wall is the sign band; the menu rows keep their cream words on the ink, with the
+   prices and the + count in its pink lit up to read at night (--r-lit). */
 body[data-brand="taco-brava"]{
   --pink:#E6246E;--cream:#FBEBD0;--lime:#C4D82E;
-  --g:#1B1514;--g2:#2A211E;--ink:#FBEBD0;--muted:#D2C3AB;--line:#3D302B;--field-line:#8E7B6C;
-  --acc:#D01C60;--acc-ink:#FFFFFF;--price:#FF6B9C;--r:3px;
-  --display:"Bungee",var(--font);--name:var(--font);--name-w:800;--name-size:17px;
-  --chip-bg:transparent;--chip-ink:#FBEBD0;--chip-line:#8E7B6C;--chip-on-bg:#FBEBD0;--chip-on-ink:#1B1514;
-  --add-bg:transparent;--add-ink:#FBEBD0;--add-line:#FBEBD0;--add-on-bg:#FF6B9C;--add-on-ink:#1B1514;
-  --lead:2px dotted;--lead-ink:#6A5850;--focus:#C4D82E;
+  --fg:#FBEBD0;--fg-2:#D2C3AB;--r:3px;
+  --r-font:"Bungee",var(--font);--name:var(--font);--name-w:800;--name-size:17px;
+  --chip-ink:#FBEBD0;--add-ink:#FBEBD0;--add-line:#FBEBD0;
 }
 /* the wall: the sign painted straight on it, the line in white, a cream and lime trim along the bottom.
    No cover picture: the birria leads the menu right under it */
 [data-brand="taco-brava"] .store{--logo-h:46px;background:var(--pink);padding-block:22px 24px;margin-bottom:12px;box-shadow:0 6px 0 var(--cream),0 12px 0 var(--lime)}
 [data-brand="taco-brava"] .store__tag{font:800 19px/1.3 var(--font);color:#FFFFFF;max-width:26ch}
 [data-brand="taco-brava"] .cover{border:4px solid var(--cream);border-radius:3px;background:var(--cream)}
-[data-brand="taco-brava"] .store .note{background:#1B1514;color:var(--cream)}
+[data-brand="taco-brava"] .store .note{background:var(--ink);color:var(--cream)}
 
 /* section titles: painted letters with a square-ended pink stripe under them, painted to the edge */
 [data-brand="taco-brava"] .sec{padding-top:30px}
-[data-brand="taco-brava"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-bottom:6px;font:400 22px/1.1 var(--display);color:var(--cream)}
+[data-brand="taco-brava"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;margin-bottom:6px;font:400 22px/1.1 var(--r-font);color:var(--cream)}
 [data-brand="taco-brava"] .sec__t::after{content:"";flex-basis:100%;height:4px;margin-top:9px;background:var(--pink)}
 
 /* rows: pictures pinned up in a cream border, the price painted in pink on the name's line */
@@ -28,14 +27,14 @@ body[data-brand="taco-brava"]{
 [data-brand="taco-brava"] .row__media img{border:3px solid var(--cream);border-radius:2px}
 [data-brand="taco-brava"] .row.is-sig .row__media img{border-width:4px}
 [data-brand="taco-brava"] .row__name{line-height:1.22}
-[data-brand="taco-brava"] .row__price{font:400 16.5px/1.2 var(--display);color:var(--price)}
+[data-brand="taco-brava"] .row__price{font:400 16.5px/1.2 var(--r-font);color:var(--price)}
 [data-brand="taco-brava"] .row.is-sig .row__price{font-size:19px}
 [data-brand="taco-brava"] .rows--drinks .row__name{font-weight:600}
 
 [data-brand="taco-brava"] .again__card{border-color:var(--pink)}
 [data-brand="taco-brava"] .dish__media{border-bottom:6px solid var(--pink)}
-[data-brand="taco-brava"] .dish__name{font:400 24px/1.15 var(--display);color:var(--cream)}
-[data-brand="taco-brava"] .dish__price{font:400 20px/1.2 var(--display)}
+[data-brand="taco-brava"] .dish__name{font:400 24px/1.15 var(--r-font);color:var(--cream)}
+[data-brand="taco-brava"] .dish__price{font:400 20px/1.2 var(--r-font)}
 
 @media (max-width:359px){
   [data-brand="taco-brava"] .row{--ph:72px}

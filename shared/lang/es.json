@@ -75,7 +75,6 @@
  "Sent: see order": "Enviado: ver pedido",
  "Continue order": "Seguir con el pedido",
  "View order": "Ver pedido",
- "View order: {items}, {total} before delivery": "Ver pedido: {items}, {total} sin la entrega",
  "We deliver to {areas}.": "Entregamos en {areas}.",
  "Elsewhere?": "¿En otro lugar?",
  "Ask us": "Pregúntanos",
@@ -134,7 +133,6 @@
  "Italian": "Italiana",
  "Dutch": "Holandesa",
  "Snacks": "Snacks",
- "View your order": "Ver tu pedido",
  "Skip to the menu": "Ir al menú",
  "Menu sections": "Secciones del menú",
  "How will you pay?": "¿Cómo vas a pagar?",
@@ -199,5 +197,15 @@
  "Every night from {time}.": "Todas las noches desde las {time}.",
  "You pay one delivery fee.": "Pagas la entrega una sola vez.",
  "You pay one delivery fee, the highest in your order.": "Pagas un solo costo de entrega: el más alto de tu pedido.",
- "From other restaurants · same order, one delivery fee": "De otros restaurantes · mismo pedido, una sola entrega"
+ "From other restaurants · same order, one delivery fee": "De otros restaurantes · mismo pedido, una sola entrega",
+ "florins": "florines",
+ "Add {gap} more food": "Añade {gap} más de comida",
+ "incl. {fee} delivery": "incl. entrega {fee}",
+ "Your order: {items}, {food} of food. Add {gap} more food to order.": "Tu pedido: {items}, {food} de comida. Añade {gap} más de comida para pedir.",
+ "View order: {items}, {total} with delivery": "Ver pedido: {items}, {total} con la entrega",
+ "Opens {time}": "Abre a las {time}",
+ "Pre-order": "Pedido anticipado",
+ "{min} minimum": "mínimo {min}",
+ "Checkout is coming": "El pago llega pronto",
+ "Order status is coming": "El estado de tu pedido llega pronto"
 }

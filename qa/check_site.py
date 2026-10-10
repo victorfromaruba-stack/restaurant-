@@ -133,7 +133,8 @@ def talk(text):
 def others_in(text, here):
     return [n for b, n in names.items() if b != here and (n in text or n.replace("’", "'") in text)]
 # public files the pages load: nothing in them may hint at a shared kitchen
-pub = ["index.html", "404.html", "sw.js", "shared/site.json", "shared/order.css", "shared/hub.css", "shared/order-app.js",
+pub = ["index.html", "404.html", "sw.js", "shared/site.json", "shared/pidi.css", "shared/order.css", "shared/hub.css", "shared/order-app.js",
+       "checkout/index.html", "order/index.html",
        "shared/lang/pap.json", "shared/lang/nl.json", "shared/lang/es.json"] + [f"{b}/index.html" for b in brands] + [f"{b}/menu.json" for b in brands]
 for f in pub:
     bad = talk(open(os.path.join(ROOT, f), encoding="utf-8").read())
@@ -213,6 +214,12 @@ for where, t in texts:
     hit = closing(t)
     check(not hit, f"no closing time in {where[:70]}" + (f": {hit}" if hit else ""))
 
+# Pidi's frame and the engine's API for its own pages (checkout/, order/): qa/check_api.py, on this same server
+api = subprocess.run([sys.executable, os.path.join(ROOT, "qa/check_api.py")], capture_output=True, text=True, env={**os.environ, "QA_BASE": BASE})
+api_fails = [l[5:] for l in api.stdout.splitlines() if l.startswith("FAIL ")]
+check(api.returncode == 0, "the frame and the API for checkout/ and order/ work (qa/check_api.py)" +
+      ("" if api.returncode == 0 else ": " + ("; ".join(api_fails) or (api.stdout + api.stderr)[-1500:])))
+
 db_calls = []
 async def no_database(ctx):
     """QA never reaches the real order database: every /rest/v1/ request is answered here (contexts block service
@@ -233,7 +240,7 @@ async def main():
         pg.on("console", lambda m: errs.append(f"console: {m.text}") if m.type == "error" and "404" not in m.text else None)
         # ops/chef.html is private (not on the public site); the chef app checks for it on purpose
         pg.on("response", lambda r: errs.append(f"HTTP {r.status} {r.url}") if r.status >= 400 and not r.url.endswith("ops/chef.html") else None)
-        for url in ["index.html", "404.html", "ops/kitchen/index.html"] + [f"{x}/index.html" for x in brands]:
+        for url in ["index.html", "404.html", "ops/kitchen/index.html", "checkout/index.html", "order/index.html"] + [f"{x}/index.html" for x in brands]:
             errs.clear()
             await pg.goto(BASE + url, wait_until="networkidle")
             h = await pg.evaluate("document.body.scrollHeight")
@@ -417,7 +424,7 @@ async def main():
         await pg.goto(BASE + first_run[1] + "/index.html", wait_until="networkidle")
         for code in ("pap", "nl", "es"):
             await pg.evaluate("c => localStorage.setItem('pidi.lang.v1', c)", code)
-            for url in ["index.html"] + [f"{x}/index.html" for x in brands]:
+            for url in ["index.html", "checkout/index.html", "order/index.html"] + [f"{x}/index.html" for x in brands]:
                 errs.clear()
                 await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
                 check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))

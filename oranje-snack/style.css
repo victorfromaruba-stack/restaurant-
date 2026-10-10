@@ -2,41 +2,41 @@
    the prices on yellow strips, Dutch headings in a fat round serif like the sign. */
 @font-face{font-family:"Fraunces";src:url(../shared/fonts/fraunces-900.woff2) format("woff2");font-weight:900;font-display:swap}
 @font-face{font-family:"Fraunces";src:url(../shared/fonts/fraunces-900-f.woff2) format("woff2");font-weight:900;font-display:swap;unicode-range:U+0192}
+/* On Pidi's ink: the tiled front with its orange fascia is the sign band, and the menu stays a lit white price
+   board with its own navy words. */
 body[data-brand="oranje-snack"]{
-  color-scheme:light;
-  --oranje:#E86A17;--oranje-ink:#A84A0E;--navy:#1B2A4A;--mayo:#FFE9A8;
-  --g:#F6F7F5;--g2:#FFFFFF;--ink:#1B2A4A;--muted:#46526B;--line:#D9DDE3;--field-line:#7C869A;
-  --acc:#E86A17;--acc-ink:#141414;--price:#1B2A4A;--r:3px;
-  --display:"Fraunces",Georgia,serif;--name:var(--font);--name-w:700;--name-size:17px;
-  --chip-bg:#FFFFFF;--chip-ink:#1B2A4A;--chip-line:#7C869A;--chip-on-bg:#1B2A4A;--chip-on-ink:#FFFFFF;
-  --add-bg:#1B2A4A;--add-ink:#FFFFFF;--add-line:#1B2A4A;--add-on-bg:#E86A17;--add-on-ink:#141414;
-  --lead:2px dotted;--lead-ink:#B3BAC6;--focus:#1B2A4A;--bad:#B3261E;
+  --oranje:#E86A17;--navy:#1B2A4A;--mayo:#FFE9A8;--r:3px;
+  --r-font:"Fraunces",Georgia,serif;--name:var(--font);--name-w:700;--name-size:17px;
 }
-/* the tiled wall: big white tiles with a faint grout line, so it reads as a wall and not as graph paper */
-[data-brand="oranje-snack"] .page{background-color:#F7F8F6;background-image:linear-gradient(#E9ECEE 2px,transparent 2px),linear-gradient(90deg,#E9ECEE 2px,transparent 2px);background-size:64px 64px;background-position:-1px -1px}
-/* the front: the sign on the tiles, the line, the picture in the board's frame, the orange fascia under it */
-[data-brand="oranje-snack"] .store{--logo-h:54px;padding-block:20px 22px;border-bottom:10px solid var(--oranje)}
+/* the front: big white tiles with a faint grout line (a wall, not graph paper), the sign, the line, the picture in
+   the board's frame, the orange fascia under it */
+[data-brand="oranje-snack"] .store{--logo-h:54px;padding-block:20px 22px;border-bottom:10px solid var(--oranje);background-color:#FFFFFF;background-image:linear-gradient(#E9ECEE 2px,transparent 2px),linear-gradient(90deg,#E9ECEE 2px,transparent 2px);background-size:64px 64px;background-position:-1px -1px}
 [data-brand="oranje-snack"] .store__tag{font:600 17px/1.35 var(--font);color:var(--navy)}
 [data-brand="oranje-snack"] .cover{border:3px solid var(--navy);border-radius:4px}
 
-/* headings: the Dutch word big in orange, the English small beside it */
+/* headings: big in orange, like the sign (5.5 on the ink) */
 [data-brand="oranje-snack"] .sec{padding-top:26px}
-[data-brand="oranje-snack"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-bottom:10px;font:900 26px/1.05 var(--display);color:var(--oranje-ink)}
+[data-brand="oranje-snack"] .sec__t{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-bottom:10px;font:900 26px/1.05 var(--r-font);color:var(--r-lit)}
 
 /* the price board: white, a navy frame, each price on a yellow strip */
+[data-brand="oranje-snack"] .rows,[data-brand="oranje-snack"] .again__card{
+  --fg:#1B2A4A;--fg-2:#46526B;--rule:#D9DDE3;--price:#1B2A4A;--g2:#FFFFFF;
+  --add-bg:#1B2A4A;--add-ink:#FFFFFF;--add-line:#1B2A4A;--add-on-bg:#E86A17;--add-on-ink:#141414;
+  --lead-ink:#B3BAC6;--focus:#1B2A4A;--bad:#B3261E;color:var(--fg)
+}
 [data-brand="oranje-snack"] .rows{padding:0 12px;background:#FFFFFF;border:3px solid var(--navy);border-radius:4px}
 [data-brand="oranje-snack"] .row{--ph:72px;padding:14px 0}
 [data-brand="oranje-snack"] .row__media img{border-radius:2px}
 [data-brand="oranje-snack"] .row__price{padding:2px 7px;background:var(--mayo);border-radius:2px;font:800 15.5px/1.25 var(--font);color:var(--navy)}
-[data-brand="oranje-snack"] .row.is-sig .row__name{font:900 20px/1.1 var(--display);color:var(--navy)}
+[data-brand="oranje-snack"] .row.is-sig .row__name{font:900 20px/1.1 var(--r-font);color:var(--navy)}
 [data-brand="oranje-snack"] .rows--drinks .row{padding:9px 0}
 [data-brand="oranje-snack"] .rows--drinks .row__name{font-weight:600}
 
 [data-brand="oranje-snack"] .again__card{background:#FFFFFF;border:3px solid var(--navy)}
-[data-brand="oranje-snack"] .again__t{font:900 22px/1.1 var(--display);color:var(--navy)}
+[data-brand="oranje-snack"] .again__t{font:900 22px/1.1 var(--r-font);color:var(--navy)}
 [data-brand="oranje-snack"] .dish__media{border-bottom:8px solid var(--oranje)}
-[data-brand="oranje-snack"] .dish__name{font:900 28px/1.1 var(--display);color:var(--navy)}
-[data-brand="oranje-snack"] .dish__price{display:inline-block;padding:3px 9px;background:var(--mayo);border-radius:2px;font:800 18px/1.25 var(--font)}
+[data-brand="oranje-snack"] .dish__name{font:900 28px/1.1 var(--r-font)}
+[data-brand="oranje-snack"] .dish__price{display:inline-block;padding:3px 9px;background:var(--mayo);border-radius:2px;font:800 18px/1.25 var(--font);color:var(--navy)}
 
 @media (max-width:359px){
   [data-brand="oranje-snack"] .store{--logo-h:46px}

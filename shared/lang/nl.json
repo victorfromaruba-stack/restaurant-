@@ -75,7 +75,6 @@
  "Sent: see order": "Verstuurd: bekijk bestelling",
  "Continue order": "Verder met bestellen",
  "View order": "Bekijk bestelling",
- "View order: {items}, {total} before delivery": "Bekijk bestelling: {items}, {total} zonder bezorging",
  "We deliver to {areas}.": "We bezorgen in {areas}.",
  "Elsewhere?": "Ergens anders?",
  "Ask us": "Vraag het ons",
@@ -134,7 +133,6 @@
  "Italian": "Italiaans",
  "Dutch": "Hollands",
  "Snacks": "Snacks",
- "View your order": "Bekijk je bestelling",
  "Skip to the menu": "Naar het menu",
  "Menu sections": "Menuonderdelen",
  "How will you pay?": "Hoe betaal je?",
@@ -199,5 +197,15 @@
  "Every night from {time}.": "Elke avond vanaf {time}.",
  "You pay one delivery fee.": "Je betaalt maar één keer bezorging.",
  "You pay one delivery fee, the highest in your order.": "Je betaalt één keer bezorgkosten: de hoogste in je bestelling.",
- "From other restaurants · same order, one delivery fee": "Van andere restaurants · zelfde bestelling, één keer bezorgen"
+ "From other restaurants · same order, one delivery fee": "Van andere restaurants · zelfde bestelling, één keer bezorgen",
+ "florins": "florin",
+ "Add {gap} more food": "Voeg nog {gap} aan eten toe",
+ "incl. {fee} delivery": "incl. {fee} bezorging",
+ "Your order: {items}, {food} of food. Add {gap} more food to order.": "Je bestelling: {items}, {food} aan eten. Voeg nog {gap} aan eten toe om te bestellen.",
+ "View order: {items}, {total} with delivery": "Bekijk bestelling: {items}, {total} met bezorging",
+ "Opens {time}": "Open om {time}",
+ "Pre-order": "Vooruit bestellen",
+ "{min} minimum": "minimaal {min}",
+ "Checkout is coming": "Afrekenen komt binnenkort",
+ "Order status is coming": "Je bestelstatus komt binnenkort"
 }

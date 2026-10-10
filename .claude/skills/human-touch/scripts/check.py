@@ -110,7 +110,7 @@ def site_copy():
     """Every piece of customer-facing copy, as (where, text)."""
     items = []
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
-    for page in ["index.html"] + [b["id"] + "/index.html" for b in site["brands"]]:
+    for page in ["index.html", "checkout/index.html", "order/index.html"] + [b["id"] + "/index.html" for b in site["brands"]]:
         p = ROOT / page
         if p.exists():
             items += [(page, t) for t in html_text(p.read_text(encoding="utf-8"))]
@@ -293,7 +293,7 @@ def image_findings():
 def css_findings():
     out = []
     pills = 0
-    for css in [ROOT / "shared/order.css", ROOT / "shared/hub.css"]:
+    for css in [ROOT / "shared/pidi.css", ROOT / "shared/order.css", ROOT / "shared/hub.css"]:
         if not css.exists():
             continue
         src = css.read_text(encoding="utf-8")
@@ -425,7 +425,7 @@ def caps_findings():
                 for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", nocomment(src))]
     def tokens(src):
         return dict(re.findall(r"(--[\w-]+)\s*:\s*([^;}]+)", nocomment(src)))
-    for css in [ROOT / "shared/order.css", ROOT / "shared/hub.css"] + sorted(ROOT.glob("*/style.css")):
+    for css in [ROOT / "shared/pidi.css", ROOT / "shared/order.css", ROOT / "shared/hub.css"] + sorted(ROOT.glob("*/style.css")):
         if css.parent.name in SKIP_DIRS:
             continue
         src = css.read_text(encoding="utf-8")

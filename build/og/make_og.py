@@ -28,7 +28,10 @@ def lum(hex_):
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255
 
 HEAD = f"""<!doctype html><html><head><meta charset="utf-8"><base href="{BASE}">
-<link rel="stylesheet" href="shared/order.css"><style>
+<link rel="stylesheet" href="shared/pidi.css"><link rel="stylesheet" href="shared/order.css"><style>
+@font-face{{font-family:"Archivo";src:url(shared/fonts/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%}}
+@font-face{{font-family:"Archivo";src:url(shared/fonts/archivo-florin.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%;unicode-range:U+0192}}
+:root{{--font:"Archivo",system-ui,sans-serif}}
 html,body{{margin:0;width:1200px;height:630px;overflow:hidden;background:#15130F}}
 .c{{position:relative;display:flex;width:1200px;height:630px}}
 .ph{{flex:none;width:660px;height:630px;object-fit:cover}}

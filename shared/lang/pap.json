@@ -75,7 +75,6 @@
  "Sent: see order": "Mandá: mira bo orden",
  "Continue order": "Sigui cu bo orden",
  "View order": "Mira bo orden",
- "View order: {items}, {total} before delivery": "Mira bo orden: {items}, {total} sin entrega",
  "We deliver to {areas}.": "Nos ta entrega na {areas}.",
  "Elsewhere?": "Otro caminda?",
  "Ask us": "Puntra nos",
@@ -134,7 +133,6 @@
  "Italian": "Italiano",
  "Dutch": "Hulandes",
  "Snacks": "Snacks",
- "View your order": "Mira bo orden",
  "Skip to the menu": "Bai na e menu",
  "Menu sections": "Partinan di e menu",
  "How will you pay?": "Con bo ta paga?",
@@ -199,5 +197,15 @@
  "Every night from {time}.": "Tur anochi for di {time}.",
  "You pay one delivery fee.": "Bo ta paga entrega un biaha so.",
  "You pay one delivery fee, the highest in your order.": "Bo ta paga un entrega so: esun di mas haltu den bo orden.",
- "From other restaurants · same order, one delivery fee": "Di otro restaurant · mes orden, un entrega so"
+ "From other restaurants · same order, one delivery fee": "Di otro restaurant · mes orden, un entrega so",
+ "florins": "florin",
+ "Add {gap} more food": "Agrega {gap} mas cuminda",
+ "incl. {fee} delivery": "incl. entrega {fee}",
+ "Your order: {items}, {food} of food. Add {gap} more food to order.": "Bo orden: {items}, {food} di cuminda. Agrega {gap} mas cuminda pa por pidi.",
+ "View order: {items}, {total} with delivery": "Mira bo orden: {items}, {total} cu entrega",
+ "Opens {time}": "Ta habri {time}",
+ "Pre-order": "Pre-orden",
+ "{min} minimum": "minimo {min}",
+ "Checkout is coming": "Checkout ta bin pronto",
+ "Order status is coming": "Status di bo orden ta bin pronto"
 }
