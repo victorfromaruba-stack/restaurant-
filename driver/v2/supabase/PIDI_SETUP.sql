@@ -209,6 +209,12 @@ create table if not exists public.pidi_driver_sessions (
   expires_at timestamptz not null
 );
 
+alter table public.pidi_orders add column if not exists pays_in_usd boolean not null default false;
+alter table public.pidi_orders add column if not exists eta_min integer;
+alter table public.pidi_orders add column if not exists eta_max integer;
+alter table public.pidi_orders add column if not exists night_no integer;
+alter table public.pidi_orders add column if not exists transfer_paid_at timestamptz;
+
 alter table public.pidi_restaurants enable row level security;
 alter table public.pidi_settings enable row level security;
 alter table public.pidi_drivers enable row level security;
@@ -295,7 +301,13 @@ insert into public.pidi_settings (key, value) values
   ('pickup_name', ''),
   ('pickup_address', ''),
   ('pickup_lat', ''),
-  ('pickup_lng', '')
+  ('pickup_lng', ''),
+  ('eta_min', '45'),
+  ('eta_max', '60'),
+  ('busy_min', '0'),
+  ('last_order', '01:30'),
+  ('max_open_per_phone', '2'),
+  ('max_night_per_phone', '6')
 on conflict (key) do nothing;
 
 create or replace function public.pidi_setting(p_key text)
@@ -553,7 +565,7 @@ begin
   own_fee := public.pidi_setting('fee_own')::integer;
   partner_fee := public.pidi_setting('fee_partner')::integer;
   if own_fee is null or partner_fee is null then
-    raise exception 'Delivery fee is not set.';
+    raise exception 'FEE_NOT_SET';
   end if;
   if any_partner then
     return partner_fee;
@@ -569,6 +581,8 @@ stable
 security definer
 set search_path = public, extensions
 as $$
+  -- What a customer's status page may show. Never the phone, address, pin or note:
+  -- anyone holding the link can read this.
   select jsonb_build_object(
     'order_id', o.id,
     'public_token', o.public_token,
@@ -577,8 +591,18 @@ as $$
     'total_cents', o.food_cents + o.fee_cents,
     'change_due_cents', o.change_due_cents,
     'pay', o.pay,
+    'pays_with_cents', o.pays_with_cents,
+    'pays_in_usd', o.pays_in_usd,
     'transfer_status', o.transfer_status,
+    'transfer_paid_at', o.transfer_paid_at,
     'due_at', o.due_at,
+    'created_at', o.created_at,
+    'first_name', split_part(trim(o.customer_name), ' ', 1),
+    'area', o.area,
+    'night_no', o.night_no,
+    'eta_min', o.eta_min,
+    'eta_max', o.eta_max,
+    'test', o.test,
     'restaurant', (
       select string_agg(r.name, ', ' order by r.name)
       from public.pidi_order_restaurants orr
@@ -595,6 +619,22 @@ as $$
       from public.pidi_order_restaurants orr
       join public.pidi_restaurants r on r.id = orr.restaurant_id
       where orr.order_id = o.id
+    ),
+    'items', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'restaurant', r.slug,
+        'name', i.name,
+        'qty', i.qty,
+        'price_cents', i.price_cents
+      ) order by r.name, i.name), '[]'::jsonb)
+      from public.pidi_order_items i
+      join public.pidi_restaurants r on r.id = i.restaurant_id
+      where i.order_id = o.id
+    ),
+    'events', (
+      select coalesce(jsonb_agg(jsonb_build_object('status', e.status, 'at', e.at) order by e.at), '[]'::jsonb)
+      from public.pidi_order_events e
+      where e.order_id = o.id
     )
   )
   from public.pidi_orders o
@@ -607,6 +647,8 @@ language plpgsql
 security definer
 set search_path = public, extensions
 as $$
+-- Errors are short codes (MIN_FOOD, BAD_ITEM:2, REST_CLOSED:taco-brava, ...). The website turns
+-- each into a sentence in the customer's language, so no English text and no hours come from here.
 declare
   rest_id uuid;
   rest_partner boolean;
@@ -614,59 +656,98 @@ declare
   fee integer;
   minimum integer;
   dish jsonb;
+  n integer;
+  idx integer;
   qty integer;
   price integer;
   pay text;
   pays integer;
+  usd boolean := false;
   v_lat numeric;
   v_lng numeric;
   v_due timestamptz;
   outside boolean := false;
   local_time time;
+  last_order time;
   hours text;
   token text;
   v_client text;
   existing jsonb;
   new_id uuid;
   uname text;
+  digits text;
   dish_slug text;
   lines jsonb := '[]'::jsonb;
   any_partner boolean := false;
+  busy integer;
+  e_min integer;
+  e_max integer;
+  v_night integer;
+  v_open integer;
+  v_tonight integer;
 begin
   if payload is null or jsonb_typeof(payload) <> 'object' then
-    raise exception 'Send the order as one object.';
+    raise exception 'BAD_PAYLOAD';
   end if;
+
+  -- A retry with the same token gets the order that already exists, whatever changed since.
+  v_client := nullif(trim(coalesce(payload->>'client_token', '')), '');
+  if v_client is not null then
+    select public.pidi_order_public(o.id) into existing
+    from public.pidi_orders o
+    where o.client_token = v_client;
+    if existing is not null then
+      return existing;
+    end if;
+  end if;
+
   if lower(coalesce(payload->>'pickup', '')) in ('true', '1', 'yes') then
-    raise exception 'Delivery only.';
+    raise exception 'DELIVERY_ONLY';
   end if;
 
   uname := trim(coalesce(payload->>'name', ''));
   if uname = '' or trim(coalesce(payload->>'phone', '')) = ''
      or trim(coalesce(payload->>'area', '')) = ''
      or trim(coalesce(payload->>'address', '')) = '' then
-    raise exception 'Name, phone, area, and address are required.';
+    raise exception 'MISSING';
   end if;
-  if length(regexp_replace(payload->>'phone', '\D', '', 'g')) < 7 then
-    raise exception 'Enter a phone number the driver can call.';
+  digits := regexp_replace(payload->>'phone', '\D', '', 'g');
+  if length(digits) < 7 or length(digits) > 15 then
+    raise exception 'BAD_PHONE';
+  end if;
+  if length(uname) > 60 or length(payload->>'area') > 60 or length(payload->>'address') > 300
+     or length(coalesce(payload->>'note', '')) > 300 then
+    raise exception 'BAD_PAYLOAD';
   end if;
 
-  if jsonb_typeof(payload->'items') <> 'array' or jsonb_array_length(payload->'items') < 1 then
-    raise exception 'Add at least one dish.';
+  if jsonb_typeof(payload->'items') is distinct from 'array' or jsonb_array_length(payload->'items') < 1 then
+    raise exception 'NO_ITEMS';
   end if;
-  for dish in select value from jsonb_array_elements(payload->'items')
+  n := jsonb_array_length(payload->'items');
+  if n > 60 then
+    raise exception 'BAD_PAYLOAD';
+  end if;
+  for idx in 0 .. n - 1
   loop
+    dish := payload->'items'->idx;
+    if jsonb_typeof(dish) is distinct from 'object'
+       or coalesce(dish->>'qty', '') !~ '^[0-9]{1,3}$'
+       or coalesce(dish->>'price_cents', '') !~ '^[0-9]{1,6}$'
+       or length(trim(coalesce(dish->>'name', ''))) < 1
+       or length(dish->>'name') > 160 then
+      raise exception 'BAD_ITEM:%', idx;
+    end if;
     qty := (dish->>'qty')::integer;
     price := (dish->>'price_cents')::integer;
-    if qty is null or qty < 1 or qty > 20 or price is null or price < 0 or price > 100000
-       or length(trim(coalesce(dish->>'name', ''))) < 1 then
-      raise exception 'Check the dishes and try again.';
+    if qty < 1 or qty > 20 or price > 100000 then
+      raise exception 'BAD_ITEM:%', idx;
     end if;
     dish_slug := lower(trim(coalesce(dish->>'restaurant', payload->>'restaurant', '')));
     select r.id, r.partner into rest_id, rest_partner
     from public.pidi_restaurants r
     where r.slug = dish_slug and r.active;
     if not found then
-      raise exception 'That restaurant is not open for orders.';
+      raise exception 'REST_CLOSED:%', dish_slug;
     end if;
     if rest_partner then
       any_partner := true;
@@ -682,72 +763,110 @@ begin
 
   minimum := coalesce(public.pidi_setting('min_food_cents')::integer, 2400);
   if food < minimum then
-    raise exception 'Food minimum is ƒ24 before delivery.';
+    raise exception 'MIN_FOOD';
   end if;
   fee := public.pidi_delivery_fee(any_partner);
 
   pay := lower(trim(coalesce(payload->>'pay', '')));
   if pay = 'cash' then
-    pays := (payload->>'pays_with_cents')::integer;
-    if pays is null or pays < food + fee then
-      raise exception 'Cash paid must cover the food and the ƒ% delivery.', fee / 100;
+    usd := lower(coalesce(payload->>'pays_in_usd', '')) in ('true', '1', 'yes');
+    if usd then
+      -- The driver tells the amount in US dollars at the door.
+      pays := food + fee;
+    else
+      if coalesce(payload->>'pays_with_cents', '') !~ '^[0-9]{1,7}$' then
+        raise exception 'CASH_SHORT';
+      end if;
+      pays := (payload->>'pays_with_cents')::integer;
+      if pays < food + fee then
+        raise exception 'CASH_SHORT';
+      end if;
     end if;
   elsif pay = 'transfer' then
     pays := null;
   else
-    raise exception 'Pay cash or by bank transfer.';
+    raise exception 'BAD_PAY';
   end if;
 
   if nullif(payload->>'lat', '') is not null or nullif(payload->>'lng', '') is not null then
+    if coalesce(payload->>'lat', '') !~ '^-?[0-9]{1,3}(\.[0-9]{1,10})?$'
+       or coalesce(payload->>'lng', '') !~ '^-?[0-9]{1,3}(\.[0-9]{1,10})?$' then
+      raise exception 'BAD_PIN';
+    end if;
     v_lat := (payload->>'lat')::numeric;
     v_lng := (payload->>'lng')::numeric;
-    if v_lat is null or v_lng is null or v_lat < -90 or v_lat > 90 or v_lng < -180 or v_lng > 180 then
-      raise exception 'The map pin is not valid.';
+    if v_lat < -90 or v_lat > 90 or v_lng < -180 or v_lng > 180 then
+      raise exception 'BAD_PIN';
     end if;
-  end if;
-
-  -- A pre-order for tonight is judged by its delivery time, not by when it was sent.
-  if nullif(payload->>'due_at', '') is not null then
-    v_due := (payload->>'due_at')::timestamptz;
-    if v_due < now() - interval '10 minutes' or v_due > now() + interval '24 hours' then
-      raise exception 'Pick a delivery time tonight.';
-    end if;
-    v_due := greatest(v_due, now());
-  else
-    v_due := now();
   end if;
 
   hours := coalesce(public.pidi_setting('hours_mode'), 'reject');
-  local_time := (v_due at time zone 'America/Aruba')::time;
-  if not (local_time >= time '22:00' or local_time < time '02:00') then
-    if hours = 'flag' then
-      outside := true;
-    else
-      raise exception 'We deliver late night from 10 PM. Pick a time tonight.';
+  last_order := coalesce(nullif(public.pidi_setting('last_order'), '')::time, time '01:30');
+  busy := coalesce(public.pidi_setting('busy_min')::integer, 0);
+  e_min := coalesce(public.pidi_setting('eta_min')::integer, 45) + busy;
+  e_max := coalesce(public.pidi_setting('eta_max')::integer, 60) + busy;
+
+  if nullif(payload->>'due_at', '') is not null then
+    -- A pre-order: judged by when it must arrive, tonight between 10 PM and 1:45 AM.
+    begin
+      v_due := (payload->>'due_at')::timestamptz;
+    exception when others then
+      raise exception 'BAD_TIME';
+    end;
+    local_time := (v_due at time zone 'America/Aruba')::time;
+    if v_due < now() + make_interval(mins => greatest(15, e_min - 25))
+       or v_due > now() + interval '24 hours'
+       or not (local_time >= time '22:00' or local_time <= time '01:45') then
+      if hours = 'flag' then
+        outside := true;
+      else
+        raise exception 'BAD_TIME';
+      end if;
+    end if;
+  else
+    v_due := now();
+    local_time := (now() at time zone 'America/Aruba')::time;
+    if not (local_time >= time '22:00' or local_time < last_order) then
+      if hours = 'flag' then
+        outside := true;
+      else
+        raise exception 'CLOSED';
+      end if;
     end if;
   end if;
 
-  v_client := nullif(trim(coalesce(payload->>'client_token', '')), '');
-  if v_client is not null then
-    select public.pidi_order_public(o.id) into existing
-    from public.pidi_orders o
-    where o.client_token = v_client;
-    if existing is not null then
-      return existing;
-    end if;
+  -- One phone: at most a few orders waiting for the kitchen, and a few a night.
+  select count(*) filter (where o.status = 'new'),
+         count(*) filter (where ((o.created_at at time zone 'America/Aruba') - interval '12 hours')::date
+                              = ((now() at time zone 'America/Aruba') - interval '12 hours')::date)
+    into v_open, v_tonight
+  from public.pidi_orders o
+  where o.created_at > now() - interval '36 hours'
+    and right(regexp_replace(o.phone, '\D', '', 'g'), 7) = right(digits, 7);
+  if v_open >= coalesce(public.pidi_setting('max_open_per_phone')::integer, 2)
+     or v_tonight >= coalesce(public.pidi_setting('max_night_per_phone')::integer, 6) then
+    raise exception 'RATE_LIMIT';
   end if;
+
+  -- A short number per service night (noon to noon, Aruba time): "Order 14".
+  perform pg_advisory_xact_lock(hashtext('pidi-night-no'));
+  select coalesce(max(o.night_no), 0) + 1 into v_night
+  from public.pidi_orders o
+  where o.created_at > now() - interval '36 hours'
+    and ((o.created_at at time zone 'America/Aruba') - interval '12 hours')::date
+      = ((now() at time zone 'America/Aruba') - interval '12 hours')::date;
 
   token := public.pidi_new_token();
   insert into public.pidi_orders (
     public_token, client_token, customer_name, phone, area, address,
-    lat, lng, note, pay, food_cents, fee_cents, pays_with_cents, transfer_status,
-    due_at, outside_hours, test
+    lat, lng, note, pay, food_cents, fee_cents, pays_with_cents, pays_in_usd, transfer_status,
+    due_at, outside_hours, test, eta_min, eta_max, night_no
   ) values (
     token, v_client, uname, trim(payload->>'phone'), trim(payload->>'area'),
     trim(payload->>'address'), v_lat, v_lng, nullif(trim(coalesce(payload->>'note', '')), ''),
-    pay::public.pidi_pay_method, food, fee, pays,
+    pay::public.pidi_pay_method, food, fee, pays, usd,
     case when pay = 'transfer' then 'awaiting'::public.pidi_transfer_status else null end,
-    v_due, outside, coalesce(lower(payload->>'test') in ('true', '1', 'yes'), false)
+    v_due, outside, coalesce(lower(payload->>'test') in ('true', '1', 'yes'), false), e_min, e_max, v_night
   ) returning id into new_id;
 
   insert into public.pidi_order_items (order_id, restaurant_id, name, qty, price_cents)
@@ -797,10 +916,39 @@ begin
   from public.pidi_orders o
   where o.public_token = token;
   if result is null then
-    raise exception 'We can''t find that order.';
+    raise exception 'NOT_FOUND';
   end if;
   return result;
 end
+$$;
+
+-- After an unclear failure the phone asks: did my order go through? Read only, never inserts.
+create or replace function public.pidi_find_order(client_token text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, extensions
+as $$
+  select public.pidi_order_public(o.id)
+  from public.pidi_orders o
+  where o.client_token = nullif(trim(pidi_find_order.client_token), '')
+$$;
+
+-- What the website needs to promise a time: the usual window plus the kitchen's busy minutes.
+create or replace function public.pidi_public_state()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, extensions
+as $$
+  select jsonb_build_object(
+    'ok', true,
+    'busy_min', coalesce(public.pidi_setting('busy_min')::integer, 0),
+    'eta_min', coalesce(public.pidi_setting('eta_min')::integer, 45),
+    'eta_max', coalesce(public.pidi_setting('eta_max')::integer, 60)
+  )
 $$;
 
 create or replace function public.pidi_kitchen_ok(token text)
@@ -895,6 +1043,8 @@ begin
                o.area, o.address, o.note, o.pay, o.food_cents, o.fee_cents,
                o.food_cents + o.fee_cents as total_cents, o.pays_with_cents, o.change_due_cents,
                o.transfer_status, o.outside_hours, o.test, o.created_at, o.due_at,
+               o.pays_in_usd, o.night_no, o.eta_min, o.eta_max,
+               (select public.pidi_setting('busy_min')) as busy_min,
                (
                  select string_agg(r.name, ', ' order by r.name)
                  from public.pidi_order_restaurants orr
@@ -1119,12 +1269,31 @@ begin
     raise exception 'Sign in again.';
   end if;
   update public.pidi_orders o
-    set transfer_status = 'paid'
+    set transfer_status = 'paid', transfer_paid_at = coalesce(o.transfer_paid_at, now())
     where o.id = pidi_kitchen_transfer_paid.order_id and o.pay = 'transfer';
   if not found then
     raise exception 'That order is not a bank transfer.';
   end if;
   return jsonb_build_object('ok', true, 'transfer_status', 'paid');
+end
+$$;
+
+create or replace function public.pidi_kitchen_set_busy(session text, minutes integer)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+begin
+  if not public.pidi_kitchen_ok(session) then
+    raise exception 'Sign in again.';
+  end if;
+  if minutes is null or minutes not in (0, 15, 30) then
+    raise exception 'Busy is 0, 15 or 30 minutes.';
+  end if;
+  insert into public.pidi_settings (key, value) values ('busy_min', minutes::text)
+  on conflict (key) do update set value = excluded.value;
+  return jsonb_build_object('ok', true, 'busy_min', minutes);
 end
 $$;
 
@@ -1415,6 +1584,8 @@ begin
             'name', o.customer_name,
             'area', o.area,
             'pay', o.pay,
+            'pays_in_usd', o.pays_in_usd,
+            'night_no', o.night_no,
             'fee_cents', o.fee_cents,
             'total_cents', o.food_cents + o.fee_cents
           ) order by ro.stop_index), '[]'::jsonb)
@@ -1548,6 +1719,8 @@ begin
         'fee_cents', o.fee_cents,
         'total_cents', o.food_cents + o.fee_cents,
         'pays_with_cents', o.pays_with_cents,
+        'pays_in_usd', o.pays_in_usd,
+        'night_no', o.night_no,
         'change_due_cents', o.change_due_cents,
         'transfer_status', o.transfer_status,
         'bags', (
@@ -1738,6 +1911,8 @@ $pidi_grants$;
 grant execute on function public.pidi_ping() to anon;
 grant execute on function public.pidi_place_order(jsonb) to anon;
 grant execute on function public.pidi_order_status(text) to anon;
+grant execute on function public.pidi_find_order(text) to anon;
+grant execute on function public.pidi_public_state() to anon;
 grant execute on function public.pidi_kitchen_login(text) to anon;
 grant execute on function public.pidi_kitchen_feed(text) to anon;
 grant execute on function public.pidi_kitchen_accept(text, uuid) to anon;
@@ -1745,6 +1920,7 @@ grant execute on function public.pidi_kitchen_set_status(text, uuid, text) to an
 grant execute on function public.pidi_kitchen_mark_ready(text, uuid, text) to anon;
 grant execute on function public.pidi_kitchen_cancel(text, uuid) to anon;
 grant execute on function public.pidi_kitchen_transfer_paid(text, uuid) to anon;
+grant execute on function public.pidi_kitchen_set_busy(text, integer) to anon;
 grant execute on function public.pidi_driver_login(text, text) to anon;
 grant execute on function public.pidi_driver_set_online(text, boolean) to anon;
 grant execute on function public.pidi_driver_offers(text) to anon;

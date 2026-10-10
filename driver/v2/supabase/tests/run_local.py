@@ -155,6 +155,9 @@ ALLOWED = [
     "pidi_ping()",
     "pidi_place_order(jsonb)",
     "pidi_order_status(text)",
+    "pidi_find_order(text)",
+    "pidi_public_state()",
+    "pidi_kitchen_set_busy(text,integer)",
     "pidi_kitchen_login(text)",
     "pidi_kitchen_feed(text)",
     "pidi_kitchen_accept(text,uuid)",
@@ -382,7 +385,7 @@ def main():
         conn,
         "select public.pidi_place_order(%s::jsonb)",
         ['{"restaurant":"dushi-wok","name":"A","phone":"2975550001","area":"Noord","address":"1","pay":"cash","pays_with_cents":5000,"items":[{"name":"Fries","qty":1,"price_cents":100}]}'],
-        "minimum",
+        "MIN_FOOD",
     )
     check("minimum ƒ24 rejected", ok, detail)
     ok, detail = explodes(conn, "select count(*) from public.pidi_orders", None, "permission denied")
@@ -448,7 +451,7 @@ def main():
                 {"restaurant": "taco-brava", "name": "Taco", "qty": 1, "price_cents": 800},
             ],
         })],
-        "minimum",
+        "MIN_FOOD",
     )
     check("mixed cart of ƒ15 + ƒ8 is refused", ok, detail)
     own_mix = place_items([
@@ -482,7 +485,7 @@ def main():
     check("partner-only pays ƒ10", partner_only["fee_cents"] == 1000 and partner_only["food_cents"] == 2500, str(partner_only))
     status = scalar(conn, "select public.pidi_order_status(%s)", [first["public_token"]])
     check("new order reads Received", status["label"] == "Received" and status["restaurant"] == "Dushi Wok")
-    ok, detail = explodes(conn, "select public.pidi_order_status(%s)", ["nope"], "can't find")
+    ok, detail = explodes(conn, "select public.pidi_order_status(%s)", ["nope"], "NOT_FOUND")
     check("wrong token is refused", ok, detail)
 
     refused = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["0000", "Ari", "2975550001", "2468"])
@@ -675,8 +678,8 @@ def main():
     q(conn, "update public.pidi_settings set value = 'reject' where key = 'hours_mode'")
     tonight = scalar(conn, """
         select ((date_trunc('day', now() at time zone 'America/Aruba')
-                 + case when (now() at time zone 'America/Aruba')::time < time '23:00'
-                        then interval '23 hours' else interval '47 hours' end)
+                 + case when (now() at time zone 'America/Aruba')::time < time '22:00'
+                        then interval '23 hours' else interval '25 hours' end)
                 at time zone 'America/Aruba')::text
     """)
     afternoon = scalar(conn, """
@@ -690,9 +693,9 @@ def main():
     pre = dict(body, client_token=None, due_at=tonight, phone="2975990092")
     pre_row = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(pre)])
     conn.commit()
-    check("a pre-order for 11 PM tonight is taken in any hour", bool(pre_row.get("order_id")), str(pre_row))
+    check("a pre-order for later tonight is taken in any hour", bool(pre_row.get("order_id")), str(pre_row))
     ok, detail = explodes(conn, "select public.pidi_place_order(%s::jsonb)",
-                          [json.dumps(dict(pre, due_at=afternoon))], "late night from 10 PM")
+                          [json.dumps(dict(pre, due_at=afternoon))], "BAD_TIME")
     check("a delivery time in the afternoon is refused", ok, detail)
     conn.commit()
     q(conn, "reset role")
@@ -742,6 +745,100 @@ def main():
     check("transfer can be marked received", paid.get("transfer_status") == "paid")
     ok, detail = explodes(conn, "select public.pidi_kitchen_transfer_paid(%s, %s)", [kitchen["token"], first["order_id"]], "not a bank transfer")
     check("a cash order is not a transfer", ok, detail)
+    conn.commit()
+
+    # --- what the status page gets, and nothing private
+    st = scalar(conn, "select public.pidi_order_status(%s)", [once["public_token"]])
+    blob = json.dumps(st)
+    check("status carries items, events, first name, area and the window",
+          len(st.get("items") or []) == 1 and len(st.get("events") or []) >= 1 and st.get("first_name") == "Twice"
+          and st.get("area") == "Noord" and st.get("eta_min") and st.get("eta_max") and st.get("night_no"), blob[:300])
+    check("status never carries the phone, address or note",
+          "5990093" not in blob and "TEST" not in json.dumps({k: v for k, v in st.items() if k not in ("first_name", "items", "restaurant", "restaurants")})
+          and "address" not in st and "phone" not in st and "note" not in st, blob[:300])
+    check("transfer received is timed", bool(st.get("transfer_paid_at")) and st.get("transfer_status") == "paid", blob[:200])
+    found = scalar(conn, "select public.pidi_find_order(%s)", ["test-client-token-1"])
+    nothing = scalar(conn, "select public.pidi_find_order(%s)", ["never-used-token"])
+    check("find_order answers by token and never inserts", found and found["order_id"] == once["order_id"] and nothing is None, str(found)[:120])
+
+    # --- error codes, never English text
+    def code_of(body):
+        q(conn, "SAVEPOINT pidi_code")
+        try:
+            q(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
+        except psycopg2.Error as err:
+            q(conn, "ROLLBACK TO SAVEPOINT pidi_code")
+            return err.diag.message_primary
+        q(conn, "RELEASE SAVEPOINT pidi_code")
+        return "no error"
+    good = {"name": "Code TEST", "phone": "2975990080", "area": "Noord", "address": "TEST", "pay": "cash", "pays_with_cents": 5000,
+            "items": [{"restaurant": "dushi-wok", "name": "Rice", "qty": 2, "price_cents": 1500}]}
+    cases = [
+        ("BAD_PAYLOAD", None),
+        ("MISSING", dict(good, name="")),
+        ("BAD_PHONE", dict(good, phone="12")),
+        ("NO_ITEMS", dict(good, items=[])),
+        ("BAD_ITEM:1", dict(good, items=good["items"] + [{"restaurant": "dushi-wok", "name": "Rice", "qty": "two", "price_cents": 100}])),
+        ("REST_CLOSED:nowhere", dict(good, items=[{"restaurant": "nowhere", "name": "Rice", "qty": 2, "price_cents": 1500}])),
+        ("CASH_SHORT", dict(good, pays_with_cents=1000)),
+        ("CASH_SHORT", dict(good, pays_with_cents="lots")),
+        ("BAD_PAY", dict(good, pay="card")),
+        ("BAD_PIN", dict(good, lat="north", lng="-70")),
+        ("BAD_TIME", dict(good, due_at="tonight")),
+        ("DELIVERY_ONLY", dict(good, pickup=True)),
+    ]
+    for want, body in cases:
+        got = code_of(body) if body is not None else None
+        if body is None:
+            q(conn, "SAVEPOINT pidi_code")
+            try:
+                q(conn, "select public.pidi_place_order('[]'::jsonb)")
+                got = "no error"
+            except psycopg2.Error as err:
+                q(conn, "ROLLBACK TO SAVEPOINT pidi_code")
+                got = err.diag.message_primary
+        check("error code " + want, got == want, str(got))
+    conn.commit()
+
+    # --- the same token after a rule change still returns the order (no refusal)
+    q(conn, "reset role")
+    q(conn, "update public.pidi_settings set value = '99999' where key = 'min_food_cents'")
+    conn.commit()
+    q(conn, "set role anon")
+    after = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body_retry := dict(body, client_token="test-client-token-1"))])
+    conn.commit()
+    check("a retry with the same token returns the order after a rule change", after["order_id"] == once["order_id"])
+    q(conn, "reset role")
+    q(conn, "update public.pidi_settings set value = '2400' where key = 'min_food_cents'")
+    conn.commit()
+    q(conn, "set role anon")
+
+    # --- US dollars, night numbers, busy minutes
+    usd = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(dict(good, phone="2975990081", pays_in_usd=True, pays_with_cents=None))])
+    conn.commit()
+    check("US dollars: stored, no change line", usd.get("pays_in_usd") is True and usd.get("change_due_cents") == 0, str(usd)[:200])
+    busy = scalar(conn, "select public.pidi_kitchen_set_busy(%s, 15)", [kitchen["token"]])
+    state = scalar(conn, "select public.pidi_public_state()")
+    slow = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(dict(good, phone="2975990082"))])
+    scalar(conn, "select public.pidi_kitchen_set_busy(%s, 0)", [kitchen["token"]])
+    conn.commit()
+    check("busy adds 15 minutes to the promise", busy.get("busy_min") == 15 and state.get("busy_min") == 15
+          and slow["eta_min"] == usd["eta_min"] + 15 and slow["eta_max"] == usd["eta_max"] + 15, str(state))
+    check("night numbers count up", slow["night_no"] == usd["night_no"] + 1, f'{usd["night_no"]} {slow["night_no"]}')
+    ok, detail = explodes(conn, "select public.pidi_kitchen_set_busy(%s, 7)", [kitchen["token"]], "0, 15 or 30")
+    check("busy only takes 0, 15 or 30", ok, detail)
+    ok, detail = explodes(conn, "select public.pidi_kitchen_set_busy(%s, 15)", ["x" * 64], "sign in again")
+    check("busy needs a kitchen session", ok, detail)
+    feed2 = scalar(conn, "select public.pidi_kitchen_feed(%s)", [kitchen["token"]])
+    kusd = next((o for o in feed2["orders"] if str(o["id"]) == str(usd["order_id"])), {})
+    check("kitchen sees USD and the night number", kusd.get("pays_in_usd") is True and kusd.get("night_no") == usd["night_no"], str(kusd)[:200])
+
+    # --- one phone can't flood the kitchen
+    flood = dict(good, phone="297 599 0083")
+    scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(flood)])
+    scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(dict(flood, phone="5990083"))])
+    conn.commit()
+    check("a third waiting order from one phone is refused", code_of(dict(flood, phone="+297-599-0083")) == "RATE_LIMIT")
     conn.commit()
     listed = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
     blob = json.dumps(listed)
