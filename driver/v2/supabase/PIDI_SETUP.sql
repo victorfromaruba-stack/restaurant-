@@ -1586,6 +1586,8 @@ begin
             'pay', o.pay,
             'pays_in_usd', o.pays_in_usd,
             'night_no', o.night_no,
+            'due_at', o.due_at,
+            'created_at', o.created_at,
             'fee_cents', o.fee_cents,
             'total_cents', o.food_cents + o.fee_cents
           ) order by ro.stop_index), '[]'::jsonb)
@@ -1721,6 +1723,8 @@ begin
         'pays_with_cents', o.pays_with_cents,
         'pays_in_usd', o.pays_in_usd,
         'night_no', o.night_no,
+        'due_at', o.due_at,
+        'created_at', o.created_at,
         'change_due_cents', o.change_due_cents,
         'transfer_status', o.transfer_status,
         'bags', (

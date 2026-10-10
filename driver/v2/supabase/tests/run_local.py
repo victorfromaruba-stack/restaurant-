@@ -556,6 +556,8 @@ def main():
     offers_bea = scalar(conn, "select public.pidi_driver_offers(%s)", [login_bea["token"]])
     conn.commit()
     check("a stale offer is re-offered", len(offers_ari) == 1 and offers_ari[0]["offer_id"] != old_ari and len(offers_bea) == 1 and offers_bea[0]["offer_id"] != old_bea)
+    check("an offer's stops carry the due time and order time",
+          all(s.get("due_at") and s.get("created_at") for s in offers_ari[0]["stops"]), str(offers_ari)[:300])
 
     results = []
 
@@ -596,6 +598,9 @@ def main():
     won = run_ari or run_bea
     check("the other driver cannot read the run", (run_ari is None) != (run_bea is None))
     check("the run has two stops", won is not None and len(won["stops"]) == 2)
+    check("each stop carries its night number, due time and order time",
+          won is not None and all(s.get("night_no") and s.get("due_at") and s.get("created_at") for s in won["stops"]),
+          str(won)[:300])
     check(
         "pickup lists a bag per restaurant",
         all(len(stop.get("bags") or []) == 1 and stop.get("fee_cents") == 500 for stop in won["stops"]),
