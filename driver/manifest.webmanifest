@@ -3,7 +3,7 @@
   "short_name": "Pidi",
   "description": "Deliveries for Pidi. Cash or bank transfer.",
   "id": "./",
-  "start_url": "./",
+  "start_url": "v2/",
   "scope": "./",
   "display": "standalone",
   "background_color": "#12143A",

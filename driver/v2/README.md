@@ -1,6 +1,6 @@
 # Pidi v2
 
-Not live. The driver app people use today is still `/driver/` (v1). Do not merge this until a test order has gone through. Do not link v2 from v1.
+Since 10 Oct 2026 `/driver/` opens v2: the old v1 pages (`index.html`, `run.html`, `cash.html`, `dispatch.html`, `help.html`) only send the phone on to `v2/` (keeping `?…` and `#…`), and the installed app starts at `v2/`. The v1 scripts stay in the repo, unused. `driver/v2/status/` sends an old customer link on to `/order/`. Merge this to `main` only after a TEST order has gone through end to end. `qa/check_staff.py` tests the staff screens with fake database answers.
 
 This talks to the live bookkeeping database at `https://cdkopyphjvfxjqhasrae.supabase.co`. The only change to that database is one paste. It creates `pidi_` tables and functions in `public` and does not touch bookkeeping tables, auth, storage, roles, or extensions.
 
@@ -45,3 +45,11 @@ python3 driver/v2/supabase/tests/run_local.py
 ```
 
 Needs local Postgres. It does not call Supabase. It applies the file twice, checks a dummy bookkeeping table is unchanged, then runs the order as the `anon` role.
+
+## Waiting on a database change (needs Victor's OK)
+
+The screens are ready for these; `PIDI_SETUP.sql` doesn't send or do them yet.
+
+1. **"Deliver at" for drivers.** `pidi_driver_offers` and `pidi_driver_run` don't send `due_at` and `created_at`. The driver screens show "Deliver at 12:15 AM" for a pre-order as soon as both are there.
+2. **Paid transfers on an offer.** `pidi_driver_offers` doesn't send `transfer_status` (the run does). Until it does, an offer says "Bank transfer. Don't collect cash." without paid or waiting.
+3. **One order number per night.** `night_no` counts by the night the order was *placed* (`created_at`, noon to noon). A pre-order placed before noon for tonight continues last night's numbers, so two open orders can both be "Order 15". Counting by the night it is *due* (`due_at`) fixes it.

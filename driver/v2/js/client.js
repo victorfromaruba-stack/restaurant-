@@ -1,6 +1,11 @@
 /* Supabase client for Pidi v2. No build step. The anon key lives in config.js. */
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
+/* The driver app's offline cache (/driver/sw.js) covers /driver/, v2 included. */
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register(new URL("../../sw.js", import.meta.url), { scope: new URL("../../", import.meta.url).pathname }).catch(() => {});
+}
+
 export const TOKEN_KEY = "pidi.v2.token";
 export const DRIVER_KEY = "pidi.v2.driver";
 
@@ -54,6 +59,41 @@ export function money(cents) {
   const neg = cents < 0;
   const n = Math.abs(cents);
   return (neg ? "-" : "") + "ƒ" + Math.floor(n / 100) + "." + String(n % 100).padStart(2, "0");
+}
+
+/* Times on staff screens are Aruba's, never the phone's. */
+export function arubaTime(ts) {
+  try {
+    return new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Aruba" });
+  } catch (e) {
+    return "";
+  }
+}
+
+/* "Order 14": the order's number tonight, the same one the kitchen sees on the bag. */
+export function orderNo(stop) {
+  return stop && stop.night_no ? "Order " + stop.night_no : "";
+}
+
+/* "Deliver at 11:00 PM" for a pre-order. Shown only when the stop carries due_at: due more than 20 min after it
+   came in (created_at), or, without created_at, still ahead of now. An as-soon-as-possible order says nothing. */
+export function deliverAt(stop) {
+  const due = Date.parse((stop && stop.due_at) || "");
+  if (isNaN(due)) return "";
+  const made = Date.parse(stop.created_at || "");
+  const pre = isNaN(made) ? due > Date.now() + 5 * 60000 : due - made > 20 * 60000;
+  return pre ? "Deliver at " + arubaTime(due) : "";
+}
+
+/* What the driver collects at the door, in one line. US dollars: the driver tells the amount, no rate here. */
+export function collectLine(stop) {
+  if (stop.pay === "transfer") {
+    // the offers don't carry transfer_status (only the run does): then say neither paid nor waiting
+    if (stop.transfer_status == null) return "Bank transfer. Don't collect cash.";
+    return stop.transfer_status === "paid" ? "Paid by bank transfer. Don't collect cash." : "Awaiting transfer. Don't collect cash.";
+  }
+  if (stop.pays_in_usd) return "Collect in US dollars: " + money(stop.total_cents) + " total";
+  return "Collect " + money(stop.total_cents);
 }
 
 export function mapsHref(stop) {

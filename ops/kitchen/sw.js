@@ -1,7 +1,7 @@
 /* Offline cache for the kitchen app.
    App files + data: network first (always fresh when online), cache when offline.
    Dish photos: cached copy first, refreshed in the background (redrawn pictures show up on the next visit). */
-var CACHE = 'kitchen-v15';
+var CACHE = 'kitchen-v17';
 var CORE = ['./', 'index.html', 'kitchen.css', 'kitchen.js', 'menu-editor.js', 'books.js', 'live.js', '../../shared/pidi.js', 'kitchen-data.json', 'manifest.webmanifest', 'icon.svg', '../../shared/fonts/archivo.woff2'];
 
 self.addEventListener('install', function (e) {

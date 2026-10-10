@@ -226,13 +226,16 @@ async def main():
             await pg.goto(BASE + rail[0], wait_until="networkidle"); await pg.wait_for_timeout(400)
             check(await pg.evaluate("!!document.querySelector('.dish__name')"), f"tapping a home dish card opens it on {rail[0].split('/')[0]}'s page")
         # the mix restaurants share one order: started on one, it's the same order on the next
-        if "dushi-wok" in mix and "taco-brava" in mix:
-            await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
-            await pg.evaluate("OrderApp.clear()"); await pg.evaluate("OrderApp.addItem('dushi-wok','fr',{},1)")
-            await pg.goto(BASE + "taco-brava/index.html", wait_until="networkidle")
-            await pg.evaluate("OrderApp.loadMenu('taco-brava').then(() => OrderApp.addItem('taco-brava','bt',{},1))")
+        # (two mix restaurants that take orders tonight: one marked "soon" in site.json can't be ordered from)
+        om = [x for x in mix if is_open.get(x)]
+        if len(om) >= 2:
+            d1, d2 = ([i["id"] for i in menus[x]["items"] if i.get("kind") != "drink" and not i.get("soldOut") and not i.get("includes")][0] for x in om[:2])
+            await pg.goto(BASE + om[0] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("OrderApp.clear()"); await pg.evaluate("([b,i]) => OrderApp.addItem(b,i,{},1)", [om[0], d1])
+            await pg.goto(BASE + om[1] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("([b,i]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,{},1))", [om[1], d2])
             n, f = await pg.evaluate("[OrderApp.count(), OrderApp.fee()]")
-            check(n == 2 and f == 500, f"Dushi Wok + Taco Brava end up in one order with one ƒ5 delivery (items {n}, fee {f})")
+            check(n == 2 and f == 500, f"{names[om[0]]} + {names[om[1]]} end up in one order with one ƒ5 delivery (items {n}, fee {f})")
             await pg.evaluate("OrderApp.clear()")
         # an order kept from earlier gets today's menu on the restaurant's own page: a dish sold out since then is
         # flagged and blocks Send, a new price is used (found 9 Oct 2026: only other restaurants' pages refreshed it)
@@ -294,15 +297,15 @@ async def main():
         await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]
+        title, br, lines, meta = [x for x in SAMPLES if runs(x)][0]   # the sample out[0] was made from
         for code in ("pap", "nl", "es"):
             await pg.evaluate("c => localStorage.setItem('orderaruba.lang.v1', c)", code)
             for url in ["index.html"] + [f"{x}/index.html" for x in brands]:
                 errs.clear()
                 await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
                 check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))
-            await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
+            await pg.goto(BASE + br + "/index.html", wait_until="networkidle")
             await pg.evaluate("OrderApp.clear()")
-            title, br, lines, meta = SAMPLES[0]
             for (lb, iid, opts, q) in lines:
                 await pg.evaluate("([b,i,o,q]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,o,q))", [lb, iid, opts, q])
             await pg.evaluate("m => OrderApp._set(m)", meta)
@@ -316,5 +319,10 @@ async def main():
                    "samples": out}, open(os.path.join(ROOT, "qa/wa-samples.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         await b.close()
 asyncio.run(main())
+# the staff screens (kitchen Orders, driver app) against fake database answers only: qa/check_staff.py
+staff = subprocess.run([sys.executable, os.path.join(ROOT, "qa/check_staff.py")], capture_output=True, text=True)
+staff_fails = [l for l in staff.stdout.splitlines() if l.startswith("FAIL ")]
+check(staff.returncode == 0, "staff screens pass qa/check_staff.py (kitchen Orders and the driver app, fake database answers)" +
+      ("" if staff.returncode == 0 else ":\n" + ("\n".join(staff_fails) or (staff.stdout + staff.stderr)[-1500:])))
 print(f"\n{len(fails)} problem(s)")
 sys.exit(1 if fails else 0)
