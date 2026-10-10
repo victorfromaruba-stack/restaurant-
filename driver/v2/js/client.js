@@ -88,7 +88,7 @@ export function deliverAt(stop) {
 /* What the driver collects at the door, in one line. US dollars: the driver tells the amount, no rate here. */
 export function collectLine(stop) {
   if (stop.pay === "transfer") {
-    // the offers don't carry transfer_status (only the run does): then say neither paid nor waiting
+    // an old offer without transfer_status: say neither paid nor waiting
     if (stop.transfer_status == null) return "Bank transfer. Don't collect cash.";
     return stop.transfer_status === "paid" ? "Paid by bank transfer. Don't collect cash." : "Awaiting transfer. Don't collect cash.";
   }

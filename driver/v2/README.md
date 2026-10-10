@@ -46,10 +46,8 @@ python3 driver/v2/supabase/tests/run_local.py
 
 Needs local Postgres. It does not call Supabase. It applies the file twice, checks a dummy bookkeeping table is unchanged, then runs the order as the `anon` role.
 
-## Waiting on a database change (needs Victor's OK)
+## Database changes made for these screens (10 Oct 2026, live)
 
-The screens are ready for these; `PIDI_SETUP.sql` doesn't send or do them yet.
-
-1. **"Deliver at" for drivers.** `pidi_driver_offers` and `pidi_driver_run` don't send `due_at` and `created_at`. The driver screens show "Deliver at 12:15 AM" for a pre-order as soon as both are there.
-2. **Paid transfers on an offer.** `pidi_driver_offers` doesn't send `transfer_status` (the run does). Until it does, an offer says "Bank transfer. Don't collect cash." without paid or waiting.
-3. **One order number per night.** `night_no` counts by the night the order was *placed* (`created_at`, noon to noon). A pre-order placed before noon for tonight continues last night's numbers, so two open orders can both be "Order 15". Counting by the night it is *due* (`due_at`) fixes it.
+1. **"Deliver at" for drivers.** `pidi_driver_offers` and `pidi_driver_run` send `due_at` and `created_at`.
+2. **Paid transfers on an offer.** `pidi_driver_offers` sends `transfer_status`, so an offer says paid or awaiting.
+3. **One order number per night.** `night_no` counts by the night the order is *due* (`due_at`, noon to noon, Aruba time), so a pre-order placed in the morning joins tonight's numbers.
