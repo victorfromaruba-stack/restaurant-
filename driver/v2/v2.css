@@ -1,0 +1,12 @@
+/* Extra bits for the v2 driver screens. The night look stays in ../css/app.css. */
+.stack { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; }
+button.text-link { background: none; border: 0; padding: 0; cursor: pointer; }
+/* One block per drop in an offer: the order number first, then where, then what to collect. */
+.money .stop + .stop { margin-top: 12px; padding-top: 12px; border-top: 2px dashed rgba(18, 20, 58, 0.25); }
+.money .order-no { margin: 0 0 2px; font-size: 26px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; }
+.money .line { margin-top: 4px; }
+.money .due, .due { display: inline-block; margin: 6px 0 0; padding: 4px 10px; border-radius: 6px; background: #FFC93C; color: #12143A; font-weight: 800; font-size: 18px; }
+.money .collect { margin: 8px 0 0; font-size: 19px; font-weight: 800; }
+.money .collect.usd { display: inline-block; padding: 4px 10px; border-radius: 6px; background: #12143A; color: #F4F5FB; }
+.stop-no { margin: 18px 0 4px; font-size: 24px; }
+main[data-step="drop"] .due { margin: 0 0 8px; }
