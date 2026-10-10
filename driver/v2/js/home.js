@@ -1,5 +1,5 @@
-/* Sign in, go online, accept a run. v1 is unchanged and stays the live app. */
-import { clear, clearSession, client, el, loadConfig, message, money, saveSession, savedDriver, savedToken } from "./client.js";
+/* Sign in, go online, accept a run. This is the driver app: /driver/ and the old v1 pages send phones here. */
+import { clear, clearSession, client, collectLine, deliverAt, el, loadConfig, message, orderNo, saveSession, savedDriver, savedToken } from "./client.js";
 
 const main = document.getElementById("screen");
 const dock = document.getElementById("dock");
@@ -107,12 +107,23 @@ function showHome() {
   }
 }
 
-/* One button: the one that changes your state. */
-function paintToggle() {
+/* One button: the one that changes your state. With one offer on screen that is Accept, so it never sits
+   below the fold on a small phone while the seconds run; Go offline comes back when the offer is gone. */
+let dockFor = null;
+function paintToggle(offer) {
+  const want = offer ? "offer:" + offer.offer_id : "toggle:" + online;
+  if (dockFor === want && dock.firstChild) return;
+  dockFor = want;
   clear(dock);
-  const b = el("button", { class: online ? "btn secondary" : "btn", type: "button", text: online ? "Go offline" : "Go online" });
-  b.addEventListener("click", () => { unlockSound(); setOnline(!online); });
-  dock.appendChild(b);
+  if (offer) {
+    const a = el("button", { class: "btn", type: "button", text: "Accept" });
+    a.addEventListener("click", () => take(offer));
+    dock.appendChild(a);
+  } else {
+    const b = el("button", { class: online ? "btn secondary" : "btn", type: "button", text: online ? "Go offline" : "Go online" });
+    b.addEventListener("click", () => { unlockSound(); setOnline(!online); });
+    dock.appendChild(b);
+  }
   keepAwake(online);
 }
 
@@ -143,28 +154,35 @@ async function refresh() {
       return;
     }
     box.appendChild(el("p", { class: "err", text: message(error) }));
+    paintToggle(null);
     return;
   }
   const offers = data || [];
   if (notice) { box.appendChild(el("p", { class: "err", text: notice })); notice = ""; }
   if (!offers.length) {
     box.appendChild(el("p", { text: online ? "No offer right now." : "Go online to get runs." }));
+    paintToggle(null);
     return;
   }
   if (offers.some((o) => !seenOffers.has(o.offer_id))) ring();
   offers.forEach((o) => seenOffers.add(o.offer_id));
   const state = document.getElementById("state");
   if (state) state.textContent = "Online";
-  offers.forEach((offer) => box.appendChild(offerCard(offer)));
+  offers.forEach((offer) => box.appendChild(offerCard(offer, offers.length === 1)));
+  paintToggle(offers.length === 1 ? offers[0] : null);
 }
 
-function offerCard(offer) {
+function offerCard(offer, acceptInDock) {
   const wrap = el("div", { class: "stack" });
   const card = el("div", { class: "money" });
   (offer.stops || []).forEach((stop) => {
-    card.appendChild(el("p", { class: "kicker", text: stop.restaurant }));
-    card.appendChild(el("p", { class: "line", text: (stop.area ? stop.area + " · " : "") + stop.name }));
-    card.appendChild(el("p", { text: stop.pay === "transfer" ? "Awaiting transfer. Don't collect cash." : "Collect " + money(stop.total_cents) }));
+    const box = el("div", { class: "stop" });
+    if (orderNo(stop)) box.appendChild(el("p", { class: "order-no", text: orderNo(stop) }));
+    box.appendChild(el("p", { class: "kicker", text: stop.restaurant }));
+    box.appendChild(el("p", { class: "line", text: (stop.area ? stop.area + " · " : "") + stop.name }));
+    if (deliverAt(stop)) box.appendChild(el("p", { class: "due", text: deliverAt(stop) }));
+    box.appendChild(el("p", { class: "collect" + (stop.pays_in_usd && stop.pay !== "transfer" ? " usd" : ""), text: collectLine(stop) }));
+    card.appendChild(box);
   });
   card.appendChild(el("p", { class: "figure", "data-seconds": String(offer.seconds_left), text: offer.seconds_left + "s" }));
   wrap.appendChild(card);
@@ -172,7 +190,7 @@ function offerCard(offer) {
   accept.addEventListener("click", () => take(offer));
   const decline = el("button", { class: "btn secondary", type: "button", text: "Not this one" });
   decline.addEventListener("click", () => pass(offer));
-  wrap.appendChild(accept);
+  if (!acceptInDock) wrap.appendChild(accept);
   wrap.appendChild(decline);
   return wrap;
 }

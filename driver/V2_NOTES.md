@@ -1,5 +1,7 @@
 # Pidi driver, v2 notes
 
+10 Oct 2026: `/driver/` now opens v2. The v1 pages only forward to `v2/`; `tests/flow.py` tests v1 and no longer applies. The staff screens are tested by `qa/check_staff.py` (fake database answers only).
+
 9 Oct 2026, later: v2 uses the live bookkeeping database (`https://cdkopyphjvfxjqhasrae.supabase.co`). The only SQL file to paste is `/driver/v2/supabase/PIDI_SETUP.sql`. It creates `public.pidi_*` only. Do not run an older migration, do not deploy Edge Functions, and do not put a service role key or a signing JWK in the repo. The anon key does go in `/driver/v2/config.js` and is committed. Where this file disagrees with `/driver/v2/README.md`, the README wins.
 
 9 Oct 2026: Victor changed the plan. WhatsApp ordering goes away once v2 is connected. The prepared system is in `/driver/v2/`. It is not live. v1 stays the driver app until a test order has gone through. Do not merge that work early.

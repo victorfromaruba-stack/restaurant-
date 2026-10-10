@@ -418,3 +418,29 @@ mark.skip { background: var(--hot); color: #fff; text-transform: uppercase; font
 .lv-empty b { display: block; font-size: 30px; font-stretch: 75%; text-transform: uppercase; }
 .lv-empty span { display: block; margin-top: 8px; color: var(--haze); }
 .lv-out { margin-top: 30px; }
+/* order number first, big; the area under it */
+.lv-top { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.lv-no { font-size: 46px; font-weight: 900; font-stretch: 75%; line-height: 1; text-transform: uppercase; letter-spacing: .005em; }
+.lv-card .ohead .mode { font-size: 26px; margin-top: 10px; }
+.lv-start { display: table; margin-top: 8px; padding: 3px 10px; box-shadow: inset 0 0 0 3px var(--ink); font-size: 20px; font-weight: 900; }
+/* a TEST order can't be missed: red mark, striped ticket */
+.lv-test { background: var(--hot); color: #fff; font-size: 24px; font-weight: 900; letter-spacing: .08em; padding: 4px 12px; border-radius: 4px; }
+.lv-testnote { margin-top: 6px; font-size: 18px; font-weight: 800; color: #A4161A; }
+.lv-is-test .ohead { background: repeating-linear-gradient(-45deg, var(--paper) 0 18px, #FBE3E1 18px 36px); }
+/* a line whose price doesn't match the menu */
+.lv-price { display: block; margin-top: 6px; padding: 6px 10px; border-radius: 4px; background: var(--hot); color: #fff; font-size: 18px; font-weight: 800; line-height: 1.25; }
+/* Kitchen busy? */
+.lv-busy { margin: 0 0 20px; }
+.lv-busy h2 { margin: 0 0 6px; font-size: 20px; }
+.lv-seg { display: flex; gap: 6px; padding: 5px; border-radius: 14px; background: var(--night-2); }
+.lv-segb { flex: 1 1 0; min-width: 0; min-height: 58px; border: 0; border-radius: 10px; background: transparent; color: var(--cream); font-size: 22px; font-weight: 900; font-stretch: 75%; padding: 4px 6px; }
+.lv-segb.on { background: var(--sodium); color: var(--ink); }
+.lv-segb:disabled { opacity: .6; }
+.lv-busy-p { margin: 6px 2px 0; font-size: 16px; line-height: 1.3; color: var(--haze); }
+.lv-nw, .lv-total b { white-space: nowrap; }
+/* pre-orders that aren't due yet */
+.lv-later { margin-top: 34px; border-top: 4px solid var(--sodium); }
+.lv-later h2 { margin-top: 18px; margin-bottom: 4px; }
+.lv-later-p { margin: 0 0 16px; color: var(--haze); font-size: 17px; }
+.lv-empty--now { padding: 18px 8px 8px; }
+@media (min-width: 900px) { .lv-card .ohead .mode { font-size: 30px; } .lv-no { font-size: 56px; } }

@@ -27,6 +27,14 @@ class _Quiet(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class _Server(http.server.ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        # a page that moves on (a redirect) drops its half-sent files; that's not a problem worth a traceback
+        if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def start():
     base = os.environ.get("QA_BASE")
     if base:
@@ -39,7 +47,7 @@ def start():
         return base
     port = int(os.environ.get("QA_PORT", "0"))
     try:
-        server = http.server.ThreadingHTTPServer(("127.0.0.1", port), functools.partial(_Quiet, directory=ROOT))
+        server = _Server(("127.0.0.1", port), functools.partial(_Quiet, directory=ROOT))
     except OSError as e:
         sys.exit(f"Can't serve on port {port} ({e.strerror}). Leave QA_PORT unset to take any free port.")
     threading.Thread(target=server.serve_forever, daemon=True).start()

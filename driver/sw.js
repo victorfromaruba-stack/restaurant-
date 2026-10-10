@@ -1,7 +1,8 @@
 /* Pidi driver service worker.
    Scope is only the /driver/ folder (on GitHub Pages: /restaurant-/driver/).
-   It must not control the customer site. */
-var CACHE = "pidi-driver-v2";
+   It must not control the customer site. Since 10 Oct 2026 /driver/ opens the v2 app (driver/v2/);
+   the v1 pages only send a phone on to v2. */
+var CACHE = "pidi-driver-v3";
 
 var FILES = [
   "./",
@@ -10,6 +11,15 @@ var FILES = [
   "cash.html",
   "dispatch.html",
   "help.html",
+  "v2/",
+  "v2/index.html",
+  "v2/run.html",
+  "v2/help.html",
+  "v2/v2.css",
+  "v2/config.js",
+  "v2/js/client.js",
+  "v2/js/home.js",
+  "v2/js/run.js",
   "install/index.html",
   "install/qr.svg",
   "manifest.webmanifest",
