@@ -25,7 +25,7 @@ body[data-brand="oranje-snack"]{
 
 /* the price board: white, a navy frame, each price on a yellow strip */
 [data-brand="oranje-snack"] .rows{padding:0 12px;background:#FFFFFF;border:3px solid var(--navy);border-radius:4px}
-[data-brand="oranje-snack"] .row{--ph:72px;padding:14px 0}
+[data-brand="oranje-snack"] .row{--ph:88px;padding:14px 0}
 [data-brand="oranje-snack"] .row__media img{border-radius:2px}
 [data-brand="oranje-snack"] .row__price{padding:2px 7px;background:var(--mayo);border-radius:2px;font:800 15.5px/1.25 var(--font);color:var(--navy)}
 [data-brand="oranje-snack"] .row.is-sig .row__name{font:900 20px/1.1 var(--display);color:var(--navy)}
@@ -41,7 +41,7 @@ body[data-brand="oranje-snack"]{
 @media (max-width:359px){
   [data-brand="oranje-snack"] .store{--logo-h:46px}
   [data-brand="oranje-snack"] .rows{padding:0 10px}
-  [data-brand="oranje-snack"] .row{--ph:64px}
+  [data-brand="oranje-snack"] .row{--ph:74px}
   [data-brand="oranje-snack"] .row.is-sig .row__name{font-size:18px}
   [data-brand="oranje-snack"] .row__price{font-size:14.5px;padding:2px 6px}
   [data-brand="oranje-snack"] .sec__t{font-size:24px}
@@ -50,5 +50,5 @@ body[data-brand="oranje-snack"]{
   [data-brand="oranje-snack"] .store{--logo-h:72px;padding-block:30px}
   [data-brand="oranje-snack"] .store__tag{font-size:19px}
   [data-brand="oranje-snack"] .rows{padding:0 18px}
-  [data-brand="oranje-snack"] .row{--ph:84px}
+  [data-brand="oranje-snack"] .row{--ph:104px}
 }

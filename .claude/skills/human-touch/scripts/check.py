@@ -278,11 +278,8 @@ def image_findings():
         hero = m.get("hero")
         if hero in {i["img"] for i in m["items"] if i.get("hidePhoto")}:
             out.append(("FAIL", b["id"] + "/menu.json", f"\"hero\" is the picture of a dish whose picture is hidden (it doesn't match its words): pick another dish's picture"))
-        for f in feat:
-            if f.get("hidePhoto"):
-                continue
-            if hero and (hero == f["img"] or near(hero, f["img"])):
-                out.append(("WARN", "index.html", f"{m['name']}'s restaurant card shows the same photo as “{f['name']}” in the dish rail above it: give the card a different dish (menu.json \"hero\")"))
+        # (the home page's "Start with these" list is words only since 15 Oct 2026, so the card's big picture can
+        # be the house dish without showing it twice)
     return out
 
 

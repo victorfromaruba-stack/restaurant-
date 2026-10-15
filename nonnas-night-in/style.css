@@ -33,9 +33,10 @@ body[data-brand="nonnas-night-in"]{
 [data-brand="nonnas-night-in"] .sec__t{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:2px;font:400 13.5px/1.3 var(--body);letter-spacing:.2em;text-transform:uppercase;color:var(--ink);text-align:center}
 [data-brand="nonnas-night-in"] .sec__t::before,[data-brand="nonnas-night-in"] .sec__t::after{content:"";flex:1;height:1px;background:var(--gold)}
 
-/* rows: the name in red italic, the price, the words under it. No pictures on the printed menu */
+/* rows: the name in red italic, the price, the words under it; each picture in a thin gold frame */
 [data-brand="nonnas-night-in"] .row{padding:14px 0;border-bottom:0}
-[data-brand="nonnas-night-in"] .row:not(.is-sig) .row__media{display:none}
+[data-brand="nonnas-night-in"] .row__media{padding:3px;background:var(--g2);border:1px solid var(--gold)}
+[data-brand="nonnas-night-in"] .row__media img{border-radius:1px}
 [data-brand="nonnas-night-in"] .row__name{font-style:italic;line-height:1.22}
 [data-brand="nonnas-night-in"] .row__price{font:400 17.5px/1.25 var(--body)}
 [data-brand="nonnas-night-in"] .row__desc{margin-top:4px;font:400 15px/1.5 var(--body);color:var(--muted)}
@@ -43,8 +44,7 @@ body[data-brand="nonnas-night-in"]{
 [data-brand="nonnas-night-in"] .plus{border-radius:2px}
 /* the house dish keeps a small picture in a gold frame, on a card inside the page's margins */
 [data-brand="nonnas-night-in"] .row.is-sig{margin:4px 0 6px;padding:14px 12px;background:var(--g2);border:1px solid var(--gold)}
-[data-brand="nonnas-night-in"] .row.is-sig .row__media{padding:3px;background:var(--g);border:1px solid var(--gold)}
-[data-brand="nonnas-night-in"] .row.is-sig .row__media img{border-radius:1px}
+[data-brand="nonnas-night-in"] .row.is-sig .row__media{background:var(--g)}
 [data-brand="nonnas-night-in"] .rows--drinks .row{padding:7px 0}
 [data-brand="nonnas-night-in"] .rows--drinks .row__name{font-size:18px}
 

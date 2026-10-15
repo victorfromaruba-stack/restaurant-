@@ -134,7 +134,7 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
    a printed menu's measure). Beside the words, one column of the same width on every row of the list: the small
    picture, and the + box right under it, so every + sits in the same place and the descriptions keep one measure. */
 .rows{display:flex;flex-direction:column}
-.row{--ph:76px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--ph);grid-template-areas:"text side";column-gap:14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}
+.row{--ph:92px;position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--ph);grid-template-areas:"text side";column-gap:14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:start}
 .rows>.row:last-child{border-bottom:0}
 .row__open{position:absolute;inset:0;z-index:1;border:0;background:transparent;border-radius:0;padding:0}
 .row__text{grid-area:text;min-width:0;container:row/inline-size}
@@ -156,6 +156,9 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 .fl--peanut,.fl--shrimp{display:inline-block;margin:2px 6px 2px 0;padding:3px 8px;border-radius:4px;background:#B3261E;color:#fff;font:800 13px/1.25 var(--font);letter-spacing:.01em}
 .fl--peanut::after,.fl--shrimp::after{content:none}.fl+.fl--peanut::before,.fl+.fl--shrimp::before,.fl--peanut+.fl::before,.fl--shrimp+.fl::before{content:none}
 .order__mix{margin:14px 0 6px;font:500 15px/1.4 var(--font)}
+/* a row without a picture gives its words the room: the column shrinks to the + box, which still sits against the
+   outer edge, in line with every other + */
+@media (max-width:759px){.row.row--np:not(.row--link){grid-template-columns:minmax(0,1fr) 44px}}
 /* the picture column: the picture, then the + box under it, both against the outer edge */
 .row__side{grid-area:side;display:flex;flex-direction:column;align-items:flex-end;gap:10px;min-width:0}
 .row__media{position:relative;width:var(--ph);height:var(--ph-h,var(--ph))}
@@ -178,7 +181,7 @@ body.past-name .tabs{opacity:1;visibility:visible;transform:none}
 /* drinks: a plain line of words, the + in the same place as on the food */
 .rows--drinks .row{padding:8px 0;align-items:center}
 .rows--drinks .row__name{font-weight:500}
-@media (max-width:359px){.row{--ph:68px;column-gap:12px}}
+@media (max-width:359px){.row{--ph:76px;column-gap:12px}}
 
 /* order again: this restaurant's last sent order, one tap */
 .again{padding-top:20px}
@@ -446,7 +449,7 @@ body.has-bar .pfoot{padding-bottom:calc(112px + var(--safe-b))}
   .sec{padding-top:34px}
   /* the picture moves to the left of the words (a row without one starts at the edge), the name runs across a dotted
      line to the price, and the + box sits right after the price at the end of the line */
-  .row{--ph:92px;padding:18px 0}
+  .row{--ph:112px;padding:18px 0}
   .row:not(.row--link){grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"media text act";column-gap:0}
   .row__side{display:contents}
   .row__side>.row__media{grid-area:media;margin-right:20px}

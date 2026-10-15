@@ -1210,11 +1210,13 @@
     // the app's delivery line ("Open now · ƒ5 delivery · 45–60 min"), then the restaurant's own sign: its
     // wordmark, its line, a small framed picture. Closed: an unlit sign, like the home page's, when it opens in amber,
     // and no delivery time (so the line stays one line)
-    var html = '<div class="strip' + (st.open ? "" : " strip--closed") + '"><ul class="facts">' +
-          '<li class="facts__status' + (st.open ? " is-open" : " is-closed") + '">' + (st.open ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") +
-            esc(st.label) + "</li>" +
+    // a restaurant that isn't taking orders yet says so here too, never "Open now" over its "Opening soon"
+    var live = st.open && status === "open";
+    var html = '<div class="strip' + (live ? "" : " strip--closed") + '"><ul class="facts">' +
+          '<li class="facts__status' + (live ? " is-open" : " is-closed") + '">' + (st.open || status !== "open" ? "" : '<span class="unlit">' + esc(tr("Closed")) + "</span> ") +
+            esc(status === "soon" ? tr("Opening soon") : status === "hidden" ? tr("Not taking orders right now.").replace(/\.$/, "") : st.label) + "</li>" +
           "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
-          (st.open && SITE.eta ? "<li>" + esc(SITE.eta) + "</li>" : "") +
+          (live && SITE.eta ? "<li>" + esc(SITE.eta) + "</li>" : "") +
         "</ul></div>" +
       '<header class="store' + (cover ? "" : " store--plain") + '">' +
         '<h1 class="store__name" id="store-name"><img class="store__logo" src="' + esc(path(menu.logo)) + '" alt="" decoding="async">' +
@@ -1403,8 +1405,9 @@
     var from = fromPrice(m);
     return brandStatus(b) !== "open" ? '<span class="soon">' + esc(tr("Opening soon")) + "</span>" : from ? "<span>" + esc(tr("From {price}", { price: money(from) })) + "</span>" : "";
   }
-  /* the home page's list: each restaurant's own sign (its wordmark on its own ground, framed), one dish picture,
-     then its cuisine, price and its own line in the app's type */
+  /* the home page's list, like a delivery app's: each restaurant as a big picture of the dish its line is about,
+     with its own sign (its wordmark on its own ground) on the picture's corner, then its cuisine, price and its own
+     line in the app's type. No true picture yet ("hero": false): the sign fills the picture's place. */
   function shopHTML(b, idx) {
     var m = MENU[b];
     if (!m) return "";
@@ -1412,8 +1415,10 @@
     // the cuisine label on every row, so the five rows read alike
     var label = "<b>" + esc(tr(m.cuisine)) + "</b>";
     return '<a class="shop' + (brandStatus(b) !== "open" ? " is-soon" : "") + (img ? "" : " shop--np") + '" id="shop-' + esc(b) + '" data-shop="' + esc(b) + '" href="' + path(b + "/index.html") + '" style="' + signStyle(m) + '">' +
-      '<span class="shop__sign"><img class="shop__logo" src="' + esc(path(m.logo)) + '" alt="" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
-      (img ? '<span class="shop__pic"><img src="' + esc(path(thumb(img))) + '" data-full="' + esc(path(img)) + '" alt="" width="360" height="360" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async"></span>' : "") +
+      '<span class="shop__pic">' +
+        (img ? '<img class="shop__photo" src="' + esc(path(img)) + '" alt="" width="780" height="446" loading="' + (idx < 2 ? "eager" : "lazy") + '" decoding="async">' : "") +
+        '<span class="shop__sign"><img class="shop__logo" src="' + esc(path(m.logo)) + '" alt="" loading="' + (idx < 3 ? "eager" : "lazy") + '" decoding="async"></span>' +
+      "</span>" +
       '<span class="shop__txt"><h3 class="shop__name">' + esc(m.name) + "</h3>" +
         '<span class="meta">' + label + fromLine(b, m) + "</span>" +
         '<span class="shop__tag">' + keep(m.tagline || "") + "</span></span></a>";
@@ -1524,7 +1529,9 @@
         start.innerHTML = picks.map(function (p) { return linkRowHTML(p[0], p[1], true); }).join("");
       }
       if (list) {
-        list.innerHTML = ids.map(function (b, i) {
+        // open restaurants first: one that's opening soon doesn't greet people at the top of the list
+        var listed = ids.filter(function (b) { return brandStatus(b) === "open"; }).concat(ids.filter(function (b) { return brandStatus(b) !== "open"; }));
+        list.innerHTML = listed.map(function (b, i) {
           return MENU[b] ? shopHTML(b, i) :
             '<div class="shop shop--fail"><p>' + esc(tr("One menu didn’t load.")) + '</p><button type="button" class="btn btn--line btn--sm" data-retry>' + esc(tr("Try again")) + "</button></div>";
         }).join("");
@@ -1539,14 +1546,15 @@
   /* home page dish lines (search results, "Start with these") open the dish on its own restaurant's page */
   function dishLink(b, item) { return path(b + "/#d=" + encodeURIComponent(item.id)); }
   function linkRowHTML(b, item, short) {
-    var m = MENU[b], pic = hasPic(item), out = isOut(m, item);
+    // "Start with these" (short) is words only: its dishes' pictures are already on the restaurant cards above it
+    var m = MENU[b], pic = !short && hasPic(item), out = isOut(m, item);
     return '<a class="row row--link' + (short ? " row--start" : "") + (pic ? "" : " row--np") + (out ? " is-out" : "") + '" href="' + esc(dishLink(b, item)) + '" data-shop="' + esc(b) + '" style="--shop:' + esc(m.color) + '">' +
       '<div class="row__text"><p class="row__brand">' + esc(m.name) + "</p>" +
         '<div class="row__head"><h3 class="row__name">' + keep(item.name) + '</h3><span class="row__lead" aria-hidden="true"></span><p class="row__price">' + money(item.price) + "</p></div>" +
         (out ? '<p class="row__out">' + esc(tr("Sold out today")) + "</p>" : "") +
         (!short && item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") + "</div>" +
-      '<div class="row__media' + (pic ? "" : " row__media--mark") + '">' + (pic ? thumbImg(item, ' loading="lazy" decoding="async"') :
-        '<img src="' + esc(path(m.mark)) + '" alt="" width="192" height="192" loading="lazy" decoding="async">') + "</div></a>";
+      (short ? "" : '<div class="row__media' + (pic ? "" : " row__media--mark") + '">' + (pic ? thumbImg(item, ' loading="lazy" decoding="async"') :
+        '<img src="' + esc(path(m.mark)) + '" alt="" width="192" height="192" loading="lazy" decoding="async">') + "</div>") + "</a>";
   }
   /* an order already started at a restaurant: a way back to it from the home page */
   function paintMine(ids) {

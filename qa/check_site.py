@@ -216,6 +216,7 @@ async def main():
         await pg.goto(BASE + "index.html", wait_until="networkidle"); await pg.wait_for_timeout(500)
         listed = await pg.evaluate("Array.from(document.querySelectorAll('#oa-list .shop')).map(a => a.getAttribute('href'))")
         shown = [b for b in site["brands"] if b.get("status") != "hidden"]
+        shown = [b for b in shown if b.get("status", "open") == "open"] + [b for b in shown if b.get("status", "open") != "open"]   # open ones first
         check(len(listed) == len(shown) and all(f"{b['id']}/" in h for b, h in zip(shown, listed)), f"home lists every restaurant ({len(listed)}/{len(shown)})")
         rail = await pg.evaluate("Array.from(document.querySelectorAll('#oa-rail a')).map(a => a.getAttribute('href'))")
         check(bool(rail) and all(re.search(r"^[a-z-]+/#d=\w+$", h) for h in rail), f"home dish cards open the dish on its restaurant's page ({len(rail)} cards)")
