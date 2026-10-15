@@ -11,6 +11,7 @@ Public repo: nothing private here (no costs, margins, buyer prices, plans, conta
 - Money is tight (8 Oct 2026: "Don't have the money now use what you can"). No paid APIs, no Gemini spend, no paid tools without asking.
 
 ## Decisions (dated)
+- 2026-10-15: 'Like how the design was before the big change it feels less alive': the 9 Oct redesign is undone. The design from before it (night blue, BON NOCHI, big photo cards, covers, + on photos) is back since 15 Oct with every later fix kept. Don't bring the redesign's look back; improve this one.
 - 2026-10-15: 'Please continue the website use to look better vs what I see now' (after calling the 9 Oct redesign 'meh' next to the older, more 'alive' site): more visual life. Done the same day: big food photo cards on the home page, every true dish picture back on the menus.
 - 2026-10-09: 'Drop it if it's Dutch translated it should be all Dutch aka the language the person is using the website that's it there shouldn't be small translation spots': the Spanish/Dutch section names (Platos, Para picar, Uit de frituur…) with small English beside them are gone; section names follow the visitor's language. Read "Drop it" as the answer to "keep or drop the bar under the Smash Shack logo": dropped (shared/logos/smash-shack*.svg; undo with git).
 - 2026-10-09: 'Big redesign the website looks a lot like AI build it /design redesign the website 100 times better': the full restyle he must OK first (human-touch rule 5) is OK'd. Shipped the same day: each restaurant its own look, Order Aruba as the app layer.

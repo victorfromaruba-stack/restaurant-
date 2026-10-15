@@ -7,8 +7,7 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
-- [ ] L · S · Restaurant pages for Taco Brava, Smash Shack and Nonna's have no picture by the sign (cover false); try a small framed picture beside the tagline like Dushi Wok and Oranje Snack have, a different dish from Start here, keeping a dish + price + box on the first screen at 320 and 390 · done when: before/after screenshots show it better, qa passes
-- [ ] M · S · Smash Shack's home card and first screen still have no food (three burgers have hidePhoto). One real phone photo of the smash cheeseburger (chef app Menu tile) fixes both: then set menu.json hero to it and drop hidePhoto (needs Victor) · done when: the home card shows a true smash burger
+- [ ] M · S · Smash Shack's three burgers show no picture (hidePhoto: the pictures have thick patties) and its cover is the loaded fries. One real phone photo of the smash cheeseburger (chef app Menu tile) fixes it: then make it the cover and drop hidePhoto (needs Victor) · done when: Smash Shack's page opens on a true smash burger
 - [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
 - [ ] M · M · Chef app "busy tonight: +15 min" switch that changes the delivery time the site shows (lateness costs ~3 future orders; widen the window instead of missing it) · done when: one tap saves site.json eta and the site shows it
 - [ ] M · S · "It's for someone else": optional name + phone for the person receiving, on the WhatsApp ticket and in the chef app · done when: ticket line parsed by the chef app, qa passes
