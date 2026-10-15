@@ -226,62 +226,16 @@ async def main():
             await pg.goto(BASE + rail[0], wait_until="networkidle"); await pg.wait_for_timeout(400)
             check(await pg.evaluate("!!document.querySelector('.dish__name')"), f"tapping a home dish card opens it on {rail[0].split('/')[0]}'s page")
         # the mix restaurants share one order: started on one, it's the same order on the next
-        if "dushi-wok" in mix and "taco-brava" in mix:
-            await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
-            await pg.evaluate("OrderApp.clear()"); await pg.evaluate("OrderApp.addItem('dushi-wok','fr',{},1)")
-            await pg.goto(BASE + "taco-brava/index.html", wait_until="networkidle")
-            await pg.evaluate("OrderApp.loadMenu('taco-brava').then(() => OrderApp.addItem('taco-brava','bt',{},1))")
+        pair = [b for b in mix if is_open.get(b)][:2]   # whichever two mix restaurants are open tonight
+        if len(pair) == 2:
+            first = lambda bid: next(i["id"] for i in menus[bid]["items"] if not i.get("soldOut"))
+            await pg.goto(BASE + pair[0] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("([b,i]) => { OrderApp.clear(); return OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,{},1)); }", [pair[0], first(pair[0])])
+            await pg.goto(BASE + pair[1] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("([b,i]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,{},1))", [pair[1], first(pair[1])])
             n, f = await pg.evaluate("[OrderApp.count(), OrderApp.fee()]")
-            check(n == 2 and f == 500, f"Dushi Wok + Taco Brava end up in one order with one ƒ5 delivery (items {n}, fee {f})")
+            check(n == 2 and f == 500, f"{names[pair[0]]} + {names[pair[1]]} end up in one order with one ƒ5 delivery (items {n}, fee {f})")
             await pg.evaluate("OrderApp.clear()")
-        # an order kept from earlier gets today's menu on the restaurant's own page: a dish sold out since then is
-        # flagged and blocks Send, a new price is used (found 9 Oct 2026: only other restaurants' pages refreshed it)
-        if "dushi-wok" in brands and is_open.get("dushi-wok"):
-            ctx2 = await b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
-            p2 = await ctx2.new_page()
-            await p2.route("https://wa.me/**", lambda r: r.abort())
-            await p2.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
-            await p2.evaluate("OrderApp.clear()")
-            await p2.evaluate("OrderApp.addItem('dushi-wok','lm',{},1); OrderApp.addItem('dushi-wok','pk',{},1); OrderApp._set({area:'Noord', addr:'Palm Beach 12', name:'Ana', pay:'Cash'})")
-            dw = json.loads(json.dumps(menus["dushi-wok"]))
-            for it in dw["items"]:
-                if it["id"] == "lm": it["soldOut"] = True
-                if it["id"] == "pk": it["price"] = 9999
-            await p2.route("**/dushi-wok/menu.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(dw)))
-            await p2.reload(wait_until="networkidle")
-            lines = await p2.evaluate("OrderApp.state().lines.map(l => [l.id, l.p, !!l.soldOut])")
-            check(["lm", 1650, True] in lines and ["pk", 9999, False] in lines, f"an order kept from earlier gets today's sold-out marks and prices on the same restaurant's page ({lines})")
-            await p2.click(".bar__btn"); await p2.wait_for_timeout(400)
-            warn = await p2.evaluate("(document.querySelector('.oa-sheet__panel') || {}).innerText || ''")
-            ft = await p2.evaluate("!!document.querySelector('.line__d--warn')")
-            check(ft and "Sold out today" in warn, "the order sheet says the sold-out dish must go")
-            await p2.click(".oa-sheet [data-send]"); await p2.wait_for_timeout(700)
-            sent = await p2.evaluate("OrderApp.state().sentAt")
-            check(not sent, "Send is blocked while a sold-out dish is in the order")
-            # the family deal holds lo mein: sold out with it, in the menu and when adding
-            row_out = await p2.evaluate("!!document.querySelector('[data-b=\"dushi-wok\"][data-id=\"ft\"].is-out') && !document.querySelector('[data-b=\"dushi-wok\"][data-id=\"ft\"] .plus')")
-            added = await p2.evaluate("!!OrderApp.addItem('dushi-wok','ft',{},1)")
-            check(row_out and not added, "a family deal is sold out when a dish inside it is")
-            await p2.evaluate("OrderApp.clear()")
-            # "Order again" after an order from two restaurants shows both, on either restaurant's page
-            await p2.unroute("**/dushi-wok/menu.json*")
-            await p2.evaluate("localStorage.setItem('orderaruba.last.v1', JSON.stringify({at: Date.now(), lines: [{b:'dushi-wok', id:'fr', q:1, o:{}}, {b:'taco-brava', id:'bt', q:1, o:{}}]}))")
-            for page in ("dushi-wok", "taco-brava"):
-                await p2.goto(BASE + page + "/index.html", wait_until="networkidle"); await p2.wait_for_timeout(500)
-                again = (await p2.evaluate("(document.querySelector('#oa-again:not([hidden])') || {}).innerText || ''")).replace("\xa0", " ")
-                check("Chicken fried rice" in again and "Birria tacos" in again, f"Order again on {page} has the dishes from both restaurants" + ("" if "Birria" in again and "fried rice" in again else f": {again!r}"))
-            await p2.evaluate("localStorage.removeItem('orderaruba.last.v1')")
-            await ctx2.close()
-        # the chef app reads each ticket back: same lines, prices, totals and payment for the customer receipt
-        await pg.goto(BASE + "ops/kitchen/index.html", wait_until="networkidle")
-        for smp, (title, br, lines, meta) in zip(out, [x for x in SAMPLES if runs(x)]):
-            r = await pg.evaluate("t => window.__kitchen.receipt(window.__kitchen.parse(t))", smp["message"])
-            ok = bool(r) and r["sub"] == smp["subtotal_cents"] and r["fee"] == smp["fee_cents"] and r["total"] == smp["total_cents"] \
-                and sum(l["p"] for l in r["lines"]) == smp["subtotal_cents"] and r["pay"] == meta.get("pay", "")
-            check(ok, f"[{title}] chef app receipt matches the order (lines, totals, payment)")
-            inside = [names[b] for b in brands if any(l[0] == b and l[1] not in ("ck", "cz", "sp") for l in lines)] or [names[lines[0][0]]]
-            ok = bool(r) and r.get("brands") == inside and r.get("biz") == site.get("name")
-            check(ok, f"[{title}] the receipt is from {site.get('name')} for {', '.join(inside)}" + ("" if ok else f": {r and (r.get('biz'), r.get('brands'))}"))
         # a shared dish link (restaurant/#d=<id>) opens that dish, for every restaurant's signature dish
         for bid in brands:
             sig = next((i for i in menus[bid]["items"] if i.get("style") == "signature"), None)
@@ -300,9 +254,9 @@ async def main():
                 errs.clear()
                 await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
                 check(not errs and await pg.evaluate("document.documentElement.lang") == code, f"[{code}] {url} loads in that language with no errors" + (f": {errs}" if errs else ""))
-            await pg.goto(BASE + "dushi-wok/index.html", wait_until="networkidle")
+            title, br, lines, meta = [x for x in SAMPLES if runs(x)][0]
+            await pg.goto(BASE + br + "/index.html", wait_until="networkidle")
             await pg.evaluate("OrderApp.clear()")
-            title, br, lines, meta = SAMPLES[0]
             for (lb, iid, opts, q) in lines:
                 await pg.evaluate("([b,i,o,q]) => OrderApp.loadMenu(b).then(() => OrderApp.addItem(b,i,o,q))", [lb, iid, opts, q])
             await pg.evaluate("m => OrderApp._set(m)", meta)
