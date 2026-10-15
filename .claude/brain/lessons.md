@@ -5,6 +5,7 @@ session doesn't pay for them again. One entry: date, what happens, what to do.
 Newest on top. When a lesson turns into a rule everyone must follow, move it into
 CLAUDE.md and delete it here.
 
+- 2026-10-15 · qa/check_site.py must never hard-code one restaurant: Victor sets restaurants open/soon/hidden from the chef app (Dushi Wok went to soon on 14 Oct and 4 checks failed). Pick from site.json status; runs() already skips samples with a closed restaurant.
 - 2026-10-09 · The Supabase MCP `execute_sql` hangs (60 s timeout, then the worker restarts) on any SQL whose text contains `drop` or `delete`: it waits for an approval nobody sees. Write setup SQL without them (`create or replace trigger`, create a policy only if missing, expire sessions with an update), send it in chunks, and ask Victor to watch for the approval when a real delete is needed (test rows).
 - 2026-10-09 · Supabase grants anon and authenticated EXECUTE on every new function and ALL on every new table by default; `revoke … from public` is not enough. Revoke from anon and authenticated by name, then grant back only what the apps call. driver/v2/supabase/tests/run_local.py now mimics those defaults and fails on a leak.
 - 2026-10-09 · In PL/pgSQL a variable named like a column (`client_token`) makes `where o.client_token = client_token` fail at run time ("column reference is ambiguous"); the old local tests never sent one. Prefix variables (`v_client`). Every pidi_ function on Supabase must match the tested file: compare `md5(prosrc)` per function.
