@@ -193,9 +193,12 @@
  "Pre-order for tonight": "Pedido anticipado para esta noche",
  "May contain traces of {list}.": "Puede contener trazas de {list}.",
  "Fried in shared oil.": "Frito en aceite compartido.",
- "From other restaurants · same order, still one {fee} delivery": "De otros restaurantes · mismo pedido, sigue siendo una entrega de {fee}",
- "You order here and send it on WhatsApp. We reply to confirm.": "Pides aquí y mandas el pedido por WhatsApp. Te respondemos para confirmar.",
  "Open now": "Abierto ahora",
  "Late night from {time}": "Tarde en la noche, desde las {time}",
- "Every night from {time}.": "Todas las noches desde las {time}."
+ "Every night from {time}.": "Todas las noches desde las {time}.",
+ "Add to your order": "Añade a tu pedido",
+ "Add from another restaurant": "Añade de otro restaurante",
+ "Same order, still one {fee} delivery": "Mismo pedido, sigue siendo una entrega de {fee}",
+ "Tap + to add a dish, or open it for choices like no onion.": "Toca + para añadir un plato, o ábrelo para elegir cosas como sin cebolla.",
+ "Add dishes from any of them to the same order: still one {fee} delivery.": "Añade platos de cualquiera de ellos al mismo pedido: sigue siendo una entrega de {fee}."
 }

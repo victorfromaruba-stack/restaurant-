@@ -12,9 +12,8 @@
  "intro": "Penne baked with beef bolognese and mozzarella, spaghetti and meatballs, chicken parmigiana and cheesy garlic bread.",
  "logo": "shared/logos/nonnas-night-in.svg",
  "mark": "shared/logos/nonnas-night-in-mark.webp",
- "hero": "nonnas-night-in/assets/dishes/bp-hero.webp",
+ "hero": "nonnas-night-in/assets/dishes/sm.webp",
  "mainSection": "mains",
- "cover": false,
  "imageNote": "Pictures are illustrations.",
  "sections": [
   {
@@ -197,5 +196,9 @@
    "img": "shared/drinks/sp.webp",
    "kind": "drink"
   }
- ]
+ ],
+ "video": {
+  "src": "nonnas-night-in/video/cover.mp4",
+  "poster": "nonnas-night-in/video/cover.webp"
+ }
 }

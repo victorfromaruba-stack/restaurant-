@@ -193,9 +193,12 @@
  "Pre-order for tonight": "Pre-orden pa awe nochi",
  "May contain traces of {list}.": "Por tin rastro di {list}.",
  "Fried in shared oil.": "Frita den mesun azeta.",
- "From other restaurants · same order, still one {fee} delivery": "Di otro restaurant · mes orden, ainda un entrega di {fee}",
- "You order here and send it on WhatsApp. We reply to confirm.": "Bo ta ordena aki y manda e orden riba WhatsApp. Nos ta contesta pa confirma.",
  "Open now": "Habri awor",
  "Late night from {time}": "Tardi anochi for di {time}",
- "Every night from {time}.": "Tur anochi for di {time}."
+ "Every night from {time}.": "Tur anochi for di {time}.",
+ "Add to your order": "Agrega na bo orden",
+ "Add from another restaurant": "Agrega di otro restaurant",
+ "Same order, still one {fee} delivery": "Mes orden, ainda un entrega di {fee}",
+ "Tap + to add a dish, or open it for choices like no onion.": "Primi + pa agrega un cuminda, of habri e pa scoge cosnan manera sin cebolla.",
+ "Add dishes from any of them to the same order: still one {fee} delivery.": "Agrega cuminda di cualkier di nan na mes orden: ainda un entrega di {fee}."
 }

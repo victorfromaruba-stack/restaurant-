@@ -12,7 +12,7 @@
  "intro": "Birria tacos filled with slow-braised beef and mozzarella, with a cup of consommé to dip, plus ground beef street tacos, quesadillas and nachos.",
  "logo": "shared/logos/taco-brava.svg",
  "mark": "shared/logos/taco-brava-mark.webp",
- "hero": "taco-brava/assets/dishes/bt-hero.webp",
+ "hero": "taco-brava/assets/dishes/bn.webp",
  "mainSection": "mains",
  "imageNote": "Pictures are illustrations.",
  "sections": [
@@ -336,5 +336,9 @@
    "kind": "drink"
   }
  ],
- "cover": false
+ "cover": "cq",
+ "video": {
+  "src": "taco-brava/video/cover.mp4",
+  "poster": "taco-brava/video/cover.webp"
+ }
 }
