@@ -1,6 +1,12 @@
 # Pidi driver, v2 notes
 
-v1 is done without a server. These notes are the plan only. No Supabase project was created, no account was opened, and nothing here costs money yet. Do not put a service-role key, a Google key, or a signing key in this repo. The repo is public.
+10 Oct 2026: `/driver/` now opens v2. The v1 pages only forward to `v2/`; `tests/flow.py` tests v1 and no longer applies. The staff screens are tested by `qa/check_staff.py` (fake database answers only).
+
+9 Oct 2026, later: v2 uses the live bookkeeping database (`https://cdkopyphjvfxjqhasrae.supabase.co`). The only SQL file to paste is `/driver/v2/supabase/PIDI_SETUP.sql`. It creates `public.pidi_*` only. Do not run an older migration, do not deploy Edge Functions, and do not put a service role key or a signing JWK in the repo. The anon key does go in `/driver/v2/config.js` and is committed. Where this file disagrees with `/driver/v2/README.md`, the README wins.
+
+9 Oct 2026: Victor changed the plan. WhatsApp ordering goes away once v2 is connected. The prepared system is in `/driver/v2/`. It is not live. v1 stays the driver app until a test order has gone through. Do not merge that work early.
+
+No Supabase project was created, no account was opened, and nothing here costs money. Do not put a service-role key, a signing key, or a PIN in this repo. The repo is public.
 
 ## Why a backend is the next step
 
@@ -12,9 +18,11 @@ A run link is enough for one dispatcher and one driver on one phone. It cannot:
 - keep the cash count when the driver changes phones
 - wake a locked phone with a new offer
 
-WhatsApp stays. The customer still sends the ticket to +297 747 7794. The database sits beside that, it does not replace it.
+v1 still sends the ticket to +297 747 7794. v2 replaces that send with a database row. Do not switch v1 over until the project exists.
 
 ## Supabase
+
+The rest of this section is the old sketch. Do not apply it. The live file is `/driver/v2/README.md` and `/driver/v2/supabase/PIDI_SETUP.sql`.
 
 Use a new project in Victor's existing Supabase account, separate from Book Keeper. Free is enough to build. It pauses after about a week of no use and has no backups. Pro ($25/month) is the one to use once real orders run. That spend is Victor's decision.
 
@@ -27,7 +35,7 @@ Money is florin cents (`int`). Times are `timestamptz`. The service night is `(c
 | Table | Holds |
 |---|---|
 | `pickup_points` | One row for Victor's pickup, plus one per partner later. Address, pin, geofence (75 m), hours as data, `show_pin_to_customers` false for his own pickup. |
-| `restaurants` | `dushi-wok`, `taco-brava`, `smash-shack`, `nonnas-night-in`, `oranje-snack`, later partners. `owner` is `own` or `partner`. `mix` only for his five. Min 2400, fee 500. |
+| `restaurants` | `dushi-wok`, `taco-brava`, `smash-shack`, `nonnas-night-in`, `oranje-snack`, later partners. `owner` is `own` or `partner`. `mix` only for his five. No minimum (16 Oct 2026), fee 500. |
 | `staff` | admin, kitchen, partner, driver. Name, phone, active flag. A driver has a vehicle line. Tied to `auth.users`. |
 | `orders` | One row per order. `kitchen_status` and `delivery_status` move separately. Items, totals, `pay_method` of `cash` or `bank_transfer` only (no card column in the product, even if an old spec mentioned one). `pays_with_cents`, `transfer_seen`, customer name, phone, area, address, drop pin, order code from WhatsApp. |
 | `order_events` | Who changed what, and when. |

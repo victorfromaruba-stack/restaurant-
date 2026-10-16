@@ -5,7 +5,7 @@
    Dish photos: cached copy first, refreshed in the background (redrawn pictures show up on the next visit).
    Only this app's own caches (names starting with "kitchen-") are ever deleted: the website and the driver
    app keep theirs. */
-var CACHE = 'kitchen-v16';
+var CACHE = 'kitchen-v18';
 var MINE = 'kitchen-';
 var WAIT = 3000;
 var CORE = ['./', 'index.html', 'kitchen.css', 'kitchen.js', 'menu-editor.js', 'books.js', 'live.js', '../../shared/pidi.js', 'kitchen-data.json',
@@ -36,6 +36,9 @@ self.addEventListener('fetch', function (e) {
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // "?fresh=…": the Orders screen reading the website itself, to send the menus to the order database. Never a
+  // saved copy: the phone's own network answer or nothing.
+  if (url.searchParams.has('fresh')) return;
   if (isImage(url)) {
     e.respondWith(caches.open(CACHE).then(function (cache) {
       return cache.match(req).then(function (hit) {

@@ -4,6 +4,8 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-16 · claude (cloud) · daily run: security lock (Content-Security-Policy) on every customer page, inline submit handler replaced by a listener, QA checks both (3d0688a); live QA 443 PASS · also today: Pidi staff side merged into pidi-live (494e5ce, prices from the database), three database pastes for Victor in one helper page · waiting: Victor's pastes, the Pidi customer side
+- 2026-10-16 · claude (cloud) · Pidi restarted on branch pidi-live (from main d2679e4, lively look): staff side (driver v2, admin, kitchen live orders, database incl. server-side prices, no minimum, 35–50) and customer side (name Pidi, checkout, order status) running as two helpers in parallel
 - 2026-10-16 · claude (cloud) · Victor 'Fix those': words follow the recipe cards (spaghetti 3 meatballs + picture hidden, Nonna's home picture now chicken parm; 'Penne arrabbiata', chili flakes, not vegetarian; no peppers in quesadilla/nachos) and sour-cream zig-zag drawn on the loaded fries picture (build/art/lf_crema.py)
 - 2026-10-16 · claude (cloud) · chef app pre-launch fixes merged (ee463b6, qa/check_kitchen.py 0 problems) · Pidi PIN fix on pidi-site (7eaa28e, paste file 55b2df1) · not on the live database: the connector can't reach the Pidi project
 - 2026-10-16 · claude (cloud) · pre-launch audit: website fixes (4599d65), internal notes off the live site via Jekyll exclude (97c00f6), 35–50 min + no minimum (1f1c41b), notes (5c67bb7) · running: chef app fixes, Pidi PIN fix · waiting: Victor on private repo, Pidi complete

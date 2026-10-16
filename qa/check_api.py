@@ -448,7 +448,7 @@ async def checkout_flow(br, width):
     await shot(pg, "checkout-4-check", end=True)
     await pg.fill("#ck-note", "Gate code 4411")
     await pg.click("[data-place]")
-    await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(400)
+    await pg.wait_for_url(lambda u: "/order/" in u); await pg.wait_for_timeout(400)
     p = fake.placed()[-1] if fake.placed() else {}
     want_items = [{"restaurant": l["b"], "id": l["id"], "name": l["name"], "qty": l["q"], "price_cents": l["p"]} for l in lines]
     check(p.get("items") == want_items and p.get("name") == "Maria Croes" and p.get("phone") == "+297 593 1234" and p.get("area") == "Noord"
@@ -522,7 +522,7 @@ async def checkout_cases(br):
     off = await pg.evaluate("[(document.querySelector('.ck-err p') || {}).textContent, location.hash]")
     check(off == ["No connection. Check your internet and tap Place order again: it won’t go in twice.", "#check"], f"no connection: it says so and stays ({off})")
     await shot(pg, "checkout-error-offline", end=True)
-    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(300)
+    await pg.click("[data-place]"); await pg.wait_for_url(lambda u: "/order/" in u); await pg.wait_for_timeout(300)
     toks = [p["client_token"] for p in fake.placed()[before:]]
     check(len(toks) == 2 and toks[0] == toks[1] and len(fake.orders) == 1, f"tapped again, it goes with the same client_token, and there is one order ({toks})")
     # the answer got lost after the order went in, and then the cart changed: the earlier order is found, not doubled
@@ -533,7 +533,7 @@ async def checkout_cases(br):
     first_tok = fake.placed()[-1]["client_token"]
     await pg.evaluate("a => OrderApp.addItem(a, 'cz', {}, 1)", A); await pg.wait_for_timeout(150)
     fake.place = ["ok"]
-    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(500)
+    await pg.click("[data-place]"); await pg.wait_for_url(lambda u: "/order/" in u); await pg.wait_for_timeout(500)
     finds = [b for n, b in fake.calls if n == "pidi_find_order"]
     note = await pg.evaluate("Array.from(document.querySelectorAll('.note')).map(n => n.textContent).join(' ')")
     check(finds and finds[-1] == {"client_token": first_tok} and len(fake.orders) == 2 and "went in the first time" in note and "earlier=1" in pg.url,
@@ -546,7 +546,7 @@ async def checkout_cases(br):
     t1 = fake.placed()[-1]["client_token"]
     await pg.evaluate("a => OrderApp.addItem(a, 'sp', {}, 1)", A); await pg.wait_for_timeout(150)
     fake.place = ["ok"]
-    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(300)
+    await pg.click("[data-place]"); await pg.wait_for_url(lambda u: "/order/" in u); await pg.wait_for_timeout(300)
     t2 = fake.placed()[-1]["client_token"]
     check(t1 != t2 and len(fake.orders) == 3, f"a changed order after a try that didn't go in gets a new client_token ({t1[:8]} then {t2[:8]})")
     # an empty cart, and WhatsApp mode
@@ -581,7 +581,7 @@ async def preorder(br, width=390):
     r = await pg.evaluate("[location.hash, (document.querySelector('.note') || {}).textContent, document.querySelector('.recap').innerText]")
     check(r[0] == "#check" and r[1] == "Pre-order for tonight, 11:00 PM" and "Cash in US dollars" in r[2], f"[{width}px] the check step says it's a pre-order for 11:00 PM ({r[1]!r})")
     await shot(pg, "checkout-4-check-preorder", end=True)
-    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(300)
+    await pg.click("[data-place]"); await pg.wait_for_url(lambda u: "/order/" in u); await pg.wait_for_timeout(300)
     p = fake.placed()[-1]
     check(p.get("due_at") == "2026-10-11T03:00:00.000Z" and p.get("pays_in_usd") is True and "pays_with_cents" not in p,
           f"[{width}px] the pre-order goes in with due_at (11 PM Aruba in UTC) and cash in US dollars ({p.get('due_at')})")

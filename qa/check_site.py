@@ -189,6 +189,14 @@ async def ordering_modes(br, open_ids):
               ticket: !!s.querySelector('.ticket'), text: s.innerText,
               how: (document.querySelector('[data-oa-how]') || {}).innerText || ''}; }""")
         total = await pg.evaluate("OrderApp.total()")
+        await pg.evaluate("window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective))")
+        if mode == "whatsapp":
+            await pg.evaluate("window.__stay = 1")
+            field = pg.locator("form.form textarea, form.form input[type=text]").first
+            await field.click(); await field.type("Palm Beach 12"); await field.press("Enter")
+            await pg.evaluate("document.querySelector('form.form').requestSubmit()"); await pg.wait_for_timeout(500)
+            check(await pg.evaluate("window.__stay === 1 && !location.search && !window.__csp.length"),
+                  f"[whatsapp] {bid}: sending the order form keeps the page and the lock blocks nothing")
         if mode == "app":
             ok = r["go"] == f"../checkout/?from={bid}" and not r["send"] and not r["form"] and not r["ticket"] and f"ƒ{total / 100:.2f}" in r["text"] \
                 and "Continue" in r["text"] and "Place your order" in r["how"] and "WhatsApp" not in r["how"]
@@ -196,6 +204,9 @@ async def ordering_modes(br, open_ids):
             await pg.click("[data-go]"); await pg.wait_for_timeout(800)
             here = await pg.evaluate("[location.pathname.endsWith('/checkout/') ? 'checkout/' : location.pathname, (document.querySelector('.step__t') || {}).textContent || '']")
             check(here == ["checkout/", "Where do we bring it?"], f"\"ordering\": \"app\": Continue opens the checkout on its first step ({here})")
+            await pg.evaluate("window.__stay = 1; window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective))")
+            await pg.click("#ck-addr"); await pg.keyboard.type("Palm Beach 12"); await pg.keyboard.press("Enter"); await pg.wait_for_timeout(400)
+            check(await pg.evaluate("window.__stay === 1 && location.hash === '#where' && !window.__csp.length"), "[app] typing in the checkout and pressing Go keeps the page, and the lock blocks nothing")
         else:
             ok = (r["send"] or "").startswith("https://wa.me/") and r["form"] and r["ticket"] and not r["go"] and "Send on WhatsApp" in r["text"] and "Send it on WhatsApp" in r["how"]
             check(ok, f"\"ordering\" missing (WhatsApp, as before): {bid}'s order sheet has the details form, the message preview and Send on WhatsApp" + ("" if ok else f" ({r['go']}, form {r['form']}, send {r['send']})"))
@@ -212,7 +223,8 @@ async def main():
         pg.on("console", lambda m: errs.append(f"console: {m.text}") if m.type == "error" and "404" not in m.text else None)
         # ops/chef.html is private (not on the public site); the chef app checks for it on purpose
         pg.on("response", lambda r: errs.append(f"HTTP {r.status} {r.url}") if r.status >= 400 and not r.url.endswith("ops/chef.html") else None)
-        for url in ["index.html", "404.html", "ops/kitchen/index.html"] + [f"{x}/index.html" for x in brands]:
+        DB = re.search(r"var URL = '(https://[^']+)'", open(os.path.join(ROOT, "shared/pidi.js"), encoding="utf-8").read()).group(1)
+        for url in ["index.html", "404.html", "ops/kitchen/index.html", "checkout/index.html", "order/index.html"] + [f"{x}/index.html" for x in brands]:
             errs.clear()
             await pg.goto(BASE + url, wait_until="networkidle")
             h = await pg.evaluate("document.body.scrollHeight")
@@ -221,6 +233,32 @@ async def main():
             await pg.wait_for_timeout(300)
             broken = await pg.evaluate("Array.from(document.images).filter(i => i.complete && i.naturalWidth === 0).map(i => i.src)")
             check(not errs and not broken, f"{url} loads with no errors or broken images" + (f": {errs + broken}" if errs or broken else ""))
+            if not url.startswith("ops/"):
+                csp = await pg.evaluate("(document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]') || {}).content || ''")
+                check("script-src 'self'" in csp and "form-action 'none'" in csp, f"{url} only runs this site's own scripts (security lock)")
+                # only the app's own pages may reach the order database, and only at the address in shared/pidi.js
+                talks = re.search(r"connect-src ([^;]*)", csp).group(1).split() if "connect-src" in csp else []
+                want = ["'self'", DB] if url.split("/")[0] in ("checkout", "order") else ["'self'"]
+                check(talks == want, f"{url} connects to " + " and ".join(want) + f" only ({talks})")
+        # the order form never sends: "Go" on the phone keyboard keeps the page (no inline handler, the lock forbids those)
+        opens = [x["id"] for x in site["brands"] if x.get("status") == "open"]
+        if opens and site.get("ordering") != "app":   # (app mode: the WhatsApp form is tested in ordering_modes, the checkout's fields there too)
+            errs.clear()
+            await pg.goto(BASE + opens[0] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("OrderApp.clear()")
+            first = await pg.evaluate("b => OrderApp.loadMenu(b).then(m => m.items.find(i => i.kind !== 'drink' && !i.soldOut).id)", opens[0])
+            await pg.evaluate("([b,i]) => OrderApp.addItem(b,i,{},1)", [opens[0], first])
+            await pg.evaluate("window.__stay = 1; location.hash = 'o'")
+            await pg.wait_for_timeout(400)
+            await pg.evaluate("window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective))")
+            field = pg.locator("form.form input[type=text], form.form input:not([type]), form.form textarea").first
+            await field.click(); await field.type("Palm Beach 12"); await field.press("Enter")
+            await pg.evaluate("document.querySelector('form.form').requestSubmit()")
+            await pg.wait_for_timeout(600)
+            stayed = await pg.evaluate("window.__stay === 1 && !location.search")
+            blocked = await pg.evaluate("window.__csp || ['page reloaded']")
+            check(stayed and not errs and not blocked, f"{opens[0]}: sending the order form keeps the page and the lock blocks nothing" + (f": {errs + blocked}" if errs or blocked else ""))
+            await pg.evaluate("OrderApp.clear()")
         out = []
         for title, br, lines, meta in [x for x in SAMPLES if runs(x)]:
             await pg.goto(BASE + br + "/index.html", wait_until="networkidle")

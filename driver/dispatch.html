@@ -5,26 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#12143A">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Pidi">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <title>Send a Pidi run</title>
+  <title>Pidi</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="brand/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/app.css">
+  <!-- The driver app moved to v2/ (10 Oct 2026). This old address sends the phone on, keeping ?… and #…. -->
+  <script>location.replace("v2/" + location.search + location.hash);</script>
+  <meta http-equiv="refresh" content="0; url=v2/">
+  <style>html, body { margin: 0; background: #12143A; color: #F4F5FB; font: 18px/1.4 system-ui, sans-serif; } p { margin: 0; padding: 24px 16px; } a { color: #DCE0FF; font-weight: 700; }</style>
 </head>
 <body>
-  <header class="top">
-    <a href="index.html"><img class="wordmark" src="brand/wordmark.svg" alt="Pidi"></a>
-    <a class="help-link" href="help.html">Help</a>
-  </header>
-  <main id="screen" class="wide"></main>
-  <div class="dock"><div id="dock"></div></div>
-  <script src="js/words.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/dispatch.js"></script>
+  <p>Opening the Pidi driver app. <a href="v2/">Tap here</a> if it doesn’t open.</p>
 </body>
 </html>

@@ -1,9 +1,14 @@
-/* Orders from the Pidi app, live in the kitchen. A test for now ("App orders (test)" on the home screen):
-   website orders still come on WhatsApp and are cooked from "Cook an order".
+/* Orders from the Pidi app, live in the kitchen: the first tile on the home screen ("Orders").
    Sign in once with the kitchen PIN (Victor sets it on /driver/admin/). New orders then come in by
    themselves: the phone beeps and shows a bar on every screen. One big button per step:
    Accept, Start cooking, then "… is ready" per restaurant. When every bag is ready, the order is
-   offered to the drivers by itself. The database decides what is allowed; this screen only asks. */
+   offered to the drivers by itself. The database decides what is allowed; this screen only asks.
+   Each card leads with the night's order number ("Order 14"), then what the chef needs (pay, note, dishes,
+   the button); the customer's phone and address come after the button. Pre-orders not due yet wait under
+   "Later tonight" with the time to start. "Kitchen busy?" adds 15 or 30 minutes to the delivery time
+   new customers see. A line whose price doesn't match the menu gets a red warning (nothing is blocked).
+   The order database prices every order from its own copy of the menus; this file keeps that copy in step
+   (syncMenus, menuSaved). */
 (function () {
   'use strict';
   var UI = window.__kitchenUI, P = window.Pidi;
@@ -11,12 +16,14 @@
   var esc = UI.esc, main = UI.main, foot = UI.foot;
   var KEY = 'pidi.kitchen.session';      // { token, expires_at, topic } on this phone only
   var SEEN = 'pidi.kitchen.seen.v1';     // order ids this phone has already beeped for
+  var PRICE_OK = 'pidi.kitchen.priceok.v1';   // order lines whose price matched the menu once: never judged again
   var POLL = 8000;
 
   var feed = null, lastAt = 0, lastErr = '', busy = {}, pinErr = '', stopListen = null, watching = 0;
-  // In-app checkout isn't built yet: website orders come on WhatsApp, so this screen is a test for now.
-  var HOWTO = '<p class="banner note lv-howto">Website orders come on WhatsApp: use <a href="#/cook">Cook an order</a>.</p>';
-  var menuPrice = null;                  // dish name -> menu price in cents, to catch a wrong price
+  var menus = null, menusAt = 0, menusLoading = false;   // restaurant slug -> its menu.json, to catch a wrong price
+  var busyMin = null, busySaving = false, busySetAt = 0, busyAskedAt = 0;   // "Kitchen busy?": 0, 15 or 30
+  var baseEta = null, etaAt = 0;   // the usual longest delivery time (pidi_public_state eta_max), without busy minutes
+  var priceOk = UI.store.get(PRICE_OK, {}) || {}, priceOkNew = false;
 
   // ------------------------------------------------------------ session
   function session() {
@@ -66,27 +73,144 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden && onScreen()) keepAwake(true); });
 
   // ------------------------------------------------------------ menu prices (a wrong price shows a warning)
-  function loadPrices() {
-    if (menuPrice) return;
-    menuPrice = {};
-    fetch('../../shared/site.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (site) {
-      (site.brands || []).forEach(function (b) {
-        fetch('../../' + b.id + '/menu.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (m) {
-          (m.items || []).forEach(function (i) { menuPrice[b.id + '|' + i.name.toLowerCase()] = i.price; });
-        }, function () {});
-      });
-    }, function () {});
+  // Each line of an order is "Dish name · option · option" with the unit price the phone sent. It is checked
+  // against that restaurant's own menu.json: the dish price plus the extra of each chosen option. Nothing is
+  // blocked; a line that doesn't match says so in red.
+  // Read again every 10 minutes while the app is open and signed in, so a price changed tonight is the one checked.
+  // Each file is read straight from the website first ("?fresh=" goes past this phone's saved copy and the web
+  // cache); only a copy read just now is sent to the order database (syncMenus). Offline: this phone's saved copy,
+  // for the warnings only.
+  function fromSite(path) {
+    return fetch('../../' + path + '?fresh=' + Date.now(), { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('The website answered ' + r.status);
+      return r.json();
+    });
   }
-  function baseName(n) { return String(n || '').split(' · ')[0].trim(); }
-  function priceWarnings(order) {
-    var out = [];
-    (order.restaurants || []).forEach(function (g) {
-      (g.items || []).forEach(function (i) {
-        var want = menuPrice && menuPrice[g.slug + '|' + baseName(i.name).toLowerCase()];
-        if (want && i.price_cents < want) out.push(baseName(i.name) + ' came in at ' + P.money(i.price_cents) + ', the menu says ' + P.money(want) + '.');
+  function fromPhone(path) { return fetch('../../' + path, { cache: 'no-cache' }).then(function (r) { return r.json(); }); }
+  function loadMenus(force) {
+    if (menusLoading || (!force && menus && Date.now() - menusAt < 10 * 60000)) return;
+    menusLoading = true;
+    var next = {}, live = {}, site = null;
+    fromSite('shared/site.json').then(function (s) { site = s; return s; }, function () { return fromPhone('shared/site.json'); }).then(function (s) {
+      return Promise.all((s.brands || []).map(function (b) {
+        return fromSite(b.id + '/menu.json').then(function (m) { live[b.id] = true; return m; }, function () { return fromPhone(b.id + '/menu.json'); })
+          .then(function (m) { next[b.id] = m; }, function () { if (menus && menus[b.id]) next[b.id] = menus[b.id]; });
+      }));
+    }).then(function () {
+      menus = next; menusAt = Date.now(); menusLoading = false;
+      if (site) syncMenus(site, next, live);
+      if (onScreen()) draw();
+    }, function () { menusLoading = false; });
+  }
+
+  // ------------------------------------------------------------ the menu the order database prices from
+  // The database works out every price itself, from its own copy of each restaurant's menu.json and its
+  // open / soon / hidden from site.json (pidi_kitchen_sync_menu). This phone keeps that copy in step: whatever
+  // changed on the website since it last sent it, and a Menu-tile save on this phone straight away (menuSaved).
+  // The database ignores a website copy for 15 minutes after a save, so an older copy never undoes it.
+  var SYNCED = 'pidi.kitchen.menusync.v1';   // restaurant -> what this phone last sent the database
+  function menuRows(menu) {
+    return (menu.items || []).map(function (i) {
+      return { id: i.id, name: i.name, price: i.price, soldOut: !!i.soldOut, includes: i.includes || [],
+        options: (i.options || []).map(function (g) {
+          return { id: g.id, label: g.label || '', type: g.type, 'default': g['default'] || null,
+            choices: (g.choices || []).map(function (c) { return { id: c.id, label: c.label, price: c.price || 0 }; }) };
+        }) };
+    });
+  }
+  function sendMenu(slug, status, items, fromSave) {
+    var s = session();
+    if (!s) return Promise.resolve(null);
+    return P.rpc('pidi_kitchen_sync_menu', { session: s.token, restaurant: slug, status: status || null, items: items, from_save: !!fromSave })
+      .then(function (r) { return r; }, function (err) {
+        if (/sign in again/i.test(err.message)) { signOut('Sign in again with the kitchen PIN.'); paintCount(); if (onScreen()) draw(); }
+        return null;
+      });
+  }
+  function syncMenus(site, set, live) {
+    if (!session()) return;
+    var sent = UI.store.get(SYNCED, {}) || {};
+    (site.brands || []).forEach(function (b) {
+      if (!set[b.id] || !live[b.id]) return;
+      var status = b.status || 'open', items = menuRows(set[b.id]), sig = JSON.stringify([status, items]);
+      if (sent[b.id] === sig) return;
+      sendMenu(b.id, status, items, false).then(function (r) {
+        if (!r || r.ok === false || r.skipped) return;   // tried again with the next read of the website
+        var now = UI.store.get(SYNCED, {}) || {};
+        now[b.id] = sig;
+        UI.store.set(SYNCED, now);
       });
     });
-    return out;
+  }
+  // The Menu tile just saved this restaurant's menu.json (menu) or site.json (status): the database gets it now.
+  function menuSaved(slug, menu, status) {
+    if (!session() || (!menu && !status)) return;
+    var sent = UI.store.get(SYNCED, {}) || {};
+    delete sent[slug];   // the website's copy is compared afresh once it shows the save
+    UI.store.set(SYNCED, sent);
+    sendMenu(slug, status || null, menu ? menuRows(menu) : null, true).then(function (r) {
+      if (!r || r.ok === false) UI.toast('Saved on the website. App orders see it in a few minutes.', 6000);
+    });
+  }
+  function key(s) { return String(s == null ? '' : s).replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim().toLowerCase(); }
+  // The choices one option text stands for, as [{ g: group, c: choice }]: "No onion", "Sauce: On the side",
+  // "Leave out: No onion, No egg", "No pickles, No mayo". null when the text names no choice on the menu.
+  function choicesFor(dish, text) {
+    var groups = dish.options || [], m = /^([^:]+):\s*(.+)$/.exec(text);
+    function one(t, only) {
+      var hit = null;
+      groups.forEach(function (g) {
+        if (only && g !== only) return;
+        (g.choices || []).forEach(function (c) {
+          if (!hit && (key(c.label) === key(t) || key(g.label + ' ' + c.label) === key(t))) hit = { g: g, c: c };
+        });
+      });
+      return hit;
+    }
+    function all(list, only) {
+      var hits = list.map(function (t) { return one(t, only); });
+      return hits.every(Boolean) ? hits : null;
+    }
+    var found = null;
+    if (m) groups.forEach(function (g) { if (!found && key(g.label) === key(m[1])) found = all(m[2].split(/\s*,\s*/), g); });
+    return found || (one(text) ? [one(text)] : all(text.split(/\s*,\s*/)));
+  }
+  // null: that restaurant's menu isn't here (can't check). Else { found, cents } for one of the dish.
+  function menuPrice(slug, name) {
+    var menu = menus && menus[slug];
+    if (!menu) return null;
+    var parts = String(name || '').split(' · '), dishName = parts.shift();
+    var dish = (menu.items || []).filter(function (i) { return key(i.name) === key(dishName); })[0];
+    if (!dish) return { found: false, menu: menu.name || slug };
+    var cents = dish.price || 0, named = {};
+    parts.forEach(function (p) {
+      (choicesFor(dish, p) || []).forEach(function (h) { named[h.g.id] = true; cents += h.c.price || 0; });
+    });
+    (dish.options || []).forEach(function (g) {   // a one-choice option nobody named is the menu's default
+      if (g.type !== 'one' || named[g.id]) return;
+      var d = (g.choices || []).filter(function (c) { return c.id === g['default']; })[0];
+      if (d && d.price) cents += d.price;
+    });
+    return { found: true, cents: cents };
+  }
+  // A line that matched the menu once stays fine on this phone, so a price changed in the Menu tile later
+  // tonight doesn't flag orders that were right when they came in.
+  function priceProblem(o, slug, item) {
+    var id = o.id + '|' + slug + '|' + item.name + '|' + item.price_cents;
+    if (priceOk[id]) return '';
+    var want = menuPrice(slug, item.name);
+    if (!want) return '';
+    if (!want.found) return 'Check this dish: it is not on the ' + esc(want.menu) + ' menu.';
+    if (want.cents !== item.price_cents) return 'Check the price: ' + money(item.price_cents) + ' here, the menu now says ' + money(want.cents) + '.';
+    priceOk[id] = Date.now(); priceOkNew = true;
+    return '';
+  }
+  function savePriceOk() {
+    if (!priceOkNew) return;
+    var now = Date.now();
+    Object.keys(priceOk).forEach(function (k) { if (now - priceOk[k] > 2 * 86400000) delete priceOk[k]; });
+    UI.store.set(PRICE_OK, priceOk);
+    priceOkNew = false;
   }
 
   // ------------------------------------------------------------ the feed
@@ -100,14 +224,17 @@
   function refresh() {
     var s = session();
     if (!s) return Promise.resolve(null);
+    var asked = Date.now();
     return P.rpc('pidi_kitchen_feed', { session: s.token }).then(function (f) {
       feed = f || { orders: [] }; lastAt = Date.now(); lastErr = '';
+      readBusy(feed, asked);
+      loadMenus();
       var fresh = (feed.orders || []).filter(function (o) { return o.status === 'new' && !seen()[o.id]; });
       if (fresh.length) {
         markSeen(fresh.map(function (o) { return o.id; }));
         beep();
         if (!onScreen()) {
-          UI.toast('New order: ' + fresh[0].name + (fresh[0].area ? ' · ' + fresh[0].area : '') + '. Tap App orders.', 8000);
+          UI.toast('New order' + (fresh[0].night_no ? ' ' + fresh[0].night_no : '') + ': ' + fresh[0].name + (fresh[0].area ? ' · ' + fresh[0].area : '') + '. Tap Orders.', 8000);
         }
       }
       if (!stopListen && feed.topic) stopListen = P.listen(feed.topic, function () { refresh(); });
@@ -123,6 +250,44 @@
       return null;
     });
   }
+  // "Kitchen busy?": the feed carries the current minutes on every order. With no orders open, the public
+  // state says it (at most every 30 s). A feed asked for before a change is older than the change: ignored.
+  // The public state also gives the usual longest delivery time (asked again every 10 minutes): a pre-order
+  // starts that long, plus tonight's busy minutes, before its delivery time.
+  function readBusy(f, asked) {
+    var v = f && f.busy_min != null ? f.busy_min : null;
+    if (v == null) ((f && f.orders) || []).some(function (o) { v = o.busy_min; return v != null; });
+    var n = parseInt(v, 10), known = !isNaN(n);
+    if (known && asked >= busySetAt) busyMin = n;
+    var now = Date.now();
+    if (now - busyAskedAt < 30000 || (known && now - etaAt < 10 * 60000)) return;
+    var at = busyAskedAt = now;
+    P.rpc('pidi_public_state', {}).then(function (st) {
+      etaAt = Date.now();
+      var e = parseInt(st && st.eta_max, 10), m = parseInt(st && st.busy_min, 10);
+      if (!isNaN(e)) baseEta = e;
+      if (!known && !isNaN(m) && at >= busySetAt) busyMin = m;
+      if (onScreen()) draw();
+    }, function () { /* the switch shows "Checking…" until the next try */ });
+  }
+  function setBusy(n) {
+    var s = session();
+    if (!s || busySaving) return;
+    busySaving = true; draw();
+    P.rpc('pidi_kitchen_set_busy', { session: s.token, minutes: n }).then(function (r) {
+      busySaving = false; busySetAt = Date.now();
+      var got = parseInt(r && r.busy_min, 10);
+      busyMin = isNaN(got) ? n : got;
+      UI.toast(busyMin ? 'Kitchen busy: new customers see a delivery time ' + busyMin + ' min later.' : 'Back to normal. New customers see the usual delivery time.', 5000);
+      draw();
+    }, function (err) {
+      busySaving = false;
+      if (/sign in again/i.test(err.message)) signOut('Sign in again with the kitchen PIN.');
+      UI.toast(err.message, 6000);
+      draw();
+    });
+  }
+
   // Runs on every screen while the app is open, so an order is never missed on the Prep screen.
   function watch() {
     if (watching) return;
@@ -153,7 +318,7 @@
   function cookAlong(order) {
     var open = UI.loadOrders().filter(function (o) { return o.live === order.id && !o.closed; })[0];
     if (open) { UI.go('#/order/' + open.id); return; }
-    var lines = ['*Order* · ' + order.name];
+    var lines = ['*Order*' + (order.night_no ? ' #' + order.night_no : '') + ' · ' + order.name];
     (order.restaurants || []).forEach(function (g) {
       lines.push('*' + g.restaurant + '*');
       (g.items || []).forEach(function (i) {
@@ -163,13 +328,16 @@
       });
     });
     lines.push('Delivery · ' + (order.area || ''));
+    // the cook screen reads Time: for "Ready for 1:30 AM" and the Confirm reply ("is booked for 1:30 AM")
+    lines.push('Time: ' + (isPre(order) ? dueText(order) : 'As soon as possible'));
     lines.push('Name: ' + order.name);
     if (order.note) lines.push('Note: ' + order.note);
-    lines.push('Pay: ' + (order.pay === 'cash' ? 'Cash' : 'Bank transfer'));
+    lines.push('Pay: ' + (order.pay === 'cash' ? (order.pays_in_usd ? 'Cash in US dollars' : 'Cash') : 'Bank transfer' + (order.transfer_status === 'paid' ? ' (paid)' : '')));
     lines.push('Total ' + P.money(order.total_cents));
     var o = UI.parseOrder(lines.join('\n'));
     o.live = order.id;
-    o.no = '';
+    o.test = !!order.test;
+    o.no = order.night_no ? String(order.night_no) : '';
     UI.putOrder(o);
     UI.go('#/order/' + o.id);
   }
@@ -182,6 +350,18 @@
     if (what === 'signin') return signIn();
     if (what === 'signout') { signOut(''); draw(); return; }
     if (what === 'retry') { refresh(); return; }
+    if (what === 'busy' || what === 'busy-yes') {
+      var n = +b.getAttribute('data-min');
+      if (what === 'busy' && n === busyMin) return;
+      if (what === 'busy' && n === 30) {
+        UI.openSheet('<h2>Very busy: +30 min?</h2><p>New customers see a delivery time 30 minutes later. Orders already in keep their time.</p>' +
+          '<div class="row-btns"><button class="btn go wide lv-big" data-live="busy-yes" data-min="30">Yes, +30 min</button></div>');
+        return;
+      }
+      UI.closeSheet();
+      setBusy(n);
+      return;
+    }
     if (!o) return;
     if (what === 'accept') act(id, 'pidi_kitchen_accept', { order_id: id }, 'Accepted. The customer sees Received.');
     else if (what === 'cooking') act(id, 'pidi_kitchen_set_status', { order_id: id, status: 'cooking' }, 'Cooking. The customer sees it.');
@@ -203,6 +383,9 @@
       busy.signin = false;
       if (!r || r.ok === false || !r.token) { pinErr = (r && r.error) || 'That PIN does not match.'; draw(); return; }
       UI.store.set(KEY, { token: r.token, expires_at: r.expires_at, topic: r.topic });
+      // a new sign-in sends every menu again, so the database's copy is whole even if it was set up since
+      UI.store.set(SYNCED, {});
+      loadMenus(true);
       // orders already waiting do not beep again after signing in on a second phone
       refresh().then(function () { watch(); });
     }, function (err) { busy.signin = false; pinErr = err.message; draw(); });
@@ -212,75 +395,124 @@
   var STEP = { new: 0, accepted: 1, cooking: 2, ready: 3, assigned: 4, picked_up: 4 };
   function ago(ts) {
     var m = Math.max(0, Math.round((Date.now() - Date.parse(ts)) / 60000));
-    return m < 1 ? 'just now' : m === 1 ? '1 min ago' : m + ' min ago';
+    if (m < 1) return 'just now';
+    if (m < 90) return m === 1 ? '1 min ago' : m + ' min ago';
+    return Math.round(m / 60) + ' hours ago';
   }
   function money(c) { return '<span class="fl">' + esc(P.money(c)) + '</span>'; }
+  // Times on this screen are Aruba's, whatever zone the phone is set to.
   function arubaTime(ts) {
     try { return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Aruba' }); }
-    catch (e) { return UI.clock(Date.parse(ts)); }
+    catch (e) { return UI.clock(typeof ts === 'number' ? ts : Date.parse(ts)); }
   }
+  // The service night a moment belongs to: noon to noon, Aruba time (Aruba has no summer time).
+  function nightOf(ts) {
+    try { return new Date(ts - 12 * 3600000).toLocaleDateString('en-CA', { timeZone: 'America/Aruba' }); }
+    catch (e) { return ''; }
+  }
+  // "Saturday night " for a time on a later night than now (a pre-order taken after last orders); '' tonight.
+  function nightWord(ts) {
+    if (nightOf(ts) === nightOf(Date.now())) return '';
+    try { return new Date(ts - 12 * 3600000).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Aruba' }) + ' night '; }
+    catch (e) { return 'Another night '; }
+  }
+  function atText(ts) { return nightWord(ts) + 'at ' + arubaTime(ts); }          // "at 1:00 AM", "Saturday night at 10:30 PM"
+  function dueText(o) { var d = Date.parse(o.due_at); return nightWord(d) + arubaTime(d); }
   function phoneLink(p) {
     var d = String(p || '').replace(/\D/g, '');
     if (d.length === 7) d = '297' + d;
     return d ? '<a class="lv-call" href="tel:+' + d + '">Call</a><a class="lv-call" href="https://wa.me/' + d + '" target="_blank" rel="noopener">WhatsApp</a>' : '';
   }
+  // A pre-order (due more than 20 minutes after it came in) waits in "Later tonight" until it is time to
+  // start: its delivery time minus the usual longest delivery time plus tonight's busy minutes (the order's own
+  // eta_max already holds the busy minutes of when it was placed, so it is only the fallback).
+  function isPre(o) { return !!o.due_at && Date.parse(o.due_at) - Date.parse(o.created_at) > 20 * 60000; }
+  function cookMin(o) { return baseEta != null ? baseEta + (busyMin || 0) : (parseInt(o.eta_max, 10) || 50); }
+  function startAt(o) { return isPre(o) ? Date.parse(o.due_at) - cookMin(o) * 60000 : Date.parse(o.created_at); }
+  function isLater(o, now) { return isPre(o) && STEP[o.status] <= 1 && now < startAt(o); }
+  function payLine(o) {
+    if (o.pay === 'transfer') {
+      return '<div class="pay pay--bank"><span class="lv-nw">Bank transfer ·</span> <span class="lv-nw">' + (o.transfer_status === 'paid' ? 'came in' : 'not in yet') + '</span></div>';
+    }
+    // each half stays on one line, so a narrow phone breaks the line at the dot
+    if (o.pays_in_usd) return '<div class="pay pay--usd"><span class="lv-nw">Pays in US dollars ·</span> <span class="lv-nw">' + money(o.total_cents) + ' total</span></div>';
+    return '<div class="pay"><span class="lv-nw">Pays ' + money(o.pays_with_cents) + ' cash ·</span> <span class="lv-nw">' +
+      (o.change_due_cents > 0 ? money(o.change_due_cents) + ' change' : 'no change') + '</span></div>';
+  }
+  // One ticket. On top what the chef needs (number, when, pay, note), then the dishes and the one big button,
+  // so a new order's Accept is on the first screen; the customer's phone and address come after it.
   function card(o) {
     var b = !!busy[o.id], step = STEP[o.status];
     var single = (o.restaurants || []).length === 1;
-    var h = '<article class="lv-card lv-' + esc(o.status) + '">';
+    var h = '<article class="lv-card lv-' + esc(o.status) + (o.test ? ' lv-is-test' : '') + '">';
     h += '<div class="ohead">';
-    if (o.test) h += '<span class="badge">TEST</span>';
-    h += '<div class="mode">' + esc(o.area || 'Delivery') + '</div>';
-    // a pre-order for later tonight says when it must be at the door
-    if (o.due_at && Date.parse(o.due_at) - Date.parse(o.created_at) > 20 * 60000) {
-      h += '<div class="when when--set">Deliver at ' + esc(arubaTime(o.due_at)) + '</div>';
+    h += '<div class="lv-top"><span class="lv-no">' + esc(o.night_no ? 'Order ' + o.night_no : 'Order · ' + arubaTime(o.created_at)) + '</span>' +
+      (o.test ? '<span class="lv-test">TEST</span>' : '') + '</div>';
+    if (o.test) h += '<div class="lv-testnote">Test order: not a real customer.</div>';
+    h += '<div class="lv-when">Came in ' + esc(arubaTime(o.created_at)) + ' · ' + ago(o.created_at) + '</div>';
+    if (isPre(o)) {
+      h += '<div class="when when--set">Deliver ' + esc(atText(Date.parse(o.due_at))) + '</div>';
+      if (isLater(o, Date.now())) h += '<div class="lv-start">Start cooking ' + esc(atText(startAt(o))) + '</div>';
     }
-    h += '<div class="lv-when">Sent ' + ago(o.created_at) + '</div>';
-    h += o.pay === 'cash'
-      ? '<div class="pay">Pays cash ' + money(o.pays_with_cents) + (o.change_due_cents > 0 ? ' · bring ' + money(o.change_due_cents) + ' change' : ' · no change needed') + '</div>'
-      : '<div class="pay pay--bank">' + (o.transfer_status === 'paid' ? 'Bank transfer · came in' : 'Bank transfer · not in yet') + '</div>';
-    h += '<div class="who">' + esc(o.name) + ' <span class="lv-phone">' + esc(o.phone || '') + '</span></div>';
-    h += '<div class="addr">' + esc(o.address || '') + '</div>';
-    h += '<div class="lv-contact">' + phoneLink(o.phone) + '</div>';
+    h += payLine(o);
     if (o.note) h += '<div class="notebox"><small>Customer note</small>' + esc(o.note) + '</div>';
     h += '</div>';
-    priceWarnings(o).forEach(function (w) { h += '<div class="banner allergy">Check the price: ' + esc(w) + '</div>'; });
     (o.restaurants || []).forEach(function (g) {
       var br = UI.brand(g.slug) || {};
       h += '<div class="brand-h lv-brand" style="background:' + esc(br.accent || '#26406A') + ';color:' + esc(br.ink || '#fff') + '">' +
         '<span>' + esc(g.restaurant) + '</span>' + (g.ready ? '<span class="lv-tick">Ready</span>' : '') + '</div>';
       h += '<ul class="lv-items">' + (g.items || []).map(function (i) {
-        var parts = String(i.name).split(' · ');
-        return '<li><b>' + esc(i.qty) + ' ×</b> <span>' + esc(parts[0]) + (parts.length > 1 ? '<em>' + esc(parts.slice(1).join(' · ')) + '</em>' : '') + '</span></li>';
+        var parts = String(i.name).split(' · '), bad = priceProblem(o, g.slug, i);
+        return '<li' + (bad ? ' class="lv-bad"' : '') + '><b>' + esc(i.qty) + ' ×</b> <span>' + esc(parts[0]) +
+          (parts.length > 1 ? '<em>' + esc(parts.slice(1).join(' · ')) + '</em>' : '') +
+          (bad ? '<strong class="lv-price">' + bad + '</strong>' : '') + '</span></li>';
       }).join('') + '</ul>';
       if (o.status === 'cooking' && !g.ready) {
         h += '<button class="btn go wide lv-big" data-live="ready" data-id="' + esc(o.id) + '" data-slug="' + esc(g.slug) + '"' + (b ? ' disabled' : '') + '>' +
           (single ? 'Food is ready' : esc(g.restaurant) + ' is ready') + '</button>';
       }
     });
-    h += '<div class="lv-total">Food ' + money(o.food_cents) + ' · Delivery ' + money(o.fee_cents) + ' · <b>Total ' + money(o.total_cents) + '</b></div>';
     if (o.status === 'new') {
       h += '<button class="btn primary wide lv-big" data-live="accept" data-id="' + esc(o.id) + '"' + (b ? ' disabled' : '') + '>Accept</button>';
     } else if (o.status === 'accepted') {
-      h += '<button class="btn primary wide lv-big" data-live="cooking" data-id="' + esc(o.id) + '"' + (b ? ' disabled' : '') + '>Start cooking</button>';
+      // a pre-order that isn't due yet can start early, but it isn't the loud next step
+      h += '<button class="btn' + (isLater(o, Date.now()) ? '' : ' primary') + ' wide lv-big" data-live="cooking" data-id="' + esc(o.id) + '"' + (b ? ' disabled' : '') + '>Start cooking</button>';
     } else if (o.status === 'ready') {
       h += '<div class="lv-wait">Ready. Waiting for a driver to take it.</div>';
     } else if (step === 4) {
       h += '<div class="lv-wait">' + (o.status === 'picked_up' ? 'The driver has it.' : 'A driver took it and is coming for the bags.') + '</div>';
     }
     if (step === 1 || step === 2) h += '<button class="btn wide" data-live="cook" data-id="' + esc(o.id) + '">Cook step by step</button>';
+    h += '<div class="lv-total">Food ' + money(o.food_cents) + ' · Delivery ' + money(o.fee_cents) + ' · <b>Total ' + money(o.total_cents) + '</b></div>';
+    h += '<div class="lv-cust"><div class="who">' + esc(o.name) + ' <span class="lv-phone">' + esc(o.phone || '') + '</span></div>' +
+      '<div class="addr">' + esc([o.area, o.address].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="lv-contact">' + phoneLink(o.phone) + '</div></div>';
     var small = '';
-    if (o.pay === 'transfer' && o.transfer_status !== 'paid') small += '<button class="btn small" data-live="paid" data-id="' + esc(o.id) + '">The transfer came in</button>';
+    if (o.pay === 'transfer' && o.transfer_status !== 'paid') small += '<button class="btn small" data-live="paid" data-id="' + esc(o.id) + '"' + (b ? ' disabled' : '') + '>The transfer came in</button>';
     if (step <= 3) small += '<button class="btn small warn" data-live="cancel" data-id="' + esc(o.id) + '">Can’t do this order</button>';
     if (small) h += '<div class="row-btns lv-small">' + small + '</div>';
     return h + '</article>';
+  }
+  // "Kitchen busy?": three big choices in one row. The database adds the minutes to the time new customers see.
+  // With orders to cook the row stays one line (the lit choice says what is on), so a new order's dishes and
+  // Accept stay on the first screen; with nothing to cook a sentence under it says what it does.
+  function busyBox(empty) {
+    var h = '<section class="lv-busy"><div class="lv-busy-row"><h2 id="lv-busy-t">Kitchen busy?</h2><div class="lv-seg" role="group" aria-labelledby="lv-busy-t">';
+    h += [[0, 'Normal'], [15, '+15 min'], [30, '+30 min']].map(function (c) {
+      var on = busyMin === c[0];
+      return '<button class="lv-segb' + (on ? ' on' : '') + '" data-live="busy" data-min="' + c[0] + '" aria-pressed="' + on + '"' + (busySaving ? ' disabled' : '') + '>' + c[1] + '</button>';
+    }).join('') + '</div></div>';
+    var line = !empty ? '' : busySaving ? 'Saving…' : busyMin == null ? 'Checking…'
+      : busyMin ? 'On: new customers see a delivery time ' + busyMin + ' min later. Tap Normal when the rush is over.'
+      : 'Rush on? Tap +15 or +30. New customers see a later delivery time.';
+    return h + (line ? '<p class="lv-busy-p">' + esc(line) + '</p>' : '') + '</section>';
   }
   function draw() {
     if (!onScreen()) return;
     var s = session();
     if (!s) {
-      UI.setBar({ title: 'App orders (test)', sub: 'Sign in once on this phone' });
-      main.innerHTML = HOWTO + '<div class="lv-pin"><h1>Kitchen PIN</h1>' +
+      UI.setBar({ title: 'Orders', sub: 'Sign in once on this phone' });
+      main.innerHTML = '<div class="lv-pin"><h1>Kitchen PIN</h1>' +
         '<p class="muted">Ask Victor for it. You stay signed in on this phone for 12 hours.</p>' +
         '<input id="lv-pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" placeholder="PIN" aria-label="Kitchen PIN">' +
         (pinErr ? '<div class="banner allergy">' + esc(pinErr) + '</div>' : '') +
@@ -291,18 +523,30 @@
       return;
     }
     keepAwake(true);
-    var orders = ((feed && feed.orders) || []).slice().sort(function (a, b) {
-      return (STEP[a.status] - STEP[b.status]) || (Date.parse(a.created_at) - Date.parse(b.created_at));
+    var now = Date.now(), all = (feed && feed.orders) || [];
+    // cook now: by step, then by when it had to start; later tonight: by when to start
+    var soon = all.filter(function (o) { return !isLater(o, now); }).sort(function (a, b) {
+      return (STEP[a.status] - STEP[b.status]) || (startAt(a) - startAt(b));
     });
-    UI.setBar({ title: 'App orders (test)', sub: lastErr ? 'Couldn’t check' + (lastAt ? ' · last good ' + UI.clock(lastAt) : '') : lastAt ? 'Live · checked ' + UI.clock(lastAt) : 'Loading…' });
-    var h = HOWTO;
-    if (lastErr) h += '<div class="banner allergy">Couldn’t check for app orders: ' + esc(lastErr) + ' <button class="btn small" data-live="retry">Try again</button></div>';
+    var later = all.filter(function (o) { return isLater(o, now); }).sort(function (a, b) { return startAt(a) - startAt(b); });
+    var tonight = later.every(function (o) { return !nightWord(Date.parse(o.due_at)); });
+    UI.setBar({ title: 'Orders', sub: lastErr ? 'Couldn’t check' + (lastAt ? ' · last good ' + arubaTime(lastAt) : '') : lastAt ? 'Live · checked ' + arubaTime(lastAt) : 'Loading…' });
+    var h = '';
+    // say it failed, so nobody trusts an old list
+    if (lastErr) h += '<div class="banner allergy">Couldn’t check for orders: ' + esc(lastErr) + ' <button class="btn small" data-live="retry">Try again</button></div>';
+    h += busyBox(!soon.length);
     if (!feed) h += lastErr ? '' : '<p class="loading">Loading orders…</p>';
-    else if (!orders.length) h += '<div class="lv-empty"><b>No orders right now.</b><span>Keep this screen open. New orders beep and show up here by themselves.</span></div>';
-    else h += orders.map(card).join('');
+    else if (!all.length) h += '<div class="lv-empty"><b>No orders right now.</b><span>Keep this screen open. New orders beep and show up here by themselves.</span></div>';
+    else {
+      h += soon.length ? soon.map(card).join('') : '<div class="lv-empty lv-empty--now"><b>Nothing to cook right now.</b></div>';
+      if (later.length) {
+        h += '<section class="lv-later"><h2>' + (tonight ? 'Later tonight' : 'Pre-orders for later') + '</h2><p class="lv-later-p">Each one says when to start cooking.</p>' + later.map(card).join('') + '</section>';
+      }
+    }
     h += '<div class="row-btns lv-out"><button class="btn small" data-live="signout">Sign out on this phone</button></div>';
     main.innerHTML = h;
     foot.innerHTML = '';
+    savePriceOk();
   }
   function paintCount() {
     var el = document.getElementById('liveCount');
@@ -310,16 +554,17 @@
     var n = ((feed && feed.orders) || []).filter(function (o) { return o.status === 'new'; }).length;
     var open = ((feed && feed.orders) || []).length;
     var failed = !!(session() && lastErr);
-    el.textContent = !session() ? 'Sign in with the kitchen PIN' : failed ? 'Couldn’t check for app orders. Tap to try again.'
+    el.textContent = !session() ? 'Sign in with the kitchen PIN' : failed ? 'Couldn’t check for orders. Tap to try again.'
       : !feed ? 'Checking…' : n ? n + ' new order' + (n > 1 ? 's' : '') + ' · tap to accept' : open ? open + ' open order' + (open > 1 ? 's' : '') : 'No orders right now';
     var tile = el.closest('.big-mode');
     if (tile) { tile.classList.toggle('lv-has-new', n > 0 && !failed); tile.classList.toggle('lv-failed', failed); }
   }
 
   window.KitchenLive = {
-    show: function () { loadPrices(); draw(); if (session()) { refresh(); watch(); } },
-    count: function () { paintCount(); }
+    show: function () { loadMenus(); draw(); if (session()) { refresh(); watch(); } },
+    count: function () { paintCount(); },
+    menuSaved: menuSaved
   };
   window.addEventListener('hashchange', function () { if (!onScreen()) keepAwake(false); });
-  if (session()) { loadPrices(); refresh(); watch(); }
+  if (session()) { loadMenus(); refresh(); watch(); }
 })();

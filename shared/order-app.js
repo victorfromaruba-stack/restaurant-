@@ -122,6 +122,9 @@
     var t = e.target, full = t && t.tagName === "IMG" && t.getAttribute("data-full");
     if (full) { t.removeAttribute("data-full"); t.src = full; }
   }, true);
+  // the order form is never sent anywhere: "Go" on a phone keyboard must not reload the page
+  // (a listener, not an inline onsubmit: the pages only allow this site's own script files)
+  document.addEventListener("submit", function (e) { e.preventDefault(); }, true);
   /* names and lines on screen wrap only between words: "stir-fry", "flat-top" and "35–50" never split at the dash,
      and a count like "(3)" stays on the line of the word before it */
   function keep(s) { return esc(s).replace(/ (\(\d+\))/g, "\u00a0$1").replace(/(\S+[-\u2013]\S+)/g, '<span class="nw">$1</span>'); }
@@ -1149,7 +1152,7 @@
       return;
     }
     var areas = (SITE.areas || []).concat([OTHER]);
-    html += '<form class="form" novalidate onsubmit="return false">';
+    html += '<form class="form" novalidate>';
     var ts = timeSlots(), when = validWhen();
     var whenOpts = (ts.asap ? ['<option value=""' + (when === "" ? " selected" : "") + ">" + esc(tr("As soon as possible ({eta})", { eta: SITE.eta || "" })) + "</option>"] : [])
       .concat(ts.slots.map(function (x) { return '<option value="' + esc(x.v) + '"' + (x.v === when ? " selected" : "") + ">" + esc(x.d) + "</option>"; }));

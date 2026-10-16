@@ -154,8 +154,9 @@
       if (food == null) { line.textContent = "ƒ5 delivery is added."; return; }
       var total = food + Pidi.FEE;
       line.textContent = "Food " + Pidi.money(food) + " + ƒ5 delivery = " + Pidi.money(total);
-      if (food < Pidi.MIN_FOOD) {
-        line.textContent = "Add " + Pidi.money(Pidi.MIN_FOOD - food) + " more. Delivery starts at ƒ24. " + line.textContent;
+      // no minimum order since 16 Oct 2026 (MIN_FOOD is 0): this line only shows if a minimum comes back
+      if (Pidi.MIN_FOOD > 0 && food < Pidi.MIN_FOOD) {
+        line.textContent = "Add " + Pidi.money(Pidi.MIN_FOOD - food) + " more. Delivery starts at " + Pidi.money(Pidi.MIN_FOOD) + ". " + line.textContent;
       }
     }
     rest.addEventListener("change", sync);
@@ -233,7 +234,7 @@
       if (!d.items.length) return who + "add an item.";
       if (d.restaurantName === "") return who + "add the restaurant name.";
       if (d._food == null) return who + "add the food total.";
-      if (d._food < Pidi.MIN_FOOD) return who + "add " + Pidi.money(Pidi.MIN_FOOD - d._food) + " more. Delivery starts at ƒ24.";
+      if (Pidi.MIN_FOOD > 0 && d._food < Pidi.MIN_FOOD) return who + "add " + Pidi.money(Pidi.MIN_FOOD - d._food) + " more. Delivery starts at " + Pidi.money(Pidi.MIN_FOOD) + ".";
       if (d.pay === "cash" && (d.paysWith == null)) return who + "add what they pay with.";
     }
     var partner = drops.some(function (d) { return !!d.restaurantName; });

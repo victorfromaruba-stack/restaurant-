@@ -4,6 +4,8 @@
   (WebSite + Organization, named by site.json "name"), never a kitchen
 - the app's name (site.json "name") wherever a static file carries it: the home page title, its og:title and
   logo text, the 404 link, manifest.webmanifest and the titles of checkout/ and order/
+- the security lock on checkout/ and order/: index.html's Content-Security-Policy, with the order database's address
+  (from shared/pidi.js) added to connect-src, since those two pages call it
 - sitemap.xml and robots.txt (checkout/ and order/ are never in the sitemap: they're noindex)
 Run after changing the name, hours, areas, menus or the site address:   python3 build/seo.py
 qa/check_site.py runs  python3 build/seo.py --check  and fails if the pages are out of date."""
@@ -82,6 +84,17 @@ def named(html):
     html = re.sub(r"(<[a-z]+ [^>]*\bdata-oa-app\b[^>]*>)[^<]*(</)", lambda m: m.group(1) + NAME + m.group(2), html)
     return re.sub(r"(<a [^>]*\bdata-oa-go\b[^>]*>Go to )[^<]+(</a>)", lambda m: m.group(1) + NAME + m.group(2), html)
 
+def app_csp(html):
+    # checkout/ and order/ talk to the order database: the home page's security lock, plus that one address in connect-src.
+    # Both come from where they're written: the policy from index.html, the address from shared/pidi.js.
+    policy = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)">', read("index.html")).group(1)
+    db = re.search(r"var URL = '(https://[^']+)'", read("shared/pidi.js")).group(1)
+    policy = re.sub(r"connect-src ([^;]*)", lambda m: "connect-src " + " ".join(dict.fromkeys(m.group(1).split() + [db])), policy, count=1)
+    tag = '<meta http-equiv="Content-Security-Policy" content="' + policy + '">'
+    if 'http-equiv="Content-Security-Policy"' in html:
+        return re.sub(r'<meta http-equiv="Content-Security-Policy" content="[^"]*">', lambda _: tag, html, count=1)
+    return re.sub(r'(<meta name="viewport"[^>]*>\n)', lambda m: m.group(1) + tag + "\n", html, count=1)
+
 def manifest():
     m = json.loads(read("manifest.webmanifest"))
     m["name"] = m["short_name"] = NAME
@@ -91,7 +104,7 @@ def outputs():
     out = {"index.html": named(with_ld(read("index.html"), home_ld())), "404.html": named(read("404.html")),
            "manifest.webmanifest": manifest()}
     for p in ("checkout/index.html", "order/index.html"):   # the app's own pages: "<name> · Checkout" (not in the sitemap)
-        if os.path.exists(os.path.join(ROOT, p)): out[p] = named(read(p))
+        if os.path.exists(os.path.join(ROOT, p)): out[p] = app_csp(named(read(p)))
     for b in brands: out[b + "/index.html"] = with_ld(read(b + "/index.html"), brand_ld(b))
     urls = [BASE] + [BASE + b + "/" for b in brands]
     out["sitemap.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \

@@ -11,11 +11,13 @@ What it proves (pre-launch audit, 16 Oct 2026):
  4. a chosen time reads "Deliver at 10:30 PM"
  5. WhatsApp copy marks and "[22:14, 15/10/2026] Ana: " prefixes are ignored; the receipt finds the restaurant
  6. "Replaces order #..." puts a red banner on the new order and marks the old one; nothing is deleted
- 7. "App orders (test)" comes after "Cook an order" and says when it couldn't check
+ 7. "Orders" (the app's orders, live) is the first tile and "Cook an order" the second; both say when the
+    order database couldn't be checked
  8. the offline cache answers within about 3 s on a slow network, keeps other apps' caches, and has site.json
  9. a Book Keeper 504, a non-JSON 5xx or a dropped connection = "may have arrived, don't send again"
 10. menu editor: fine-grained keys only, a confirm step before Open / Opening soon / Hidden, plain errors
 11. replies use site.json's delivery time, never offer pickup, and count a Family Table as one dish
+12. a Menu-tile save on a phone signed in to Orders goes to the order database at once (it prices the orders)
 Plus: every ticket in qa/wa-samples.json, and fresh tickets built by the customer site's own code for every
 dish of every restaurant, parse to the right cards with the right totals."""
 import asyncio, base64, copy, http.server, json, os, re, sys, tempfile, threading, time
@@ -428,7 +430,7 @@ async def test_matching(browser):
     await ctx.close()
 
 
-# ------------------------------------------------------------------ 7 the App orders tile
+# ------------------------------------------------------------------ 7 the Orders tile
 async def test_live(browser):
     errs = []
 
@@ -442,10 +444,10 @@ async def test_live(browser):
     await open_app(pg)
     await pg.wait_for_function("/Couldn/.test((document.getElementById('liveCount') || {}).textContent || '')", timeout=10000)
     tiles = await pg.evaluate("Array.from(document.querySelectorAll('.home-grid > a')).map(a => a.className.replace('big-mode ', '') + '|' + a.innerText.replace(/\\n/g, ' '))")
-    check(tiles[0].startswith("cook|"), f"[7] 'Cook an order' is the first tile: {tiles[0]!r}")
-    live = next((t for t in tiles if t.startswith("live")), "")
-    check("App orders (test)" in live.replace("APP ORDERS (TEST)", "App orders (test)") and "Website orders come on WhatsApp: use Cook an order." in live,
-          f"[7] the app orders tile says it's a test and where website orders come: {live!r}")
+    check(tiles[0].startswith("live") and tiles[1].startswith("cook|"), f"[7] 'Orders' is the first tile, 'Cook an order' the second: {tiles[:2]!r}")
+    live = tiles[0] if tiles[0].startswith("live") else ""
+    check(live.upper().startswith("LIVE LV-FAILED|ORDERS") and "test" not in live.lower() and "WhatsApp" not in live,
+          f"[7] the Orders tile is the real thing (no test label, no pointer to WhatsApp): {live!r}")
     check("Couldn’t check" in live, f"[7] a failed check says so on the tile instead of an old count: {live!r}")
     await shot(pg, "7-home")
     await shot(pg, "7-home-bottom", bottom=True)
@@ -453,11 +455,11 @@ async def test_live(browser):
     await pg.wait_for_function("/Couldn/.test(document.querySelector('#main').innerText)", timeout=10000)
     body = await text(pg, "#main")
     bar = await text(pg, "#bar")
-    check("Website orders come on WhatsApp" in body and "Couldn’t check" in body and "App orders (test)".upper() in bar.upper(),
-          "[7] the App orders screen says it's a test, points to Cook an order, and shows the failed check")
+    check("Couldn’t check" in body and "ORDERS" in bar.upper() and "test" not in (bar + body).lower(),
+          f"[7] the Orders screen shows the failed check and no test label: {bar!r} / {body[:80]!r}")
     check(all("supabase.co" in u for _, u in calls), "[7] only the (faked) order database was called")
-    await shot(pg, "7-app-orders")
-    check(not errs, "no script errors on App orders" + (f": {errs}" if errs else ""))
+    await shot(pg, "7-orders")
+    check(not errs, "no script errors on Orders" + (f": {errs}" if errs else ""))
     await ctx.close()
 
 
@@ -595,6 +597,73 @@ async def test_menu_editor(browser):
     await ctx.close()
 
 
+# ------------------------------------------------------------------ 12 a Menu-tile save reaches the order database
+async def test_menu_sync(browser):
+    errs, puts, synced = [], [], []
+    session = "test-kitchen-session-" + "0" * 12
+
+    async def fake(route):
+        req = route.request
+        if "api.github.com" in req.url:
+            m = re.search(r"/contents/([^?]+)", req.url)
+            if req.method == "PUT" and m:
+                puts.append((m.group(1), json.loads(req.post_data)))
+                await route.fulfill(status=200, content_type="application/json", body='{"content":{"sha":"new"}}')
+            elif m:
+                raw = open(os.path.join(ROOT, m.group(1)), "rb").read()
+                await route.fulfill(status=200, content_type="application/json",
+                                    body=json.dumps({"sha": "sha-" + m.group(1), "content": base64.b64encode(raw).decode()}))
+            else:
+                await route.fulfill(status=200, content_type="application/json", body="{}")
+            return True
+        m = re.search(r"\.supabase\.co/rest/v1/rpc/([a-z_]+)$", req.url)
+        if not m:
+            return False
+        args = json.loads(req.post_data or "{}")
+        if m.group(1) == "pidi_kitchen_sync_menu":
+            synced.append(args)
+            body = {"ok": True, "skipped": False, "items": len(args.get("items") or [])}
+        elif m.group(1) == "pidi_kitchen_feed":
+            body = {"orders": []}
+        elif m.group(1) == "pidi_public_state":
+            body = {"ok": True, "busy_min": 0, "eta_min": 35, "eta_max": 50}
+        else:
+            return False
+        await route.fulfill(status=200, content_type="application/json", body=json.dumps(body))
+        return True
+    ctx, calls = await new_ctx(browser, fake)
+    pg = await new_page(ctx, errs)
+    await pg.goto(BASE + "robots.txt")
+    await pg.evaluate("""s => { localStorage.setItem('pidi.kitchen.session', JSON.stringify({token: s, expires_at: '2099-01-01T00:00:00Z', topic: 't'}));
+      localStorage.setItem('kitchen.github.v1', JSON.stringify({token: 'github_pat_' + 'x'.repeat(82)})); }""", session)
+    await open_app(pg, "#/menu/taco-brava")
+    await pg.wait_for_selector(".me-row [data-mact=soldout]")
+    for _ in range(60):   # the website's copy of every menu goes first (signed in, nothing sent yet)
+        if len(synced) >= len(brands):
+            break
+        await pg.wait_for_timeout(100)
+    first = list(synced)
+    check(sorted(a["restaurant"] for a in first) == sorted(brands) and all(a["from_save"] is False and a["session"] == session for a in first),
+          f"[12] signed in, the phone sends each restaurant's menu from the website once: {[(a['restaurant'], a['from_save']) for a in first]}")
+    dish = next(i for i in menus["taco-brava"]["items"] if not i.get("soldOut"))
+    await pg.click(f".me-row [data-mact=soldout][data-id='{dish['id']}']")
+    await pg.wait_for_function("/Saved/.test(document.getElementById('toast').textContent)", timeout=10000)
+    for _ in range(30):
+        if len(synced) > len(first):
+            break
+        await pg.wait_for_timeout(100)
+    after = synced[len(first):]
+    row = next((r for a in after for r in (a.get("items") or []) if r["id"] == dish["id"]), None)
+    check(puts and puts[-1][0] == "taco-brava/menu.json" and len(after) == 1 and after[0]["restaurant"] == "taco-brava"
+          and after[0]["from_save"] is True and row and row["soldOut"] is True,
+          f"[12] marking {dish['name']} sold out sends the saved menu to the order database at once: {[(a['restaurant'], a['from_save']) for a in after]}")
+    toast = await text(pg, "#toast")
+    check("Saved" in toast and "few minutes" not in toast, f"[12] the save says Saved (the database took it too): {toast!r}")
+    check(all("api.github.com" in u or ".supabase.co/" in u for _, u in calls), "[12] only the (faked) GitHub and order database were called")
+    check(not errs, "no script errors when a save goes to the order database" + (f": {errs}" if errs else ""))
+    await ctx.close()
+
+
 # ------------------------------------------------------------------ 8 the offline cache
 async def test_sw(browser):
     errs = []
@@ -639,7 +708,7 @@ async def test_sw(browser):
 async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        for t in (test_tickets, test_orders, test_matching, test_live, test_books, test_menu_editor, test_sw):
+        for t in (test_tickets, test_orders, test_matching, test_live, test_books, test_menu_editor, test_menu_sync, test_sw):
             try:
                 await t(browser)
             except Exception as e:   # one broken group must not hide the others

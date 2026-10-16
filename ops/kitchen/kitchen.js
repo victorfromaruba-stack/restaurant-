@@ -701,9 +701,12 @@
     setBar({ title: 'Kitchen', sub: niceDate(), home: false });
     var open = loadOrders().filter(function (o) { return !o.closed; });
     var pc = countTicks('prep'), cc = countTicks('close');
-    // Website orders arrive on WhatsApp and are cooked from "Cook an order", so that tile comes first.
+    // Orders from the app come in by themselves, so that tile comes first. "Cook an order" is for an order
+    // pasted from WhatsApp (a customer who wrote instead of using the app) or picked by hand.
     main.innerHTML = '<div class="home-grid">' +
-      '<a class="big-mode cook" href="#/cook"><b>Cook an order</b><span>Paste the WhatsApp order, or pick dishes</span>' +
+      '<a class="big-mode live" href="#/live"><b>Orders</b><span>New orders from the app come in here by themselves</span>' +
+      '<span class="count" id="liveCount"></span></a>' +
+      '<a class="big-mode cook" href="#/cook"><b>Cook an order</b><span>Paste a WhatsApp order, or pick dishes</span>' +
       (open.length ? '<span class="count">' + open.length + ' open order' + (open.length > 1 ? 's' : '') + '</span>' : '') + '</a>' +
       '<a class="big-mode prep" href="#/prep"><b>Prep</b><span>Night before, morning, before you open</span>' +
       '<span class="count">' + pc.done + ' of ' + pc.total + ' done today</span></a>' +
@@ -712,8 +715,6 @@
       '<a class="big-mode books" href="#/receipts"><b>Receipts</b>' +
       '<span>Bought something? Take a photo of the shop receipt. It goes into Book Keeper.</span></a>' +
       '<a class="big-mode menu" href="#/menu"><b>Menu</b><span>Sold out, prices, photos, new dishes on the website</span></a>' +
-      '<a class="big-mode live" href="#/live"><b>App orders (test)</b><span>Website orders come on WhatsApp: use Cook an order.</span>' +
-      '<span class="count" id="liveCount"></span></a>' +
       '</div>';
     foot.innerHTML = '';
     if (window.KitchenLive) window.KitchenLive.count(document.getElementById('liveCount'));
@@ -918,15 +919,18 @@
   function brandOf(id) { return BRAND[id] || { id: id, name: String(id || ''), accent: '#26406A', ink: '#FFFFFF' }; }
   function modeText(o) { return o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery · area not in the message'; }
   function orderHead(o, noMode) {
-    var h = '<div class="ohead">' + (noMode ? '' : '<div class="mode">' + esc(modeText(o)) + '</div>');
+    var h = '<div class="ohead' + (o.test ? ' is-test' : '') + '">' + (o.test ? '<span class="badge badge--test">TEST order · not a real customer</span>' : '') +
+      (noMode ? '' : '<div class="mode">' + esc(modeText(o)) + '</div>');
     // the customer picked a delivery time: that's when it must be at the door
     if (o.time) h += '<div class="when' + (/possible|asap/i.test(o.time) ? '' : ' when--set') + '">' + (/possible|asap/i.test(o.time) ? 'As soon as possible' : 'Deliver at ' + esc(o.time)) + '</div>';
     if (o.preorder) h += '<span class="badge">PRE-ORDER · sent while closed</span>';
     if (o.pickup) h += '<div class="notebox allergy"><small>Check with the customer</small>The message says pickup. We only deliver.</div>';
-    if (o.pay && o.pay !== '-') {   // the website ticket says "Pay: Cash" or "Pay: Bank transfer"
-      var bank = /bank|transfer/i.test(o.pay);
-      h += '<div class="pay' + (bank ? ' pay--bank' : '') + '">' + (bank ? 'Pays by bank transfer · check it came in'
-        : /cash/i.test(o.pay) ? 'Pays cash to the driver' + (o.total ? ' · <span class="fl">\u0192' + esc(o.total) + '</span>' : '') : 'Pays: ' + esc(o.pay)) + '</div>';
+    if (o.pay && o.pay !== '-') {   // the ticket says "Pay: Cash", "Pay: Cash in US dollars" or "Pay: Bank transfer"
+      var bank = /bank|transfer/i.test(o.pay), usd = /dollar|\busd\b|\bus\$/i.test(o.pay);
+      var sum = o.total ? ' · <span class="fl">\u0192' + esc(o.total) + '</span>' + (usd ? ' total' : '') : '';
+      h += '<div class="pay' + (bank ? ' pay--bank' : '') + '">' + (bank ? (/came in|\bpaid\b/i.test(o.pay) ? 'Paid by bank transfer · it came in' : 'Pays by bank transfer · check it came in')
+        : usd ? 'Pays in US dollars to the driver' + sum
+        : /cash/i.test(o.pay) ? 'Pays cash to the driver' + sum : 'Pays: ' + esc(o.pay)) + '</div>';
     }
     if (o.name) h += '<div class="who">' + esc(o.name) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div>';
     if (o.address) h += '<div class="addr">' + esc(o.address) + '</div>';
@@ -1057,13 +1061,13 @@
     lines.forEach(function (l) { var b = foodBrand(l); if (b && brands.indexOf(BRAND[b].name) < 0) brands.push(BRAND[b].name); });
     var sub = o.subtotalC != null ? o.subtotalC : lines.reduce(function (t, l) { return t + l.price; }, 0);
     var fee = o.feeC != null ? o.feeC : 0;
-    // like a delivery app's receipt: Order Aruba on top, the restaurant under it, and that restaurant's WhatsApp number
+    // like a delivery app's receipt: the app (Pidi) on top, the restaurant under it, and that restaurant's WhatsApp number
     var one = o.brandId && BRAND[o.brandId] ? o.brandId : null;
     if (!one) lines.forEach(function (l) { if (!one) one = foodBrand(l); });
     var conf = one && (SITE.brands || []).filter(function (b) { return b.id === one; })[0];
     if (!brands.length && one) brands = [BRAND[one].name];
     var area = (o.area || '').replace(/\s*\(please confirm\)/i, '');
-    return { no: o.no || '', when: o.created, brands: brands, biz: SITE.name || 'Order Aruba',
+    return { no: o.no || '', when: o.created, brands: brands, biz: SITE.name || 'Pidi',
       wa: (conf && conf.whatsapp) || SITE.whatsapp || '', mode: o.mode || area ? 'Delivery' + (area ? ' \u00b7 ' + area : '') : '',
       name: o.name || '', lines: lines.map(function (l) { return { q: l.qty, n: l.raw, p: l.price, d: (l.includes || []).concat(l.mods || []) }; }),
       sub: sub, fee: fee, feeLabel: 'Delivery', total: o.totalC != null ? o.totalC : sub + fee,

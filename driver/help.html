@@ -5,34 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#12143A">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Pidi">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <title>Pidi help</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/app.css">
+  <!-- The driver app moved to v2/ (10 Oct 2026). This old address sends the phone on, keeping ?… and #…. -->
+  <script>location.replace("v2/help.html" + location.search + location.hash);</script>
+  <meta http-equiv="refresh" content="0; url=v2/help.html">
+  <style>html, body { margin: 0; background: #12143A; color: #F4F5FB; font: 18px/1.4 system-ui, sans-serif; } p { margin: 0; padding: 24px 16px; } a { color: #DCE0FF; font-weight: 700; }</style>
 </head>
 <body>
-  <header class="top">
-    <a href="index.html"><img class="wordmark" src="brand/wordmark.svg" alt="Pidi"></a>
-    <a class="help-link" href="index.html">Home</a>
-  </header>
-  <main>
-    <h1>Help</h1>
-    <p>Hand the food over at the door. Don't go inside.</p>
-    <p>If a place feels wrong, leave.</p>
-    <div class="row">
-      <a class="btn" href="tel:911">Call 911</a>
-      <a class="btn secondary" href="tel:100">Police 100</a>
-    </div>
-    <p><a class="btn" href="https://wa.me/2977477794?text=I%20need%20help%20on%20a%20Pidi%20run.">WhatsApp +297 747 7794</a></p>
-    <p class="quiet">If the screen locks, the phone stops sharing from the browser. In WhatsApp, use the paperclip, then Location, then Share live location.</p>
-  </main>
-  <script src="js/words.js"></script>
-  <script src="js/app.js"></script>
-  <script>Pidi.registerSW(); Pidi.watchSignal();</script>
+  <p>Opening the Pidi driver app. <a href="v2/help.html">Tap here</a> if it doesn’t open.</p>
 </body>
 </html>

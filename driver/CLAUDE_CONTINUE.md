@@ -1,10 +1,12 @@
 # Pidi driver app, handoff
 
-Plain HTML, CSS and JS in `/driver/`. No build step, no framework, no accounts, no backend. The customer site and the chef app are owned by another tool. Do not edit anything outside `/driver/` unless Victor asks.
+Plain HTML, CSS and JS in `/driver/`. No build step, no framework. The customer site and the chef app are owned by another tool. Do not edit anything outside `/driver/` unless Victor asks.
+
+v1 (this folder's `index.html`) is the live driver app. v2 is prepared in `/driver/v2/` and is not live. Do not merge it, and do not change v1, until Victor's Supabase project is connected. Read `/driver/v2/README.md`.
 
 Live: https://victorfromaruba-stack.github.io/restaurant-/driver/
 
-Pidi Blue is `#2D3BE8`. Night background is Pidi Ink `#12143A`. The wordmark, icons and "X by Pidi" logos are the real files in `brand/`. Payment is cash or bank transfer only. Currency is the Aruban florin (ƒ). Rules in the app: ƒ24 food before the fee, ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp is +297 747 7794 (`2977477794`).
+Pidi Blue is `#2D3BE8`. Night background is Pidi Ink `#12143A`. The wordmark, icons and "X by Pidi" logos are the real files in `brand/`. Payment is cash or bank transfer only. Currency is the Aruban florin (ƒ). Rules in the app: no minimum order (since 16 Oct 2026; `MIN_FOOD` is 0), ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp is +297 747 7794 (`2977477794`).
 
 ## 1. Screens
 
@@ -16,7 +18,7 @@ Pidi Blue is `#2D3BE8`. Night background is Pidi Ink `#12143A`. The wordmark, ic
 | Drop | `run.html` | One drop at a time, up to 2. Name, area, money box, then Google Maps, Waze, Call and WhatsApp (those four sit above the Delivered bar on a 390×664 phone). Address, note and items follow. Every step starts at the top. One button: Delivered. |
 | Run done | `run.html` | Cash collected on this run. Button: Count the cash. |
 | Cash count | `cash.html` | Sum of delivered cash drops for this service night, across every run on the phone. Transfer drops are listed as awaiting or paid, and they add ƒ0. Type the florins counted, then Compare. A match says "It matches." A gap under ƒ9 is "Small difference, noted." ƒ9 to ƒ36 is "Check within 24 hours." Over ƒ36 is "Check now." |
-| Send a run | `dispatch.html` | Form for one pickup and one or two drops. Checks the ƒ24 food floor and adds ƒ5. "Send to driver on WhatsApp" opens `wa.me` with the run link. Default number is 2977477794. Copy and "Open this run on this phone" are there too. |
+| Send a run | `dispatch.html` | Form for one pickup and one or two drops. Adds ƒ5 (no minimum order since 16 Oct 2026). "Send to driver on WhatsApp" opens `wa.me` with the run link. Default number is 2977477794. Copy and "Open this run on this phone" are there too. |
 | Help | `help.html` | Hand over at the door. Call 911, police 100, WhatsApp the order number. |
 | Install | `install/index.html` | iPhone: Safari, Share, Add to Home Screen. Android: Chrome menu, Install app. A computer shows a QR code of the install page. TestFlight and the Android file are not built yet. |
 
@@ -39,7 +41,7 @@ Buttons are at least 56px. One primary action sits in the bottom bar.
 | `tests/test_run.json` | The TEST order |
 | `tests/flow.py` | Playwright flow on iPhone 13 and Pixel 7 |
 | `TEST_RUN.txt` | The ready-made live link |
-| `V2_NOTES.md` | Backend, native apps, live sync. Not built. |
+| `V2_NOTES.md` | Earlier backend notes. The build that replaces them is `/driver/v2/`. |
 
 Storage key: `localStorage["pidi.driver.v1"]`. Shape: `{ v, runs: { [id]: record } }`. A record keeps the payload, `step` (`intro`, `pickup`, `drop`, `done`), `dropIndex`, `pickedUpAt`, `deliveredAt[]`, `night`, `receivedAt`. Opening the same id with the same payload keeps the step. A changed payload replaces it. The service night is Aruba time (UTC−4) minus 8 hours, so 12:30 AM still counts as the night before. `Pidi.serviceNight()` does that.
 
@@ -109,7 +111,7 @@ Money is integer florin cents. Pins are strings, so `12.5696` is not turned into
 | `drops[].area` `note` | no | |
 | `drops[].items[]` | at least one | `{ name, qty }` |
 | `drops[].pay` | yes | `cash` or `transfer` |
-| `drops[].food` `fee` `total` | `total` required | Cents. Dispatcher sets `fee` to 500 and `total` to food + fee. Food must be at least 2400 before send. |
+| `drops[].food` `fee` `total` | `total` required | Cents. Dispatcher sets `fee` to 500 and `total` to food + fee. No minimum since 16 Oct 2026 (`Pidi.MIN_FOOD` is 0). |
 | `drops[].paysWith` | cash only | Cents they hand over. Change = paysWith − total. |
 | `drops[].transfer` | transfer only | `awaiting` (default) or `paid`. No cash is collected. |
 
@@ -151,11 +153,13 @@ Needs Playwright (`playwright` Python package and Chromium).
 
 ## 4. What is missing
 
-v1 is one phone and a link. Nothing syncs. Details are in `V2_NOTES.md`. Short version:
+v1 is one phone and a link. It stays that way until Supabase is connected.
 
-1. **Supabase** (a new project in Victor's account, not Book Keeper). Tables for pickup points, restaurants, staff, orders, order events, runs, run stops, offers, driver positions, cash-ups. Auth is a 6-digit PIN for staff. Realtime for new runs and status. Row-level security so a driver only sees their own run. No service-role key in this public repo. Do not create the project or spend money until Victor says so.
-2. **Native apps.** Capacitor can wrap this `/driver/` folder. Android: a signed APK, later Play internal testing. iPhone: TestFlight, which needs Victor's Apple Developer account ($99/year). Signing keys stay out of the repo. The install page should then point Android at the APK and iPhone at the TestFlight invite. Background GPS and a locked-screen offer need the native app. The web app cannot do that.
-3. **Live sync** with the chef app (`ops/kitchen/`) and the customer site. Today the chef pastes WhatsApp and the customer sends WhatsApp. v2 writes one order row at Send, the chef accepts it, and the driver offer is the same row. Until that exists, keep using the run link.
+v2 is written and waiting. It lives in `/driver/v2/`. The database is the live bookkeeping project (`https://cdkopyphjvfxjqhasrae.supabase.co`). Victor pastes `driver/v2/supabase/PIDI_SETUP.sql` once. That file creates only `public.pidi_*` objects. It must not be replaced with the old migration (that one created roles, schemas, and Edge Functions). There is no service role and no Edge Function.
+
+Apply in this order: SQL first, then the PIN seed he edits in the SQL editor, then put the URL and anon key in `driver/v2/config.js` and commit it. Never commit a service role key or a signing JWK (those are not used). Empty `anonKey` keeps the "not connected" screen. v2 also stays off until `pidi_ping()` answers. Do not link v2 from v1. Steps are in `/driver/v2/README.md`. The paste-ready prompt for the kitchen app and the customer site is `/driver/v2/CLAUDE_REALTIME_PROMPT.md`. Do not edit `/ops/kitchen/` or the customer site from the driver task.
+
+Still not built: native TestFlight and APK (Capacitor wrapping `/driver/`, keys out of the repo), a second person at the cash count, a float, and a US dollar rate.
 
 Also not in v1: a second person at the cash count, a float, US dollar rate (Victor has not set one), masked phone numbers, in-app turn-by-turn, proof photos, customer PIN, SOS to a dispatch screen.
 
@@ -166,9 +170,9 @@ Paste this:
 ```
 You are continuing the Pidi driver app in /driver/ of victorfromaruba-stack/restaurant-. Read /driver/CLAUDE_CONTINUE.md and /driver/V2_NOTES.md first. The app is vanilla HTML/CSS/JS with no build step. Do not edit any file outside /driver/ unless Victor explicitly asks. Do not create accounts, Supabase projects, or store listings, and do not spend money.
 
-Pidi is the name (capital P, rest lowercase). Pidi Blue is #2D3BE8. Payment is cash or bank transfer only. ƒ24 food minimum, ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp 2977477794. The five restaurants are Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In and Oranje Snack. A partner pickup is allowed in the data (restaurantName) but has no logo yet.
+Pidi is the name (capital P, rest lowercase). Pidi Blue is #2D3BE8. Payment is cash or bank transfer only. No minimum order, ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp 2977477794. The five restaurants are Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In and Oranje Snack. A partner pickup is allowed in the data (restaurantName) but has no logo yet.
 
 The driver UI stays one step per screen, big buttons (56px), plain words, restaurant logos, no internal codes on screen. Run links are a base64url JSON hash documented in CLAUDE_CONTINUE.md. Keep tests/flow.py passing on the live URL with Playwright device profiles iPhone 13 and Pixel 7. Bump the CACHE name in sw.js when you change cached files. The service worker scope must stay the /driver/ folder only.
 
-Victor's next real gap is a shared backend so the chef app and this driver app see the same order. Design it as in V2_NOTES.md, but wait for his Supabase URL and publishable key before wiring it. Native TestFlight and APK come after that, by wrapping /driver/ with Capacitor, keys kept out of the repo.
+v2 is already in /driver/v2/ and must stay unmerged until a test order has gone through the bookkeeping database. The only SQL to paste is driver/v2/supabase/PIDI_SETUP.sql. It may create only public.pidi_* objects. Do not create roles, schemas, extensions, or Edge Functions, and do not alter any object that is not pidi_. Put the URL and anon key in driver/v2/config.js and commit that file. Never commit a service role key or a signing JWK. Do not change v1 behaviour. The kitchen feed and the customer checkout are specified in /driver/v2/CLAUDE_REALTIME_PROMPT.md. Those folders belong to another tool. Native TestFlight and APK come after the live orders work, by wrapping /driver/ with Capacitor, keys kept out of the repo.
 ```

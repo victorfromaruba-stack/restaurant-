@@ -14,3 +14,6 @@ exclude:
   - driver/TEST_RUN.txt
   - driver/setup/
   - driver/tests/
+  - driver/v2/README.md
+  - driver/v2/CLAUDE_REALTIME_PROMPT.md
+  - driver/v2/supabase/
