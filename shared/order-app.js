@@ -141,7 +141,7 @@
     if (MENU[id]) return Promise.resolve(MENU[id]);
     if (!pending[id]) {
       pending[id] = getJSON(id + "/menu.json").then(function (m) {
-        m.byId = {};
+        m.byId = Object.create(null);   // "#d=constructor" is never a dish
         m.items.forEach(function (it) { m.byId[it.id] = it; });
         MENU[id] = m;
         delete failed[id];
@@ -207,7 +207,7 @@
     for (var k = 0; k < wins.length; k++) {
       var x = wins[k];
       if (now >= x.o && now < x.cut) {
-        // No closing or last-orders time on screen until the permit is confirmed (Victor, 9 Oct): only when we open.
+        // No closing or last-orders time on screen (Victor, 9 Oct 2026): only when we open.
         var opens = clock(((x.o % 1440) + 1440) % 1440);
         return { open: true, soon: false, lastOrder: "", last: false,
           label: tr("Open now"), sub: tr("Late night from {time}", { time: opens }) };
@@ -238,7 +238,9 @@
     if (!(s && s.v === 2 && Array.isArray(s.lines))) s = memState || blank();
     if (KEY === MIX_KEY) absorb(s);
     s.mode = "delivery";   // delivery only (Victor, 9 Oct 2026)
-    s.lines = s.lines.filter(function (l) { return ALLOWED.indexOf(l.b) >= 0; });
+    // a damaged or hand-edited saved order never stops the page: only real lines, whole numbers
+    s.lines = s.lines.filter(function (l) { return l && typeof l === "object" && typeof l.k === "string" && ALLOWED.indexOf(l.b) >= 0; });
+    s.lines.forEach(function (l) { l.q = Math.max(0, Math.min(MAX_QTY, Math.floor(+l.q) || 0)); l.p = Math.max(0, Math.round(+l.p) || 0); });
     return s;
   }
   /* For a few hours on 9 Oct 2026 every restaurant had its own order (order.<id>.v1). A mix restaurant's
@@ -281,10 +283,11 @@
       return true;
     });
     if (s.sentAt && Date.now() - s.sentAt > SENT_KEEP) { retire(s); changed = true; }
+    if (s.when && Date.now() - (s.updated || 0) > 12 * 3600 * 1000) { s.when = ""; changed = true; }   // a slot picked on another night
     if (changed) writeStore(s, true);
   }
   /* the sent order is already saved as "Order again"; empty the bag and forget its number */
-  function retire(s) { s.lines = []; s.no = ""; s.sentAt = 0; s.note = ""; s.when = ""; }
+  function retire(s) { s.lines = []; s.no = ""; s.sentAt = 0; s.note = ""; s.when = ""; s.replaces = ""; }
   function commit() { writeStore(state); }
   window.addEventListener("storage", function (e) { if (KEY && e.key === KEY) { reload(); emit(); } });
 
@@ -343,15 +346,18 @@
   function addItem(b, id, opts, qty) {
     var menu = MENU[b], item = menu && menu.byId[id];
     if (!item || isOut(menu, item) || brandStatus(b) !== "open" || ALLOWED.indexOf(b) < 0) return null;
+    qty = Math.floor(+qty || 1);
+    if (qty < 1) return null;
     var o = normOpts(item, opts || {});
     var drink = item.kind === "drink";
     var k = drink ? "drink|" + id : lineKey(b, id, o);
     var s = S();
     if (s.sentAt) { retire(s); freshStart = true; }
     var line = s.lines.filter(function (l) { return l.k === k; })[0];
-    if (line) line.q = Math.min(MAX_QTY, line.q + (qty || 1));
+    if (line && line.q >= MAX_QTY) { line.full = true; return line; }
+    if (line) { line.q = Math.min(MAX_QTY, line.q + qty); line.full = false; }
     else {
-      line = { k: k, b: b, id: id, q: Math.min(MAX_QTY, qty || 1), o: o, d: describe(item, o), n: item.name, p: unitPrice(item, o) };
+      line = { k: k, b: b, id: id, q: Math.min(MAX_QTY, qty), o: o, d: describe(item, o), n: item.name, p: unitPrice(item, o) };
       if (drink) line.dr = true;
       if (item.includes) line.inc = includesNames(menu, item);
       s.lines.push(line);
@@ -375,11 +381,13 @@
     commit();
   }
   function refreshLines(b) {
-    var s = S(), menu = MENU[b], changed = false;
+    var s = S(), menu = MENU[b], changed = false, dropped = false;
+    var closed = brandStatus(b) !== "open";   // switched to "opening soon" or hidden since the dish went in
     s.lines.forEach(function (l) {
       if (l.b !== b) return;
       var item = menu.byId[l.id];
-      if (!item) { if (!l.gone) { l.gone = true; changed = true; } return; }
+      if (!item) { if (!l.gone) { l.gone = true; changed = true; if (!s.sentAt) dropped = true; } return; }
+      if (!!l.closed !== closed) { l.closed = closed; changed = true; }
       var o = normOpts(item, l.o), p = unitPrice(item, o);
       if (l.n !== item.name || l.p !== p || l.gone) { l.n = item.name; l.p = p; l.gone = false; changed = true; }
       l.d = describe(item, o);
@@ -388,6 +396,8 @@
       if (!!l.soldOut !== out) { l.soldOut = out; changed = true; }
     });
     if (changed) commit();
+    // a dish taken off the menu leaves the order: say so once, so it doesn't just vanish
+    if (dropped) setTimeout(function () { toast(tr("A dish in your order is no longer on the menu, so it was taken out.")); }, 600);
   }
   function liveLines() { return S().lines.filter(function (l) { return !l.gone && l.q > 0; }); }
   function count() { return liveLines().reduce(function (n, l) { return n + l.q; }, 0); }
@@ -470,6 +480,7 @@
     out.push("Delivery · " + (s.area ? s.area + (s.area === OTHER ? " (please confirm)" : "") : "area not set"));
     out.push("Time: " + (validWhen() || "As soon as possible"));
     if (!shopStatus().open) out.push("Pre-order: sent while you were closed");
+    if (s.replaces && s.replaces !== s.no) out.push("Replaces order #" + s.replaces);
     out.push("");
     function put(l) {
       out.push(l.q + " × " + l.n + " — " + money(l.q * l.p));
@@ -662,6 +673,7 @@
     var it = itemFrom(btn);
     if (!it) return;
     var line = addItem(it.b, it.id, {}, 1);
+    if (line && line.full) { toast(tr("{n} is the most for one dish", { n: MAX_QTY })); return; }
     if (line) {
       toast(addedMsg(tr("{name} added", { name: line.n })));
       bump();
@@ -683,11 +695,11 @@
     var o = normOpts(item, {}), qty = 1;
     var groups = (item.options || []).map(function (g) {
       var type = g.type === "one" ? "radio" : "checkbox";
-      return '<fieldset class="opt"><legend>' + esc(g.label) + (g.type === "one" ? "" : " <span>" + esc(tr("optional")) + "</span>") + '</legend><div class="chips">' +
+      return '<fieldset class="opt"><legend>' + esc(tr(g.label)) + (g.type === "one" ? "" : " <span>" + esc(tr("optional")) + "</span>") + '</legend><div class="chips">' +
         g.choices.map(function (c) {
           var on = g.type === "one" ? o[g.id] === c.id : false;
           return '<label class="chip"><input type="' + type + '" name="g-' + esc(g.id) + '" value="' + esc(c.id) + '"' + (on ? " checked" : "") + ">" +
-            "<span>" + esc(c.label) + (c.price ? " +" + shortMoney(c.price) : "") + "</span></label>";
+            "<span>" + esc(tr(c.label)) + (c.price ? " +" + shortMoney(c.price) : "") + "</span></label>";
         }).join("") + "</div></fieldset>";
     }).join("");
     var pairs = (item.kind === "side" || item.kind === "drink") ? [] :
@@ -782,7 +794,8 @@
         return;
       }
       if (e.target.closest("[data-new]")) { clearOrder(); toast(tr("New order started")); if (node._mode === "sheet") closeSheet(); return; }
-      if (e.target.closest("[data-edit]")) { S().sentAt = 0; commit(); return; }
+      // the corrected order goes out with a new number, and says which one it replaces, so it isn't cooked twice
+      if (e.target.closest("[data-edit]")) { var se = S(); if (se.no) se.replaces = se.no; se.sentAt = 0; commit(); return; }
     });
     node.addEventListener("input", function (e) {
       var f = e.target.getAttribute("data-f");
@@ -872,7 +885,8 @@
       node.innerHTML = head + '<div class="sent"><div class="sent__icon">' + ICON.wa + "</div>" +
         '<p class="sent__k">' + esc(tr("Order #{no}", { no: s.no })) + "</p>" +
         "<h3>" + esc(tr("One more step: press Send in WhatsApp")) + "</h3>" +
-        "<p>" + tr("Your order is typed out in the chat. Once you press <b>Send</b>, we reply on WhatsApp to confirm it.") + "</p>" +
+        "<p>" + (shopStatus().open ? tr("Your order is typed out in the chat. Once you press <b>Send</b>, we reply on WhatsApp to confirm it.")
+          : tr("Your order is typed out in the chat. Once you press <b>Send</b>, we confirm it on WhatsApp when we open.")) + "</p>" +
         '<a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa + "<span>" + esc(tr("Open WhatsApp again")) + "</span></a>" +
         '<button type="button" class="btn btn--line" data-new>' + esc(tr("Start a new order")) + "</button>" +
         '<button type="button" class="link" data-edit>' + esc(tr("Edit this order")) + "</button></div>";
@@ -898,7 +912,8 @@
         return '<li class="line">' + pic +
           '<div class="line__main"><p class="line__n">' + keep(l.n) + "</p>" +
           (extra ? '<p class="line__d">' + esc(extra) + "</p>" : "") +
-          (l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
+          (l.closed ? '<p class="line__d line__d--warn">' + esc(tr("Not taking orders right now. Please remove.")) + "</p>"
+            : l.soldOut ? '<p class="line__d line__d--warn">' + esc(tr("Sold out today. Please remove.")) + "</p>" : "") +
           '<p class="line__t">' + money(l.p * l.q) + "</p></div>" +
           '<div class="qty"><button type="button" class="qty__b" data-line="' + esc(l.k) + '" data-d="-1" aria-label="' + esc(tr(l.q === 1 ? "Remove {name}" : "One less {name}", { name: l.n })) + '">' + ICON.minus + "</button>" +
           '<span class="qty__n">' + l.q + "</span>" +
@@ -937,6 +952,7 @@
         payOptions().map(function (p) {
           return '<label class="chip"><input type="radio" name="oa-pay" value="' + esc(p) + '"' + (s.pay === p ? " checked" : "") + errAttrs("pay") + "><span>" + esc(tr(p)) + "</span></label>";
         }).join("") + "</div>" + (SITE.payment ? '<p class="field__help">' + esc(clean(tr(SITE.payment))) + "</p>" : "") +
+        (/bank|transfer/i.test(s.pay || "") ? '<p class="field__help">' + esc(tr("We send the bank details on WhatsApp when we confirm.")) + "</p>" : "") +
         err("pay", tr("Pick how you\u2019ll pay.")) + "</fieldset>" : "") +
       "</form>";
     // the mix perk, said where the money is: one order across restaurants, one delivery fee
@@ -954,6 +970,7 @@
       '<div class="order__send"><a class="btn btn--wa" data-send href="#" target="_blank" rel="noopener">' + ICON.wa +
       '<span class="lg">' + esc(tr("Send on WhatsApp")) + '</span><span class="sm">' + esc(tr("Send order")) + '</span><span class="btn__total">' + money(total()) + "</span></a></div>";
     node.innerHTML = html;
+    node._drawn = { open: st.open, when: validWhen() };   // what the customer saw, checked again on Send
     wireSend(node);
     if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-send]");
   }
@@ -1007,8 +1024,22 @@
     updateSend(node);
     a.addEventListener("click", function (e) {
       if (!liveLines().length) { e.preventDefault(); return; }
+      if (a._at && Date.now() - a._at < 2500) { e.preventDefault(); return; }   // a double tap sends one order, not two
       if (!S().sentAt && !validate(node)) { e.preventDefault(); return; }
+      if (liveLines().some(function (l) { return l.closed; })) { e.preventDefault(); toast(tr("Remove the dishes we can\u2019t take right now first")); return; }
       if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast(tr("Remove the sold-out dish first")); return; }
+      // the sheet was drawn while open and ordering has stopped since (or the picked time is gone): show the new
+      // situation instead of sending a pre-order for another night the customer never saw
+      if (!S().sentAt && node._drawn && (node._drawn.open !== shopStatus().open || node._drawn.when !== validWhen())) {
+        e.preventDefault();
+        var was = node._drawn.open, now = shopStatus().open;
+        renderOrder(node);
+        toast(was && !now ? tr("We just stopped taking orders for now. Check the time and send again.")
+          : !was && now ? tr("We\u2019re open now. Check the time and send again.")
+          : tr("That time has passed. Pick a new time and send again."));
+        return;
+      }
+      a._at = Date.now();
       if (!S().sentAt) { S().no = newOrderNo(); writeStore(S(), true); }   // number = the minute it's sent
       var link = checkoutLink();
       a.href = link.url;
@@ -1102,7 +1133,7 @@
   function howNote() {
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
     var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().getDay()]];
-    // no closing or last-orders time on screen until the permit is confirmed (Victor, 9 Oct 2026)
+    // no closing or last-orders time on screen (Victor, 9 Oct 2026)
     var hours = same ? tr("Every night from {time}.", { time: clock(mins(h[0])) })
       : today ? tr("Late night from {time}", { time: clock(mins(today[0])) }) + "." : tr("Closed today.");
     var many = PAGE === "hub" ? mixGroup().length > 1 : ALLOWED.length > 1;
@@ -1433,11 +1464,12 @@
       return add.join(" ");
     }
     var all = [], seenDrink = {};
-    ids.forEach(function (b) {
+    // open restaurants first; one opening soon is still found ("fried rice" finds Dushi Wok, marked Opening soon)
+    ids.filter(function (b) { return brandStatus(b) === "open"; }).concat(ids.filter(function (b) { return brandStatus(b) === "soon"; })).forEach(function (b) {
       var m = MENU[b];
-      if (!m || brandStatus(b) !== "open") return;
+      if (!m) return;
       m.items.forEach(function (i) {
-        if (i.kind === "drink") { if (seenDrink[i.id]) return; seenDrink[i.id] = 1; }
+        if (i.kind === "drink") { if (brandStatus(b) !== "open" || seenDrink[i.id]) return; seenDrink[i.id] = 1; }
         all.push({ b: b, i: i,
           name: norm(i.name + " " + extra(i.name) + (i.kind === "drink" ? " drink soda can" : "")),
           rest: norm([m.name, m.cuisine].join(" ")),
@@ -1455,7 +1487,7 @@
         if (!s1) return 0;
         sc += s1;
       }
-      return sc + (x.i.style === "signature" ? 0.5 : 0) - (x.i.kind === "drink" ? 0.3 : 0);
+      return sc + (x.i.style === "signature" ? 0.5 : 0) - (x.i.kind === "drink" ? 0.3 : 0) - (brandStatus(x.b) !== "open" ? 3 : 0);
     }
     var t;
     function chips() {
@@ -1548,11 +1580,11 @@
   /* home page cards open the dish on its own restaurant's page: each restaurant is its own order */
   function dishLink(b, item) { return path(b + "/#d=" + encodeURIComponent(item.id)); }
   function linkRowHTML(b, item) {
-    var m = MENU[b], out = isOut(m, item), pic = hasPic(item);
-    return '<a class="row row--link' + (out ? " is-out" : "") + (pic ? "" : " row--np") + '" href="' + esc(dishLink(b, item)) + '">' +
+    var m = MENU[b], out = isOut(m, item), pic = hasPic(item), soon = brandStatus(b) !== "open";
+    return '<a class="row row--link' + (out || soon ? " is-out" : "") + (pic ? "" : " row--np") + '" href="' + esc(dishLink(b, item)) + '">' +
       '<div class="row__text"><p class="row__brand">' + esc(m.name) + "</p>" +
         '<h3 class="row__name">' + keep(item.name) + "</h3>" +
-        '<p class="row__price">' + money(item.price) + (out ? ' <span class="row__out">' + esc(tr("Sold out today")) + "</span>" : "") + "</p>" +
+        '<p class="row__price">' + money(item.price) + (soon ? ' <span class="row__out">' + esc(tr("Opening soon")) + "</span>" : out ? ' <span class="row__out">' + esc(tr("Sold out today")) + "</span>" : "") + "</p>" +
         (item.desc && item.kind !== "drink" ? '<p class="row__desc">' + keep(item.desc) + "</p>" : "") + "</div>" +
       (pic ? '<div class="row__media' + (item.kind === "drink" ? " is-drink" : "") + '">' + thumbImg(item, ' loading="lazy" decoding="async"') + "</div>" : "") + "</a>";
   }

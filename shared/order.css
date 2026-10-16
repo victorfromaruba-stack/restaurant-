@@ -207,7 +207,7 @@ body.past-name .top__title{opacity:1;transform:none}
 /* qty */
 .qty{display:inline-flex;align-items:center;gap:2px;border-radius:999px;background:var(--night-3);padding:3px}
 .link::after{content:"";position:absolute;inset:-6px 0}
-.qty__b{position:relative;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--cream);display:grid;place-items:center}
+.qty__b{position:relative;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--cream);display:grid;place-items:center}
 .qty__b svg{width:17px;height:17px}
 .qty__b::after{content:"";position:absolute;inset:-4px}
 .qty__n{min-width:26px;text-align:center;font:800 16px/1 var(--font);font-variant-numeric:tabular-nums}

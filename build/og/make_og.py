@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(ROOT, "qa"))
 from local_server import start
 BASE = start()
 site = json.load(open(os.path.join(ROOT, "shared/site.json"), encoding="utf-8"))
-ids = [b["id"] for b in site["brands"] if b.get("status") != "hidden"]
+ids = [b["id"] for b in site["brands"] if b.get("status", "open") == "open"] + [b["id"] for b in site["brands"] if b.get("status") == "soon"]   # orderable first
 menus = {b: json.load(open(os.path.join(ROOT, b, "menu.json"), encoding="utf-8")) for b in ids}
 
 def t12(hhmm):

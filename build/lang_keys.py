@@ -50,6 +50,10 @@ def keys():
         m = json.load(open(os.path.join(ROOT, b["id"], "menu.json"), encoding="utf-8"))
         add(m["cuisine"]); add(m.get("imageNote"))
         for sec in m["sections"]: add(sec["title"])
+        for it in m["items"]:
+            for g in it.get("options", []):
+                add(g["label"])
+                for c in g["choices"]: add(c["label"])
     # fixed words in the HTML files
     for p in ["index.html"] + sorted(glob.glob(os.path.join(ROOT, "*/index.html"))):
         h = open(os.path.join(ROOT, p), encoding="utf-8").read()
