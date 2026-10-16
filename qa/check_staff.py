@@ -448,7 +448,9 @@ async def driver(b, w, h, deep):
 
 # ================================================================== old addresses
 async def redirects(b):
-    fake = Fake({"pidi_ping": lambda a: ok({"ok": True}), "pidi_driver_offers": lambda a: ok([]), "pidi_driver_set_online": lambda a: ok()})
+    # the old status link now lands on Pidi's real status page, which asks for the order (an unknown token here)
+    fake = Fake({"pidi_ping": lambda a: ok({"ok": True}), "pidi_driver_offers": lambda a: ok([]), "pidi_driver_set_online": lambda a: ok(),
+                 "pidi_order_status": lambda a: (400, {"code": "P0001", "message": "NOT_FOUND"})})
     ctx = await new_ctx(b, fake, 390, 844)
     pg = await ctx.new_page()
     for old, new in [("driver/", "driver/v2/"), ("driver/index.html?from=home#x=1", "driver/v2/?from=home#x=1"),
@@ -468,7 +470,7 @@ async def redirects(b):
         check('http-equiv="refresh"' in html and "location.replace" in html and "js/app.js" not in html, f"driver/{f} only sends the phone on to v2 (script and refresh fallback)")
     man = json.load(open(os.path.join(ROOT, "driver/manifest.webmanifest"), encoding="utf-8"))
     check(man.get("start_url") == "v2/" and man.get("id") == "./" and man.get("scope") == "./", "the installed driver app opens v2 (same app id and scope)")
-    check(not fake.stray, "the old addresses sent nothing to the database" + (f": {fake.stray}" if fake.stray else ""))
+    check(not fake.stray, "the old addresses sent nothing else to the database" + (f": {fake.stray}" if fake.stray else ""))
     await ctx.close()
 
 # ================================================================== the driver app offline
