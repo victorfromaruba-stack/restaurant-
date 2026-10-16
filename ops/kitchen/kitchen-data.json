@@ -4594,7 +4594,9 @@
     "gluten",
     "egg"
    ],
-   "flags": [],
+   "flags": [
+    "pork"
+   ],
    "options": [
     {
      "label": "Leave out",
@@ -4711,7 +4713,9 @@
     "egg",
     "mustard"
    ],
-   "flags": [],
+   "flags": [
+    "pork"
+   ],
    "options": [],
    "aliases": [
     "Mixed snack box"
@@ -4853,6 +4857,7 @@
    "kind": "main",
    "price": 1650,
    "allergens": [
+    "gluten",
     "peanut",
     "soy"
    ],

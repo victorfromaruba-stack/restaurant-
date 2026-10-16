@@ -167,6 +167,7 @@
    "desc": "Three charred chicken skewers with warm peanut sauce, cucumber and shallot.",
    "img": "oranje-snack/assets/art/st.webp",
    "allergens": [
+    "gluten",
     "peanut",
     "soy"
    ],

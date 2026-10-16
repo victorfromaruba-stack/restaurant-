@@ -68,7 +68,7 @@ for b, m in menus.items():
 # Found 8 Oct 2026: tenders in buttermilk brine, sesame garnish and oyster sauce were missing from the site.
 ALLERGEN_WORDS = {
     "dairy": r"buttermilk|\bmilk\b|cream|cheese|cheddar|mozzarella|parmesan|(?<!peanut )\bbutter\b(?!-sheen)",
-    "gluten": r"flour|\bbuns?\b|bread|panko|noodle|pasta|penne|spaghetti|wrapper|tortilla",
+    "gluten": r"flour|\bbuns?\b|bread|panko|noodle|pasta|penne|spaghetti|wrapper|tortilla|ketjap|kecap|soy sauce",   # soy sauce is brewed with wheat
     "egg": r"\beggs?\b|mayo", "soy": r"\bsoy\b|ketjap", "shellfish": r"shrimp|prawn|oyster",
     "sesame": r"sesame", "peanut": r"peanut", "mustard": r"mustard", "fish": r"fish sauce|anchov",
 }
@@ -84,6 +84,10 @@ if os.path.exists(kdata):
             need = {a for a, pat in ALLERGEN_WORDS.items() if re.search(pat, recipe)} | set(card.get("allergens", []))
             missing = sorted(need - set(it.get("allergens", [])))
             check(not missing, f"{b}/{it['id']} lists every allergen its recipe card uses" + (f": missing {missing}" if missing else ""))
+            # the chef app warns on a "no pork" / "no shrimp" / "no peanuts" note from the card's flags (found 16 Oct 2026:
+            # frikandel and the snack box had pork on the site but not on their cards)
+            odd = sorted(({"pork", "shrimp", "peanut"} & set(it.get("flags", []))) ^ ({"pork", "shrimp", "peanut"} & set(card.get("flags", []))))
+            check(not odd, f"{b}/{it['id']} has the same pork/shrimp/peanut labels as its recipe card" + (f": differs on {odd}" if odd else ""))
 tb = {i["id"]: i for i in menus["taco-brava"]["items"]}
 check(tb["bt"]["price"] == 2700, "Birria tacos stay at ƒ27.00")
 check(site["deliveryFee"] == 500, "Delivery fee is ƒ5.00")
