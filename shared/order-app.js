@@ -581,7 +581,8 @@
     else { var n = cutFor(windowFor(d + 1)); if (n) { win = { o: n.o + 1440, end: endOf(n, 1440) }; prefix = "Tomorrow "; } }
     var slots = [];
     if (win) {
-      var start = Math.ceil(Math.max(win.o + 30, now + 45) / 15) * 15;
+      // the first delivery time is a quarter hour after opening (Victor, 16 Oct: any time after 10 PM)
+      var start = Math.ceil(Math.max(win.o + 15, now + 45) / 15) * 15;
       for (var m = start; m <= win.end; m += 15) slots.push({ v: prefix + slotLabel(m), d: (prefix ? tr("Tomorrow") + " " : "") + slotText(m) });
     }
     return { asap: st.open, slots: slots };
