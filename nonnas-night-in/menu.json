@@ -12,7 +12,7 @@
  "intro": "Penne baked with beef bolognese and mozzarella, spaghetti and meatballs, chicken parmigiana and cheesy garlic bread.",
  "logo": "shared/logos/nonnas-night-in.svg",
  "mark": "shared/logos/nonnas-night-in-mark.webp",
- "hero": "nonnas-night-in/assets/dishes/sm.webp",
+ "hero": "nonnas-night-in/assets/dishes/cp.webp",
  "mainSection": "mains",
  "imageNote": "Pictures are illustrations.",
  "sections": [
@@ -78,7 +78,7 @@
    "section": "mains",
    "name": "Spaghetti & meatballs",
    "price": 2550,
-   "desc": "Spaghetti with beef meatballs in marinara, finished with Parmesan and Italian herbs.",
+   "desc": "Spaghetti with three beef meatballs in marinara, finished with Parmesan and Italian herbs.",
    "img": "nonnas-night-in/assets/dishes/sm.webp",
    "allergens": [
     "gluten",
@@ -97,7 +97,8 @@
       }
      ]
     }
-   ]
+   ],
+   "hidePhoto": true
   },
   {
    "id": "ca",
@@ -114,16 +115,15 @@
   {
    "id": "pa",
    "section": "mains",
-   "name": "Penne arrabbiata (vegetarian)",
+   "name": "Penne arrabbiata",
    "price": 1695,
-   "desc": "Penne in a spicy tomato marinara with peppers, garlic, onion and Parmesan.",
+   "desc": "Penne in a spicy tomato sauce with chili flakes, garlic and onion, finished with Parmesan and parsley. No meat.",
    "img": "nonnas-night-in/assets/dishes/pa.webp",
    "allergens": [
     "gluten",
     "dairy"
    ],
    "flags": [
-    "vegetarian",
     "spicy"
    ],
    "options": [

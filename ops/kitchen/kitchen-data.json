@@ -1806,7 +1806,6 @@
     {
      "label": "Leave out",
      "choices": [
-      "No peppers",
       "No onion"
      ]
     }
@@ -1925,8 +1924,7 @@
      "label": "Leave out",
      "choices": [
       "No black beans",
-      "No cream",
-      "No peppers"
+      "No cream"
      ]
     }
    ],
@@ -4021,7 +4019,7 @@
    "key": "nonnas-night-in/pa",
    "brand": "nonnas-night-in",
    "id": "pa",
-   "name": "Penne arrabbiata (vegetarian)",
+   "name": "Penne arrabbiata",
    "img": "../../nonnas-night-in/assets/dishes/pa.webp",
    "kind": "main",
    "price": 1695,
@@ -4030,7 +4028,6 @@
     "dairy"
    ],
    "flags": [
-    "vegetarian",
     "spicy"
    ],
    "options": [
@@ -4049,6 +4046,7 @@
     }
    ],
    "aliases": [
+    "Penne arrabbiata",
     "Penne arrabbiata (vegetarian)"
    ],
    "ahead": null,
@@ -4143,7 +4141,7 @@
     "Parsley: 20 g"
    ],
    "label": {
-    "name": "Penne arrabbiata (vegetarian)",
+    "name": "Penne arrabbiata",
     "next": "Toss penne in arrabbiata → parm/chili/parsley"
    }
   },

@@ -147,7 +147,7 @@
    "section": "mains",
    "name": "Chicken quesadilla",
    "price": 1600,
-   "desc": "Flour tortilla with chicken, cheddar, mozzarella, peppers and onion, served with salsa and cream.",
+   "desc": "Flour tortilla with chicken, cheddar, mozzarella and onion, served with salsa and cream.",
    "img": "taco-brava/assets/dishes/cq.webp",
    "allergens": [
     "dairy",
@@ -159,10 +159,6 @@
      "label": "Leave out",
      "type": "many",
      "choices": [
-      {
-       "id": "peppers",
-       "label": "No peppers"
-      },
       {
        "id": "onion",
        "label": "No onion"
@@ -176,7 +172,7 @@
    "section": "mains",
    "name": "Beef nachos (fried tortilla chips)",
    "price": 2000,
-   "desc": "Crispy fried tortilla chips topped with spiced ground beef, cheddar, black beans, peppers, salsa and cream.",
+   "desc": "Crispy fried tortilla chips topped with spiced ground beef, cheddar, black beans, salsa and cream.",
    "img": "taco-brava/assets/dishes/bn.webp",
    "allergens": [
     "dairy",
@@ -207,10 +203,6 @@
       {
        "id": "cream",
        "label": "No cream"
-      },
-      {
-       "id": "peppers",
-       "label": "No peppers"
       }
      ]
     }

@@ -3,14 +3,14 @@
  "samples": [
   {
    "case": "burgers + Italian in one order",
-   "message": "*Order* #1350-KM · 2 restaurants\nDelivery · Santa Cruz\nTime: 10:30 PM\nPre-order: sent while you were closed\n\n*Smash Shack*\n1 × Smash cheeseburger — ƒ16.95\n   No onion · No pickles\n2 × Fries (side) — ƒ5.00\n*Nonna’s Night In*\n1 × Penne arrabbiata (vegetarian) — ƒ16.95\n   Heat: Extra spicy\n\nSubtotal ƒ38.90\nDelivery ƒ5.00\n*Total ƒ43.90*\nPay: Cash\n\nName: Carla\nAddress: Near the church, green house\nNote: extra napkins",
+   "message": "*Order* #1312-DY · 2 restaurants\nDelivery · Santa Cruz\nTime: 10:30 PM\nPre-order: sent while you were closed\n\n*Smash Shack*\n1 × Smash cheeseburger — ƒ16.95\n   No onion · No pickles\n2 × Fries (side) — ƒ5.00\n*Nonna’s Night In*\n1 × Penne arrabbiata — ƒ16.95\n   Heat: Extra spicy\n\nSubtotal ƒ38.90\nDelivery ƒ5.00\n*Total ƒ43.90*\nPay: Cash\n\nName: Carla\nAddress: Near the church, green house\nNote: extra napkins",
    "subtotal_cents": 3890,
    "fee_cents": 500,
    "total_cents": 4390
   },
   {
    "case": "Oranje Snack on its own, dip choice",
-   "message": "*Oranje Snack order* #1350-TP\nDelivery · Eagle Beach\nTime: 10:30 PM\nPre-order: sent while you were closed\n\n2 × Bitterballen (8) — ƒ25.90\n   Dip: Mustard\n\nSubtotal ƒ25.90\nDelivery ƒ5.00\n*Total ƒ30.90*\nPay: Bank transfer\n\nName: Eva\nAddress: Hotel lobby, room 214",
+   "message": "*Oranje Snack order* #1312-TY\nDelivery · Eagle Beach\nTime: 10:30 PM\nPre-order: sent while you were closed\n\n2 × Bitterballen (8) — ƒ25.90\n   Dip: Mustard\n\nSubtotal ƒ25.90\nDelivery ƒ5.00\n*Total ƒ30.90*\nPay: Bank transfer\n\nName: Eva\nAddress: Hotel lobby, room 214",
    "subtotal_cents": 2590,
    "fee_cents": 500,
    "total_cents": 3090
