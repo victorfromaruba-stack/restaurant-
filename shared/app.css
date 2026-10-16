@@ -1,8 +1,142 @@
 /* The app's own pages (checkout/, order/). Builds on shared/order.css: the same night palette, Archivo, and the
-   app's yellow as the accent (the restaurant pages use their own colour). */
+   app's yellow (the OPEN sign's sodium) as the accent; the restaurant pages use their own colour. One loud thing per
+   screen: the step's question at checkout, the order's state on the status page. */
 body[data-page="checkout"],body[data-page="order"]{--accent:var(--sodium);--accent-ink:var(--night)}
 body[data-page="checkout"] .top__in,body[data-page="order"] .top__in{max-width:600px}
 .top__name{flex:1;min-width:0;font:800 18px/1 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top__app{flex:none;font:900 18px/1 var(--font);font-stretch:70%;text-transform:uppercase;letter-spacing:.02em;color:var(--sodium)}
-.app{max-width:600px;margin:0 auto;padding:0 16px calc(40px + var(--safe-b))}
+.app{max-width:600px;margin:0 auto;padding:0 16px calc(24px + var(--safe-b))}
 .app__foot{max-width:600px;margin:0 auto;padding:8px 16px calc(32px + var(--safe-b))}
+.app .oa-skel{padding:16px 0 0}
+.app .oa-skel div:first-child{aspect-ratio:auto;height:72px;margin:0;border-radius:var(--r)}
+
+/* ---------- checkout: one step per screen */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-top:12px}
+.steps i{height:4px;border-radius:2px;background:var(--night-3)}
+.steps i.on{background:var(--sodium)}
+.step__n{margin:14px 0 0;color:var(--haze);font:700 13.5px/1.2 var(--font);letter-spacing:.04em}
+.step__t{margin:6px 0 4px;font-size:clamp(34px,10.5vw,46px);font-weight:900;font-stretch:66%;text-transform:uppercase;line-height:.95}
+.app .field{margin-top:22px}
+.app .field legend,.app .field__l{font-size:16px}
+.app .field__help{margin-top:2px}
+.app .field__help a{color:var(--sodium);font-weight:700}
+
+/* a choice as a big row: When, How will you pay */
+.picks{display:grid;gap:10px}
+.picks legend{margin-bottom:0}
+.picks legend.sr{position:absolute}
+.pick{position:relative;display:block}
+.pick input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.pick__b{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:66px;padding:12px 16px 12px 54px;border-radius:14px;background:var(--night-2);box-shadow:inset 0 0 0 1.5px var(--rule);position:relative}
+.pick__b::before{content:"";position:absolute;left:18px;top:50%;width:22px;height:22px;margin-top:-11px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--field);box-sizing:border-box}
+.pick__t{font:800 17px/1.2 var(--font)}
+.pick__s{color:var(--haze);font-size:14.5px;line-height:1.35}
+.pick input:checked+.pick__b{box-shadow:inset 0 0 0 2px var(--sodium);background:#14305A}
+.pick input:checked+.pick__b::before{box-shadow:inset 0 0 0 7px var(--sodium)}
+.pick input:focus-visible+.pick__b{outline:3px solid var(--sodium);outline-offset:2px}
+.picks.is-bad .pick__b{box-shadow:inset 0 0 0 1.5px var(--bad)}
+
+/* delivery times: a grid of big taps */
+.times{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (min-width:420px){.times{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.time{position:relative;display:block}
+.time input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.time span{display:flex;align-items:center;justify-content:center;min-height:48px;padding:0 6px;border-radius:12px;background:var(--night-3);font:700 15.5px/1 var(--font);font-variant-numeric:tabular-nums;white-space:nowrap}
+.time input:checked+span{background:var(--cream);color:var(--night)}
+.time input:focus-visible+span{outline:3px solid var(--sodium);outline-offset:2px}
+.field.is-bad .time span{box-shadow:inset 0 0 0 1.5px var(--bad)}
+
+/* the map pin for the driver: optional */
+.loc{margin-top:18px}
+.btn--loc{justify-content:flex-start;min-height:50px;font-size:15.5px}
+.btn--loc svg{width:20px;height:20px;color:var(--sodium)}
+.btn--loc:disabled{opacity:.6}
+.loc .field__help{margin-top:8px}
+.loc--on{display:flex;align-items:center;gap:10px;padding:10px 6px 10px 14px;border-radius:var(--r-sm);background:var(--night-2)}
+.loc__i{display:grid;place-items:center;width:28px;height:28px;color:var(--sodium)}
+.loc__i svg{width:22px;height:22px}
+.loc__t{flex:1;margin:0;font:600 15px/1.35 var(--font)}
+.loc--on .link{margin:0;flex:none}
+
+.ck-saved{margin:18px 0 0;color:var(--haze);font-size:14px;line-height:1.4}
+.ck-total{margin:10px 0 0;color:var(--haze);font:600 16px/1.3 var(--font)}
+.ck-total b{color:var(--cream);font-weight:800;margin-left:4px;font-variant-numeric:tabular-nums}
+.ck-usd{margin:16px 0 0}
+
+/* cash: the note they'll hand over, so the driver brings change */
+.cash{position:relative;max-width:220px}
+.cash__f{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--haze);font:700 18px/1 var(--font)}
+.app .cash input{padding-left:34px;font:700 20px/1 var(--font);font-variant-numeric:tabular-nums}
+.chips--cash{margin-top:4px}
+.chips--cash .chip--btn{display:inline-flex;align-items:center;min-height:44px;border:0;border-radius:999px;background:var(--night-3);color:var(--cream);font:700 15px/1 var(--font);padding:0 16px;font-variant-numeric:tabular-nums}
+
+/* bank transfer details, once site.json has them */
+.bank{margin-top:18px;padding:14px 16px;border-radius:var(--r);background:var(--night-2);font-size:15px;line-height:1.45}
+.bank p{margin:0;color:var(--haze)}
+.bank dl{margin:10px 0}
+.bank dl div{display:flex;justify-content:space-between;gap:12px;padding:4px 0}
+.bank dt{color:var(--haze)}
+.bank dd{margin:0;font-weight:700;text-align:right;overflow-wrap:anywhere}
+
+/* check and place */
+.app .lines__brand{margin-top:22px}
+.line__q{color:var(--sodium);font-variant-numeric:tabular-nums}
+.app .line{align-items:flex-start}
+.app .line__t{flex:none;margin:2px 0 0;color:var(--cream)}
+.app .lines .line:last-child{border-bottom:0}
+.ck-edit{margin:12px 0 0;padding:8px 0;text-align:left}
+.recap{margin:20px 0 0;border-top:1px solid var(--rule)}
+.recap>div{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.recap dt{grid-column:1;color:var(--haze);font:700 13.5px/1.2 var(--font)}
+.recap dd{grid-column:1;margin:4px 0 0;font-size:15.5px;line-height:1.4;overflow-wrap:anywhere}
+.recap .recap__go{grid-column:2;grid-row:1/span 2;align-self:center;margin:0}
+.recap .link{margin:0;padding:12px 4px;color:var(--sodium)}
+.app .order__mix{margin-top:20px}
+
+/* the button at the bottom of each step, always in reach of a thumb */
+.app__go{position:sticky;bottom:0;z-index:5;margin:24px -16px 0;padding:12px 16px calc(12px + var(--safe-b));background:linear-gradient(to top,var(--night) 80%,transparent)}
+.app__go .btn{min-height:58px;font-size:17px}
+.app__go [data-place]{justify-content:space-between}
+.app__go .btn:disabled{opacity:.55;cursor:not-allowed}
+.app__go .btn[aria-busy="true"]{opacity:.8;justify-content:center}
+
+/* what went wrong, and what to do now */
+.ck-err{display:grid;gap:12px;margin-top:20px}
+.ck-err p{margin:0}
+.ck-err .btn{min-height:50px}
+.ck-err .btn--line{color:var(--warn-ink);box-shadow:inset 0 0 0 1.5px currentColor;width:auto;justify-self:start}
+.app .empty{padding-top:48px}
+.app .empty .btn{max-width:360px;margin:0 auto}
+.app .empty p{color:var(--haze)}
+
+/* ---------- order status: the state in big letters, then the four steps with their times */
+.st{padding-top:20px}
+.st__k{margin:0;color:var(--haze);font:700 14px/1.2 var(--font);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.st__t{margin:6px 0 0;font-size:clamp(46px,15vw,72px);font-weight:900;font-stretch:62%;text-transform:uppercase;line-height:.9;color:var(--sodium)}
+.st--done .st__t{color:var(--cream)}
+.st--off .st__t{color:var(--haze)}
+.st__eta{margin:12px 0 0;font:800 19px/1.3 var(--font);font-variant-numeric:tabular-nums}
+.st__line{margin:6px 0 0;color:var(--haze);font-size:16px;line-height:1.45}
+.track{list-style:none;margin:22px 0 0;padding:0}
+.track__s{position:relative;display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;min-height:46px;color:var(--haze);font:700 16px/1.2 var(--font)}
+.track__s+.track__s::before{content:"";position:absolute;left:7px;top:-15px;height:30px;width:2px;background:var(--rule)}
+.track__s.is-done+.track__s::before{background:var(--sodium)}
+.track__dot{position:relative;z-index:1;width:16px;height:16px;border-radius:50%;background:var(--night);box-shadow:inset 0 0 0 2px var(--field)}
+.track__s.is-done .track__dot{background:var(--sodium);box-shadow:none}
+.track__s.is-now .track__dot{background:var(--sodium);box-shadow:0 0 0 4px rgba(255,201,60,.25)}
+.track__s.is-done,.track__s.is-now{color:var(--cream)}
+.track__s.is-now .track__l{font-weight:900}
+.track__t{color:var(--haze);font:600 14.5px/1 var(--font);font-variant-numeric:tabular-nums}
+.st-sec{margin-top:34px}
+.st-sec__t{font-size:25px;font-weight:900;font-stretch:75%}
+.st-pay,.st-to,.st-p{margin:10px 0 0;font-size:15.5px;line-height:1.45}
+.st-to{color:var(--haze)}
+.st-wa{margin-top:18px}
+.st-num{margin:10px 0 0;color:var(--haze);font-size:14px;line-height:1.45}
+.st-t{margin:22px 0 0;font-size:clamp(34px,10.5vw,46px);font-weight:900;font-stretch:66%;text-transform:uppercase;line-height:.95}
+.st-t~.btn{margin-top:18px}
+.mine-list{display:grid;gap:8px;margin-top:12px}
+.ord{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:center;min-height:56px;padding:10px 14px;border-radius:var(--r);background:var(--night-2);text-decoration:none}
+.ord__t{grid-column:1;font:800 15.5px/1.25 var(--font)}
+.ord__d{grid-column:1;color:var(--haze);font:600 13.5px/1.3 var(--font);font-variant-numeric:tabular-nums}
+.ord__p{grid-column:2;grid-row:1/span 2;font:700 15px/1 var(--font);font-variant-numeric:tabular-nums}

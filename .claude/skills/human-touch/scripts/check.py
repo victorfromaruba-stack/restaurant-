@@ -106,12 +106,14 @@ def site_copy():
     """Every piece of customer-facing copy, as (where, text)."""
     items = []
     site = json.loads((ROOT / "shared/site.json").read_text(encoding="utf-8"))
-    for page in ["index.html"] + [b["id"] + "/index.html" for b in site["brands"]]:
+    for page in ["index.html", "checkout/index.html", "order/index.html"] + [b["id"] + "/index.html" for b in site["brands"]]:
         p = ROOT / page
         if p.exists():
             items += [(page, t) for t in html_text(p.read_text(encoding="utf-8"))]
-    app = ROOT / "shared/order-app.js"
-    items += [("shared/order-app.js", t) for t in js_strings(app.read_text(encoding="utf-8"))]
+    for js in ("shared/order-app.js", "shared/checkout.js", "shared/status.js"):   # the engine, then the app's checkout and order status
+        app = ROOT / js
+        if app.exists():
+            items += [(js, t) for t in js_strings(app.read_text(encoding="utf-8"))]
     for k in ("eta", "deliveryTime", "payment"):
         if isinstance(site.get(k), str):
             items.append(("shared/site.json " + k, site[k]))

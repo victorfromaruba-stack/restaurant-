@@ -11,13 +11,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def js_string(lit):
     return json.loads('"' + lit.replace("\\'", "'") + '"')
 
-def keys():
-    out = []
-    def add(k):
-        k = k.strip() if k else k
-        if k and k not in out: out.append(k)
-    js = open(os.path.join(ROOT, "shared/order-app.js"), encoding="utf-8").read()
-    # string literals inside tr( ... ), ternaries included
+APP_JS = ("shared/checkout.js", "shared/status.js")
+
+def tr_strings(js, add):
     for m in re.finditer(r"\btr\(", js):
         i, depth = m.end(), 1
         while depth and i < len(js):
@@ -32,6 +28,23 @@ def keys():
             elif c in "({[": depth += 1
             elif c in ")}]": depth -= 1
             i += 1
+
+def keys():
+    out = []
+    def add(k):
+        k = k.strip() if k else k
+        if k and k not in out: out.append(k)
+    js = open(os.path.join(ROOT, "shared/order-app.js"), encoding="utf-8").read()
+    # string literals inside tr( ... ), ternaries included: the engine, then the app's own pages (checkout/, order/)
+    for src in [js] + [open(os.path.join(ROOT, p), encoding="utf-8").read() for p in APP_JS if os.path.exists(os.path.join(ROOT, p))]:
+        tr_strings(src, add)
+    # the app pages' word lists that go through tr() as variables: step titles, the four order states
+    for p in APP_JS:
+        if not os.path.exists(os.path.join(ROOT, p)): continue
+        src = open(os.path.join(ROOT, p), encoding="utf-8").read()
+        obj = re.search(r"var TITLE = \{([^}]*)\}", src)
+        for lit in re.findall(r':\s*"((?:[^"\\]|\\.)*)"', obj.group(1) if obj else ""): add(js_string(lit))
+        for lit in re.findall(r'\{ label: "((?:[^"\\]|\\.)*)"', src): add(js_string(lit))
     # word lists that go through tr() as variables
     for name in ("DAY_NAMES", "SUGGEST"):
         arr = re.search(name + r" = \[([^\]]*)\]", js).group(1)
