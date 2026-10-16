@@ -3,7 +3,76 @@
    delivery fee (the app's perk, like DoorDash's Double Dash); any other restaurant has its own order.
    Menus live in <restaurant>/menu.json. App settings (WhatsApp number, hours, areas, delivery fee, delivery time,
    which restaurants are open, how orders go in) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
-   No framework, no build step. */
+   No framework, no build step.
+
+   ---------------------------------------------------------------------------------------------------------------
+   THE API FOR THE APP'S OWN PAGES (checkout/, order/). Stable: those pages are built on it, so change it only by
+   adding. On <body data-page="checkout" data-root="../"> or <body data-page="order" data-root="../"> this script boots
+   in app mode: it loads site.json, the visitor's language and the menus of every restaurant in the cart and in this
+   phone's saved orders, translates [data-t] and [data-t-attr], fills [data-oa-langs] with the language switch and
+   [data-oa-app] with the app's name, sets <html lang>, and draws nothing else (no order bar, no sheets). Then
+   OrderApp.ready resolves and "oa:ready" fires on document. The home page and the restaurant pages resolve it too,
+   once they are drawn. Call the rest after ready.
+
+   OrderApp.ready             Promise, resolves when the page's data is in (rejects if site.json can't load)
+   OrderApp.site()            site.json: name, whatsapp, eta, areas, brands, hours, payWith, ordering, utcOffset ...
+                              plus etaMin and etaMax, read from "eta" ("35–50 min"), the one place it's written
+   OrderApp.ordering()        "app" (orders go in through checkout/) or "whatsapp" (the order sheet opens WhatsApp,
+                              the default when site.json has no "ordering")
+   OrderApp.eta()             {min, max, text}: the usual delivery time, {35, 50, "35–50 min"}
+   OrderApp.menu(b)           a restaurant's loaded menu.json (b = its folder name, "taco-brava"), or null
+   OrderApp.loadMenu(b)       Promise of that menu
+   OrderApp.tr(text, vars)    screen text in the visitor's language: tr("{name} added", {name: "Fries"}). Every new
+                              phrase goes into shared/lang/pap.json, nl.json and es.json (build/lang_keys.py --check)
+   OrderApp.money(c, html)    "ƒ12.95" from cents, a dot decimal in every language. html = true: the same inside
+                              <span aria-hidden="true">, plus a hidden "12.95 florins" a screen reader says instead of "f"
+   OrderApp.lang()            "en" | "pap" | "nl" | "es"
+   OrderApp.clock(m, full)    Aruba clock text for m minutes after midnight: "11:55 PM" in EN ("10 PM" on the hour,
+                              "10:00 PM" with full = true), "23:55" in PAP, NL and ES
+   OrderApp.arubaNow()        {mins, day, h, m, date, ms}: now on the Aruba clock (site.json utcOffset, never the phone's
+                              time zone). mins = minutes since Aruba midnight, day = 0 Sunday .. 6 Saturday, date =
+                              "2026-10-16", ms = Date.now()
+   OrderApp.shopStatus()      {open, label, sub, opensAt, opensIn}: open = an order for as soon as possible goes in
+                              now; else label ("Opens tonight 10 PM"), opensAt (minutes after midnight) and opensIn
+                              (minutes from now). Never a closing time.
+   OrderApp.slots()           [{m, label, iso, tonight, day, early}]: the 15-minute delivery times the order database
+                              accepts for the coming night, Aruba 22:00 to 01:45 inside site.json hours, each at least
+                              max(15, etaMin - 25) minutes from now and within 24 h. m = minutes after Aruba midnight,
+                              label = clock(m, true), iso = the UTC time to send as due_at, tonight = the service night
+                              that is on now or still to come today (false: the next one, after last orders), day = the
+                              weekday that night starts on, early = in the first 30 minutes after opening. While open it
+                              includes times sooner than the usual delivery time: a page may hide those.
+   OrderApp.canOrderNow()     true while an "as soon as possible" order is accepted (opening time until lastOrder)
+   OrderApp.lines()           the cart, newest data from the menus: [{k, b, brand, id, name, title, opts, q, p, img,
+                              drink, soldOut, o}]. k = line key, b = restaurant folder, brand = its name, name = the
+                              ticket text (dish name, then each chosen option after " · ", what pidi_place_order takes
+                              as an item name), title = the dish name for the screen (English, mark it lang="en"),
+                              opts = the chosen option labels, q = quantity, p = unit price in cents with its options,
+                              img = thumbnail address or "", drink = a can, soldOut = can't be ordered now (sold out, or
+                              its restaurant stopped taking orders), o = the option ids (for Order again)
+   OrderApp.food()            food in cents
+   OrderApp.fee()             the one delivery fee (site.json deliveryFee), once per order however many restaurants
+                              are in it, 0 when the cart is empty
+   OrderApp.total()           food() + fee()
+   OrderApp.minFood()         site.json minFood, 0 when it isn't set (no minimum order, Victor, 16 Oct 2026)
+   OrderApp.shortBy()         how much more food the order needs: max(0, minFood() - food()), so 0 without a minimum
+   OrderApp.setLineQty(k, q)  change a line's quantity; 0 removes it
+   OrderApp.clear()           empty the cart (the customer's details stay)
+   OrderApp.details()         {name, phone, area, addr, note, pay, paysWith, usd}, kept on this phone in localStorage
+                              "pidi.me.v1" (pay "cash" | "transfer" | "", paysWith in cents or null, usd true/false)
+   OrderApp.saveDetails(p)    merge p into the details and keep them; returns them
+   OrderApp.rememberOrder(r)  after pidi_place_order answers r: keeps {t: r.public_token, at, no: r.night_no,
+                              restaurants (names), total_cents, pay, due, lines (the full basket, as lines())} newest first
+                              in localStorage "pidi.orders.v1" (5 at most), and makes that basket the "Order again"
+                              basket. It does not empty the cart: call clear() after it.
+   OrderApp.orders()          that list, newest first
+   OrderApp.onChange(fn)      fn() after every change to the cart (also from another tab)
+   OrderApp.waNumber()        the app's WhatsApp number written out ("+297 747 7794", no-break spaces)
+   OrderApp.waLink(text)      a wa.me link to it with text typed in
+   OrderApp.esc(s), keep(s)   HTML-escape; keep() also stops "stir-fry" or "35–50" from breaking at the dash
+   OrderApp.listAnd(list)     "Noord, Palm Beach and Santa Cruz" in the visitor's language
+   OrderApp.toast(text)       a short message at the bottom of the screen
+   Kept from before, for the restaurant pages and QA: buildMessage, checkoutLink, addItem, count, subtotal, state, _set. */
 (function () {
   "use strict";
 
@@ -32,6 +101,9 @@
     });
   }
   function money(c) { return "ƒ" + (Math.round(c) / 100).toFixed(2); }
+  /* money on screen: screen readers say "ƒ" as "f", so the sign is hidden from them and the words are read instead */
+  function sayMoney(c) { return (Math.round(c) / 100).toFixed(2) + " " + tr("florins"); }
+  function moneyHTML(c) { return '<span aria-hidden="true">' + money(c) + '</span><span class="sr">' + esc(sayMoney(c)) + "</span>"; }
   function shortMoney(c) { return "ƒ" + (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2)); }
   function path(p) { return ROOT + p; }
   /* small square pictures for menu rows (build/thumbs.py makes them); drinks are small already */
@@ -54,6 +126,14 @@
      and a count like "(3)" stays on the line of the word before it */
   function keep(s) { return esc(s).replace(/ (\(\d+\))/g, "\u00a0$1").replace(/(\S+[-\u2013]\S+)/g, '<span class="nw">$1</span>'); }
   function el(html) { var t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+  /* OrderApp.ready: resolves once the page's data is in (see the API at the top) */
+  var READY_FNS = null;
+  var READY = new Promise(function (res, rej) { READY_FNS = { res: res, rej: rej }; });
+  READY.catch(function () { /* a page that never asked doesn't log it; one that did gets the rejection */ });
+  function ready() {
+    READY_FNS.res(window.OrderApp);
+    try { document.dispatchEvent(new CustomEvent("oa:ready")); } catch (e) { /* very old browser */ }
+  }
   function clean(s) { return String(s || "").trim().replace(/\s+/g, " "); }
   function plural(n, one, many) { return n + " " + tr(n === 1 ? one : many); }
 
@@ -98,10 +178,12 @@
     if (vars) out = out.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
     return out;
   }
-  /* times on screen: 10 PM in English, 22:00 in the other languages (the ticket always uses 10 PM) */
-  function clock(m) {
-    if (LANG === "en") return fmtTime(m);
-    return String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+  /* times on screen: 10 PM in English (10:00 PM with full), 22:00 in the other languages, set by hand: Intl has no
+     Papiamento (the ticket always uses 10 PM) */
+  function clock(m, full) {
+    m = ((Math.round(m) % 1440) + 1440) % 1440;
+    if (LANG === "en") return fmtTime(m, full);
+    return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
   }
   /* the fixed words in the HTML files: data-t on an element (its text), data-t-attr="placeholder,aria-label" */
   function translatePage() {
@@ -149,7 +231,22 @@
       return r.json();
     });
   }
-  function loadSite() { return getJSON("shared/site.json").then(function (s) { SITE = s; moveBrandKeys(); return s; }); }
+  function loadSite() {
+    return getJSON("shared/site.json").then(function (s) {
+      SITE = s;
+      var e = eta(); SITE.etaMin = e.min; SITE.etaMax = e.max;   // read from "eta", the one place it's written
+      moveBrandKeys();
+      return s;
+    });
+  }
+  /* the usual delivery time: site.json "eta" ("35–50 min"); etaMin and etaMax only for a site.json without it */
+  function eta() {
+    var m = /(\d+)\D+(\d+)/.exec(SITE.eta || "");
+    var lo = m ? +m[1] : +SITE.etaMin || 0, hi = m ? +m[2] : +SITE.etaMax || 0;
+    return { min: lo, max: hi, text: SITE.eta || (lo && hi ? lo + "–" + hi + " min" : "") };
+  }
+  /* how orders go in: "app" = checkout/ and the order database, "whatsapp" (the default) = the order sheet opens WhatsApp */
+  function ordering() { return SITE && SITE.ordering === "app" ? "app" : "whatsapp"; }
   function loadMenu(id) {
     if (MENU[id]) return Promise.resolve(MENU[id]);
     if (!pending[id]) {
@@ -191,15 +288,19 @@
   }
 
   /* ---------------------------------------------------------------- hours */
+  /* Aruba time: site.json utcOffset (-4; Aruba has no daylight saving), never the phone's time zone: tourists' phones
+     are often still set to home. awDate() is a Date moved to Aruba's wall clock, read with getUTC*() only. */
+  function awOffset() { return (SITE && typeof SITE.utcOffset === "number" ? SITE.utcOffset : -4) * 3600e3; }
+  function awDate(ms) { return new Date((ms == null ? Date.now() : ms) + awOffset()); }
   function arubaNow() {
-    var n = new Date();
-    return new Date(n.getTime() + (n.getTimezoneOffset() + (SITE.utcOffset || -4) * 60) * 60000);
+    var ms = Date.now(), d = awDate(ms), h = d.getUTCHours(), m = d.getUTCMinutes();
+    return { ms: ms, mins: h * 60 + m, day: d.getUTCDay(), h: h, m: m, date: d.toISOString().slice(0, 10) };
   }
   function mins(hhmm) { var p = hhmm.split(":"); return (+p[0]) * 60 + (+p[1]); }
-  function fmtTime(m) {
+  function fmtTime(m, full) {
     var hh = Math.floor(m / 60) % 24, mm = m % 60, ap = hh >= 12 ? "PM" : "AM";
     hh = hh % 12 || 12;
-    return hh + (mm ? ":" + String(mm).padStart(2, "0") : "") + " " + ap;
+    return hh + (mm || full ? ":" + String(mm).padStart(2, "0") : "") + " " + ap;
   }
   /* Hours can cross midnight: ["22:00","02:00"] = opens 10 PM, closes 2 AM the next morning. */
   function windowFor(dayIdx) {
@@ -221,7 +322,7 @@
     return { o: w.o, c: w.c, cut: cut };
   }
   function shopStatus() {
-    var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
+    var t = arubaNow(), d = t.day, now = t.mins;
     var wins = [];
     var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
     if (y) wins.push({ o: y.o - 1440, c: y.c - 1440, cut: y.cut - 1440 });
@@ -231,21 +332,21 @@
       if (now >= x.o && now < x.cut) {
         // No closing or last-orders time on screen (Victor, 9 Oct 2026): only when we open.
         var opens = clock(((x.o % 1440) + 1440) % 1440);
-        return { open: true, soon: false, lastOrder: "", last: false,
+        return { open: true, soon: false, lastOrder: "", last: false, opensAt: ((x.o % 1440) + 1440) % 1440, opensIn: 0,
           label: tr("Open now"), sub: tr("Late night from {time}", { time: opens }) };
       }
     }
     var finishing = wins.some(function (x) { return now >= x.cut && now < x.c; });
     var res = null;
-    if (w && now < w.o) res = { label: tr(w.o >= 18 * 60 ? "Opens tonight {time}" : "Opens today {time}", { time: clock(w.o) }) };
+    if (w && now < w.o) res = { label: tr(w.o >= 18 * 60 ? "Opens tonight {time}" : "Opens today {time}", { time: clock(w.o) }), opensAt: w.o % 1440, opensIn: w.o - now };
     for (var i = 1; i <= 7 && !res; i++) {
       var n = windowFor(d + i);
       if (n) {
         res = { label: i === 1 ? tr(n.o >= 18 * 60 ? "Opens tomorrow night {time}" : "Opens tomorrow {time}", { time: clock(n.o) })
-          : tr("Opens {day} {time}", { day: tr(DAY_NAMES[(d + i) % 7]), time: clock(n.o) }) };
+          : tr("Opens {day} {time}", { day: tr(DAY_NAMES[(d + i) % 7]), time: clock(n.o) }), opensAt: n.o % 1440, opensIn: n.o + i * 1440 - now };
       }
     }
-    res = res || { label: tr("Closed") };
+    res = res || { label: tr("Closed"), opensAt: null, opensIn: null };
     res.open = false;
     res.finishing = finishing;
     return res;
@@ -450,7 +551,7 @@
   function newOrderNo() {
     var t = arubaNow(), r = "";
     for (var i = 0; i < 2; i++) r += NO_CHARS.charAt(Math.floor(Math.random() * NO_CHARS.length));
-    return String(t.getHours()).padStart(2, "0") + String(t.getMinutes()).padStart(2, "0") + "-" + r;
+    return String(t.h).padStart(2, "0") + String(t.m).padStart(2, "0") + "-" + r;
   }
   function orderNo() {
     var s = S();
@@ -468,7 +569,7 @@
   function slotText(m) { m = m % 1440; return m === 0 ? tr("Midnight") : clock(m); }
   /* Time choices run from 30 min after opening (or 45 min from now) until last orders, never the closing minute itself. */
   function timeSlots() {
-    var t = arubaNow(), d = t.getDay(), now = t.getHours() * 60 + t.getMinutes();
+    var t = arubaNow(), d = t.day, now = t.mins;
     var st = shopStatus(), win = null, prefix = "";
     function endOf(x, shift) { return (x.cut < x.c ? x.cut : x.c - 15) + shift; }
     var y = cutFor(windowFor(d - 1)), w = cutFor(windowFor(d));
@@ -492,6 +593,100 @@
     var s = S(), ts = timeSlots();
     if (s.when && ts.slots.some(function (x) { return x.v === s.when; })) return s.when;
     return ts.asap ? "" : (ts.slots[0] ? ts.slots[0].v : "");
+  }
+
+  /* ---------------------------------------------------------------- the in-app order (API, see the top of this file) */
+  /* "As soon as possible" goes in from opening until lastOrder, on the Aruba clock: exactly while shopStatus() says open */
+  function canOrderNow() { return !!(SITE && shopStatus().open); }
+  /* The delivery times the order database accepts for a pre-order: every 15 minutes from 22:00 to 01:45 Aruba time,
+     at least max(15, etaMin - 25) minutes from now and no more than 24 hours ahead. Here also only inside site.json's
+     hours for that night, so a night without hours has none. The first night that still has a time is the one given:
+     at 3 PM that is tonight from 10 PM, at 11:30 PM the rest of tonight, at 1:40 AM the coming night. */
+  var SLOT_FIRST = 22 * 60, SLOT_LAST = 25 * 60 + 45;   // minutes after the night's first midnight: 22:00 .. 01:45
+  function slots() {
+    if (!SITE) return [];
+    var now = Date.now(), aw = awOffset(), lead = Math.max(15, (eta().min || 45) - 25) * 60000;
+    var d = awDate(now), midnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());   // Aruba midnight, on the moved clock
+    var thisNight = new Date(now + aw - 12 * 3600e3).toISOString().slice(0, 10);   // service nights run noon to noon
+    for (var k = -1; k <= 1; k++) {
+      var start = midnight + k * 864e5, day = new Date(start).getUTCDay(), w = windowFor(day), out = [];
+      if (!w) continue;
+      var from = Math.ceil(Math.max(w.o, SLOT_FIRST) / 15) * 15, to = Math.min(w.c - 15, SLOT_LAST);
+      var night = new Date(start).toISOString().slice(0, 10);
+      for (var m = from; m <= to; m += 15) {
+        var utc = start + m * 60000 - aw;
+        if (utc < now + lead || utc > now + 864e5) continue;
+        out.push({ m: m % 1440, label: clock(m, true), iso: new Date(utc).toISOString(), tonight: night === thisNight, day: day, early: m - w.o < 30 });
+      }
+      if (out.length) return out;
+    }
+    return [];
+  }
+  /* the cart as the app's own pages read it */
+  function ticketName(l) { return [l.n].concat(l.d || []).join(" \u00b7 "); }
+  function lines() {
+    return liveLines().map(function (l) {
+      var m = MENU[l.b], it = m && m.byId[l.id];
+      return { k: l.k, b: l.b, brand: brandName(l.b), id: l.id, name: ticketName(l), title: l.n, opts: (l.d || []).slice(),
+        q: l.q, p: l.p, img: it && hasPic(it) && it.kind !== "drink" ? path(thumb(it.img)) : "", drink: isDrinkLine(l),
+        soldOut: !!(l.soldOut || l.closed), o: JSON.parse(JSON.stringify(l.o || {})) };
+    });
+  }
+  /* no minimum order (Victor, 16 Oct 2026): site.json "minFood" in cents brings one back, 0 when it isn't there */
+  function food() { return subtotal(); }
+  function minFood() { return SITE && typeof SITE.minFood === "number" && SITE.minFood > 0 ? SITE.minFood : 0; }
+  function shortBy() { return Math.max(0, minFood() - food()); }
+  /* the customer's details, kept on this phone for next time (no account). The first time they come from what the
+     order sheet already remembered (area, address, name) */
+  var ME_KEY = "pidi.me.v1", ORDERS_KEY = "pidi.orders.v1", memMe = null, memOrders = [];
+  function details() {
+    var me = memMe;
+    try { me = JSON.parse(localStorage.getItem(ME_KEY)) || memMe; } catch (e) { /* private mode */ }
+    me = me && typeof me === "object" ? me : {};
+    var s = KEY ? S() : {}, areas = (SITE && SITE.areas) || [];
+    function str(v) { return typeof v === "string" ? v : ""; }
+    var area = me.area != null ? str(me.area) : str(s.area);
+    return { name: me.name != null ? str(me.name) : str(s.name), phone: str(me.phone), area: areas.indexOf(area) >= 0 ? area : "",
+      addr: me.addr != null ? str(me.addr) : str(s.addr), note: str(me.note), pay: me.pay === "cash" || me.pay === "transfer" ? me.pay : "",
+      paysWith: typeof me.paysWith === "number" && me.paysWith > 0 ? Math.round(me.paysWith) : null, usd: me.usd === true };
+  }
+  function saveDetails(patch) {
+    var d = details();
+    Object.keys(patch || {}).forEach(function (k) { if (Object.prototype.hasOwnProperty.call(d, k)) d[k] = patch[k]; });
+    memMe = d;
+    try { localStorage.setItem(ME_KEY, JSON.stringify(d)); } catch (e) { /* private mode: kept for this visit */ }
+    return details();
+  }
+  /* orders placed from this phone, newest first (5 at most), each with its full basket for the status page and Order again */
+  function orders() {
+    try { var a = JSON.parse(localStorage.getItem(ORDERS_KEY)); if (Array.isArray(a)) return a.filter(function (o) { return o && typeof o.t === "string" && o.t; }); } catch (e) { /* private mode */ }
+    return memOrders.slice();
+  }
+  function rememberOrder(res) {
+    res = res || {};
+    var ls = lines(), at = Date.parse(res.created_at || "") || Date.now();
+    var names = Array.isArray(res.restaurants) && res.restaurants.length
+      ? res.restaurants.map(function (r) { return r.name || brandName(r.slug); }) : brandsInCart().map(brandName);
+    var rec = { t: String(res.public_token || ""), at: at, no: res.night_no || null, restaurants: names,
+      total_cents: typeof res.total_cents === "number" ? res.total_cents : total(), pay: res.pay || details().pay || "",
+      due: res.due_at || "", lines: ls };
+    var list = orders().filter(function (o) { return o && o.t !== rec.t; });
+    list.unshift(rec);
+    list = list.slice(0, 5);
+    memOrders = list;
+    try { localStorage.setItem(ORDERS_KEY, JSON.stringify(list)); } catch (e) { /* private mode: kept for this visit */ }
+    // the same basket is the "Order again" basket on the restaurant pages
+    try { localStorage.setItem(LAST_KEY || MIX_LAST, JSON.stringify({ at: at, lines: ls.map(function (l) { return { b: l.b, id: l.id, q: l.q, o: l.o }; }) })); } catch (e) { /* private mode */ }
+    return rec;
+  }
+  /* restaurants in the orders this phone remembers and in its Order again basket: their menus load with the page */
+  function savedBrands() {
+    var out = [];
+    function add(b) { if (b && out.indexOf(b) < 0) out.push(b); }
+    orders().forEach(function (o) { (Array.isArray(o.lines) ? o.lines : []).forEach(function (l) { add(l && l.b); }); });
+    try { var last = JSON.parse(localStorage.getItem(LAST_KEY || MIX_LAST)); (last && Array.isArray(last.lines) ? last.lines : []).forEach(function (l) { add(l && l.b); }); } catch (e) { /* private mode */ }
+    var known = (SITE.brands || []).map(function (b) { return b.id; });
+    return out.filter(function (b) { return known.indexOf(b) >= 0; });
   }
 
   /* ---------------------------------------------------------------- WhatsApp ticket */
@@ -1155,7 +1350,7 @@
   }
   function howNote() {
     var vals = DAYS.map(function (d) { return SITE.hours[d] ? SITE.hours[d].join("-") : "x"; });
-    var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().getDay()]];
+    var h = SITE.hours.mon, same = h && vals.every(function (v) { return v === vals[0]; }), today = SITE.hours[DAYS[arubaNow().day]];
     // no closing or last-orders time on screen (Victor, 9 Oct 2026)
     var hours = same ? tr("Every night from {time}.", { time: clock(mins(h[0])) })
       : today ? tr("Late night from {time}", { time: clock(mins(today[0])) }) + "." : tr("Closed today.");
@@ -1221,7 +1416,7 @@
   function listAnd(arr) { return arr.length < 2 ? arr.join("") : arr.slice(0, -1).join(", ") + " " + tr("and") + " " + arr[arr.length - 1]; }
   function paintSign(first) {
     // the greeting follows the Aruba clock: Papiamento for morning, afternoon and night
-    var hello = $("[data-oa-hello]"), hr = arubaNow().getHours();
+    var hello = $("[data-oa-hello]"), hr = arubaNow().h;
     if (hello) hello.textContent = hr >= 5 && hr < 12 ? "Bon dia." : hr >= 12 && hr < 18 ? "Bon tardi." : "Bon nochi.";
     var sign = $("[data-oa-sign]");
     if (!sign) return;
@@ -1547,7 +1742,7 @@
   function renderHub() {
     var ids = (SITE.brands || []).filter(function (b) { return b.status !== "hidden"; }).map(function (b) { return b.id; });
     paintSign(true);
-    Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
+    return Promise.all(ids.map(function (b) { return loadMenu(b).catch(function () { return null; }); })).then(function () {
       var rail = $("#oa-rail"), list = $("#oa-list");
       quickRow(ids);
       if (rail) {
@@ -1645,20 +1840,43 @@
 
   /* ---------------------------------------------------------------- boot */
   function boot() {
+    var fail = function (err) {
+      console.error(err);
+      READY_FNS.rej(err);
+      if (PAGE === "checkout" || PAGE === "order") return;   // the app's own pages say it their own way
+      ($("#oa-main") || BODY).insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
+    };
+    if (PAGE === "checkout" || PAGE === "order") {
+      // app mode: the data, the words and the language switch, nothing drawn
+      Promise.all([loadSite(), loadLang()]).then(function () {
+        setOrder();
+        reload();
+        translatePage();
+        $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });
+        $$("[data-oa-app]").forEach(function (n) { n.textContent = SITE.name || n.textContent; });
+        var need = menusInCart();
+        savedBrands().forEach(function (b) { if (need.indexOf(b) < 0) need.push(b); });
+        return Promise.all(need.map(function (b) { return loadMenu(b).catch(function () { return null; }); }));
+      }).then(function () {
+        Object.keys(MENU).forEach(function (b) { refreshLines(b); });
+        document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { reload(); emit(); } });
+        BODY.classList.add("oa-ready");
+        later(registerSW);
+        ready();
+      }).catch(fail);
+      return;
+    }
     if (PAGE === "hub") {
       Promise.all([loadSite(), loadLang()]).then(function () {
         translatePage();
         fillCommon();
         setInterval(fillCommon, 60000);
-        renderHub();
         $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });
         setupIAB();
         BODY.classList.add("oa-ready");
         later(registerSW);
-      }).catch(function (err) {
-        console.error(err);
-        ($("#oa-main") || BODY).insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
-      });
+        return renderHub();
+      }).then(ready).catch(fail);
       return;
     }
     if (PAGE !== "brand" || !HERE) return;
@@ -1686,19 +1904,25 @@
         document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { reload(); emit(); } });
         BODY.classList.add("oa-ready");
         later(registerSW);
+        ready();
       });
-    }).catch(function (err) {
-      console.error(err);
-      var main = $("#oa-main") || BODY;
-      main.insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
-    });
+    }).catch(fail);
   }
 
   window.OrderApp = {
+    // the restaurant pages and QA
     buildMessage: buildMessage, checkoutLink: checkoutLink, addItem: addItem, setLineQty: setLineQty,
     count: count, subtotal: subtotal, fee: fee, total: total, state: function () { return S(); },
     clear: clearOrder, loadMenu: loadMenu, shopStatus: function () { return shopStatus(); },
-    _set: function (patch) { var s = S(); Object.keys(patch).forEach(function (k) { s[k] = patch[k]; }); commit(); }
+    _set: function (patch) { var s = S(); Object.keys(patch).forEach(function (k) { s[k] = patch[k]; }); commit(); },
+    // the app's own pages (checkout/, order/): the API at the top of this file
+    ready: READY, site: function () { return SITE; }, ordering: function () { return ordering(); }, eta: function () { return eta(); },
+    menu: function (b) { return MENU[b] || null; }, tr: tr, money: function (c, html) { return html ? moneyHTML(c) : money(c); },
+    lang: function () { return LANG; }, clock: function (m, full) { return clock(m, full); }, arubaNow: arubaNow, slots: slots,
+    canOrderNow: canOrderNow, lines: lines, food: food, minFood: minFood, shortBy: shortBy,
+    details: details, saveDetails: saveDetails, rememberOrder: rememberOrder, orders: orders, onChange: onChange,
+    waNumber: function () { return waNumber(); }, waLink: function (t) { return waLink(t); },
+    esc: esc, keep: keep, listAnd: function (a) { return listAnd(a); }, toast: function (t) { toast(t); }
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();

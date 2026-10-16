@@ -1,0 +1,8 @@
+/* The app's own pages (checkout/, order/). Builds on shared/order.css: the same night palette, Archivo, and the
+   app's yellow as the accent (the restaurant pages use their own colour). */
+body[data-page="checkout"],body[data-page="order"]{--accent:var(--sodium);--accent-ink:var(--night)}
+body[data-page="checkout"] .top__in,body[data-page="order"] .top__in{max-width:600px}
+.top__name{flex:1;min-width:0;font:800 18px/1 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top__app{flex:none;font:900 18px/1 var(--font);font-stretch:70%;text-transform:uppercase;letter-spacing:.02em;color:var(--sodium)}
+.app{max-width:600px;margin:0 auto;padding:0 16px calc(40px + var(--safe-b))}
+.app__foot{max-width:600px;margin:0 auto;padding:8px 16px calc(32px + var(--safe-b))}
