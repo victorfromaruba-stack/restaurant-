@@ -60,7 +60,7 @@ function showDesk(drivers) {
     id: "kitchen-pin",
     inputmode: "numeric",
     autocomplete: "new-password",
-    placeholder: "4 to 8 digits",
+    placeholder: "6 to 8 digits",
     type: "password",
   });
   main.appendChild(el("label", { class: "field" }, [el("span", { text: "Kitchen PIN" }), kitchen]));

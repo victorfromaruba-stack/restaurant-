@@ -490,7 +490,16 @@ def main():
 
     refused = scalar(conn, "select public.pidi_admin_add_driver(%s, %s, %s, %s)", ["0000", "Ari", "2975550001", "2468"])
     check("wrong admin PIN is refused", refused.get("ok") is False and "does not match" in refused.get("error", "").lower(), str(refused))
-    q(conn, "select public.pidi_admin_set_kitchen_pin(%s, %s)", ["42424242", "9999"])
+    # The live kitchen PIN was set when 4 digits were allowed. Store one like that,
+    # as the owner, so the steps below prove it still signs in. New PINs are 6 to 8
+    # digits; that is tested at the end.
+    q(conn, "reset role")
+    q(conn, """
+        insert into public.pidi_settings (key, value)
+        values ('kitchen_pin_hash', extensions.crypt('9999', extensions.gen_salt('bf', 8)))
+        on conflict (key) do update set value = excluded.value
+    """)
+    q(conn, "set role anon")
     refused_kitchen = scalar(conn, "select public.pidi_kitchen_login(%s)", ["0000"])
     check(
         "wrong kitchen PIN is refused",
@@ -502,6 +511,7 @@ def main():
     conn.commit()
     kitchen = scalar(conn, "select public.pidi_kitchen_login(%s)", ["9999"])
     check("kitchen login returns a token and a topic", bool(kitchen["token"]) and kitchen["topic"].startswith("pidi:k:"))
+    check("a 4-digit kitchen PIN set before the 6-digit rule still signs in", kitchen.get("ok") is True, str(kitchen)[:120])
     q(conn, "reset role")
     q(conn, "update public.pidi_kitchen_sessions set expires_at = now() - interval '1 minute'")
     conn.commit()
@@ -940,6 +950,121 @@ def main():
         bool(bea_still.get("token")) and bea_still.get("ok") is True,
         str(bea_still),
     )
+
+    # --- many wrong PINs at once, each on its own connection, still count one by one
+    def owner(sql, args=None):
+        q(conn, "reset role")
+        q(conn, sql, args)
+        conn.commit()
+        q(conn, "set role anon")
+        conn.commit()
+
+    def burst(sql, args, n=20):
+        gate = threading.Barrier(n)
+        answers = []
+
+        def one():
+            other = psycopg2.connect(DSN)
+            other.autocommit = True
+            cur = other.cursor()
+            try:
+                cur.execute("set role anon")
+                gate.wait(timeout=30)
+                cur.execute(sql, args)
+                row = cur.fetchone()[0]
+                answers.append((row.get("error") or "ok") if isinstance(row, dict) else str(row))
+            except (psycopg2.Error, threading.BrokenBarrierError) as err:
+                answers.append("raised: " + str(err).strip())
+            finally:
+                other.close()
+
+        threads = [threading.Thread(target=one) for _ in range(n)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        misses = sum("does not match" in a.lower() for a in answers)
+        waits = sum("too many tries" in a.lower() for a in answers)
+        return misses, waits, answers
+
+    def burst_check(label, misses, waits, answers, n=20):
+        check(
+            "%s %s wrong tries at once: at most 5 misses, the rest told to wait" % (n, label),
+            misses <= 5 and misses + waits == n,
+            "misses=%s waits=%s other=%s" % (misses, waits, [a for a in answers if "does not match" not in a.lower() and "too many tries" not in a.lower()][:3]),
+        )
+        check("%s wrong tries at once are all counted (exactly 5 misses)" % label, misses == 5, "misses=%s" % misses)
+
+    owner("""
+        update public.pidi_settings set value = case key when 'kitchen_pin_failures' then '0' else '' end
+        where key in ('kitchen_pin_failures', 'kitchen_pin_locked_until')
+    """)
+    misses, waits, answers = burst("select public.pidi_kitchen_login(%s)", ["0000"])
+    burst_check("kitchen", misses, waits, answers)
+    q(conn, "reset role")
+    k_failures = scalar(conn, "select value from public.pidi_settings where key = 'kitchen_pin_failures'")
+    k_locked = scalar(conn, "select nullif(value, '')::timestamptz > now() from public.pidi_settings where key = 'kitchen_pin_locked_until'")
+    conn.commit()
+    q(conn, "set role anon")
+    check("kitchen burst sets the lock and counts 5", k_locked is True and k_failures == "5", "%s %s" % (k_failures, k_locked))
+    row = scalar(conn, "select public.pidi_kitchen_login(%s)", ["9999"])
+    conn.commit()
+    check("right kitchen PIN refused after the burst", row.get("ok") is False and "too many tries" in row.get("error", "").lower(), str(row))
+
+    owner("update public.pidi_drivers set pin_failures = 0, pin_locked_until = null where name = 'Ari'")
+    misses, waits, answers = burst("select public.pidi_driver_login(%s, %s)", ["Ari", "0000"])
+    burst_check("driver", misses, waits, answers)
+    q(conn, "reset role")
+    d_row = q(conn, "select pin_failures, pin_locked_until > now() from public.pidi_drivers where name = 'Ari'")
+    conn.commit()
+    q(conn, "set role anon")
+    check("driver burst sets the lock and counts 5", d_row == [(5, True)], str(d_row))
+    row = scalar(conn, "select public.pidi_driver_login(%s, %s)", ["Ari", "2468"])
+    conn.commit()
+    check("right driver PIN refused after the burst", row.get("ok") is False and "too many tries" in row.get("error", "").lower(), str(row))
+    row = scalar(conn, "select public.pidi_driver_login(%s, %s)", ["Bea", "1357"])
+    conn.commit()
+    check("the burst on one driver leaves another signing in", row.get("ok") is True, str(row))
+
+    owner("""
+        update public.pidi_settings set value = case key when 'admin_pin_failures' then '0' else '' end
+        where key in ('admin_pin_failures', 'admin_pin_locked_until')
+    """)
+    misses, waits, answers = burst("select public.pidi_admin_list_drivers(%s)", ["00000000"])
+    burst_check("admin", misses, waits, answers)
+    q(conn, "reset role")
+    a_failures = scalar(conn, "select value from public.pidi_settings where key = 'admin_pin_failures'")
+    a_locked = scalar(conn, "select nullif(value, '')::timestamptz > now() from public.pidi_settings where key = 'admin_pin_locked_until'")
+    conn.commit()
+    q(conn, "set role anon")
+    check("admin burst sets the lock and counts 5", a_locked is True and a_failures == "5", "%s %s" % (a_failures, a_locked))
+    row = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
+    conn.commit()
+    check("right admin PIN refused after the burst", row.get("ok") is False and "too many tries" in row.get("error", "").lower(), str(row))
+
+    # --- a new kitchen PIN is 6 to 8 digits
+    owner("""
+        update public.pidi_settings set value = case when key in ('admin_pin_failures', 'kitchen_pin_failures') then '0' else '' end
+        where key in ('admin_pin_failures', 'admin_pin_locked_until', 'kitchen_pin_failures', 'kitchen_pin_locked_until')
+    """)
+    for short in ("1234", "12345"):
+        ok, detail = explodes(conn, "select public.pidi_admin_set_kitchen_pin(%s, %s)", ["42424242", short], "6 to 8 digits")
+        conn.commit()
+        check("a %s-digit kitchen PIN is refused" % len(short), ok, detail)
+    old = scalar(conn, "select public.pidi_kitchen_login(%s)", ["9999"])
+    conn.commit()
+    check("a refused new PIN leaves the old 4-digit PIN working", old.get("ok") is True, str(old)[:120])
+    for good_pin in ("246810", "86420246"):
+        saved = scalar(conn, "select public.pidi_admin_set_kitchen_pin(%s, %s)", ["42424242", good_pin])
+        conn.commit()
+        signed = scalar(conn, "select public.pidi_kitchen_login(%s)", [good_pin])
+        conn.commit()
+        check("a %s-digit kitchen PIN is saved and signs in" % len(good_pin),
+              saved.get("ok") is True and signed.get("ok") is True, str(saved) + " " + str(signed)[:80])
+    stale = scalar(conn, "select public.pidi_kitchen_login(%s)", ["9999"])
+    conn.commit()
+    check("the old 4-digit PIN stops working once a new one is set",
+          stale.get("ok") is False and "does not match" in stale.get("error", "").lower(), str(stale))
 
     seed_when_placeholder_replaced()
 

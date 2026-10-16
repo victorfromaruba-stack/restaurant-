@@ -977,6 +977,7 @@ $$;
 
 -- A miss is returned as jsonb, not raised. A raised error would roll the failure
 -- count back, and the lock would never stick. One kitchen, so the lock is global.
+-- Tries wait in line for one another, so many tries at once still count one by one.
 create or replace function public.pidi_kitchen_login(pin text)
 returns jsonb
 language plpgsql
@@ -990,6 +991,7 @@ declare
   token text;
   hours integer;
 begin
+  perform pg_advisory_xact_lock(hashtext('pidi-kitchen-login'));
   hash := public.pidi_setting('kitchen_pin_hash');
   if hash is null or hash = '' then
     return jsonb_build_object('ok', false, 'error', 'The kitchen PIN is not set yet.');
@@ -1326,6 +1328,7 @@ $$;
 
 -- Returns null when the PIN is good. A wrong PIN is returned as text, not raised:
 -- a raised error would roll the failure count back, and the lock would never stick.
+-- Tries wait in line for one another, so many tries at once still count one by one.
 create or replace function public.pidi_admin_ok(admin_pin text)
 returns text
 language plpgsql
@@ -1337,6 +1340,7 @@ declare
   failures integer;
   locked timestamptz;
 begin
+  perform pg_advisory_xact_lock(hashtext('pidi-admin-login'));
   hash := public.pidi_setting('admin_pin_hash');
   if hash is null or hash = '' then
     return 'Set the admin PIN in the SQL editor first. The seed is at the bottom of PIDI_SETUP.sql.';
@@ -1364,6 +1368,8 @@ begin
 end
 $$;
 
+-- A new kitchen PIN is 6 to 8 digits. Sign in still takes 4 to 8, so a PIN set
+-- before this rule keeps working until it is changed here.
 create or replace function public.pidi_admin_set_kitchen_pin(admin_pin text, new_pin text)
 returns jsonb
 language plpgsql
@@ -1377,9 +1383,11 @@ begin
   if admin_msg is not null then
     return jsonb_build_object('ok', false, 'error', admin_msg);
   end if;
-  if new_pin is null or new_pin !~ '^[0-9]{4,8}$' then
-    raise exception 'Kitchen PIN must be 4 to 8 digits.';
+  if new_pin is null or new_pin !~ '^[0-9]{6,8}$' then
+    raise exception 'Kitchen PIN must be 6 to 8 digits.';
   end if;
+  -- Waits for a kitchen sign-in in progress, so its miss is not counted on the new PIN.
+  perform pg_advisory_xact_lock(hashtext('pidi-kitchen-login'));
   insert into public.pidi_settings (key, value)
   values ('kitchen_pin_hash', extensions.crypt(new_pin, extensions.gen_salt('bf', 8)))
   on conflict (key) do update set value = excluded.value;
@@ -1500,9 +1508,12 @@ declare
   key text;
 begin
   key := lower(trim(coalesce(driver_name_or_id, '')));
+  -- The driver's row stays locked until this try ends, so tries at once for one
+  -- driver wait in line and count one by one.
   select * into drv
   from public.pidi_drivers d
-  where d.active and (d.code = key or lower(d.name) = key or d.id::text = key);
+  where d.active and (d.code = key or lower(d.name) = key or d.id::text = key)
+  for no key update;
   if not found then
     return jsonb_build_object('ok', false, 'error', 'That PIN does not match.');
   end if;

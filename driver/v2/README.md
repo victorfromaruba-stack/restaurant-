@@ -14,7 +14,7 @@ There is no service role key, no Edge Function, and no signing key. Do not go lo
 
 v2 stays on "Not connected yet" until that key is set and `pidi_ping()` answers. Opening `/driver/v2/` or `/driver/admin/` before that does not call the database.
 
-**3. Then the admin screen.** Open `/driver/admin/` on your phone. Enter the admin PIN (it stays on that screen only, it is not saved on the phone). Set the kitchen PIN. Add each driver: name, phone, PIN. Remove a driver who is not out on a run. Kitchen and driver PINs are 4 to 8 digits. The driver signs in with their name (`Ari`) and their PIN. Do not commit these PINs.
+**3. Then the admin screen.** Open `/driver/admin/` on your phone. Enter the admin PIN (it stays on that screen only, it is not saved on the phone). Set the kitchen PIN. Add each driver: name, phone, PIN. Remove a driver who is not out on a run. A new kitchen PIN is 6 to 8 digits (a 4 or 5 digit one set earlier still signs in until you change it). Driver PINs are 4 to 8 digits. The driver signs in with their name (`Ari`) and their PIN. Do not commit these PINs.
 
 Five wrong admin PINs lock admin checks for 5 minutes. There is one admin, so the lock is global. Five wrong kitchen PINs lock the kitchen the same way. Five wrong tries lock that driver only. The other drivers can still sign in. Until a lock ends, the right PIN is refused too: "Too many tries. Wait 5 minutes."
 
