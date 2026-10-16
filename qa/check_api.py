@@ -267,13 +267,430 @@ async def look_checks(br):
     check(not pg._errs, "the look checks ran with no page errors" + (f": {pg._errs}" if pg._errs else ""))
     await ctx.close()
 
+# ---------------------------------------------------------------- checkout/ and order/, against a fake order database
+# Every /rest/v1/rpc/ call is answered here, the way driver/v2/supabase/PIDI_SETUP.sql answers it: the real database is
+# never reached (and any other request to it is stopped and counted). QA_SHOTS=<folder> saves phone screenshots of every
+# checkout step and every order state at 390 and 320 px wide.
+SHOTS = os.environ.get("QA_SHOTS")
+APP_SITE = dict(site, ordering="app")
+NAMES = {b: m["name"] for b, m in menus.items()}
+leaks = []
+
+def iso_now(t): return t if t.endswith("Z") else t + "Z"
+
+class FakeDB:
+    """the order database's answers, from what each test sets"""
+    def __init__(self, now):
+        self.now, self.calls, self.place, self.orders, self.by_client, self.n = now, [], ["ok"], {}, {}, 0
+    def order_from(self, p, n):
+        food = sum(i["qty"] * i.get("price_cents", 0) for i in p["items"])
+        usd, pays = bool(p.get("pays_in_usd")), p.get("pays_with_cents")
+        rest = []
+        for i in p["items"]:
+            if i["restaurant"] not in [r["slug"] for r in rest]:
+                rest.append({"slug": i["restaurant"], "name": NAMES.get(i["restaurant"], i["restaurant"]), "food_cents": 0, "ready": False})
+        return {"order_id": f"id-{n}", "public_token": f"tok-{n}", "food_cents": food, "fee_cents": 500, "total_cents": food + 500,
+                "change_due_cents": (pays - food - 500) if p["pay"] == "cash" and not usd else None, "pay": p["pay"],
+                "pays_with_cents": pays if p["pay"] == "cash" and not usd else None, "pays_in_usd": usd,
+                "transfer_status": "awaiting" if p["pay"] == "transfer" else None, "transfer_paid_at": None,
+                "due_at": p.get("due_at") or self.now, "created_at": self.now, "first_name": p["name"].split(" ")[0], "area": p["area"],
+                "night_no": 10 + n, "eta_min": ETA[0], "eta_max": ETA[1], "test": False, "restaurant": ", ".join(r["name"] for r in rest),
+                "restaurants": rest, "items": [{"restaurant": i["restaurant"], "name": i["name"], "qty": i["qty"], "price_cents": i.get("price_cents", 0)} for i in p["items"]],
+                "events": [{"status": "new", "at": self.now}], "status": "new", "label": "Received", "topic": f"pidi:order:tok-{n}"}
+    async def handle(self, route):
+        req = route.request
+        name = req.url.split("/rpc/")[-1].split("?")[0] if "/rpc/" in req.url else req.url
+        body = json.loads(req.post_data or "{}") if req.method == "POST" else {}
+        self.calls.append((name, body))
+        async def answer(v, status=200):
+            await route.fulfill(status=status, content_type="application/json", body=json.dumps(v))
+        if name == "pidi_place_order":
+            what = self.place.pop(0) if len(self.place) > 1 else self.place[0]
+            if what == "abort":
+                return await route.abort("failed")
+            p = body.get("payload") or {}
+            if what not in ("ok", "ok-lost"):
+                return await answer({"code": "P0001", "details": None, "hint": None, "message": what}, 400)
+            ct = p.get("client_token")
+            if ct not in self.by_client:
+                self.n += 1
+                o = self.order_from(p, self.n)
+                self.orders[o["public_token"]], self.by_client[ct] = o, o["public_token"]
+            if what == "ok-lost":   # it went in, but the answer never reached the phone
+                return await route.abort("failed")
+            return await answer(self.orders[self.by_client[ct]])
+        if name == "pidi_find_order":
+            return await answer(self.orders.get(self.by_client.get(body.get("client_token"))))
+        if name == "pidi_order_status":
+            o = self.orders.get(body.get("token"))
+            return await answer(o) if o else await answer({"code": "P0001", "details": None, "hint": None, "message": "NOT_FOUND"}, 400)
+        await answer({"message": "no such function"}, 404)
+    def placed(self): return [b["payload"] for n, b in self.calls if n == "pidi_place_order"]
+
+async def app_page(br, fake, t, width=390, site_json=APP_SITE, lang=None, fixed=True):
+    ctx = await br.new_context(viewport={"width": width, "height": 780}, is_mobile=True, has_touch=True, service_workers="block", device_scale_factor=2 if SHOTS else 1,
+                               timezone_id="Europe/Amsterdam", locale="en-US", geolocation={"latitude": 12.5711, "longitude": -70.0412}, permissions=["geolocation"])
+    await ctx.route("**/rest/v1/**", fake.handle)
+    async def stop(route):
+        leaks.append(route.request.url); await route.abort()
+    await ctx.route(re.compile(r"^https://[^/]*supabase\.co/(?!rest/v1/)"), stop)
+    await ctx.route("**/shared/site.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(site_json)))
+    await ctx.route("https://wa.me/**", lambda r: r.abort())
+    pg = await ctx.new_page()
+    pg._errs = []
+    pg.on("pageerror", lambda e: pg._errs.append(f"page error: {e}"))
+    pg.on("console", lambda m: pg._errs.append(f"console: {m.text}") if m.type == "error" and "Failed to load resource" not in m.text else None)
+    if fixed:
+        await pg.clock.set_fixed_time(t)
+    else:
+        await pg.clock.install(time=t)
+    await pg.goto(BASE + "404.html")
+    await pg.evaluate("localStorage.clear(); sessionStorage.clear()")
+    if lang:
+        await pg.evaluate("l => localStorage.setItem('pidi.lang.v1', l)", lang)
+    return ctx, pg
+
+shot_n = {}
+async def shot(pg, name, end=False):
+    """a phone screenshot: the first screen, and with end=True also the bottom of the page"""
+    if not SHOTS:
+        return
+    os.makedirs(SHOTS, exist_ok=True)
+    w = pg.viewport_size["width"]
+    await pg.evaluate("window.scrollTo(0, 0)"); await pg.wait_for_timeout(120)
+    await pg.screenshot(path=os.path.join(SHOTS, f"{name}-{w}.png"))
+    if end:
+        await pg.evaluate("window.scrollTo(0, document.body.scrollHeight)"); await pg.wait_for_timeout(200)
+        await pg.screenshot(path=os.path.join(SHOTS, f"{name}-{w}-end.png"))
+        await pg.evaluate("window.scrollTo(0, 0)")
+
+async def fits(pg):
+    return await pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+
+def tap(value, name):
+    return f"label:has(> input[name={name}][value=\"{value}\"])"
+
+async def fill_cart(pg, a, ia, b=None, ib=None):
+    await pg.goto(BASE + a + "/index.html", wait_until="networkidle")
+    await pg.evaluate("""([a, ia, b, ib]) => (b ? OrderApp.loadMenu(b) : Promise.resolve()).then(() => {
+        OrderApp.clear(); OrderApp.addItem(a, ia, {}, 1); if (b) OrderApp.addItem(b, ib, {}, 2); OrderApp.addItem(a, 'ck', {}, 1); })""", [a, ia, b, ib])
+    return await pg.evaluate("[OrderApp.lines(), OrderApp.total()]")
+
+async def step_of(pg):
+    return await pg.evaluate("[location.hash.slice(1), (document.querySelector('.step__t') || {}).textContent || '']")
+
+def dish(b, skip=()):
+    return next(i for i in menus[b]["items"] if i.get("kind") not in ("drink", "side") and not i.get("soldOut") and i["id"] not in skip)
+
+async def checkout_flow(br, width):
+    """a first-time customer at 11:30 PM: every step, then Place order"""
+    fake = FakeDB(iso_now(T_LATE))
+    ctx, pg = await app_page(br, fake, T_LATE, width)
+    A, B = open_mix[0], open_mix[1]
+    ia, ib = dish(A)["id"], dish(B)["id"]
+    lines, total = await fill_cart(pg, A, ia, B, ib)
+    await pg.goto(BASE + f"checkout/?from={A}", wait_until="networkidle"); await pg.wait_for_timeout(200)
+    tag = f"[{width}px]"
+    st = await step_of(pg)
+    asap = await pg.evaluate("(document.querySelector('input[name=ck-when]:checked') || {}).value")
+    check(st == ["where", "Where do we bring it?"] and asap == "asap" and await fits(pg),
+          f"{tag} checkout opens on step 1, \"Where do we bring it?\", with as soon as possible picked while open ({st}, {asap})")
+    await shot(pg, "checkout-1-where")
+    await pg.click("[data-next]"); await pg.wait_for_timeout(250)
+    bad = await pg.evaluate("[Array.from(document.querySelectorAll('.is-bad')).map(f => f.getAttribute('data-err')), document.activeElement && document.activeElement.name, location.hash]")
+    check(bad[0] == ["area", "addr"] and bad[1] == "ck-area" and bad[2] == "#where", f"{tag} Continue with nothing filled in says what's missing and stays ({bad})")
+    await shot(pg, "checkout-1-where-missing")
+    await pg.click(tap("Noord", "ck-area"))
+    await pg.fill("#ck-addr", "Weg Fontein 12, yellow house, blue gate")
+    await pg.click("[data-loc]"); await pg.wait_for_timeout(300)
+    loc = await pg.evaluate("!!document.querySelector('.loc--on')")
+    check(loc and not await pg.evaluate("document.querySelector('.is-bad')"), f"{tag} the area, the address and the phone's location go in ({loc})")
+    await shot(pg, "checkout-1-where-filled", end=True)
+    await pg.click("[data-next]"); await pg.wait_for_timeout(250)
+    st = await step_of(pg)
+    check(st == ["you", "Who’s it for?"] and await fits(pg), f"{tag} step 2: \"Who’s it for?\" ({st})")
+    await pg.fill("#ck-name", "Maria Croes")
+    await pg.fill("#ck-phone", "12")
+    await pg.click("[data-next]"); await pg.wait_for_timeout(250)
+    check(await pg.evaluate("[...document.querySelectorAll('.is-bad')].map(f => f.getAttribute('data-err'))") == ["phone"], f"{tag} a phone number too short to call is caught")
+    await pg.fill("#ck-phone", "+297 593 1234")
+    await shot(pg, "checkout-2-you")
+    await pg.click("[data-next]"); await pg.wait_for_timeout(250)
+    st = await step_of(pg)
+    check(st == ["pay", "How will you pay?"], f"{tag} step 3: \"How will you pay?\" ({st})")
+    await shot(pg, "checkout-3-pay")
+    await pg.click(tap("cash", "ck-pay")); await pg.wait_for_timeout(150)
+    chips = await pg.evaluate("Array.from(document.querySelectorAll('[data-cash]')).map(b => +b.getAttribute('data-cash'))")
+    check(chips[0] == total and all(c > total for c in chips[1:]) and len(chips) >= 3, f"{tag} cash: \"Exact amount\" and the notes above the total ({chips}, total {total})")
+    await pg.fill("#ck-cash", str((total - 100) / 100))
+    await pg.click("[data-next]"); await pg.wait_for_timeout(250)
+    check(await pg.evaluate("[...document.querySelectorAll('.is-bad')].map(f => f.getAttribute('data-err'))") == ["cash"], f"{tag} paying with less than the total is caught")
+    await pg.click(f"[data-cash='{chips[1]}']"); await pg.wait_for_timeout(150)
+    change = await pg.evaluate("document.querySelector('[data-change]').textContent")
+    check(change == f"The driver brings {money(chips[1] - total)} change.", f"{tag} the change the driver brings ({change})")
+    await shot(pg, "checkout-3-pay-cash", end=True)
+    await pg.click(tap("usd", "ck-cur")); await pg.wait_for_timeout(150)
+    await shot(pg, "checkout-3-pay-usd")
+    await pg.click(tap("transfer", "ck-pay")); await pg.wait_for_timeout(150)
+    await shot(pg, "checkout-3-pay-transfer")
+    await pg.click(tap("cash", "ck-pay")); await pg.wait_for_timeout(150)
+    await pg.click(tap("awg", "ck-cur")); await pg.wait_for_timeout(150)
+    await pg.click(f"[data-cash='{chips[1]}']"); await pg.wait_for_timeout(150)
+    await pg.click("[data-next]"); await pg.wait_for_timeout(250)
+    st = await step_of(pg)
+    page = await pg.evaluate("document.getElementById('oa-main').innerText")
+    groups = await pg.evaluate("Array.from(document.querySelectorAll('.lines__brand')).map(h => h.textContent)")
+    pics = await pg.evaluate("Array.from(document.querySelectorAll('.line__pic')).length")
+    btn = await pg.evaluate("document.querySelector('[data-place]').innerText.replace(/\\s+/g, ' ')")
+    check(st == ["check", "Check your order"] and groups[:2] == [NAMES[A], NAMES[B]] and pics == len(lines) and page.count("ƒ5.00") == 1
+          and "You pay ƒ5 delivery once." in page and money(total) in btn and "Place order" in btn and await fits(pg),
+          f"{tag} step 4: the dishes by restaurant with a picture each, ƒ5 delivery once, the total on Place order ({groups}, {btn})")
+    await shot(pg, "checkout-4-check", end=True)
+    await pg.fill("#ck-note", "Gate code 4411")
+    await pg.click("[data-place]")
+    await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(400)
+    p = fake.placed()[-1] if fake.placed() else {}
+    want_items = [{"restaurant": l["b"], "id": l["id"], "name": l["name"], "qty": l["q"], "price_cents": l["p"]} for l in lines]
+    check(p.get("items") == want_items and p.get("name") == "Maria Croes" and p.get("phone") == "+297 593 1234" and p.get("area") == "Noord"
+          and p.get("address") == "Weg Fontein 12, yellow house, blue gate" and p.get("note") == "Gate code 4411" and p.get("pay") == "cash"
+          and p.get("pays_with_cents") == chips[1] and "pays_in_usd" not in p and "due_at" not in p and p.get("lat") == "12.571100"
+          and p.get("lng") == "-70.041200" and len(p.get("client_token") or "") >= 16 and "pickup" not in p,
+          f"{tag} Place order sends pidi_place_order every line by id, the details, cash with the note, the map pin and a client_token ({ {k: v for k, v in p.items() if k != 'items'} })")
+    after = await pg.evaluate("""() => [location.hash, JSON.parse(localStorage.getItem('pidi.cart.v1')).lines.length, (JSON.parse(localStorage.getItem('pidi.orders.v1')) || [{}])[0].t,
+        JSON.parse(localStorage.getItem('pidi.me.v1')).phone, (document.querySelector('.st__t') || {}).textContent]""")
+    check(after == ["#t=tok-1", 0, "tok-1", "+297 593 1234", "Received"], f"{tag} then: the order is remembered, the cart emptied, the phone number kept, and its status page shows Received ({after})")
+    await shot(pg, "status-0-just-placed", end=True)
+    check(not pg._errs, f"{tag} the checkout ran with no errors" + (f": {pg._errs}" if pg._errs else ""))
+    await ctx.close()
+    return fake
+
+async def checkout_cases(br):
+    """a returning customer, every error code, a retry with the same token, a pre-order, WhatsApp mode, an empty cart"""
+    A, B = open_mix[0], open_mix[1]
+    a1, b1 = dish(A), dish(B)
+    fake = FakeDB(iso_now(T_LATE))
+    ctx, pg = await app_page(br, fake, T_LATE)
+    await fill_cart(pg, A, a1["id"], B, b1["id"])
+    await pg.evaluate("OrderApp.saveDetails({name: 'Ben', phone: '5931234', area: 'Oranjestad', addr: 'Caya G.F. Betico Croes 10', pay: 'transfer'})")
+    await pg.goto(BASE + f"checkout/?from={A}", wait_until="networkidle"); await pg.wait_for_timeout(200)
+    st = await step_of(pg)
+    check(st[0] == "check", f"a returning customer (details on this phone) lands on Check your order, as soon as possible while open ({st})")
+    # every answer from the database becomes a sentence, and the customer lands where it can be fixed
+    lines = await pg.evaluate("OrderApp.lines()")
+    cases = [("REST_CLOSED:" + B, f"{NAMES[B]} isn’t taking orders right now. Take its dishes out and try again.", "check", "edit"),
+             ("SOLD_OUT:0", f"Sorry, {lines[0]['title']} just sold out tonight. Remove it to send the order.", "check", "edit"),
+             ("BAD_ITEM:1", f"{lines[1]['title']} changed on the menu. Take it out and add it again.", "check", "edit"),
+             ("BAD_PHONE", "That phone number doesn’t look right. Check it and try again.", "you", ""),
+             ("CASH_SHORT", "The cash you pay with doesn’t cover the whole total. Pick a bigger amount.", "pay", ""),
+             ("BAD_TIME", "That delivery time can’t be booked any more. Pick another time.", "where", ""),
+             ("CLOSED", "We just stopped taking orders for right now. Pick a time for later.", "where", ""),
+             ("RATE_LIMIT", "This phone number already has orders waiting. To add something, message us on WhatsApp.", "check", "wa"),
+             ("MIN_FOOD", "Add a little more food to this order and try again.", "check", "edit"),
+             ("FEE_NOT_SET", "Something went wrong on our side. Try again in a minute, or send this order on WhatsApp.", "check", "wa")]
+    for n, (code, text, where, extra) in enumerate(cases):
+        fake.place = [code]
+        await pg.goto(BASE + f"checkout/?from={A}&n={n}#check", wait_until="networkidle"); await pg.wait_for_timeout(150)
+        await pg.click("[data-place]"); await pg.wait_for_timeout(400)
+        got = await pg.evaluate("""() => { const e = document.querySelector('.ck-err'); return [e ? e.querySelector('p').textContent : '', location.hash.slice(1),
+            e ? (e.querySelector('[data-wa]') || {}).href || '' : '', e ? !!Array.from(e.querySelectorAll('a')).find(a => /#o$/.test(a.href)) : false]; }""")
+        ok = got[0].replace("\xa0", " ") == text and got[1] == where and (extra != "wa" or got[2].startswith("https://wa.me/")) and (extra != "edit" or got[3])
+        check(ok, f"{code}: \"{text}\" on the {where} step" + (" with a WhatsApp link" if extra == "wa" else " with a way back to the order" if extra == "edit" else "") + ("" if ok else f" ({got})"))
+        if code == "FEE_NOT_SET":
+            from urllib.parse import unquote
+            msg = unquote(got[2].split("text=", 1)[-1])
+            check(msg.startswith("*Order* #") and f"*{NAMES[A]}*" in msg and "Pay: Bank transfer" in msg and "Name: Ben" in msg and "Phone 5931234." in msg,
+                  f"when the database can't take it, the same order goes out on WhatsApp, written out like before ({msg.splitlines()[0] if msg else ''})")
+        if n == 0:
+            await shot(pg, "checkout-error-restaurant-closed")
+        if code == "FEE_NOT_SET":
+            await shot(pg, "checkout-error-whatsapp-fallback")
+    check(len(fake.orders) == 0, "none of those went in")
+    # the same sentence in the visitor's language
+    await pg.evaluate("localStorage.setItem('pidi.lang.v1', 'nl')")
+    fake.place = ["REST_CLOSED:" + B]
+    await pg.goto(BASE + f"checkout/?from={A}&n=nl#check", wait_until="networkidle"); await pg.wait_for_timeout(150)
+    await pg.click("[data-place]"); await pg.wait_for_timeout(400)
+    nl = await pg.evaluate("(document.querySelector('.ck-err p') || {}).textContent")
+    check(nl == words["nl"]["{restaurant} isn’t taking orders right now. Take its dishes out and try again."].replace("{restaurant}", NAMES[B]), f"[nl] the same answer in Dutch ({nl})")
+    await shot(pg, "checkout-error-nl")
+    await pg.evaluate("localStorage.removeItem('pidi.lang.v1')")
+    # no connection, then Place order again: the same client_token, one order
+    fake.place = ["abort", "ok"]
+    await pg.goto(BASE + f"checkout/?from={A}&n=retry#check", wait_until="networkidle"); await pg.wait_for_timeout(150)
+    before = len(fake.placed())
+    await pg.click("[data-place]"); await pg.wait_for_timeout(400)
+    off = await pg.evaluate("[(document.querySelector('.ck-err p') || {}).textContent, location.hash]")
+    check(off == ["No connection. Check your internet and tap Place order again: it won’t go in twice.", "#check"], f"no connection: it says so and stays ({off})")
+    await shot(pg, "checkout-error-offline")
+    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(300)
+    toks = [p["client_token"] for p in fake.placed()[before:]]
+    check(len(toks) == 2 and toks[0] == toks[1] and len(fake.orders) == 1, f"tapped again, it goes with the same client_token, and there is one order ({toks})")
+    # the answer got lost after the order went in, and then the cart changed: the earlier order is found, not doubled
+    fake.place = ["ok-lost"]
+    await fill_cart(pg, A, a1["id"])
+    await pg.goto(BASE + f"checkout/?from={A}&n=lost#check", wait_until="networkidle"); await pg.wait_for_timeout(150)
+    await pg.click("[data-place]"); await pg.wait_for_timeout(400)
+    first_tok = fake.placed()[-1]["client_token"]
+    await pg.evaluate("a => OrderApp.addItem(a, 'cz', {}, 1)", A); await pg.wait_for_timeout(150)
+    fake.place = ["ok"]
+    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(500)
+    finds = [b for n, b in fake.calls if n == "pidi_find_order"]
+    note = await pg.evaluate("Array.from(document.querySelectorAll('.note')).map(n => n.textContent).join(' ')")
+    check(finds and finds[-1] == {"client_token": first_tok} and len(fake.orders) == 2 and "went in the first time" in note and "earlier=1" in pg.url,
+          f"after an answer that never came and a changed cart, it asks pidi_find_order first, finds the order and shows it, no second one ({len(fake.orders)} orders)")
+    # a changed cart after a failure where nothing went in: a new token
+    fake.place = ["abort"]
+    await fill_cart(pg, A, a1["id"])
+    await pg.goto(BASE + f"checkout/?from={A}&n=new#check", wait_until="networkidle"); await pg.wait_for_timeout(150)
+    await pg.click("[data-place]"); await pg.wait_for_timeout(400)
+    t1 = fake.placed()[-1]["client_token"]
+    await pg.evaluate("a => OrderApp.addItem(a, 'sp', {}, 1)", A); await pg.wait_for_timeout(150)
+    fake.place = ["ok"]
+    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(300)
+    t2 = fake.placed()[-1]["client_token"]
+    check(t1 != t2 and len(fake.orders) == 3, f"a changed order after a try that didn't go in gets a new client_token ({t1[:8]} then {t2[:8]})")
+    # an empty cart, and WhatsApp mode
+    await pg.goto(BASE + "checkout/", wait_until="networkidle")
+    empty = await pg.evaluate("(document.querySelector('.empty__t') || {}).textContent")
+    check(empty == "Your order is empty", f"checkout with nothing in the cart says so ({empty})")
+    check(not pg._errs, "the error and retry cases ran with no errors" + (f": {pg._errs}" if pg._errs else ""))
+    await ctx.close()
+    ctx, pg = await app_page(br, fake, T_LATE, site_json=dict(site, ordering="whatsapp"))
+    await fill_cart(pg, A, a1["id"])
+    await pg.goto(BASE + f"checkout/?from={A}", wait_until="networkidle")
+    off = await pg.evaluate("[document.getElementById('oa-main').innerText, (document.querySelector('.empty .btn') || {}).href || '']")
+    check("Orders go in on WhatsApp right now." in off[0] and off[1].endswith(f"/{A}/#o"), "with site.json \"ordering\": \"whatsapp\" the checkout takes no order and sends people back to the order sheet")
+    await ctx.close()
+
+async def preorder(br, width=390):
+    """3 PM, closed: no as soon as possible, a time tonight, sent as due_at"""
+    fake = FakeDB(iso_now(T_AFTERNOON))
+    ctx, pg = await app_page(br, fake, T_AFTERNOON, width)
+    A = open_mix[0]
+    await fill_cart(pg, A, dish(A)["id"])
+    await pg.evaluate("OrderApp.saveDetails({name: 'Eva', phone: '5601234', area: 'Eagle Beach', addr: 'Hotel lobby, room 214', pay: 'cash', usd: true})")
+    await pg.goto(BASE + f"checkout/?from={A}", wait_until="networkidle"); await pg.wait_for_timeout(200)
+    r = await pg.evaluate("""() => [location.hash, !!document.querySelector('input[name=ck-when]'), (document.querySelector('.note') || {}).textContent,
+        Array.from(document.querySelectorAll('.time span')).map(s => s.textContent)]""")
+    check(r[0] == "#where" and not r[1] and r[2] == "We’re closed now. Opens tonight 10 PM. Pick a time and it’s a pre-order: we start on it when we open." and r[3][:1] == ["10:30 PM"]
+          and r[3][-1] == "1:45 AM" and await fits(pg),
+          f"[{width}px] 3 PM: closed, no as soon as possible, times tonight from 10:30 PM (half an hour after opening) to 1:45 AM ({r[2]!r}, {r[3][:2]}..)")
+    await shot(pg, "checkout-1-preorder", end=True)
+    await pg.click(tap("2026-10-11T03:00:00.000Z", "ck-time"))
+    await pg.click("[data-next]"); await pg.wait_for_timeout(250)
+    r = await pg.evaluate("[location.hash, (document.querySelector('.note') || {}).textContent, document.querySelector('.recap').innerText]")
+    check(r[0] == "#check" and r[1] == "Pre-order for tonight, 11:00 PM" and "Cash in US dollars" in r[2], f"[{width}px] the check step says it's a pre-order for 11:00 PM ({r[1]!r})")
+    await shot(pg, "checkout-4-check-preorder", end=True)
+    await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(300)
+    p = fake.placed()[-1]
+    check(p.get("due_at") == "2026-10-11T03:00:00.000Z" and p.get("pays_in_usd") is True and "pays_with_cents" not in p,
+          f"[{width}px] the pre-order goes in with due_at (11 PM Aruba in UTC) and cash in US dollars ({p.get('due_at')})")
+    eta = await pg.evaluate("(document.querySelector('.st__eta') || {}).textContent")
+    check(eta == "Arrives around 11 PM", f"[{width}px] its status page: arrives around 11 PM ({eta!r})")
+    await shot(pg, "status-1-preorder", end=True)
+    check(not pg._errs, f"[{width}px] the pre-order ran with no errors" + (f": {pg._errs}" if pg._errs else ""))
+    await ctx.close()
+
+STAGE_WORDS = ["Received", "Cooking", "On the way", "Delivered"]
+async def status_checks(br, width=390):
+    """every state of an order, its times, how they pay, a link nobody knows, and the page asking again by itself"""
+    fake = FakeDB(iso_now(T_LATE))
+    ctx, pg = await app_page(br, fake, T_LATE, width, fixed=False)
+    A, B = open_mix[0], open_mix[1]
+    base = {"name": "Maria", "phone": "5931234", "area": "Noord", "address": "Weg 12", "pay": "cash", "pays_with_cents": 10000,
+            "items": [{"restaurant": A, "id": dish(A)["id"], "name": dish(A)["name"], "qty": 1, "price_cents": dish(A)["price"]},
+                      {"restaurant": B, "id": dish(B)["id"], "name": dish(B)["name"] + " · No onion", "qty": 2, "price_cents": dish(B)["price"]},
+                      {"restaurant": A, "id": "ck", "name": "Coca-Cola (can)", "qty": 1, "price_cents": 300}]}
+    o = fake.order_from(base, 1)
+    fake.orders["tok-1"] = o
+    def at(minutes): return (utc(T_LATE) + datetime.timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    flow = [("new", 0), ("accepted", 1), ("cooking", 3), ("ready", 22), ("assigned", 24), ("picked_up", 27), ("delivered", 41)]
+    await pg.goto(BASE + "order/#t=tok-1", wait_until="networkidle"); await pg.wait_for_timeout(300)
+    async def read():
+        return await pg.evaluate("""() => ({t: (document.querySelector('.st__t') || {}).textContent, eta: (document.querySelector('.st__eta') || {}).textContent || '',
+            line: (document.querySelector('.st__line') || {}).textContent, k: (document.querySelector('.st__k') || {}).textContent,
+            track: Array.from(document.querySelectorAll('.track__s')).map(s => s.className.replace('track__s is-', '') + (s.querySelector('.track__t') ? '@' + s.querySelector('.track__t').textContent : '')),
+            pay: (document.querySelector('.st-pay') || {}).textContent, wa: (document.querySelector('.st-wa') || {}).href || ''})""")
+    r = await read()
+    check(r["t"] == "Received" and r["k"] == "Order 11 for Maria · Noord" and r["eta"] == "Arrives between 12:05 and 12:20 AM"
+          and r["line"] == f"{NAMES[A]} and {NAMES[B]} got your order." and r["track"][0] == "now@11:30 PM" and r["track"][1:] == ["todo", "todo", "todo"]
+          and r["pay"] == f"Cash: you pay with ƒ100.00, the driver brings {money(10000 - o['total_cents'])} change." and r["wa"].startswith("https://wa.me/" + site["whatsapp"]) and await fits(pg),
+          f"[{width}px] Received: the order number and name, when it arrives ({ETA[0]}–{ETA[1]} min after it went in), who has it, the steps, the change ({r['eta']!r})")
+    await shot(pg, "status-2-received", end=True)
+    calls = len([c for c in fake.calls if c[0] == "pidi_order_status"])
+    for status, minutes in flow[1:]:
+        o["events"].append({"status": status, "at": at(minutes)})
+        o["status"] = status
+        await pg.clock.run_for(16000); await pg.wait_for_timeout(150)
+        r = await read()
+        i = {"accepted": 0, "cooking": 1, "ready": 1, "assigned": 2, "picked_up": 2, "delivered": 3}[status]
+        want = {"cooking": f"Your order is being made right now.", "picked_up": "The driver has your order. Keep your phone close."}.get(status)
+        ok = r["t"] == STAGE_WORDS[i] and (status == "delivered" or r["track"][i].startswith("now")) and (not want or r["line"] == want)
+        if status == "delivered":
+            ok = ok and r["line"] == f"Delivered at {at_clock(41)}. Danki." and all(x.startswith("done@") for x in r["track"]) and r["eta"] == ""
+        check(ok, f"[{width}px] {status}: the page asks again by itself within 15 s and shows \"{STAGE_WORDS[i]}\" ({r['t']}, {r['track']})")
+        if status in ("cooking", "picked_up", "delivered"):
+            await shot(pg, "status-" + {"cooking": "3-cooking", "picked_up": "4-on-the-way", "delivered": "5-delivered"}[status], end=True)
+    n_calls = len([c for c in fake.calls if c[0] == "pidi_order_status"])
+    await pg.clock.run_for(60000); await pg.wait_for_timeout(150)
+    check(len([c for c in fake.calls if c[0] == "pidi_order_status"]) == n_calls and n_calls >= calls + 6, f"[{width}px] once delivered it stops asking ({n_calls} asks)")
+    # cancelled, US dollars, bank transfer, a link nobody knows, the list of this phone's orders
+    o2 = fake.order_from(dict(base, pay="transfer", pays_with_cents=None), 2)
+    o2.update(status="cancelled", events=[{"status": "new", "at": at(0)}, {"status": "cancelled", "at": at(4)}])
+    o3 = fake.order_from(dict(base, pays_in_usd=True, pays_with_cents=None), 3)
+    o4 = fake.order_from(dict(base, pay="transfer", pays_with_cents=None), 4)
+    o4.update(status="cooking", transfer_status="paid", events=[{"status": "new", "at": at(0)}, {"status": "cooking", "at": at(2)}])
+    fake.orders.update({"tok-2": o2, "tok-3": o3, "tok-4": o4})
+    await pg.evaluate("ts => ts.forEach(t => OrderApp.rememberOrder({public_token: t, night_no: 12, total_cents: 4321, created_at: '" + T_LATE + "', restaurants: [{slug: 'x', name: 'Taco Brava'}]}))", ["tok-3", "tok-2"])
+    for tokn, name, want in (("tok-2", "status-6-cancelled", {"t": "Cancelled", "pay": "Bank transfer. We send the bank details on WhatsApp when we confirm."}),
+                              ("tok-3", "status-7-usd", {"t": "Received", "pay": "Cash in US dollars. The driver tells you the amount at the door."}),
+                              ("tok-4", "status-8-transfer-paid", {"t": "Cooking", "pay": "Bank transfer: received. Danki."})):
+        await pg.goto(BASE + "order/#t=" + tokn, wait_until="networkidle"); await pg.reload(wait_until="networkidle"); await pg.wait_for_timeout(300)
+        r = await read()
+        ok = all(r[k] == v for k, v in want.items()) and (tokn != "tok-2" or (r["track"] == [] and r["eta"] == ""))
+        check(ok, f"[{width}px] {name.split('-', 2)[-1]}: \"{want['t']}\", and how they pay: \"{want['pay']}\"" + ("" if ok else f" ({r})"))
+        await shot(pg, name, end=True)
+    others = await pg.evaluate("Array.from(document.querySelectorAll('.ord')).map(a => a.getAttribute('href'))")
+    check(others == ["#t=tok-2", "#t=tok-3"] or set(others) >= {"#t=tok-2"}, f"[{width}px] under it, this phone's other orders link to their own status ({others})")
+    await pg.goto(BASE + "order/#t=nobody-knows", wait_until="networkidle"); await pg.reload(wait_until="networkidle"); await pg.wait_for_timeout(300)
+    nf = await pg.evaluate("[(document.querySelector('h1') || {}).textContent, (document.querySelector('.btn--wa') || {}).href || '']")
+    check(nf[0] == "We can’t find this order" and nf[1].startswith("https://wa.me/"), f"[{width}px] a link nobody knows: \"We can’t find this order\" and WhatsApp ({nf[0]})")
+    await shot(pg, "status-9-not-found")
+    await pg.goto(BASE + "order/", wait_until="networkidle"); await pg.reload(wait_until="networkidle"); await pg.wait_for_timeout(300)
+    lst = await pg.evaluate("[(document.querySelector('h1') || {}).textContent, document.querySelectorAll('.ord').length]")
+    check(lst == ["Your orders", 2], f"[{width}px] order/ without a link lists this phone's orders ({lst})")
+    # in Spanish
+    await pg.evaluate("localStorage.setItem('pidi.lang.v1', 'es')")
+    await pg.goto(BASE + "order/#t=tok-4", wait_until="networkidle"); await pg.reload(wait_until="networkidle"); await pg.wait_for_timeout(300)
+    r = await read()
+    check(r["t"] == words["es"]["Cooking"] and r["pay"] == words["es"]["Bank transfer: received. Danki."] and r["track"][0].endswith("23:30"),
+          f"[{width}px] [es] the status page in Spanish, 24-hour times ({r['t']}, {r['track'][0]})")
+    await shot(pg, "status-es-cooking")
+    check(not pg._errs, f"[{width}px] the status page ran with no errors" + (f": {pg._errs}" if pg._errs else ""))
+    await ctx.close()
+
+def at_clock(minutes):
+    t = utc(T_LATE) + datetime.timedelta(minutes=minutes, hours=-4)
+    h, m = t.hour, t.minute
+    return f"{h % 12 or 12}{':%02d' % m if m else ''} {'PM' if h >= 12 else 'AM'}"
+
 async def main():
     async with async_playwright() as p:
         br = await p.chromium.launch()
         await api_checks(br)
         await look_checks(br)
+        if len(open_mix) >= 2:
+            for w in (390, 320):
+                await checkout_flow(br, w)
+            await checkout_cases(br)
+            for w in (390, 320):
+                await preorder(br, w)
+                await status_checks(br, w)
+        else:
+            check(False, "the checkout tests need two open restaurants that share one order")
         await br.close()
 asyncio.run(main())
-check(not db_calls, f"nothing called the order database ({db_calls})")
+check(not db_calls, f"the API checks never called the order database ({db_calls})")
+check(not leaks, f"nothing reached the real order database ({leaks})")
 print(f"\n{len(fails)} problem(s)")
 sys.exit(1 if fails else 0)
