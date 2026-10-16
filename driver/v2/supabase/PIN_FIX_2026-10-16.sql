@@ -1,10 +1,18 @@
 -- PIN fix of 16 Oct 2026, for a database set up before it. Paste all of it into the
--- Supabase SQL editor of the Pidi project and press Run. Safe to run twice.
+-- Supabase SQL editor of the Pidi project and press Run. Safe to run twice. In any other
+-- project it stops at the first check and changes nothing.
 -- Same four functions as in PIDI_SETUP.sql: many PIN tries at once now count one by
 -- one (the lock after 5 misses holds), and a new kitchen PIN must be 6 to 8 digits.
 -- A kitchen PIN set before this keeps working until it is changed.
 
 begin;
+
+-- Stops here, changing nothing, when this isn't the Pidi database.
+do $guard$ begin
+  if to_regclass('public.pidi_orders') is null or to_regclass('public.pidi_settings') is null then
+    raise exception 'This is not the Pidi database (no pidi_orders table). Nothing was changed.';
+  end if;
+end $guard$;
 
 -- A miss is returned as jsonb, not raised. A raised error would roll the failure
 -- count back, and the lock would never stick. One kitchen, so the lock is global.
