@@ -5,6 +5,7 @@ session doesn't pay for them again. One entry: date, what happens, what to do.
 Newest on top. When a lesson turns into a rule everyone must follow, move it into
 CLAUDE.md and delete it here.
 
+- 2026-10-16 · git pull --rebase on a branch that carries merge commits replays them one by one and conflicts (the Pidi go-live push hit it). When origin/main is an ancestor of your branch (git merge-base --is-ancestor origin/main HEAD), just push; otherwise git pull --no-rebase.
 - 2026-10-16 · Playwright: a route handler with two parameters is called as (route, request), so a 'lambda r, c=x:' default-argument trick silently breaks. Under the security lock, string wait_for_function is refused (it needs eval): use wait_for_url(lambda u: ...) or poll with evaluate. Full-page screenshots put sticky bars mid-page: take viewport shots at the top and the end.
 - 2026-10-16 · A form with several fields and no submit button never submits on Enter (HTML implicit submission), so an Enter test proves nothing about a submit guard. Test with form.requestSubmit() and a securitypolicyviolation listener (qa/check_site.py does). With the security lock, a page that calls another host (Pidi's Supabase on pidi-live) must list it in connect-src, and inline onclick/onsubmit/<script> no longer run.
 - 2026-10-16 · The Write tool turns \uXXXX escapes in its content into the real characters. For regexes that must keep readable escapes (invisible marks in ops/kitchen/kitchen.js), write the file with a script instead.

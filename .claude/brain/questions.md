@@ -15,7 +15,7 @@ When answered: record the decision in victor.md (dated) and delete it here.
 - Own domain for Order Aruba (about $10–15 a year, e.g. orderaruba.com)? Then links read orderaruba.com/taco-brava/ instead of victorfromaruba-stack.github.io/restaurant-/.
 - Redesign leftover: plainer dish names ('Smash combo', 'Loaded fries'; 'Penne arrabbiata' is done, 16 Oct)? And dish names and descriptions are still English in every language (so the WhatsApp ticket reads the same for the kitchen): translate the descriptions too, now that he wants everything in the visitor's language?
 - Bank transfer: which account (bank, name, number) should a customer send to? The status page and the kitchen's message need it. Until then the page says the restaurant will send the details.
-- Kitchen PIN: Claude set one for the test (told to Victor in chat, not written here). When Pidi goes online, change it to 8 digits on /driver/admin/ (on the pidi-live branch; the database now refuses fewer than 6) and give it only to the chef. Add the real drivers there too (name, phone, PIN).
+- Kitchen PIN: Claude set one for the test (told to Victor in chat, not written here). Pidi is live: change it to 8 digits on /driver/admin/ (the database now refuses fewer than 6) and give it only to the chef. Add the real drivers there too (name, phone, PIN).
 - Make the repo private: first github.com/settings/billing must show a paid plan (Pro); on Free, a private repo's site goes offline. Then Settings → General → Danger Zone → Change visibility → Private. Also github.com/settings/emails → Keep my email addresses private.
 
-- Pidi: about 110 new Papiamento lines (checkout and the order page, in shared/lang/pap.json on pidi-live) need his check before Pidi goes online.
+- Pidi: about 110 new Papiamento lines (checkout and the order page, in shared/lang/pap.json on pidi-live) need his check (Pidi is live since 16 Oct).

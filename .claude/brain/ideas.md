@@ -7,6 +7,7 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
+- [ ] M · S · Skills and the daily routine still say Order Aruba and WhatsApp ordering (human-touch, daily-improvement, anti-ai-slop references, the routine's stored prompt): update them to Pidi with in-app ordering, and add qa/check_api.py, check_kitchen.py and check_staff.py to the daily run's health step · done when: no skill tells a session to protect WhatsApp ordering, and the daily run runs all four checks
 - [ ] H · S · Pidi branch follows Victor's 15–16 Oct decisions before go-live: the lively Order Aruba look (not the 9 Oct redesign's), no minimum order, 35–50 min; its own CLAUDE.md still says otherwise · done when: pidi-site's CLAUDE.md, site.json and screens agree with victor.md
 - [ ] M · S · Smash Shack's three burgers show no picture (hidePhoto: the pictures have thick patties) and its cover is the loaded fries. One real phone photo of the smash cheeseburger (chef app Menu tile) fixes it: then make it the cover and drop hidePhoto (needs Victor) · done when: Smash Shack's page opens on a true smash burger
 - [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
