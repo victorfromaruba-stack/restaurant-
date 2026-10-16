@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-16 · claude (cloud) · Victor ran the 3 Pidi database pastes; verified live read-only (eta 35/50, menu sync function present and guarded) · next: Victor's look at the Pidi screenshots, icon and 10:30 PM pre-order answers, Papiamento, bank details; then Pidi can go live
 - 2026-10-16 · claude (cloud) · Pidi customer side merged into pidi-live (checkout in 4 steps, live order page, name Pidi, neon PIDI icon, CSP with Supabase for the two app pages); all checks 0 problems (site 494, api 142, kitchen 133, staff 0 problems) · 253c497 · waiting: Victor's 3 database pastes, his look at the screenshots, Papiamento, bank details
 - 2026-10-16 · claude (cloud) · daily run: security lock (Content-Security-Policy) on every customer page, inline submit handler replaced by a listener, QA checks both (3d0688a); live QA 443 PASS · also today: Pidi staff side merged into pidi-live (494e5ce, prices from the database), three database pastes for Victor in one helper page · waiting: Victor's pastes, the Pidi customer side
 - 2026-10-16 · claude (cloud) · Pidi restarted on branch pidi-live (from main d2679e4, lively look): staff side (driver v2, admin, kitchen live orders, database incl. server-side prices, no minimum, 35–50) and customer side (name Pidi, checkout, order status) running as two helpers in parallel
