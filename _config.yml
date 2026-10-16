@@ -1,0 +1,16 @@
+# GitHub Pages builds this site with Jekyll. Everything in the repo is published except what is listed here and
+# files or folders starting with "." or "_" (so .claude/ is never served). Internal notes, checks, build scripts
+# and setup files stay off the live site (Victor, 16 Oct 2026). A new internal file belongs on this list.
+exclude:
+  - CLAUDE.md
+  - HANDOFF.md
+  - README.md
+  - SOURCES.md
+  - build/
+  - qa/
+  - "*.py"
+  - driver/CLAUDE_CONTINUE.md
+  - driver/V2_NOTES.md
+  - driver/TEST_RUN.txt
+  - driver/setup/
+  - driver/tests/
