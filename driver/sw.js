@@ -1,7 +1,7 @@
 /* Pidi driver service worker.
    Scope is only the /driver/ folder (on GitHub Pages: /restaurant-/driver/).
    It must not control the customer site. */
-var CACHE = "pidi-driver-v2";
+var CACHE = "pidi-driver-v3";
 
 var FILES = [
   "./",
@@ -55,7 +55,8 @@ self.addEventListener("install", function (event) {
 self.addEventListener("activate", function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
-      return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) {
+      // only this app's old caches: the website and the chef app keep their own on the same address
+      return Promise.all(keys.filter(function (k) { return k.indexOf("pidi-driver-") === 0 && k !== CACHE; }).map(function (k) {
         return caches.delete(k);
       }));
     }).then(function () { return self.clients.claim(); })

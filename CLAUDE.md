@@ -18,6 +18,7 @@ Skills in `.claude/skills/`:
 One licensed kitchen in Aruba, five delivery-only restaurants. To customers, **Order Aruba is a delivery app, like Uber Eats** (Victor, 9 Oct 2026: "we need to still use all kitchen on website like Uber"), and **each restaurant is its own business** ("people also cannot know it's all the same kitchen, they really need to believe each restaurant is their own business").
 The home page lists the restaurants; each restaurant page is its own shop. The five ghost-kitchen restaurants (`"mix": true` in site.json) share one order and one ƒ5 delivery, said as the app's perk ("Order from several restaurants at once. You pay ƒ5 delivery once.", Victor 9 Oct: "Bring the mix back for those restaurants in specific"); a restaurant added later without `mix` keeps its own order and fee. Delivery only: no pickup, no dine-in. Orders go to Order Aruba's WhatsApp (+297 747 7794), like ordering through an app.
 Static site, no framework, no build step. Hosted on GitHub Pages from this repo (`main` branch, root folder).
+**Pidi** (branch `pidi-site`: the name Pidi, ordering inside the app, order tracking, driver v2, staff screens, the Pidi database) is what goes online, and only once it's complete (Victor, 16 Oct 2026). Until then this site stays Order Aruba with WhatsApp ordering. Victor's 15–16 Oct decisions (the lively look, no minimum, 35–50 min) apply to Pidi too; its own CLAUDE.md predates them.
 
 ## Restaurants (folder: what it is)
 - `dushi-wok/`: Chinese (soft-launch lead)
@@ -60,7 +61,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - WhatsApp `2977477794` is correct.
 - Open every night 10 PM to 2 AM (hours cross midnight; site.json uses `["22:00","02:00"]`).
 - Delivery area: Santa Cruz to Noord (Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera, Santa Cruz). Other areas: customer asks on WhatsApp.
-- Usual delivery time 35–50 min.
+- Usual delivery time 35–50 min (confirmed again 16 Oct 2026). No minimum order (16 Oct 2026).
 - Last orders 1:30 AM (`"lastOrder": "01:30"`). Customers pay cash in florins or US dollars, or by bank transfer (`payment`, `payWith`). Frikandel contains pork (keep the flag).
 
 ## Rules (keep these)
@@ -81,7 +82,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - Victor still has to check the Papiamento (`shared/lang/pap.json`).
 - Own domain for Order Aruba (e.g. orderaruba.com pointed at GitHub Pages) when Victor wants one. Restaurant pages then read like orderaruba.com/taco-brava/, the way a delivery app's do.
 - WhatsApp stays +297 747 7794 (Victor, 9 Oct). Its Business profile name should read "Order Aruba" (the app), not a kitchen. A restaurant can still get its own number later (`"whatsapp"` per brand in site.json).
-- The GitHub repo is public, and GitHub Pages (with `.nojekyll`) serves every file, including CLAUDE.md and `.claude/brain/`, which describe the shared kitchen. Making it private needs GitHub Pro or moving hosting (e.g. Cloudflare Pages, free); Victor's call.
+- The live site is built by GitHub Pages with Jekyll (no `.nojekyll` since 16 Oct 2026): `.claude/` and everything listed in `_config.yml` `exclude` (CLAUDE.md, HANDOFF.md, README.md, SOURCES.md, build/, qa/, *.py, the driver notes, test run and setup) is never served. A new internal file goes on that list. The repo itself is still public on GitHub until Victor makes it private (questions.md); the chef app and `ops/kitchen/kitchen-data.json` stay public by necessity.
 
 ## Run locally
 `python3 qa/check_site.py` in the repo folder (needs Python Playwright 1.56.0 and Pillow). It serves the repo itself for the run (`qa/local_server.py`), so there's no server to start or keep alive; `QA_BASE=<url>` checks another server instead. To click around yourself: `python3 qa/local_server.py` or `python3 -m http.server 8462 --bind 127.0.0.1`. The check also compares every dish's allergens with its recipe card in `ops/kitchen/kitchen-data.json`.
