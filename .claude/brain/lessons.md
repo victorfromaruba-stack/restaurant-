@@ -5,6 +5,7 @@ session doesn't pay for them again. One entry: date, what happens, what to do.
 Newest on top. When a lesson turns into a rule everyone must follow, move it into
 CLAUDE.md and delete it here.
 
+- 2026-10-16 · A form with several fields and no submit button never submits on Enter (HTML implicit submission), so an Enter test proves nothing about a submit guard. Test with form.requestSubmit() and a securitypolicyviolation listener (qa/check_site.py does). With the security lock, a page that calls another host (Pidi's Supabase on pidi-live) must list it in connect-src, and inline onclick/onsubmit/<script> no longer run.
 - 2026-10-16 · The Write tool turns \uXXXX escapes in its content into the real characters. For regexes that must keep readable escapes (invisible marks in ops/kitchen/kitchen.js), write the file with a script instead.
 - 2026-10-16 · Local Postgres for the Pidi SQL tests can't live under /tmp/claude-0 (the harness resets it to owner-only and the postgres user loses access). Use /var/lib/postgresql/<name> owned by postgres, socket /var/run/postgresql, connect as user postgres; stop and delete it after.
 - 2026-10-16 · The Supabase connector can be linked to a different Supabase account than the one holding a project: on 16 Oct it listed only 'victorfromaruba-stack's Project' (inactive), and execute_sql on Pidi's project answered 'You do not have permission'. Run list_projects first; if the project isn't there, give Victor a short paste-in SQL file (and test it locally: old setup + file == fresh install) instead of waiting.

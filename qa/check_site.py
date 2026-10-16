@@ -169,6 +169,28 @@ async def main():
             await pg.wait_for_timeout(300)
             broken = await pg.evaluate("Array.from(document.images).filter(i => i.complete && i.naturalWidth === 0).map(i => i.src)")
             check(not errs and not broken, f"{url} loads with no errors or broken images" + (f": {errs + broken}" if errs or broken else ""))
+            if not url.startswith("ops/"):
+                csp = await pg.evaluate("(document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]') || {}).content || ''")
+                check("script-src 'self'" in csp and "form-action 'none'" in csp, f"{url} only runs this site's own scripts (security lock)")
+        # the order form never sends: "Go" on the phone keyboard keeps the page (no inline handler, the lock forbids those)
+        opens = [x["id"] for x in site["brands"] if x.get("status") == "open"]
+        if opens:
+            errs.clear()
+            await pg.goto(BASE + opens[0] + "/index.html", wait_until="networkidle")
+            await pg.evaluate("OrderApp.clear()")
+            first = await pg.evaluate("b => OrderApp.loadMenu(b).then(m => m.items.find(i => i.kind !== 'drink' && !i.soldOut).id)", opens[0])
+            await pg.evaluate("([b,i]) => OrderApp.addItem(b,i,{},1)", [opens[0], first])
+            await pg.evaluate("window.__stay = 1; location.hash = 'o'")
+            await pg.wait_for_timeout(400)
+            await pg.evaluate("window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective))")
+            field = pg.locator("form.form input[type=text], form.form input:not([type]), form.form textarea").first
+            await field.click(); await field.type("Palm Beach 12"); await field.press("Enter")
+            await pg.evaluate("document.querySelector('form.form').requestSubmit()")
+            await pg.wait_for_timeout(600)
+            stayed = await pg.evaluate("window.__stay === 1 && !location.search")
+            blocked = await pg.evaluate("window.__csp || ['page reloaded']")
+            check(stayed and not errs and not blocked, f"{opens[0]}: sending the order form keeps the page and the lock blocks nothing" + (f": {errs + blocked}" if errs or blocked else ""))
+            await pg.evaluate("OrderApp.clear()")
         out = []
         for title, br, lines, meta in [x for x in SAMPLES if runs(x)]:
             await pg.goto(BASE + br + "/index.html", wait_until="networkidle")
