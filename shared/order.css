@@ -378,3 +378,10 @@ body[data-page="brand"] .top__in{max-width:720px}
 .order__mix b{color:var(--cream)}
 .field__help,.field__err{margin:0}
 
+
+/* app mode ("ordering": "app"): the order sheet ends with Continue to the app's checkout, and a placed order has a way back */
+.order__send .btn--go{justify-content:flex-start}
+.track-sec{padding:18px 16px 0}
+.trackrow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:10px 14px;border-radius:var(--r);background:var(--night-2);border-left:4px solid var(--sodium);text-decoration:none}
+.trackrow__t{font:800 15.5px/1.25 var(--font)}
+.trackrow__go{flex:none;color:var(--sodium);font:800 14.5px/1.2 var(--font)}

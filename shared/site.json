@@ -3,6 +3,7 @@
  "name": "Pidi",
  "whatsapp": "2977477794",
  "whatsappConfirmed": true,
+ "ordering": "app",
  "deliveryFee": 500,
  "eta": "35–50 min",
  "payment": "We take cash in florins or US dollars, or a bank transfer.",
@@ -83,5 +84,6 @@
  "_payWith_help": "payWith: the ways to pay that customers tap at checkout; the choice goes on the WhatsApp ticket as \"Pay: ...\". Remove it to show only the payment sentence.",
  "_payment_help": "payment: one sentence on how to pay. With payWith it shows under the pay choices at checkout and in How ordering works.",
  "_whatsapp_help": "whatsapp: the number orders go to. A restaurant can have its own: add \"whatsapp\": \"297...\" to its line under brands.",
- "_mix_help": "mix: true lets a restaurant share one order and one delivery fee with the other mix restaurants (customers can combine them). A restaurant without it has its own order and its own fee."
+ "_mix_help": "mix: true lets a restaurant share one order and one delivery fee with the other mix restaurants (customers can combine them). A restaurant without it has its own order and its own fee.",
+ "_ordering_help": "ordering: \"app\" = orders go in on the site (checkout, then the order status page); \"whatsapp\" (or no ordering line) = the order sheet opens WhatsApp with the order typed out, as before."
 }

@@ -355,5 +355,12 @@
  "Sorry, {dish} just sold out tonight. Remove it to send the order.": "Sorry, {dish} is net uitverkocht voor vanavond. Haal het weg om de bestelling te sturen.",
  "Sorry, a dish in your order just sold out tonight. Remove it to send the order.": "Sorry, een gerecht in je bestelling is net uitverkocht voor vanavond. Haal het weg om de bestelling te sturen.",
  "The cash you pay with doesn’t cover the whole total. Pick a bigger amount.": "Het bedrag waarmee je betaalt dekt het totaal niet. Kies een hoger bedrag.",
- "A price changed since you added the dishes. The total below is what you pay.": "Er is een prijs veranderd sinds je de gerechten toevoegde. Het totaal hieronder is wat je betaalt."
+ "A price changed since you added the dishes. The total below is what you pay.": "Er is een prijs veranderd sinds je de gerechten toevoegde. Het totaal hieronder is wat je betaalt.",
+ "Order now and pick a delivery time at checkout.": "Bestel nu en kies bij het afrekenen een bezorgtijd.",
+ "Next: where to bring it, and how you’ll pay.": "Hierna: waar we het brengen, en hoe je betaalt.",
+ "Place your order": "Plaats je bestelling",
+ "Say where to bring it and how you’ll pay. No account needed.": "Zeg waar we het brengen en hoe je betaalt. Geen account nodig.",
+ "Follow it to your door": "Volg het tot aan je deur",
+ "You see when it’s cooking and when it’s on the way.": "Je ziet wanneer het gemaakt wordt en wanneer het onderweg is.",
+ "Track it": "Volgen"
 }

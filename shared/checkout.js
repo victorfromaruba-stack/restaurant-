@@ -319,6 +319,7 @@
     if (push && step && step !== st) stack.push(step);
     step = st;
     error = null;
+    var t = document.getElementById("oa-toast"); if (t) t.hidden = true;   // "Fill in the missing details" was about the last step
     if (location.hash !== "#" + st) {
       try { history[push ? "pushState" : "replaceState"](null, "", location.pathname + location.search + "#" + st); } catch (e) { location.hash = st; }
     }

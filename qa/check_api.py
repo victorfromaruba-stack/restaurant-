@@ -501,9 +501,9 @@ async def checkout_cases(br):
             check(msg.startswith("*Order* #") and f"*{NAMES[A]}*" in msg and "Pay: Bank transfer" in msg and "Name: Ben" in msg and "Phone 5931234." in msg,
                   f"when the database can't take it, the same order goes out on WhatsApp, written out like before ({msg.splitlines()[0] if msg else ''})")
         if n == 0:
-            await shot(pg, "checkout-error-restaurant-closed")
+            await shot(pg, "checkout-error-restaurant-closed", end=True)
         if code == "FEE_NOT_SET":
-            await shot(pg, "checkout-error-whatsapp-fallback")
+            await shot(pg, "checkout-error-whatsapp-fallback", end=True)
     check(len(fake.orders) == 0, "none of those went in")
     # the same sentence in the visitor's language
     await pg.evaluate("localStorage.setItem('pidi.lang.v1', 'nl')")
@@ -512,7 +512,7 @@ async def checkout_cases(br):
     await pg.click("[data-place]"); await pg.wait_for_timeout(400)
     nl = await pg.evaluate("(document.querySelector('.ck-err p') || {}).textContent")
     check(nl == words["nl"]["{restaurant} isn’t taking orders right now. Take its dishes out and try again."].replace("{restaurant}", NAMES[B]), f"[nl] the same answer in Dutch ({nl})")
-    await shot(pg, "checkout-error-nl")
+    await shot(pg, "checkout-error-nl", end=True)
     await pg.evaluate("localStorage.removeItem('pidi.lang.v1')")
     # no connection, then Place order again: the same client_token, one order
     fake.place = ["abort", "ok"]
@@ -521,7 +521,7 @@ async def checkout_cases(br):
     await pg.click("[data-place]"); await pg.wait_for_timeout(400)
     off = await pg.evaluate("[(document.querySelector('.ck-err p') || {}).textContent, location.hash]")
     check(off == ["No connection. Check your internet and tap Place order again: it won’t go in twice.", "#check"], f"no connection: it says so and stays ({off})")
-    await shot(pg, "checkout-error-offline")
+    await shot(pg, "checkout-error-offline", end=True)
     await pg.click("[data-place]"); await pg.wait_for_function("location.pathname.endsWith('/order/')"); await pg.wait_for_timeout(300)
     toks = [p["client_token"] for p in fake.placed()[before:]]
     check(len(toks) == 2 and toks[0] == toks[1] and len(fake.orders) == 1, f"tapped again, it goes with the same client_token, and there is one order ({toks})")
@@ -669,6 +669,39 @@ async def status_checks(br, width=390):
     check(not pg._errs, f"[{width}px] the status page ran with no errors" + (f": {pg._errs}" if pg._errs else ""))
     await ctx.close()
 
+async def brand_app_mode(br, width=390):
+    """a restaurant page in app mode: its order sheet (Continue, no WhatsApp form), and the way back to a placed order"""
+    fake = FakeDB(iso_now(T_LATE))
+    ctx, pg = await app_page(br, fake, T_LATE, width)
+    A, B = open_mix[0], open_mix[1]
+    await pg.goto(BASE + A + "/index.html", wait_until="networkidle"); await pg.wait_for_timeout(300)
+    await shot(pg, "restaurant-page")
+    await fill_cart(pg, A, dish(A)["id"], B, dish(B)["id"])
+    await pg.wait_for_timeout(200)
+    await shot(pg, "restaurant-page-with-order")
+    await pg.click(".bar__btn"); await pg.wait_for_timeout(450)
+    r = await pg.evaluate("""() => { const s = document.querySelector('.oa-sheet__panel');
+        return [s.querySelector('[data-go]').getAttribute('href'), !!s.querySelector('[data-send], #oa-addr, .ticket'), document.documentElement.scrollWidth <= innerWidth + 1]; }""")
+    check(r == [f"../checkout/?from={A}", False, True], f"[{width}px] app mode: {NAMES[A]}'s order sheet goes on to checkout/ ({r})")
+    if SHOTS:
+        os.makedirs(SHOTS, exist_ok=True)
+        await pg.screenshot(path=os.path.join(SHOTS, f"restaurant-order-sheet-{width}.png"))
+        await pg.evaluate("document.querySelector('.oa-sheet__panel').scrollTo(0, 99999)"); await pg.wait_for_timeout(200)
+        await pg.screenshot(path=os.path.join(SHOTS, f"restaurant-order-sheet-{width}-end.png"))
+    await pg.keyboard.press("Escape"); await pg.wait_for_timeout(300)
+    # after an order: a row at the top of the restaurant page and on the home page leads back to its status
+    await pg.evaluate("a => { OrderApp.rememberOrder({public_token: 'tok-9', night_no: 19, total_cents: 4321, restaurants: [{slug: a, name: 'x'}]}); OrderApp.clear(); }", A)
+    await pg.goto(BASE + A + "/index.html", wait_until="networkidle"); await pg.wait_for_timeout(300)
+    row = await pg.evaluate("[(document.querySelector('#oa-track a') || {}).getAttribute ? document.querySelector('#oa-track a').getAttribute('href') : '', (document.querySelector('#oa-track') || {}).innerText]")
+    check(row[0] == "../order/#t=tok-9" and "Track it" in (row[1] or ""), f"[{width}px] after an order, the restaurant page has \"Track it\" back to its status ({row})")
+    await shot(pg, "restaurant-page-track")
+    await pg.goto(BASE + "index.html", wait_until="networkidle"); await pg.wait_for_timeout(300)
+    home = await pg.evaluate("Array.from(document.querySelectorAll('#oa-mine a')).map(a => a.getAttribute('href'))")
+    check("order/#t=tok-9" in home, f"[{width}px] and the home page's \"Your order\" row does too ({home})")
+    await shot(pg, "home-track")
+    check(not pg._errs, f"[{width}px] the restaurant page in app mode ran with no errors" + (f": {pg._errs}" if pg._errs else ""))
+    await ctx.close()
+
 def at_clock(minutes):
     t = utc(T_LATE) + datetime.timedelta(minutes=minutes, hours=-4)
     h, m = t.hour, t.minute
@@ -686,6 +719,7 @@ async def main():
             for w in (390, 320):
                 await preorder(br, w)
                 await status_checks(br, w)
+                await brand_app_mode(br, w)
         else:
             check(False, "the checkout tests need two open restaurants that share one order")
         await br.close()

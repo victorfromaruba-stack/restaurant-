@@ -355,5 +355,12 @@
  "Sorry, {dish} just sold out tonight. Remove it to send the order.": "Sorry, {dish} a caba awe nochi. Kit'e pa manda e orden.",
  "Sorry, a dish in your order just sold out tonight. Remove it to send the order.": "Sorry, un plato den bo orden a caba awe nochi. Kit'e pa manda e orden.",
  "The cash you pay with doesn’t cover the whole total. Pick a bigger amount.": "E cash cu bo ta paga no ta cubri henter e total. Scoge un suma mas grandi.",
- "A price changed since you added the dishes. The total below is what you pay.": "Un preis a cambia desde cu bo a pone e platonan. E total aki bao ta loke bo ta paga."
+ "A price changed since you added the dishes. The total below is what you pay.": "Un preis a cambia desde cu bo a pone e platonan. E total aki bao ta loke bo ta paga.",
+ "Order now and pick a delivery time at checkout.": "Ordena awor y scoge un ora di entrega ora bo ta paga.",
+ "Next: where to bring it, and how you’ll pay.": "Despues: unda nos ta trece e, y con bo ta paga.",
+ "Place your order": "Manda bo orden",
+ "Say where to bring it and how you’ll pay. No account needed.": "Bisa unda nos ta trece e y con bo ta paga. No mester di un cuenta.",
+ "Follow it to your door": "Sigui e te na bo porta",
+ "You see when it’s cooking and when it’s on the way.": "Bo ta mira ora e ta cocinando y ora e ta na caminda.",
+ "Track it": "Sigui e"
 }

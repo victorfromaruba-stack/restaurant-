@@ -1113,7 +1113,8 @@
     }
     html += head;
     // no closing or last-orders time on screen (Victor, 9 Oct 2026): closed is just closed
-    if (!st.open) html += '<p class="note note--warn">' + keep(tr("We\u2019re closed.") + " " + st.label + ". " + tr("Order now for later and we confirm when we open.")) + "</p>";
+    if (!st.open) html += '<p class="note note--warn">' + keep(tr("We\u2019re closed.") + " " + st.label + ". " +
+      (ordering() === "app" ? tr("Order now and pick a delivery time at checkout.") : tr("Order now for later and we confirm when we open."))) + "</p>";
     var brands = brandsInCart(), groups = [];
     brands.forEach(function (b) { var f = foodLines(b); if (f.length) groups.push({ t: brandName(b), lines: f }); });
     if (drinkLines().length) groups.push({ t: tr("Drinks"), lines: drinkLines() });
@@ -1138,6 +1139,15 @@
       }).join("") + "</ul>";
     });
     html += suggestions();
+    if (ordering() === "app") {
+      html += totalsHTML() + '<p class="order__hint">' + esc(tr("Next: where to bring it, and how you\u2019ll pay.")) + "</p>" +
+        '<div class="order__send"><a class="btn btn--accent btn--go" data-go href="' + esc(path("checkout/?from=" + encodeURIComponent(HERE))) + '">' +
+        "<span>" + esc(tr("Continue")) + '</span><span class="btn__total">' + money(total()) + "</span></a></div>";
+      node.innerHTML = html;
+      wireGo(node);
+      if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-go]");
+      return;
+    }
     var areas = (SITE.areas || []).concat([OTHER]);
     html += '<form class="form" novalidate onsubmit="return false">';
     var ts = timeSlots(), when = validWhen();
@@ -1172,14 +1182,7 @@
         (/bank|transfer/i.test(s.pay || "") ? '<p class="field__help">' + esc(tr("We send the bank details on WhatsApp when we confirm.")) + "</p>" : "") +
         err("pay", tr("Pick how you\u2019ll pay.")) + "</fieldset>" : "") +
       "</form>";
-    // the mix perk, said where the money is: one order across restaurants, one delivery fee
-    if (inMix(HERE) || brandsInCart().some(inMix)) {
-      html += '<p class="order__mix">' + keep(tr("Order from several restaurants at once.")) + " <b>" +
-        keep(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b></p>";
-    }
-    html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
-      "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
-      '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
+    html += totalsHTML();
     html += '<details class="ticket"><summary>' + esc(tr("Preview the message")) + "</summary><pre>" + esc(buildMessage()) + "</pre></details>";
     html += '<p class="order__hint">' + esc(payLine()) + tr("Opens WhatsApp with your order typed out. Press <b>Send</b> there.") +
       (waNum() ? " " + esc(tr("It goes to {app} on WhatsApp, {number}.", { app: SITE.name || "us", number: waNumber() })) : "") + "</p>" +
@@ -1190,6 +1193,27 @@
     node._drawn = { open: st.open, when: validWhen() };   // what the customer saw, checked again on Send
     wireSend(node);
     if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-send]");
+  }
+  /* the mix perk, said where the money is (one order across restaurants, one delivery fee), then the totals */
+  function totalsHTML() {
+    var html = "";
+    if (inMix(HERE) || brandsInCart().some(inMix)) {
+      html += '<p class="order__mix">' + keep(tr("Order from several restaurants at once.")) + " <b>" +
+        keep(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b></p>";
+    }
+    return html + '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + money(subtotal()) + "</dd></div>" +
+      "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + money(fee()) + "</dd></div>" +
+      '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + money(total()) + "</dd></div></dl>";
+  }
+  /* app mode: Continue opens checkout/, once nothing in the order is sold out or from a restaurant that stopped taking orders */
+  function wireGo(node) {
+    var a = $("[data-go]", node);
+    if (!a) return;
+    a.addEventListener("click", function (e) {
+      if (!liveLines().length) { e.preventDefault(); return; }
+      if (liveLines().some(function (l) { return l.closed; })) { e.preventDefault(); toast(tr("Remove the dishes we can\u2019t take right now first")); return; }
+      if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast(tr("Remove the sold-out dish first")); return; }
+    });
   }
   function validate(node) {
     var bad = missing(), first = null;
@@ -1346,6 +1370,9 @@
       [tr("Send it on WhatsApp"), tr("WhatsApp opens with your order already written out. Just press send.")],
       [tr("We reply to confirm"), clean((SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]
     ];
+    if (ordering() === "app") steps.splice(1, 2,   // the order goes in here: no WhatsApp step
+      [tr("Place your order"), tr("Say where to bring it and how you\u2019ll pay. No account needed.")],
+      [tr("Follow it to your door"), clean(tr("You see when it\u2019s cooking and when it\u2019s on the way.") + " " + (SITE.eta ? tr("Delivery takes about {eta}.", { eta: SITE.eta }) : "") + " " + (SITE.payment ? tr(SITE.payment) : ""))]);
     return steps.map(function (s) { return "<li><b>" + keep(s[0]) + ".</b> <span>" + keep(s[1]) + "</span></li>"; }).join("");
   }
   function howNote() {
@@ -1359,6 +1386,7 @@
       tr("We only deliver: there\u2019s no pickup or dine-in."), hours].join(" ").trim();
   }
   function setupIAB() {
+    if (ordering() === "app") return;   // the note is about WhatsApp not opening: in app mode the order goes in on the page
     var ua = navigator.userAgent || "";
     var iab = /(Instagram|FBAN|FBAV|FB_IAB|musical_ly|BytedanceWebview|Snapchat|Line\/)/i.test(ua);
     if (!iab) return;
@@ -1473,6 +1501,7 @@
         (status === "soon" ? '<p class="note note--warn">' + esc(tr("Opening soon. Ordering starts shortly.")) + "</p>" : "") +
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>" +
+      '<section class="track-sec" id="oa-track" hidden></section>' +
       '<section class="again" id="oa-again" hidden></section>';
     if (rail.length) {
       html += '<section class="sec" id="featured" aria-labelledby="h-featured"><h2 class="sec__t" id="h-featured">' + esc(tr("Start here")) + "</h2>" +
@@ -1588,7 +1617,19 @@
     var lines = l.lines.filter(function (x) { var m = MENU[x.b], i = m && m.byId[x.id]; return ALLOWED.indexOf(x.b) >= 0 && i && !isOut(m, i) && brandStatus(x.b) === "open"; });
     return lines.length ? lines : null;
   }
+  /* orders placed in the app from this phone in the last 3 hours: the way back to their status page */
+  function recentOrders() { return orders().filter(function (o) { return Date.now() - (o.at || 0) < SENT_KEEP; }).slice(0, 2); }
+  function paintTrack() {
+    var box = $("#oa-track");
+    if (!box) return;
+    var o = recentOrders()[0];
+    var html = o ? '<a class="trackrow" href="' + esc(path("order/#t=" + encodeURIComponent(o.t))) + '"><span class="trackrow__t">' +
+      esc(tr("Your order: {names}", { names: listAnd(o.restaurants || []) })) + '</span><span class="trackrow__go">' + esc(tr("Track it")) + "</span></a>" : "";
+    if (box._html === html) return;
+    box._html = html; box.innerHTML = html; box.hidden = !html;
+  }
   function paintAgain() {
+    paintTrack();
     var box = $("#oa-again");
     if (!box) return;
     var lines = liveLines().length ? null : lastOrder();
@@ -1833,7 +1874,11 @@
         esc(o.sentAt ? tr("Sent: see order") : plural(n, "item", "items") + " \u00b7 " + money(sum)) + "</span></a>";
     }
     var mix = mixGroup();
-    var rows = row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row(orderKey(b), [b]); }).join("");
+    var rows = recentOrders().map(function (o) {
+      var b = (o.lines || []).map(function (l) { return l.b; }).filter(function (x) { return MENU[x]; })[0];
+      return '<a class="mine__row" href="' + esc(path("order/#t=" + encodeURIComponent(o.t))) + '" style="--shop:' + esc(b ? MENU[b].color : "#FFC93C") + '"><span class="mine__t">' +
+        esc(tr("Your order: {names}", { names: listAnd(o.restaurants || []) })) + '</span><span class="mine__d">' + esc(tr("Track it")) + "</span></a>";
+    }).join("") + row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row(orderKey(b), [b]); }).join("");
     box.innerHTML = rows;
     box.hidden = !rows;
   }

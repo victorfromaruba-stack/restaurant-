@@ -355,5 +355,12 @@
  "Sorry, {dish} just sold out tonight. Remove it to send the order.": "Lo sentimos, {dish} se acaba de agotar esta noche. Quítalo para enviar el pedido.",
  "Sorry, a dish in your order just sold out tonight. Remove it to send the order.": "Lo sentimos, un plato de tu pedido se acaba de agotar esta noche. Quítalo para enviar el pedido.",
  "The cash you pay with doesn’t cover the whole total. Pick a bigger amount.": "El efectivo con el que pagas no cubre todo el total. Elige un importe mayor.",
- "A price changed since you added the dishes. The total below is what you pay.": "Un precio cambió desde que añadiste los platos. El total de abajo es lo que pagas."
+ "A price changed since you added the dishes. The total below is what you pay.": "Un precio cambió desde que añadiste los platos. El total de abajo es lo que pagas.",
+ "Order now and pick a delivery time at checkout.": "Pide ahora y elige la hora de entrega al pagar.",
+ "Next: where to bring it, and how you’ll pay.": "Después: dónde lo llevamos y cómo vas a pagar.",
+ "Place your order": "Haz tu pedido",
+ "Say where to bring it and how you’ll pay. No account needed.": "Dinos dónde lo llevamos y cómo vas a pagar. No hace falta cuenta.",
+ "Follow it to your door": "Síguelo hasta tu puerta",
+ "You see when it’s cooking and when it’s on the way.": "Ves cuándo se está cocinando y cuándo va en camino.",
+ "Track it": "Seguir"
 }

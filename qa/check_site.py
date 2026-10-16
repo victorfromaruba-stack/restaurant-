@@ -166,6 +166,42 @@ home = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
 check(man["name"] == man["short_name"] == APP and f"<title>{APP} · " in home and f'"name":"{APP}"' in home,
       f"the home page title, Google data and home screen name say {APP}")
 
+async def ordering_modes(br, open_ids):
+    if not open_ids:
+        return check(False, "a restaurant is open, so the order sheet can be tested")
+    bid = open_ids[0]
+    item = next(i for i in menus[bid]["items"] if i.get("kind") != "drink" and not i.get("soldOut"))
+    for mode in ("app", "whatsapp"):
+        conf = dict(site, ordering=mode) if mode == "app" else {k: v for k, v in site.items() if k != "ordering"}
+        ctx = await br.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+        body = json.dumps(conf)
+        await ctx.route("**/shared/site.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=body))
+        await ctx.route("**/rest/v1/**", lambda r: r.abort())   # the order database is never reached from here
+        pg = await ctx.new_page()
+        errs = []
+        pg.on("pageerror", lambda e: errs.append(str(e)))
+        await pg.goto(BASE + bid + "/index.html", wait_until="networkidle")
+        await pg.evaluate("([b, i]) => { OrderApp.clear(); OrderApp.addItem(b, i, {}, 1); }", [bid, item["id"]])
+        await pg.click(".bar__btn"); await pg.wait_for_timeout(400)
+        r = await pg.evaluate("""() => { const s = document.querySelector('.oa-sheet__panel');
+            return {go: (s.querySelector('[data-go]') || {}).getAttribute ? s.querySelector('[data-go]').getAttribute('href') : null,
+              send: (s.querySelector('[data-send]') || {}).href || null, form: !!s.querySelector('#oa-addr, #oa-name, #oa-when, input[name=oa-area]'),
+              ticket: !!s.querySelector('.ticket'), text: s.innerText,
+              how: (document.querySelector('[data-oa-how]') || {}).innerText || ''}; }""")
+        total = await pg.evaluate("OrderApp.total()")
+        if mode == "app":
+            ok = r["go"] == f"../checkout/?from={bid}" and not r["send"] and not r["form"] and not r["ticket"] and f"ƒ{total / 100:.2f}" in r["text"] \
+                and "Continue" in r["text"] and "Place your order" in r["how"] and "WhatsApp" not in r["how"]
+            check(ok, f"\"ordering\": \"app\": {bid}'s order sheet ends with the total and Continue to checkout/, no WhatsApp form, and How ordering works says so" + ("" if ok else f" ({r['go']}, form {r['form']}, send {r['send']})"))
+            await pg.click("[data-go]"); await pg.wait_for_timeout(800)
+            here = await pg.evaluate("[location.pathname.endsWith('/checkout/') ? 'checkout/' : location.pathname, (document.querySelector('.step__t') || {}).textContent || '']")
+            check(here == ["checkout/", "Where do we bring it?"], f"\"ordering\": \"app\": Continue opens the checkout on its first step ({here})")
+        else:
+            ok = (r["send"] or "").startswith("https://wa.me/") and r["form"] and r["ticket"] and not r["go"] and "Send on WhatsApp" in r["text"] and "Send it on WhatsApp" in r["how"]
+            check(ok, f"\"ordering\" missing (WhatsApp, as before): {bid}'s order sheet has the details form, the message preview and Send on WhatsApp" + ("" if ok else f" ({r['go']}, form {r['form']}, send {r['send']})"))
+        check(not errs, f"[{mode}] the order sheet runs with no errors" + (f": {errs}" if errs else ""))
+        await ctx.close()
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -228,10 +264,13 @@ async def main():
             await pg.click(".bar__btn"); await pg.wait_for_timeout(400)
             sheet = await pg.evaluate("(document.querySelector('.oa-sheet__panel') || {}).innerText || ''")
             hrefs = await pg.evaluate("Array.from(document.querySelectorAll('.oa-sheet__panel a[href]')).map(a => a.getAttribute('href'))")
-            away = [h for h in hrefs if not h.startswith(("#", "https://wa.me/"))]
+            away = [h for h in hrefs if not h.startswith(("#", "https://wa.me/", "../checkout/?from=" + bid))]   # (app mode: Continue to checkout)
             bad = [n for b, n in names.items() if b != bid and b not in mix and n in sheet] + (others_in(sheet, bid) if bid not in mix else []) + talk(sheet)
             check(bool(sheet) and not bad and not away, f"{bid} order sheet offers only what can share its order, and no kitchen talk" + (f": {bad + away}" if bad or away else ""))
             await pg.evaluate("OrderApp.clear()")
+        # how orders go in: site.json "ordering". "app": the order sheet ends with Continue to checkout/ (no WhatsApp form);
+        # "whatsapp" (the default when the line is missing): everything as before, WhatsApp opens with the order typed out
+        await ordering_modes(b, [x for x in mix if is_open.get(x)] or [x for x in brands if is_open.get(x)])
         # the home page: every restaurant listed, and every card opens the dish on its own restaurant's page
         await pg.goto(BASE + "index.html", wait_until="networkidle"); await pg.wait_for_timeout(500)
         listed = await pg.evaluate("Array.from(document.querySelectorAll('#oa-list .shop')).map(a => a.getAttribute('href'))")
