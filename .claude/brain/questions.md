@@ -17,4 +17,5 @@ When answered: record the decision in victor.md (dated) and delete it here.
 - Bank transfer: which account (bank, name, number) should a customer send to? The status page and the kitchen's message need it. Until then the page says the restaurant will send the details.
 - Kitchen PIN: Claude set one for the test (told to Victor in chat, not written here). When Pidi goes online, change it to 8 digits on /driver/admin/ (on the pidi-live branch; the database now refuses fewer than 6) and give it only to the chef. Add the real drivers there too (name, phone, PIN).
 - Make the repo private: first github.com/settings/billing must show a paid plan (Pro); on Free, a private repo's site goes offline. Then Settings → General → Danger Zone → Change visibility → Private. Also github.com/settings/emails → Keep my email addresses private.
-- Pidi (when he looks at the screenshots): (1) the home-screen icon is a neon PIDI sign like the OPEN sign, not the old blue 'Pi' tile: OK? (2) pre-orders start at 10:30 PM, half an hour after opening, as on today's site: right? (3) about 110 new Papiamento lines for checkout and the order page need his check.
+
+- Pidi: about 110 new Papiamento lines (checkout and the order page, in shared/lang/pap.json on pidi-live) need his check before Pidi goes online.
