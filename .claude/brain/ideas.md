@@ -7,6 +7,9 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
+- [ ] M · S · A Content-Security-Policy meta tag on every public page (scripts and fonts from this site only, wa.me links allowed) · done when: qa/check_site.py passes with it and the console shows no blocked request
+- [ ] H · S · Pidi branch follows Victor's 15–16 Oct decisions before go-live: the lively Order Aruba look (not the 9 Oct redesign's), no minimum order, 35–50 min; its own CLAUDE.md still says otherwise · done when: pidi-site's CLAUDE.md, site.json and screens agree with victor.md
+- [ ] H · M · Pidi before it goes online: the server works out every price and total from the menu itself, never from the numbers the phone sends · done when: a test order with a changed price comes back with the menu's price
 - [ ] M · S · Smash Shack's three burgers show no picture (hidePhoto: the pictures have thick patties) and its cover is the loaded fries. One real phone photo of the smash cheeseburger (chef app Menu tile) fixes it: then make it the cover and drop hidePhoto (needs Victor) · done when: Smash Shack's page opens on a true smash burger
 - [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
 - [ ] M · M · Chef app "busy tonight: +15 min" switch that changes the delivery time the site shows (lateness costs ~3 future orders; widen the window instead of missing it) · done when: one tap saves site.json eta and the site shows it
