@@ -122,9 +122,9 @@ async def api_checks(br):
     check(not r["open"] and not r["can"], "3 PM: closed, no order for as soon as possible")
     check(len(s) == 16 and s[0] == {"m": 1320, "label": f"10:00{NBSP}PM", "iso": "2026-10-11T02:00:00.000Z", "tonight": True, "day": 6, "early": True}
           and s[-1]["iso"] == "2026-10-11T05:45:00.000Z" and s[-1]["label"] == f"1:45{NBSP}AM" and s[-1]["tonight"] and not s[-1]["early"]
-          and [x["early"] for x in s].count(True) == 2
+          and [x["early"] for x in s].count(True) == 1
           and all(re.match(r"^\d\d:\d\d:00\.000Z$", x["iso"][11:]) and int(x["iso"][14:16]) % 15 == 0 for x in s),
-          f"3 PM: tonight's 16 times, 10:00 PM to 1:45 AM Aruba, every 15 min, sent in UTC, the first half hour marked early ({s[0] if s else None} .. {s[-1] if s else None})")
+          f"3 PM: tonight's 16 times, 10:00 PM to 1:45 AM Aruba, every 15 min, sent in UTC, 10:00 PM itself marked early ({s[0] if s else None} .. {s[-1] if s else None})")
     r = await at(T_LATE)
     s = r["slots"]
     first = utc(T_LATE) + datetime.timedelta(minutes=LEAD)
@@ -572,9 +572,9 @@ async def preorder(br, width=390):
     await pg.goto(BASE + f"checkout/?from={A}", wait_until="networkidle"); await pg.wait_for_timeout(200)
     r = await pg.evaluate("""() => [location.hash, !!document.querySelector('input[name=ck-when]'), (document.querySelector('.note') || {}).textContent,
         Array.from(document.querySelectorAll('.time span')).map(s => s.textContent)]""")
-    check(r[0] == "#where" and not r[1] and r[2] == "We’re closed now. Opens tonight 10 PM. Pick a time and it’s a pre-order: we start on it when we open." and r[3][:1] == ["10:30 PM"]
+    check(r[0] == "#where" and not r[1] and r[2] == "We’re closed now. Opens tonight 10 PM. Pick a time and it’s a pre-order: we start on it when we open." and r[3][:1] == ["10:15 PM"]
           and r[3][-1] == "1:45 AM" and await fits(pg),
-          f"[{width}px] 3 PM: closed, no as soon as possible, times tonight from 10:30 PM (half an hour after opening) to 1:45 AM ({r[2]!r}, {r[3][:2]}..)")
+          f"[{width}px] 3 PM: closed, no as soon as possible, times tonight from 10:15 PM (a quarter hour after opening; Victor: any time after 10 PM) to 1:45 AM ({r[2]!r}, {r[3][:2]}..)")
     await shot(pg, "checkout-1-preorder", end=True)
     await pg.click(tap("2026-10-11T03:00:00.000Z", "ck-time"))
     await pg.click("[data-next]"); await pg.wait_for_timeout(250)

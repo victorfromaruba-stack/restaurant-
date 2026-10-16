@@ -40,7 +40,7 @@
                               max(15, etaMin - 25) minutes from now and within 24 h. m = minutes after Aruba midnight,
                               label = clock(m, true), iso = the UTC time to send as due_at, tonight = the service night
                               that is on now or still to come today (false: the next one, after last orders), day = the
-                              weekday that night starts on, early = in the first 30 minutes after opening. While open it
+                              weekday that night starts on, early = the opening minute itself (deliveries start after it). While open it
                               includes times sooner than the usual delivery time: a page may hide those.
    OrderApp.canOrderNow()     true while an "as soon as possible" order is accepted (opening time until lastOrder)
    OrderApp.lines()           the cart, newest data from the menus: [{k, b, brand, id, name, title, opts, q, p, img,
@@ -620,7 +620,7 @@
       for (var m = from; m <= to; m += 15) {
         var utc = start + m * 60000 - aw;
         if (utc < now + lead || utc > now + 864e5) continue;
-        out.push({ m: m % 1440, label: clock(m, true), iso: new Date(utc).toISOString(), tonight: night === thisNight, day: day, early: m - w.o < 30 });
+        out.push({ m: m % 1440, label: clock(m, true), iso: new Date(utc).toISOString(), tonight: night === thisNight, day: day, early: m - w.o < 15 });
       }
       if (out.length) return out;
     }
