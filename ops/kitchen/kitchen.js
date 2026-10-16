@@ -1,5 +1,6 @@
 /* Kitchen app: Prep / Cook an order / Close up.
-   Data: kitchen-data.json (built by _build/make_data.py). No libraries, works offline once loaded.
+   Data: kitchen-data.json (built by _build/make_data.py), plus the website's site.json and every restaurant's
+   menu.json (which dish a ticket line is, and which pictures are hidden). No libraries, works offline once loaded.
    Saved on this device (localStorage): open orders, running timers, prep + close-up ticks per date. */
 (function () {
   'use strict';
@@ -100,33 +101,76 @@
     Object.keys(DISH).forEach(function (k) {
       var d = DISH[k];
       [d.name].concat(d.aliases || []).forEach(function (nm) {
-        INDEX.push({ key: k, brand: d.brand, n: norm(nm), l: loose(nm), t: toks(nm) });
+        INDEX.push({ key: k, ref: k, brand: d.brand, n: norm(nm), l: loose(nm), t: toks(nm) });
       });
     });
   }
-  function matchDish(name, brandId) {
+
+  /* The website's menus (every restaurant in site.json, open, soon and hidden). A ticket line is matched to the
+     menu by its restaurant and its exact name, then to that dish's recipe card by the menu id. A dish added with
+     the Menu tile has no card yet: it shows as a plain line with the menu's words, never as another dish's card. */
+  var MENUS = {};
+  var MENU_INDEX = [];
+  function cardFor(brand, item) {
+    var d = DISH[item.kind === 'drink' ? 'drink/' + item.id : brand + '/' + item.id];
+    if (!d) return null;
+    if (item.kind === 'drink') return d.key;
+    // the same id with a name that shares no word with the card: an old id used again for a new dish
+    var mine = toks(item.name), names = [d.name].concat(d.aliases || []);
+    return names.some(function (nm) { return toks(nm).some(function (w) { return w.length > 2 && mine.indexOf(w) >= 0; }); }) ? d.key : null;
+  }
+  function applyMenus() {
+    MENU_INDEX = [];
+    var hidden = {};
+    Object.keys(MENUS).forEach(function (b) {
+      var m = MENUS[b];
+      if (!BRAND[b]) BRAND[b] = { id: b, name: m.name || b, accent: m.color || '#26406A', ink: '#FFFFFF', dishes: [] };
+      (m.items || []).forEach(function (it) {
+        var card = cardFor(b, it);
+        // "hidePhoto": the picture doesn't match the words, so the chef app doesn't show it either
+        if (it.hidePhoto) {
+          if (it.img) hidden['../../' + it.img] = 1;
+          if (card && DISH[card]) DISH[card].img = null;
+        }
+        MENU_INDEX.push({ ref: it.kind === 'drink' ? 'drink/' + it.id : b + '/' + it.id, brand: b, id: it.id, drink: it.kind === 'drink',
+          card: card, item: it, n: norm(it.name), l: loose(it.name) });
+      });
+    });
+    Object.keys(DISH).forEach(function (k) { if (DISH[k].img && hidden[DISH[k].img]) DISH[k].img = null; });
+  }
+  // the one thing every hit points at, or null when they point at different dishes
+  function one(list) {
+    return list.length && list.every(function (x) { return x.ref === list[0].ref; }) ? list[0] : null;
+  }
+  /* -> { key: recipe card or null, menu: menu entry or null, fuzzy: true when it is only a close name } */
+  function matchLine(name, brandId) {
     var n = norm(name), l = loose(name), t = toks(name);
-    var pools = brandId
-      ? [INDEX.filter(function (x) { return x.brand === brandId || x.brand === null; }), INDEX]
-      : [INDEX];
-    var i, hit;
-    for (i = 0; i < pools.length; i++) {
-      hit = pools[i].filter(function (x) { return x.n === n; })[0] || pools[i].filter(function (x) { return x.l === l; })[0];
-      if (hit) return hit.key;
+    if (!n) return null;
+    var menus = MENU_INDEX.filter(function (x) { return !brandId || x.brand === brandId || x.drink; });
+    var cards = INDEX.filter(function (x) { return !brandId || x.brand === brandId || x.brand === null; });
+    var hit = one(menus.filter(function (x) { return x.n === n; })) || (l ? one(menus.filter(function (x) { return x.l === l; })) : null);
+    if (hit) {
+      var key = hit.card;
+      // no card under this menu id: a card with exactly this name in the same restaurant is the same dish
+      if (!key) { var c0 = one(cards.filter(function (x) { return x.n === n && x.brand === hit.brand; })); key = c0 ? c0.key : null; }
+      return { key: key, menu: hit, fuzzy: false };
     }
-    for (i = 0; i < pools.length; i++) {
-      var best = null, score = 0;
-      pools[i].forEach(function (x) { var s = dice(t, x.t); if (s > score) { score = s; best = x; } });
-      if (best && score >= 0.6) return best.key;
-    }
+    // a recipe card with this name (a ticket sent before a rename, or the menus didn't load)
+    var c = one(cards.filter(function (x) { return x.n === n; })) || (l ? one(cards.filter(function (x) { return x.l === l; })) : null);
+    if (c) return { key: c.key, menu: null, fuzzy: false };
+    // last resort: the closest recipe card, only inside one restaurant
+    var best = null, score = 0, seen = {};
+    cards.forEach(function (x) { var s = dice(t, x.t); if (s >= 0.6) seen[x.brand] = 1; if (s > score) { score = s; best = x; } });
+    if (best && score >= 0.6 && (brandId || Object.keys(seen).length === 1)) return { key: best.key, menu: null, fuzzy: true };
     return null;
   }
+  function matchKey(name, brandId) { var h = matchLine(name, brandId); return h ? h.key : null; }
   function matchBrand(text) {
     var n = norm(String(text || '').replace(/^[\s—–=:-]+|[\s—–=:-]+$/g, ''));
     if (!n) return null;
-    for (var i = 0; i < DATA.brands.length; i++) {
-      var b = DATA.brands[i];
-      if (norm(b.name) === n) return b;
+    var ids = Object.keys(BRAND);
+    for (var i = 0; i < ids.length; i++) {
+      if (norm(BRAND[ids[i]].name) === n) return BRAND[ids[i]];
     }
     return null;
   }
@@ -165,22 +209,37 @@
     var m = /^(\d{1,3})\s*[x×X✕✖*]\s*(.+)$/.exec(s);
     if (m) return { qty: +m[1], name: m[2].trim(), price: price };
     m = /^(.+?)\s*[x×X]\s*(\d{1,3})$/.exec(s);
-    if (m && matchDish(m[1], brandId)) return { qty: +m[2], name: m[1].trim(), price: price };
+    if (m && matchLine(m[1], brandId)) return { qty: +m[2], name: m[1].trim(), price: price };
     m = /^(\d{1,3})\s+(.+)$/.exec(s);
-    if (m && matchDish(m[2], brandId)) return { qty: +m[1], name: m[2].trim(), price: price };
+    if (m && matchLine(m[2], brandId)) return { qty: +m[1], name: m[2].trim(), price: price };
     return null;
+  }
+  /* What WhatsApp adds when a message is copied: invisible direction marks, and "[22:14, 15/10/2026] Ana: "
+     in front of each message (or "15/10/2026, 22:14 - Ana: " from an exported chat). */
+  var MARKS = /[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g;
+  var WA_STAMP = /^\[(?=[^\]]*\d{1,2}[:.]\d{2})(?=[^\]]*\d{1,4}[\/.-]\d{1,2}[\/.-]\d{2,4})[^\]]{6,40}\]\s*[^:]{1,60}?:\s*/;
+  var WA_EXPORT = /^\d{1,4}[\/.-]\d{1,2}[\/.-]\d{2,4},?\s+\d{1,2}[:.]\d{2}(?:[:.]\d{2})?(?:\s?[AaPp]\.?\s?[Mm]\.?)?\s+[-–]\s+[^:]{1,60}?:\s*/;
+  function cleanLine(raw) {
+    return raw.replace(MARKS, '').replace(/[\u00A0\u2007\u202F\t]/g, ' ').trim().replace(WA_STAMP, '').replace(WA_EXPORT, '').trim();
   }
   function parseOrder(text) {
     var o = {
       id: 'o' + uid(), no: '', title: '', brandId: null, multi: false, mode: '', area: '', preorder: false,
       name: '', address: '', note: '', phone: '', lines: [], other: [], created: Date.now(), closed: false
     };
-    var cur = null, last = null, header = false, sawFee = false;
+    var cur = null, last = null, header = false, sawFee = false, stop = false;
     String(text || '').replace(/\r\n?/g, '\n').split('\n').forEach(function (raw) {
-      var line = raw.replace(/[   \t]/g, ' ').replace(/[​-‍﻿]/g, '').trim();
+      if (stop) return;
+      var line = cleanLine(raw);
       if (!line) { last = null; return; }
       var bare = stripMarks(line), m;
       if (!bare) return;
+      // "Replaces order #2300-EC": the customer changed an order they had already sent
+      if ((m = /^replaces\s+(?:order\s*)?#\s*([A-Za-z0-9]+(?:-[A-Za-z0-9]+)?)/i.exec(bare))) { o.replaces = m[1]; last = null; return; }
+      // a second "… order #2314-K7" after the first one (or after dishes): two messages in one paste
+      if ((header || o.lines.length) && (m = /^(.*?)\s*\border\b[\s:]*#\s*[A-Za-z0-9]/i.exec(bare)) && m[1].split(' ').length <= 4 && !/:/.test(m[1])) {
+        o.twoOrders = true; stop = true; return;
+      }
       if ((m = /^(name|customer|address|addr|note|notes|comment|phone|tel|mobile|time|when|pay|payment)\s*:\s*(.*)$/i.exec(bare))) {
         var f = m[1].toLowerCase(), v = m[2].trim();
         if (/^(time|when)$/.test(f)) o.time = v;
@@ -205,7 +264,7 @@
       }
       var br = matchBrand(bare);
       if (br) { cur = br.id; last = null; if (!o.title) o.title = br.name; return; }
-      if (/^drinks?$/i.test(bare)) { last = null; return; }   // website groups cans under *Drinks*
+      if (/^drinks?$/i.test(bare)) { cur = null; last = null; return; }   // website groups cans under *Drinks*: no restaurant
       if (/^total\b/i.test(bare)) { var tm = /ƒ\s*([\d.,]+)/.exec(bare); if (tm) o.total = tm[1]; o.totalC = priceOf(bare); }
       if (/^sub\s*-?\s*total\b/i.test(bare)) o.subtotalC = priceOf(bare);
       if (/^(sub\s*-?\s*total|total|delivery fee|service|tip|discount|fee)\b/i.test(bare)) {
@@ -214,13 +273,19 @@
       }
       if ((m = /^(delivery|deliver|pick\s*-?\s*up|collection)\b\s*[·•:|,—–-]*\s*(.*)$/i.exec(bare))) {
         if (/ƒ|\bafl\b|awg|\d+[.,]\d{2}/i.test(m[2])) { if (/^d/i.test(m[1])) sawFee = true; o.feeC = priceOf(bare); last = null; return; }
-        o.mode = /^d/i.test(m[1]) ? 'Delivery' : 'Pickup';
+        // delivery only: a hand-typed "pickup" stays in the message lines and gets a warning on the order
+        if (!/^d/i.test(m[1])) { o.pickup = true; o.other.push(line); last = null; return; }
+        o.mode = 'Delivery';
         o.area = m[2].replace(/^[·•:|,—–-\s]+/, '').trim();
         last = null; return;
       }
       var it = parseItemLine(bare, cur);
       if (it) {
-        last = { qty: it.qty, raw: it.name, brandId: cur, key: matchDish(it.name, cur), mods: [], includes: null, price: it.price };
+        var hit = matchLine(it.name, cur), mi = hit && hit.menu;
+        last = { qty: it.qty, raw: it.name, brandId: cur, key: hit ? hit.key : null, mods: [], includes: null, price: it.price };
+        if (hit && hit.fuzzy) last.fuzzy = true;
+        // matched on the website's menu: kept so a dish with no recipe card can show the menu's own words
+        if (mi) last.menu = { b: mi.brand, id: mi.id, drink: mi.drink, desc: mi.item.desc || '', allergens: mi.item.allergens || [], flags: mi.item.flags || [] };
         o.lines.push(last);
         return;
       }
@@ -228,7 +293,7 @@
         var t = bare.replace(/^[-•–—>\s]+/, '').trim();
         var inc = /^includes?\s*:\s*(.*)$/i.exec(t);
         if (inc) { last.includes = (last.includes || []).concat(splitTop(inc[1], ',')); return; }
-        if (last.key && DISH[last.key] && DISH[last.key].kind === 'bundle' && matchDish(t, cur)) {
+        if (last.key && DISH[last.key] && DISH[last.key].kind === 'bundle' && matchKey(t, DISH[last.key].brand)) {
           last.includes = (last.includes || []).concat([t.replace(/\s*[x×]\s*\d+$/, '')]);
           return;
         }
@@ -246,10 +311,19 @@
     var items = [];
     lines.forEach(function (ln) {
       var d = ln.key ? DISH[ln.key] : null;
+      if (!d && ln.menu) {
+        // on the website's menu, but no recipe card yet (a new dish from the Menu tile): a plain line with the menu's words
+        var mm = ln.menu;
+        items.push({ uid: uid(), key: null, name: ln.raw, qty: ln.qty, mods: ln.mods, nocard: true, drink: !!mm.drink,
+          brand: mm.drink ? null : mm.b, info: { desc: mm.desc, allergens: mm.allergens, flags: mm.flags }, done: false });
+        return;
+      }
       if (!d) {
         items.push({ uid: uid(), key: null, name: ln.raw, qty: ln.qty, mods: ln.mods, unknown: true, brand: ln.brandId, done: false });
         return;
       }
+      // the card has another name than the ticket (renamed dish, or only a close name): the chef sees both
+      var said = ln.raw && norm(ln.raw) !== norm(d.name) ? ln.raw : '';
       if (d.kind === 'drink') {
         items.push({ uid: uid(), key: d.key, name: d.name, qty: ln.qty, mods: ln.mods, drink: true, brand: null, done: false });
         return;
@@ -257,19 +331,21 @@
       if (d.kind === 'bundle') {
         var keys = (d.includes || []).slice();
         if (ln.includes && ln.includes.length) {
-          var named = ln.includes.map(function (n) { return matchDish(n, d.brand); });
+          var named = ln.includes.map(function (n) { return matchKey(n, d.brand); });
           if (named.every(Boolean)) keys = named;
         }
         keys.forEach(function (k) {
           items.push({ uid: uid(), key: k, name: DISH[k].name, qty: ln.qty, mods: ln.mods.slice(), brand: DISH[k].brand,
-            bundle: { key: d.key, name: d.name }, done: false });
+            bundle: { key: d.key, name: d.name }, ticket: said, fuzzy: !!ln.fuzzy, done: false });
         });
         return;
       }
-      items.push({ uid: uid(), key: d.key, name: d.name, qty: ln.qty, mods: ln.mods, brand: d.brand, done: false });
+      items.push({ uid: uid(), key: d.key, name: d.name, qty: ln.qty, mods: ln.mods, brand: d.brand, ticket: said, fuzzy: !!ln.fuzzy, done: false });
     });
     return items;
   }
+  // what to call a drink on screen ("Grab 2 × Sprite can"), also for a drink with no card
+  function grabName(i) { var d = i.key && DISH[i.key]; return d ? (d.grab || d.name) : i.name; }
 
   // ------------------------------------------------------------------ orders store
   function loadOrders() { return store.get(KEY_ORDERS, []); }
@@ -578,7 +654,7 @@
       h += containsHtml(d);
       if (ctx.order) {
         var drinks = ctx.order.items.filter(function (i) { return i.drink; });
-        if (drinks.length) h += '<h2>Drinks in this order</h2>' + linesHtml(drinks.map(function (i) { return 'Grab ' + i.qty + ' × ' + DISH[i.key].grab; }), [], 'small');
+        if (drinks.length) h += '<h2>Drinks in this order</h2>' + linesHtml(drinks.map(function (i) { return 'Grab ' + i.qty + ' × ' + grabName(i); }), [], 'small');
       }
     } else if (card.t === 'label') {
       kind = 'Label it';
@@ -625,18 +701,19 @@
     setBar({ title: 'Kitchen', sub: niceDate(), home: false });
     var open = loadOrders().filter(function (o) { return !o.closed; });
     var pc = countTicks('prep'), cc = countTicks('close');
+    // Website orders arrive on WhatsApp and are cooked from "Cook an order", so that tile comes first.
     main.innerHTML = '<div class="home-grid">' +
-      '<a class="big-mode live" href="#/live"><b>Orders</b><span>New orders from the app come in here by themselves</span>' +
-      '<span class="count" id="liveCount"></span></a>' +
+      '<a class="big-mode cook" href="#/cook"><b>Cook an order</b><span>Paste the WhatsApp order, or pick dishes</span>' +
+      (open.length ? '<span class="count">' + open.length + ' open order' + (open.length > 1 ? 's' : '') + '</span>' : '') + '</a>' +
       '<a class="big-mode prep" href="#/prep"><b>Prep</b><span>Night before, morning, before you open</span>' +
       '<span class="count">' + pc.done + ' of ' + pc.total + ' done today</span></a>' +
-      '<a class="big-mode cook" href="#/cook"><b>Cook an order</b><span>Pick dishes, or paste an order</span>' +
-      (open.length ? '<span class="count">' + open.length + ' open order' + (open.length > 1 ? 's' : '') + '</span>' : '') + '</a>' +
       '<a class="big-mode close" href="#/close"><b>Close up</b><span>Cool down, label, throw away, clean</span>' +
       '<span class="count">' + cc.done + ' of ' + cc.total + ' done today</span></a>' +
       '<a class="big-mode books" href="#/receipts"><b>Receipts</b>' +
       '<span>Bought something? Take a photo of the shop receipt. It goes into Book Keeper.</span></a>' +
       '<a class="big-mode menu" href="#/menu"><b>Menu</b><span>Sold out, prices, photos, new dishes on the website</span></a>' +
+      '<a class="big-mode live" href="#/live"><b>App orders (test)</b><span>Website orders come on WhatsApp: use Cook an order.</span>' +
+      '<span class="count" id="liveCount"></span></a>' +
       '</div>';
     foot.innerHTML = '';
     if (window.KitchenLive) window.KitchenLive.count(document.getElementById('liveCount'));
@@ -686,8 +763,10 @@
     var h = '';
     if (open.length) {
       h += '<h2 style="margin-top:4px">Open orders</h2><div class="open-orders">' + open.map(function (o) {
-        var n = o.items.length, d = itemsDone(o);
-        return '<a class="oo" href="#/order/' + o.id + '"><div><b>' + esc(orderLabel(o)) + '</b><span>' +
+        var n = o.items.length, d = itemsDone(o), by = replacedBy(o);
+        return '<a class="oo' + (by ? ' oo--replaced' : '') + '" href="#/order/' + o.id + '"><div><b>' + esc(orderLabel(o)) + '</b>' +
+          (by ? '<span class="oo-flag">Replaced by #' + esc(by.no || '') + ': don’t cook this one</span>' : '') +
+          (o.replaces ? '<span class="oo-flag oo-flag--new">Replaces #' + esc(o.replaces) + '</span>' : '') + '<span>' +
           esc((o.title || '') + (o.mode ? ' · ' + o.mode : '') + ' · ' + d + ' of ' + n + ' done') + '</span></div><span class="go">Open ›</span></a>';
       }).join('') + '</div>';
     }
@@ -727,22 +806,23 @@
     var o = getOrder(oid);
     if (!o) { go('#/cook', true); return; }
     var brands = [];
-    o.items.forEach(function (i) { if (!i.drink && i.brand && brands.indexOf(i.brand) < 0) brands.push(i.brand); });
-    var accent = brands.length === 1 ? BRAND[brands[0]].accent : null;
-    setBar({ title: orderLabel(o), sub: brands.map(function (b) { return BRAND[b].name; }).join(' + ') || o.title, accent: accent,
+    o.items.forEach(function (i) { if (!i.drink && !i.unknown && i.brand && brands.indexOf(i.brand) < 0) brands.push(i.brand); });
+    var accent = brands.length === 1 ? brandOf(brands[0]).accent : null;
+    setBar({ title: orderLabel(o), sub: brands.map(function (b) { return brandOf(b).name; }).join(' + ') || o.title, accent: accent,
       side: { label: 'Orders', href: '#/cook' } });
     var done = itemsDone(o), n = o.items.length;
-    var h = '<div class="order-wrap"><div>' + orderHead(o) + '</div><div>';
+    var h = '<div class="order-wrap"><div>' + replaceBanners(o) + orderHead(o) + '</div><div>';
     h += '<p class="progress-line">' + done + ' of ' + n + ' done</p>';
     var groups = brands.map(function (b) { return { id: b, items: [] }; });
     var drinks = [], unknown = [];
     o.items.forEach(function (it, idx) {
+      var g = groups.filter(function (x) { return x.id === it.brand; })[0];
       if (it.drink) drinks.push(idx);
-      else if (it.unknown) unknown.push(idx);
-      else groups.filter(function (g) { return g.id === it.brand; })[0].items.push(idx);
+      else if (it.unknown || !g) unknown.push(idx);
+      else g.items.push(idx);
     });
     groups.forEach(function (g) {
-      var b = BRAND[g.id];
+      var b = brandOf(g.id);
       h += '<div class="brand-h" style="background:' + esc(b.accent) + ';color:' + esc(b.ink) + '">' + esc(b.name) + '</div>';
       g.items.forEach(function (idx) { h += itemRow(o, idx); });
     });
@@ -769,19 +849,56 @@
     var no = o.no ? 'Order #' + o.no : 'Your order';
     var hi = 'Danki' + (o.name ? ', ' + o.name : '') + '! ';
     var timed = o.time && !/possible|asap/i.test(o.time);
-    var pickup = o.mode === 'Pickup';
     var total = o.total ? ' Total \u0192' + o.total + '.' : '';
+    // delivery time as the website says it (site.json "eta")
+    var eta = SITE.eta ? ' It\u2019s with you in about ' + SITE.eta + '.' : '';
     // the first real dish (not a drink), so the customer sees we are on their food
-    var food = (o.items || []).filter(function (i) { return !i.drink && !i.unknown; });
-    var dish = food.length ? food[0].name + (food.length > 1 ? ' and ' + (food.length - 1) + ' more' : '') : '';
+    var food = foodNames(o);
+    var dish = food.length ? food[0] + (food.length > 1 ? ' and ' + (food.length - 1) + ' more' : '') : '';
     var named = dish ? no + ' (' + dish + ')' : no;
     return [
-      { k: 'Confirm', t: hi + no + (timed ? ' is booked for ' + o.time + '.' : ' is confirmed.') +
-          (pickup ? ' We\u2019ll message you when it\u2019s ready for pickup.' : timed ? '' : ' It\u2019s with you in about 45\u201360 min.') + total },
+      { k: 'Confirm', t: hi + no + (timed ? ' is booked for ' + o.time + '.' : ' is confirmed.' + eta) + total },
       { k: 'Cooking', t: no + ' is on the stove now' + (dish ? ': ' + dish + '.' : '.') },
-      { k: pickup ? 'Ready for pickup' : 'On the way', t: pickup ? named + ' is ready for pickup. See you soon!' : named + ' is on the way. See you in a few minutes!' },
+      { k: 'On the way', t: named + ' is on the way. See you in a few minutes!' },
       { k: 'Sold out', t: 'Sorry, one dish in ' + (o.no ? 'order #' + o.no : 'your order') + ' is sold out tonight. Can we swap it for something else?' }
     ];
+  }
+  /* The dishes as the customer ordered them: one per order line (a Family Table is one dish, not three), no drinks. */
+  function foodNames(o) {
+    if (o.lines && o.lines.length) {
+      return o.lines.filter(function (l) {
+        var d = l.key && DISH[l.key];
+        return d ? d.kind !== 'drink' : !!(l.menu && !l.menu.drink);
+      }).map(function (l) { return l.raw; });
+    }
+    var out = [], seen = {};
+    (o.items || []).forEach(function (i) {
+      if (i.drink || i.unknown) return;
+      if (i.bundle) { if (seen[i.bundle.key]) return; seen[i.bundle.key] = 1; out.push(i.bundle.name); return; }
+      out.push(i.name);
+    });
+    return out;
+  }
+  /* "Replaces order #2300-EC" on a ticket: the customer changed an order already sent. Nothing is deleted:
+     both orders say it, so the old one isn't cooked twice. */
+  function sameNo(a, b) { return !!a && !!b && String(a).toUpperCase() === String(b).toUpperCase(); }
+  function replacedBy(o, list) {
+    if (!o.no) return null;
+    return (list || loadOrders()).filter(function (x) { return x.id !== o.id && sameNo(x.replaces, o.no); })[0] || null;
+  }
+  function replaceBanners(o, onStep) {
+    var h = '', list = loadOrders();
+    if (o.replaces && !onStep) {   // on the cook steps only "replaced by" matters: stop cooking this one
+      var old = list.filter(function (x) { return x.id !== o.id && sameNo(x.no, o.replaces); })[0];
+      h += '<div class="banner allergy replaces">Replaces order #' + esc(o.replaces) + ': don\u2019t cook that one twice' +
+        (old && !old.closed ? '<a class="banner-link" href="#/order/' + esc(old.id) + '">#' + esc(old.no) + ' is still open here \u203a</a>' : '') + '</div>';
+    }
+    var by = replacedBy(o, list);
+    if (by) {
+      h += '<div class="banner allergy replaces">Replaced by order #' + esc(by.no || '') + ': don\u2019t cook this one' +
+        '<a class="banner-link" href="#/order/' + esc(by.id) + '">Open #' + esc(by.no || 'the new order') + ' \u203a</a></div>';
+    }
+    return h;
   }
   function replyBlock(o) {
     return '<h2>Reply to the customer</h2><div class="replies">' + replyTexts(o).map(function (r, i) {
@@ -798,14 +915,18 @@
     try { if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t); } catch (err) { /* ignore */ }
     toast('Copied. Pick the customer\u2019s chat in WhatsApp and send.');
   });
+  function brandOf(id) { return BRAND[id] || { id: id, name: String(id || ''), accent: '#26406A', ink: '#FFFFFF' }; }
+  function modeText(o) { return o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery · area not in the message'; }
   function orderHead(o, noMode) {
-    var h = '<div class="ohead">' + (noMode ? '' : '<div class="mode">' + esc(o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery or pickup: not in message') + '</div>');
-    if (o.time) h += '<div class="when' + (/possible|asap/i.test(o.time) ? '' : ' when--set') + '">' + (/possible|asap/i.test(o.time) ? 'As soon as possible' : 'Ready for ' + esc(o.time)) + '</div>';
+    var h = '<div class="ohead">' + (noMode ? '' : '<div class="mode">' + esc(modeText(o)) + '</div>');
+    // the customer picked a delivery time: that's when it must be at the door
+    if (o.time) h += '<div class="when' + (/possible|asap/i.test(o.time) ? '' : ' when--set') + '">' + (/possible|asap/i.test(o.time) ? 'As soon as possible' : 'Deliver at ' + esc(o.time)) + '</div>';
     if (o.preorder) h += '<span class="badge">PRE-ORDER · sent while closed</span>';
+    if (o.pickup) h += '<div class="notebox allergy"><small>Check with the customer</small>The message says pickup. We only deliver.</div>';
     if (o.pay && o.pay !== '-') {   // the website ticket says "Pay: Cash" or "Pay: Bank transfer"
       var bank = /bank|transfer/i.test(o.pay);
       h += '<div class="pay' + (bank ? ' pay--bank' : '') + '">' + (bank ? 'Pays by bank transfer · check it came in'
-        : /cash/i.test(o.pay) ? 'Pays cash ' + (o.mode === 'Pickup' ? 'at pickup' : 'to the driver') + (o.total ? ' · <span class="fl">\u0192' + esc(o.total) + '</span>' : '') : 'Pays: ' + esc(o.pay)) + '</div>';
+        : /cash/i.test(o.pay) ? 'Pays cash to the driver' + (o.total ? ' · <span class="fl">\u0192' + esc(o.total) + '</span>' : '') : 'Pays: ' + esc(o.pay)) + '</div>';
     }
     if (o.name) h += '<div class="who">' + esc(o.name) + (o.phone ? ' · ' + esc(o.phone) : '') + '</div>';
     if (o.address) h += '<div class="addr">' + esc(o.address) + '</div>';
@@ -815,10 +936,20 @@
   function itemRow(o, idx) {
     var it = o.items[idx];
     if (it.drink) {
-      var dd = DISH[it.key];
+      var dd = DISH[it.key] || { img: null };
       return '<button class="item drink' + (it.done ? ' done' : '') + '" data-act="drink" data-id="' + o.id + '" data-idx="' + idx + '">' +
-        '<span class="box">' + (it.done ? '✓' : '') + '</span>' + photo(dd.img, dd.grab, '#ffffff') +
-        '<span class="it"><b>Grab ' + it.qty + ' × ' + esc(dd.grab) + '</b>' + (it.done ? '<span class="part">In the bag</span>' : '') + '</span></button>';
+        '<span class="box">' + (it.done ? '✓' : '') + '</span>' + photo(dd.img, grabName(it), '#ffffff') +
+        '<span class="it"><b>Grab ' + it.qty + ' × ' + esc(grabName(it)) + '</b>' + (it.done ? '<span class="part">In the bag</span>' : '') + '</span></button>';
+    }
+    if (it.nocard) {
+      // a dish from the website's menu with no recipe card yet: the menu's own words, never another dish's card
+      var inf = it.info || {};
+      return '<button class="item nocard' + (it.done ? ' done' : '') + '" data-act="drink" data-id="' + o.id + '" data-idx="' + idx + '">' +
+        '<span class="box">' + (it.done ? '✓' : '') + '</span><span class="it"><b>' + it.qty + ' × ' + esc(it.name) + '</b>' +
+        '<span class="part nocard-t">No recipe card yet</span>' +
+        (inf.desc ? '<span class="part nocard-d">' + esc(inf.desc) + '</span>' : '') +
+        (inf.allergens && inf.allergens.length ? '<span class="part nocard-d">Contains: <b>' + esc(inf.allergens.join(' · ')) + '</b></span>' : '') +
+        '<span class="part">Tap to tick when it’s done.</span>' + modChips(it.mods, conflicts(o, inf)) + '</span></button>';
     }
     if (it.unknown) {
       return '<button class="item unknown' + (it.done ? ' done' : '') + '" data-act="drink" data-id="' + o.id + '" data-idx="' + idx + '">' +
@@ -829,6 +960,7 @@
     return '<a class="item' + (it.done ? ' done' : '') + '" href="#/order/' + o.id + '/' + idx + '/0">' +
       photo(d.img, d.name, BRAND[d.brand].accent) +
       '<span class="it"><b>' + it.qty + ' × ' + esc(d.name) + '</b>' +
+      (it.ticket ? '<span class="part said">Ticket says: ' + esc(it.ticket) + '</span>' : '') +
       (it.bundle ? '<span class="part">Part of ' + esc(it.bundle.name) + '</span>' : '') +
       modChips(it.mods, warn) + '</span>' +
       '<span class="go">' + (it.done ? '✓ Done' : 'Cook ›') + '</span></a>';
@@ -846,7 +978,9 @@
     var cards = dishCards(d);
     c = Math.max(0, Math.min(cards.length - 1, c));
     setBar({ title: it.qty + ' × ' + d.name, sub: b.name + ' · ' + orderLabel(o), accent: b.accent, side: { label: 'Order', href: '#/order/' + oid } });
-    var banners = '';
+    var banners = replaceBanners(o, true);
+    // the recipe card's name isn't what the ticket says (a renamed dish, or only a close name): show both, every step
+    if (it.ticket) banners += '<div class="banner said">Ticket says: ' + esc(it.ticket) + (it.fuzzy ? '<small>Not the same name. Check this is the right dish.</small>' : '') + '</div>';
     if (it.mods && it.mods.length) banners += '<div class="banner mods">' + esc(it.mods.join(' · ')) + '</div>';
     if (it.bundle) banners += '<div class="banner note"><small>Family Table</small>Part of ' + esc(it.bundle.name) + ' · ' + it.qty + ' tray' + (it.qty > 1 ? 's' : '') + '</div>';
     var warn = conflicts(o, d);
@@ -889,10 +1023,10 @@
     if (!o) { go('#/cook', true); return; }
     setBar({ title: 'Order ready', sub: orderLabel(o), side: { label: 'Order', href: '#/order/' + oid } });
     var h = '<div class="ready"><div class="big"><b>ORDER READY</b><span>' + esc(o.no ? '#' + o.no : orderLabel(o)) + '</span></div>' +
-      '<div class="mode">' + esc(o.mode ? o.mode + (o.area ? ' · ' + o.area : '') : 'Delivery or pickup: check the message') + '</div>' +
+      '<div class="mode">' + esc(modeText(o)) + '</div>' +
       '</div>' + orderHead(o, true) + '<h2>In the bag</h2><ul class="lines small">' +
       o.items.map(function (i) {
-        var nm = i.drink ? DISH[i.key].grab : (i.key ? DISH[i.key].name : i.name);
+        var nm = i.drink ? grabName(i) : (i.key ? DISH[i.key].name : i.name);
         return '<li>' + i.qty + ' × ' + esc(nm) + (i.bundle ? ' (' + esc(i.bundle.name) + ')' : '') + (i.mods && i.mods.length ? ' · ' + esc(i.mods.join(' · ')) : '') + '</li>';
       }).join('') + '</ul>' +
       (receiptModel(o) ? '<div class="row-btns" style="margin-top:18px"><button class="btn go wide" data-act="receipt" data-id="' + o.id + '">Receipt for the customer</button></div>' : '');
@@ -908,23 +1042,31 @@
   var SITE = {};
   function money(c) { return '\u0192' + (c / 100).toFixed(2); }
   function phoneText(n) { n = String(n || ''); return /^297\d{7}$/.test(n) ? '+297 ' + n.slice(3, 6) + ' ' + n.slice(6) : '+' + n; }
+  /* the restaurant a line belongs to: its section on the ticket, else the dish's own restaurant (drinks: none) */
+  function foodBrand(l) {
+    var d = l.key && DISH[l.key];
+    if ((d && d.kind === 'drink') || (l.menu && l.menu.drink)) return null;
+    var b = l.brandId || (d && d.brand) || (l.menu && l.menu.b) || null;
+    return b && BRAND[b] ? b : null;
+  }
   function receiptModel(o) {
     var lines = o.lines || [];
     // every line needs its price, or a dish would silently be missing from the receipt
     if (!lines.length || lines.some(function (l) { return l.price == null; })) return null;
     var brands = [];
-    lines.forEach(function (l) { var b = l.brandId && BRAND[l.brandId]; if (b && !/drink/i.test(l.raw) && brands.indexOf(b.name) < 0) brands.push(b.name); });
+    lines.forEach(function (l) { var b = foodBrand(l); if (b && brands.indexOf(BRAND[b].name) < 0) brands.push(BRAND[b].name); });
     var sub = o.subtotalC != null ? o.subtotalC : lines.reduce(function (t, l) { return t + l.price; }, 0);
     var fee = o.feeC != null ? o.feeC : 0;
     // like a delivery app's receipt: Order Aruba on top, the restaurant under it, and that restaurant's WhatsApp number
     var one = o.brandId && BRAND[o.brandId] ? o.brandId : null;
-    if (!one) lines.forEach(function (l) { if (!one && l.brandId && BRAND[l.brandId] && !/drink/i.test(l.raw)) one = l.brandId; });
+    if (!one) lines.forEach(function (l) { if (!one) one = foodBrand(l); });
     var conf = one && (SITE.brands || []).filter(function (b) { return b.id === one; })[0];
     if (!brands.length && one) brands = [BRAND[one].name];
+    var area = (o.area || '').replace(/\s*\(please confirm\)/i, '');
     return { no: o.no || '', when: o.created, brands: brands, biz: SITE.name || 'Order Aruba',
-      wa: (conf && conf.whatsapp) || SITE.whatsapp || '', mode: o.mode ? o.mode + (o.mode === 'Delivery' && o.area ? ' \u00b7 ' + o.area.replace(/\s*\(please confirm\)/i, '') : '') : '',
+      wa: (conf && conf.whatsapp) || SITE.whatsapp || '', mode: o.mode || area ? 'Delivery' + (area ? ' \u00b7 ' + area : '') : '',
       name: o.name || '', lines: lines.map(function (l) { return { q: l.qty, n: l.raw, p: l.price, d: (l.includes || []).concat(l.mods || []) }; }),
-      sub: sub, fee: fee, feeLabel: o.mode === 'Pickup' ? 'Pickup' : 'Delivery', total: o.totalC != null ? o.totalC : sub + fee,
+      sub: sub, fee: fee, feeLabel: 'Delivery', total: o.totalC != null ? o.totalC : sub + fee,
       pay: o.pay && o.pay !== '-' ? o.pay : '' };
   }
   function receiptDate(ts) {
@@ -1107,17 +1249,8 @@
       var text = ta ? ta.value : draft;
       draft = text;
       if (!text.trim()) { lastErr = 'The box is empty. Paste the WhatsApp order first.'; render(true); return; }
-      var o = parseOrder(text);
-      if (!o.items.length) { lastErr = 'No dishes found in that message. Check it is the whole order (lines like "2 × Chicken fried rice").'; render(true); return; }
-      if (o.no) {
-        var dup = loadOrders().filter(function (x) { return !x.closed && x.no === o.no; })[0];
-        if (dup) { lastErr = ''; draft = ''; toast('Order #' + o.no + ' is already open.'); go('#/order/' + dup.id); return; }
-      }
-      putOrder(o);
-      lastErr = ''; draft = '';
-      var miss = o.items.filter(function (i) { return i.unknown; }).length;
-      if (miss) toast(miss + ' line' + (miss > 1 ? 's' : '') + ' not matched. Check the orange box.', 5000);
-      go('#/order/' + o.id);
+      // the menus decide which dish a line is: wait for them (they are almost always in already)
+      upTo(menusReady, 5000).then(function () { readOrder(text); });
     },
     drink: function (el) {
       var o = getOrder(el.getAttribute('data-id')), idx = +el.getAttribute('data-idx');
@@ -1195,6 +1328,24 @@
       openSheet('<h2>' + esc(d.name) + '</h2><p class="muted">Batch of 10 portions</p>' + linesHtml(d.ingredients, [], 'small'));
     }
   };
+  function readOrder(text) {
+    var o = parseOrder(text);
+    if (o.twoOrders) { lastErr = 'Two orders in one paste. Paste them one at a time.'; render(true); return; }
+    if (!o.items.length) { lastErr = 'No dishes found in that message. Check it is the whole order (lines like "2 × Chicken fried rice").'; render(true); return; }
+    if (o.no) {
+      var dup = loadOrders().filter(function (x) { return !x.closed && sameNo(x.no, o.no); })[0];
+      if (dup) { lastErr = ''; draft = ''; toast('Order #' + o.no + ' is already open.'); go('#/order/' + dup.id); return; }
+    }
+    putOrder(o);
+    lastErr = ''; draft = '';
+    var miss = o.items.filter(function (i) { return i.unknown; }).length;
+    var nocard = o.items.filter(function (i) { return i.nocard && !i.drink; }).length;
+    var old = o.replaces && loadOrders().filter(function (x) { return !x.closed && x.id !== o.id && sameNo(x.no, o.replaces); })[0];
+    if (old) toast('This replaces order #' + o.replaces + ', which is still open. Don’t cook that one twice.', 6000);
+    else if (miss) toast(miss + ' line' + (miss > 1 ? 's' : '') + ' not matched. Check the orange box.', 5000);
+    else if (nocard) toast(nocard + ' dish' + (nocard > 1 ? 'es have' : ' has') + ' no recipe card yet. The menu’s words are on the order.', 5000);
+    go('#/order/' + o.id);
+  }
   function tileAccent(k) { var d = DISH[k]; return d.brand ? BRAND[d.brand].accent : '#ffffff'; }
   document.addEventListener('click', function (e) {
     var el = e.target.closest ? e.target.closest('[data-act]') : null;
@@ -1213,6 +1364,7 @@
     DATA = data;
     DATA.brands.forEach(function (b) { BRAND[b.id] = b; });
     DISH = DATA.dishes;
+    if (menusIn) applyMenus();
     buildIndex();
     render();
     setInterval(tick, 500);
@@ -1226,9 +1378,28 @@
     Object.keys(DISH).forEach(function (k) { if (DISH[k].img) urls.push(new URL(DISH[k].img, location.href).href); });
     navigator.serviceWorker.controller.postMessage({ type: 'warm', urls: urls });
   }
-  fetch('../../shared/site.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (s) { SITE = s || {}; }, function () {});
+  /* site.json, then every restaurant's menu.json (soon and hidden ones too). The app starts once the recipe
+     cards are in and the menus have had up to 4 seconds; menus that come later are used from then on. */
+  var menusIn = false;
+  var menusReady = fetch('../../shared/site.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : {}; })
+    .then(function (s) { SITE = s || {}; return loadMenus(SITE); }, function () {})
+    .then(function () {
+      menusIn = true;
+      if (!DATA) return;
+      applyMenus();
+      var typing = document.activeElement && document.activeElement.id === 'paste';
+      if (/^#\/(order|task|ready|cook)/.test(location.hash) && !typing) render(true);
+    });
+  function loadMenus(site) {
+    return Promise.all((site.brands || []).map(function (b) {
+      return fetch('../../' + b.id + '/menu.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (m) { if (m && m.items) MENUS[b.id] = m; }, function () {});
+    }));
+  }
+  function upTo(p, ms) { return Promise.race([p, new Promise(function (ok) { setTimeout(ok, ms); })]); }
   fetch('kitchen-data.json', { cache: 'no-cache' })
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) { return upTo(menusReady, 4000).then(function () { return data; }); })
     .then(boot)
     .catch(function () {
       main.innerHTML = '<p class="loading">Could not load the kitchen data. Check the connection once, then it works offline.</p>' +
@@ -1255,6 +1426,9 @@
     receipt: function (o) { return receiptModel(o); },
     receiptText: function (o) { var r = receiptModel(o); return r ? receiptText(r) : null; },
     timers: function () { return TIMERS; },
-    expire: function () { TIMERS.forEach(function (t) { t.ends = Date.now() - 1; }); saveTimers(); tick(); }
+    expire: function () { TIMERS.forEach(function (t) { t.ends = Date.now() - 1; }); saveTimers(); tick(); },
+    replies: function (o) { return replyTexts(o); },
+    menus: function () { return menusIn ? Object.keys(MENUS) : null; },
+    img: function (key) { return DISH[key] ? DISH[key].img : undefined; }
   };
 })();

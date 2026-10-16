@@ -1,4 +1,5 @@
-/* Orders from the Pidi app, live in the kitchen.
+/* Orders from the Pidi app, live in the kitchen. A test for now ("App orders (test)" on the home screen):
+   website orders still come on WhatsApp and are cooked from "Cook an order".
    Sign in once with the kitchen PIN (Victor sets it on /driver/admin/). New orders then come in by
    themselves: the phone beeps and shows a bar on every screen. One big button per step:
    Accept, Start cooking, then "… is ready" per restaurant. When every bag is ready, the order is
@@ -13,6 +14,8 @@
   var POLL = 8000;
 
   var feed = null, lastAt = 0, lastErr = '', busy = {}, pinErr = '', stopListen = null, watching = 0;
+  // In-app checkout isn't built yet: website orders come on WhatsApp, so this screen is a test for now.
+  var HOWTO = '<p class="banner note lv-howto">Website orders come on WhatsApp: use <a href="#/cook">Cook an order</a>.</p>';
   var menuPrice = null;                  // dish name -> menu price in cents, to catch a wrong price
 
   // ------------------------------------------------------------ session
@@ -104,7 +107,7 @@
         markSeen(fresh.map(function (o) { return o.id; }));
         beep();
         if (!onScreen()) {
-          UI.toast('New order: ' + fresh[0].name + (fresh[0].area ? ' · ' + fresh[0].area : '') + '. Tap Orders.', 8000);
+          UI.toast('New order: ' + fresh[0].name + (fresh[0].area ? ' · ' + fresh[0].area : '') + '. Tap App orders.', 8000);
         }
       }
       if (!stopListen && feed.topic) stopListen = P.listen(feed.topic, function () { refresh(); });
@@ -112,8 +115,10 @@
       if (onScreen()) draw();
       return feed;
     }, function (err) {
-      if (/sign in again/i.test(err.message)) { signOut('Sign in again with the kitchen PIN.'); if (onScreen()) draw(); return null; }
-      lastErr = err.message;
+      if (/sign in again/i.test(err.message)) { signOut('Sign in again with the kitchen PIN.'); paintCount(); if (onScreen()) draw(); return null; }
+      // say it failed, so nobody trusts an old count
+      lastErr = err.message || 'No connection.';
+      paintCount();
       if (onScreen()) draw();
       return null;
     });
@@ -274,8 +279,8 @@
     if (!onScreen()) return;
     var s = session();
     if (!s) {
-      UI.setBar({ title: 'Orders', sub: 'Sign in once on this phone' });
-      main.innerHTML = '<div class="lv-pin"><h1>Kitchen PIN</h1>' +
+      UI.setBar({ title: 'App orders (test)', sub: 'Sign in once on this phone' });
+      main.innerHTML = HOWTO + '<div class="lv-pin"><h1>Kitchen PIN</h1>' +
         '<p class="muted">Ask Victor for it. You stay signed in on this phone for 12 hours.</p>' +
         '<input id="lv-pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" placeholder="PIN" aria-label="Kitchen PIN">' +
         (pinErr ? '<div class="banner allergy">' + esc(pinErr) + '</div>' : '') +
@@ -289,10 +294,10 @@
     var orders = ((feed && feed.orders) || []).slice().sort(function (a, b) {
       return (STEP[a.status] - STEP[b.status]) || (Date.parse(a.created_at) - Date.parse(b.created_at));
     });
-    UI.setBar({ title: 'Orders', sub: lastAt ? 'Live · checked ' + UI.clock(lastAt) : 'Loading…' });
-    var h = '';
-    if (lastErr) h += '<div class="banner allergy">' + esc(lastErr) + ' <button class="btn small" data-live="retry">Try again</button></div>';
-    if (!feed) h += '<p class="loading">Loading orders…</p>';
+    UI.setBar({ title: 'App orders (test)', sub: lastErr ? 'Couldn’t check' + (lastAt ? ' · last good ' + UI.clock(lastAt) : '') : lastAt ? 'Live · checked ' + UI.clock(lastAt) : 'Loading…' });
+    var h = HOWTO;
+    if (lastErr) h += '<div class="banner allergy">Couldn’t check for app orders: ' + esc(lastErr) + ' <button class="btn small" data-live="retry">Try again</button></div>';
+    if (!feed) h += lastErr ? '' : '<p class="loading">Loading orders…</p>';
     else if (!orders.length) h += '<div class="lv-empty"><b>No orders right now.</b><span>Keep this screen open. New orders beep and show up here by themselves.</span></div>';
     else h += orders.map(card).join('');
     h += '<div class="row-btns lv-out"><button class="btn small" data-live="signout">Sign out on this phone</button></div>';
@@ -304,9 +309,11 @@
     if (!el) return;
     var n = ((feed && feed.orders) || []).filter(function (o) { return o.status === 'new'; }).length;
     var open = ((feed && feed.orders) || []).length;
-    el.textContent = !session() ? 'Sign in with the kitchen PIN' : n ? n + ' new order' + (n > 1 ? 's' : '') + ' · tap to accept' : open ? open + ' open order' + (open > 1 ? 's' : '') : 'No orders right now';
+    var failed = !!(session() && lastErr);
+    el.textContent = !session() ? 'Sign in with the kitchen PIN' : failed ? 'Couldn’t check for app orders. Tap to try again.'
+      : !feed ? 'Checking…' : n ? n + ' new order' + (n > 1 ? 's' : '') + ' · tap to accept' : open ? open + ' open order' + (open > 1 ? 's' : '') : 'No orders right now';
     var tile = el.closest('.big-mode');
-    if (tile) tile.classList.toggle('lv-has-new', n > 0);
+    if (tile) { tile.classList.toggle('lv-has-new', n > 0 && !failed); tile.classList.toggle('lv-failed', failed); }
   }
 
   window.KitchenLive = {

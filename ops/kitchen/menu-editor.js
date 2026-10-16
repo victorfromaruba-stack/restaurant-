@@ -16,6 +16,11 @@
   var ALLERGENS = [['gluten', 'Gluten'], ['egg', 'Egg'], ['dairy', 'Milk'], ['soy', 'Soy'], ['shellfish', 'Shellfish'], ['sesame', 'Sesame'],
     ['peanut', 'Peanuts'], ['nuts', 'Tree nuts'], ['mustard', 'Mustard'], ['fish', 'Fish'], ['celery', 'Celery']];
   var STATUS = [['open', 'Open'], ['soon', 'Opening soon'], ['hidden', 'Hidden']];
+  var STATUS_SAYS = {
+    open: 'Customers can order from it on the website again.',
+    soon: 'The website shows it as Opening soon. Customers can’t order from it.',
+    hidden: 'It disappears from the website’s home page. Its own page says it isn’t taking orders.'
+  };
 
   function token() { return (UI.store.get(KEY, {}) || {}).token || ''; }
   function cents(c) { return 'ƒ' + (c / 100).toFixed(2); }
@@ -50,18 +55,25 @@
   function updateJson(p, change, message, retried) {
     return readJson(p).then(function (f) {
       var err = change(f.data);
-      if (err) throw new Error(err);
+      if (err) { var x = new Error(err); x.plain = true; throw x; }
       return putFile(p, b64text(JSON.stringify(f.data, null, 1)), f.sha, message);
     }).catch(function (e) {
       if (!retried && (e.status === 409 || e.status === 422)) return updateJson(p, change, message, true);
       throw e;
     });
   }
+  /* Plain words for the chef, never GitHub's own English sentences. */
   function explain(e) {
-    if (e.status === 401) return 'The GitHub key is wrong or expired. Disconnect and paste a new one.';
-    if (e.status === 403 || e.status === 404) return 'This GitHub key can’t save. It needs the restaurant- repo with Contents: Read and write.';
+    var s = e && e.status;
+    if (e && e.plain) return e.message;   // our own sentence, e.g. "That dish isn't on the menu any more."
+    if (s === 401) return 'The GitHub key is wrong or expired. Disconnect and paste a new one.';
+    if (s === 403 || s === 404) return 'This GitHub key can’t save. It needs the restaurant- repo with Contents: Read and write.';
+    if (s === 409 || s === 422) return 'Someone else saved at the same moment. Try again.';
+    if (s === 429) return 'Too many saves at once. Wait a few minutes, then try again.';
+    if (s >= 500) return 'GitHub isn’t working right now. Try again in a few minutes.';
     if (!navigator.onLine) return 'No internet. Try again when the phone is online.';
-    return e.message || 'Saving didn’t work. Try again.';
+    if (!s) return 'GitHub didn’t answer. Check the internet and try again.';
+    return 'Saving didn’t work (GitHub said ' + s + '). Try again, or ask Victor.';
   }
   function saving(promise, done) {
     UI.toast('Saving…', 20000);
@@ -187,7 +199,10 @@
   }
   function row(i) {
     var drink = i.kind === 'drink';
-    return '<div class="me-row' + (i.soldOut ? ' out' : '') + '"><img src="' + esc(site(drink ? i.img : thumbOf(i.img))) + '" alt="" onerror="this.onerror=null;this.src=\'' + esc(site(i.img)) + '\'">' +
+    // a picture that doesn't match its dish ("hidePhoto") isn't shown here either; no thumbnail yet: the big picture
+    var pic = i.hidePhoto ? '<span class="me-noimg">No photo yet</span>'
+      : '<img src="' + esc(site(drink ? i.img : thumbOf(i.img))) + '" alt=""' + (drink ? '' : ' data-full="' + esc(site(i.img)) + '"') + '>';
+    return '<div class="me-row' + (i.soldOut ? ' out' : '') + '">' + pic +
       '<div class="me-t"><b>' + esc(i.name) + '</b><span>' + cents(i.price) + (i.soldOut ? ' · <em>Sold out</em>' : '') + '</span></div>' +
       '<div class="me-b"><button class="btn small' + (i.soldOut ? ' go' : ' warn') + '" data-mact="soldout" data-id="' + esc(i.id) + '" data-v="' + (i.soldOut ? 'on' : 'out') + '">' + (i.soldOut ? 'Back on' : 'Sold out') + '</button>' +
       (drink ? '' : '<a class="btn small" href="#/menu/' + esc(current.brand) + '/' + esc(i.id) + '">Edit</a>') + '</div></div>';
@@ -209,9 +224,11 @@
           return '<label><input type="checkbox" name="' + name + '" value="' + x[0] + '"' + ((on || []).indexOf(x[0]) >= 0 ? ' checked' : '') + '><span>' + x[1] + '</span></label>';
         }).join('') + '</div>';
       }
+      var showImg = it.img && !it.hidePhoto;
       main.innerHTML = '<form class="me-wrap me-form" onsubmit="return false">' +
-        '<div class="me-photo"><img id="me-prev" src="' + (it.img ? esc(site(it.img)) : '') + '" alt=""' + (it.img ? '' : ' hidden') + '>' +
-        '<label class="btn wide"><input id="me-file" type="file" accept="image/*" capture="environment" hidden>' + (it.img ? 'Take a new photo' : 'Take the photo') + '</label>' +
+        '<div class="me-photo">' + (it.hidePhoto ? '<div class="me-noimg" id="me-noimg">The old picture didn’t match this dish, so it isn’t shown. Take a photo of the real dish.</div>' : '') +
+        '<img id="me-prev" src="' + (showImg ? esc(site(it.img)) : '') + '" alt=""' + (showImg ? '' : ' hidden') + '>' +
+        '<label class="btn wide"><input id="me-file" type="file" accept="image/*" capture="environment" hidden>' + (showImg ? 'Take a new photo' : 'Take the photo') + '</label>' +
         '<p class="hint">Photograph the real dish, exactly as it goes out. Nothing extra on the plate.</p></div>' +
         '<label class="me-field"><span>Name</span><input id="me-name" maxlength="60" value="' + esc(it.name) + '"></label>' +
         '<label class="me-field"><span>Price (ƒ)</span><input id="me-price" inputmode="decimal" value="' + (it.price ? (it.price / 100).toFixed(2) : '') + '" placeholder="14.50"></label>' +
@@ -273,7 +290,13 @@
     retry: function () { UI.render(); },
     savetoken: function () {
       var t = (document.getElementById('me-token').value || '').trim();
-      if (!/^(github_pat_|ghp_)\w{20,}/.test(t)) { UI.toast('That doesn’t look like a GitHub key. It starts with github_pat_.', 4000); return; }
+      // only fine-grained keys: they can be limited to this one website. An old "ghp_" key opens every repo on the account.
+      if (/^ghp_/.test(t)) {
+        UI.openSheet('<h2>That’s an old-style GitHub key</h2><p>It starts with ghp_ and can change everything on the GitHub account, not just the menu. ' +
+          'If this phone is lost, that is too much. Make the fine-grained key with the link on this screen (it starts with github_pat_), then delete the old one on GitHub.</p>');
+        return;
+      }
+      if (!/^github_pat_\w{20,}$/.test(t)) { UI.toast('That doesn’t look like a GitHub key. It starts with github_pat_.', 4000); return; }
       UI.store.set(KEY, { token: t });
       UI.toast('Checking the key…', 10000);
       gh('GET', '/repos/' + GH.owner + '/' + GH.repo).then(function () {
@@ -285,8 +308,17 @@
         '<div class="row-btns"><button class="btn warn wide" data-mact="disconnectyes">Yes, disconnect</button></div>');
     },
     disconnectyes: function () { UI.store.del(KEY); UI.closeSheet(); UI.go('#/menu'); },
+    // Open / Opening soon / Hidden changes what every customer sees, so it asks first.
     status: function (el) {
+      var v = el.getAttribute('data-v'), st = STATUS.filter(function (x) { return x[0] === v; })[0];
+      if (!st) return;
+      if (el.classList.contains('on')) { UI.toast(current.menu.name + ' is already ' + st[1] + '.', 2500); return; }
+      UI.openSheet('<h2>' + esc(current.menu.name) + ': ' + esc(st[1]) + '?</h2><p>' + esc(STATUS_SAYS[v]) + '</p>' +
+        '<div class="row-btns"><button class="btn ' + (v === 'open' ? 'go' : 'warn') + ' wide" data-mact="statusyes" data-v="' + esc(v) + '">Yes, make it ' + esc(st[1]) + '</button></div>');
+    },
+    statusyes: function (el) {
       var brand = current.brand, v = el.getAttribute('data-v');
+      UI.closeSheet();
       saving(updateJson('shared/site.json', function (s) {
         var b = s.brands.filter(function (x) { return x.id === brand; })[0];
         if (!b) return 'That restaurant isn’t in the website settings.';
@@ -356,13 +388,22 @@
     e.preventDefault();
     ACT[el.getAttribute('data-mact')](el);
   });
+  // a row picture with no thumbnail yet falls back to the big picture, once
+  document.addEventListener('error', function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== 'IMG' || !t.hasAttribute('data-full')) return;
+    var full = t.getAttribute('data-full');
+    t.removeAttribute('data-full');
+    t.src = full;
+  }, true);
   document.addEventListener('change', function (e) {
     if (e.target.id !== 'me-file' || !e.target.files || !e.target.files[0]) return;
     UI.toast('Getting the photo ready…', 8000);
     makePictures(e.target.files[0]).then(function (p) {
       pics = p;
-      var prev = document.getElementById('me-prev');
+      var prev = document.getElementById('me-prev'), none = document.getElementById('me-noimg');
       if (prev) { prev.src = p.preview; prev.hidden = false; }
+      if (none) none.hidden = true;
       UI.toast('Photo ready. It’s saved when you tap Save.', 3000);
     }, function (err) { UI.toast(err.message || 'That photo could not be read.', 4000); });
   });
