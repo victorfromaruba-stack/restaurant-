@@ -178,6 +178,9 @@
     }).then(function (o) {
       if (t !== token) return;
       order = o; missing = false; offline = false;
+      // its restaurants' menus, for the dishes' pictures (an order opened from a link on another phone has none loaded)
+      var need = (o.restaurants || []).map(function (r) { return r.slug; }).filter(function (b) { return b && !A.menu(b); });
+      if (need.length) Promise.all(need.map(function (b) { return A.loadMenu(b).catch(function () { return null; }); })).then(function () { if (t === token) render(false); });
     }, function (e) {
       if (t !== token) return;
       if (/NOT_FOUND/.test(String(e && e.message))) missing = true;

@@ -616,6 +616,8 @@ async def status_checks(br, width=390):
           and r["line"] == f"{NAMES[A]} and {NAMES[B]} got your order." and r["track"][0] == "now@11:30 PM" and r["track"][1:] == ["todo", "todo", "todo"]
           and r["pay"] == f"Cash: you pay with ƒ100.00, the driver brings {money(10000 - o['total_cents'])} change." and r["wa"].startswith("https://wa.me/" + site["whatsapp"]) and await fits(pg),
           f"[{width}px] Received: the order number and name, when it arrives ({ETA[0]}–{ETA[1]} min after it went in), who has it, the steps, the change ({r['eta']!r})")
+    pics = await pg.evaluate("Array.from(document.querySelectorAll('.line__pic')).filter(i => i.complete && i.naturalWidth > 0).length")
+    check(pics == 3, f"[{width}px] each dish has its picture (or its restaurant's mark), even for an order this phone didn't place ({pics} of 3)")
     await shot(pg, "status-2-received", end=True)
     calls = len([c for c in fake.calls if c[0] == "pidi_order_status"])
     for status, minutes in flow[1:]:
