@@ -1,5 +1,5 @@
 """Link preview cards (shared/og/*.jpg, 1200x630) from the live menus and pictures: one per restaurant
-(its signature dish, so the picture matches the tagline) and one for the Order Aruba home page.
+(its signature dish, so the picture matches the tagline) and one for the app's home page (site.json "name").
 Never anything about a shared kitchen.
 Run from the repo folder: python3 build/og/make_og.py (it serves the repo itself, see qa/local_server.py).
 Uses each menu.json's name, tagline, color, mark and hero, and the opening time in shared/site.json.
@@ -22,6 +22,7 @@ def t12(hhmm):
 o, c = site["hours"]["mon"]
 HOURS = f"From {t12(o)}"
 FEE = "ƒ%g" % (site["deliveryFee"] / 100)
+NAME = site["name"]
 
 def ink(hex_):
     h = hex_.lstrip("#"); r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
@@ -56,12 +57,12 @@ def brand_html(b):
     photo = f'<img class="ph" src="{pic}">' if pic else ""
     return HEAD + f"""<div class="c{'' if pic else ' solo'}">{photo}<div class="side" style="background:{col};color:{fg}">
 <img class="mk" src="{m['mark']}"><h1 class="nm">{m['name']}</h1><p class="tg">{m['tagline']}</p>
-<div class="ft"><span>Order Aruba</span><span>{HOURS}</span></div></div></div></body></html>"""
+<div class="ft"><span>{NAME}</span><span>{HOURS}</span></div></div></div></body></html>"""
 
 def home_html():
     hidden = {i["img"] for m in menus.values() for i in m["items"] if i.get("hidePhoto")}
     pics = [menus[b]["hero"] for b in ids if menus[b].get("hero") and menus[b]["hero"] not in hidden][:4]
-    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg">Order Aruba</div>
+    return HEAD + f"""<div class="hm"><div class="hl"><div class="lg">{NAME}</div>
 <div class="h1">Bon<br>nochi.</div><p class="sub">Late-night food, delivered.<br><b>{FEE} delivery, late night from {t12(o)}.</b></p>
 <div class="sg"><b>Open</b><span>Late night<br>from {t12(o)}</span></div></div>
 <div class="grid">{''.join(f'<img src="{p}">' for p in pics)}</div></div></body></html>"""

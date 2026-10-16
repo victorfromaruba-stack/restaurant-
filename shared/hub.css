@@ -1,4 +1,4 @@
-/* Order Aruba home: the delivery app's list of restaurants. Builds on shared/order.css (same font, same night palette). */
+/* The app's home page: the delivery app's list of restaurants. Builds on shared/order.css (same font, same night palette). */
 .home{max-width:1100px;margin:0 auto;padding:0 0 calc(120px + var(--safe-b))}
 .hero{padding:18px 16px 4px;display:grid;gap:14px}
 .hero__row{display:flex;align-items:center;justify-content:space-between;gap:12px}

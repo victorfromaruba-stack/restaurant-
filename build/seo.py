@@ -1,9 +1,11 @@
-"""Google listing data, built from shared/site.json and the menus:
-- a JSON-LD block in every restaurant page (schema.org FoodEstablishment: hours, cuisine, delivery area,
-  menu with prices), each restaurant on its own with no shared parent, and on the home page the delivery
-  app itself (WebSite + Organization "Order Aruba"), never a kitchen
-- sitemap.xml and robots.txt
-Run after changing hours, areas, menus or the site address:   python3 build/seo.py
+"""Google listing data and the app's name, built from shared/site.json and the menus:
+- a JSON-LD block in every restaurant page (schema.org FoodEstablishment: cuisine, delivery area, menu with
+  prices), each restaurant on its own with no shared parent, and on the home page the delivery app itself
+  (WebSite + Organization, named by site.json "name"), never a kitchen
+- the app's name (site.json "name") wherever a static file carries it: the home page title, its og:title and
+  logo text, the 404 link, manifest.webmanifest and the titles of checkout/ and order/
+- sitemap.xml and robots.txt (checkout/ and order/ are never in the sitemap: they're noindex)
+Run after changing the name, hours, areas, menus or the site address:   python3 build/seo.py
 qa/check_site.py runs  python3 build/seo.py --check  and fails if the pages are out of date."""
 import json, os, re, sys
 
@@ -14,6 +16,7 @@ brands = [b["id"] for b in site["brands"] if b.get("status") != "hidden"]
 # the site's public address, from the first restaurant page's og:url (…/dushi-wok/ -> …/)
 BASE = re.search(r'<meta property="og:url" content="([^"]+)">', read(brands[0] + "/index.html")).group(1)[:-len(brands[0] + "/")]
 menus = {b: json.loads(read(b + "/menu.json")) for b in brands}
+NAME = site["name"]
 DAYS = {"mon": "Monday", "tue": "Tuesday", "wed": "Wednesday", "thu": "Thursday", "fri": "Friday", "sat": "Saturday", "sun": "Sunday"}
 
 def phone(b):
@@ -42,12 +45,12 @@ def common(b):
     }
 
 def home_ld():
-    org = {"@type": "Organization", "@id": BASE + "#app", "name": site.get("name", "Order Aruba"), "url": BASE,
+    org = {"@type": "Organization", "@id": BASE + "#app", "name": NAME, "url": BASE,
            "image": BASE + "shared/og/home.jpg", "telephone": phone(None),
-           "description": "Late-night food delivery in Aruba from 10 PM, ordered on WhatsApp.",
+           "description": "Late-night food delivery in Aruba from 10 PM.",
            "areaServed": [{"@type": "Place", "name": a + ", Aruba"} for a in site["areas"]]}
     return {"@context": "https://schema.org", "@graph": [
-        {"@type": "WebSite", "@id": BASE + "#site", "name": site.get("name", "Order Aruba"), "url": BASE, "publisher": {"@id": BASE + "#app"}}, org]}
+        {"@type": "WebSite", "@id": BASE + "#site", "name": NAME, "url": BASE, "publisher": {"@id": BASE + "#app"}}, org]}
 
 def brand_ld(b):
     m = menus[b]
@@ -72,8 +75,23 @@ def with_ld(html, data):
         return re.sub(r'<script type="application/ld\+json">.*?</script>', lambda _: block, html, count=1, flags=re.S)
     return html.replace("</head>", block + "\n</head>", 1)
 
+def named(html):
+    # the app's name where a static page carries it: "<name> · ..." titles, the logo text, "Go to <name>"
+    html = re.sub(r"(<title>)[^<·]+?( · )", lambda m: m.group(1) + NAME + m.group(2), html, count=1)
+    html = re.sub(r'(<meta property="og:title" content=")[^"·]+?( · )', lambda m: m.group(1) + NAME + m.group(2), html, count=1)
+    html = re.sub(r"(<[a-z]+ [^>]*\bdata-oa-app\b[^>]*>)[^<]*(</)", lambda m: m.group(1) + NAME + m.group(2), html)
+    return re.sub(r"(<a [^>]*\bdata-oa-go\b[^>]*>Go to )[^<]+(</a>)", lambda m: m.group(1) + NAME + m.group(2), html)
+
+def manifest():
+    m = json.loads(read("manifest.webmanifest"))
+    m["name"] = m["short_name"] = NAME
+    return json.dumps(m, indent=1, ensure_ascii=False)
+
 def outputs():
-    out = {"index.html": with_ld(read("index.html"), home_ld())}
+    out = {"index.html": named(with_ld(read("index.html"), home_ld())), "404.html": named(read("404.html")),
+           "manifest.webmanifest": manifest()}
+    for p in ("checkout/index.html", "order/index.html"):   # the app's own pages: "<name> · Checkout" (not in the sitemap)
+        if os.path.exists(os.path.join(ROOT, p)): out[p] = named(read(p))
     for b in brands: out[b + "/index.html"] = with_ld(read(b + "/index.html"), brand_ld(b))
     urls = [BASE] + [BASE + b + "/" for b in brands]
     out["sitemap.xml"] = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + \

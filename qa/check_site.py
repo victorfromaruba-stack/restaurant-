@@ -2,7 +2,8 @@
 (qa/local_server.py), so there is no server to start first. QA_BASE=<url> checks another server instead.
 Checks every menu image exists, every page loads with no errors, and builds the WhatsApp sample
 messages in qa/wa-samples.json from the real ordering code, testing the owner's rules.
-Order Aruba is a delivery app, like Uber Eats (Victor, 9 Oct 2026): the home page lists the restaurants,
+The app (site.json "name": Pidi since 16 Oct 2026, Order Aruba before) is a delivery app, like Uber Eats
+(Victor, 9 Oct 2026): the home page lists the restaurants,
 and customers must believe each one is its own business. Nothing may say or hint that they share a
 kitchen. Restaurants marked "mix" in site.json share one order and one ƒ5 delivery (the app's perk);
 any other restaurant keeps its own order."""
@@ -149,6 +150,21 @@ for b in brands:
     others = [x for x in brands if x != b and (x + "/" in html or names[x] in html)]
     check(not others and "parentOrganization" not in html, f"{b}/index.html (title, Google data) stands on its own" + (f": mentions {others}" if others else ""))
 check(not os.path.exists(os.path.join(ROOT, "cart.html")), "no shared cart page: each restaurant is its own order")
+# The app is called site.json "name" (Pidi since 16 Oct 2026). The old name stays only in the storage keys a phone may
+# still have (moved once to the new ones: order-app.js OLD_KEYS) and the old offline cache sw.js clears.
+APP = site["name"]
+renamed = pub_code + ["checkout/index.html", "order/index.html", "shared/checkout.js", "shared/status.js"]
+for f in renamed:
+    fp = os.path.join(ROOT, f)
+    if not os.path.exists(fp):
+        continue
+    text = open(fp, encoding="utf-8").read()
+    left = re.findall(r"order ?aruba", re.sub(r'"orderaruba\.(cart\.v2|last\.v1|lang\.v1)"|"orderaruba-"', "", text), re.I)
+    check(not left, f"{f} says {APP}, never the old name" + (f": {left}" if left else ""))
+man = json.load(open(os.path.join(ROOT, "manifest.webmanifest"), encoding="utf-8"))
+home = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
+check(man["name"] == man["short_name"] == APP and f"<title>{APP} · " in home and f'"name":"{APP}"' in home,
+      f"the home page title, Google data and home screen name say {APP}")
 
 async def main():
     async with async_playwright() as p:
@@ -225,8 +241,10 @@ async def main():
         rail = await pg.evaluate("Array.from(document.querySelectorAll('#oa-rail a')).map(a => a.getAttribute('href'))")
         check(bool(rail) and all(re.search(r"^[a-z-]+/#d=\w+$", h) for h in rail), f"home dish cards open the dish on its restaurant's page ({len(rail)} cards)")
         check(await pg.evaluate("!document.querySelector('[data-quick], .bag, #oa-bar')"), "home has no shared bag: ordering happens on each restaurant's page")
-        bad = talk(await pg.evaluate("document.body.innerText"))
+        home_text = await pg.evaluate("document.body.innerText")
+        bad = talk(home_text)
         check(not bad, "home says nothing about a shared kitchen" + (f": {bad}" if bad else ""))
+        check(APP.upper() in home_text.upper() and "ORDER ARUBA" not in home_text.upper(), f"the home page says {APP} at the top, never the old name")
         if rail:
             await pg.goto(BASE + rail[0], wait_until="networkidle"); await pg.wait_for_timeout(400)
             check(await pg.evaluate("!!document.querySelector('.dish__name')"), f"tapping a home dish card opens it on {rail[0].split('/')[0]}'s page")
@@ -254,7 +272,7 @@ async def main():
         # other languages: pages load cleanly, and the WhatsApp ticket stays in English for the kitchen
         en_msg = out[0]["message"]
         for code in ("pap", "nl", "es"):
-            await pg.evaluate("c => localStorage.setItem('orderaruba.lang.v1', c)", code)
+            await pg.evaluate("c => localStorage.setItem('pidi.lang.v1', c)", code)
             for url in ["index.html"] + [f"{x}/index.html" for x in brands]:
                 errs.clear()
                 await pg.goto(BASE + url, wait_until="networkidle"); await pg.wait_for_timeout(300)
@@ -270,7 +288,7 @@ async def main():
             norm = lambda t: re.sub(r"^Time: .*$", "Time:", re.sub(r"#\S+", "#", t), flags=re.M)
             check(time_ok and norm(msg) == norm(en_msg), f"[{code}] WhatsApp ticket is the same English text")
             await pg.evaluate("OrderApp.clear()")
-        await pg.evaluate("localStorage.removeItem('orderaruba.lang.v1')")
+        await pg.evaluate("localStorage.removeItem('pidi.lang.v1')")
         json.dump({"_about": "Real WhatsApp messages produced by shared/order-app.js. Regenerate with python3 qa/check_site.py.",
                    "samples": out}, open(os.path.join(ROOT, "qa/wa-samples.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         await b.close()

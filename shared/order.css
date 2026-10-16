@@ -1,4 +1,4 @@
-/* Order Aruba — one look for every page.
+/* Pidi: one look for every page.
    One typeface (Archivo: condensed for headlines, normal for everything else), one night palette,
    and each restaurant's own colour as the accent on its page (set from menu.json). */
 @font-face{font-family:"Archivo";src:url(fonts/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
@@ -12,7 +12,7 @@
   --field:#5574A6;   /* field outlines: 3:1 against the night */
   --cream:#FFF4DF;   /* text */
   --haze:#A9B6CC;    /* secondary text */
-  --sodium:#FFC93C;  /* Order Aruba yellow */
+  --sodium:#FFC93C;  /* the app's yellow: the OPEN sign, the checkout */
   --accent:var(--sodium);--accent-ink:#0B1D3A; /* each restaurant page swaps these for its own colour */
   --wa:#0F7A3D;--ok:#3DDC84;--bad:#FF7A7A;--warn-bg:#3A3112;--warn-ink:#FFE7A6;
   --font:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -319,7 +319,7 @@ body[data-page="brand"] .top__in{max-width:720px}
 .again__btn{min-height:44px;font-size:15px;justify-content:space-between;border-radius:12px}
 
 .also__sub{margin:0 0 14px;color:var(--haze);font-size:15px;line-height:1.4}
-/* restaurants as rows (the home page, and "More on Order Aruba" at the end of a restaurant page) */
+/* restaurants as rows (the home page, and "More on <app>" at the end of a restaurant page) */
 .shops{display:grid;grid-template-columns:1fr;margin-top:6px}
 .shop{display:grid;grid-template-columns:92px minmax(0,1fr);gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule);text-decoration:none;color:inherit}
 .shop:last-child{border-bottom:0}

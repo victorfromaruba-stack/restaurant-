@@ -1,6 +1,6 @@
 {
- "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95). Order Aruba is the delivery app; customers' phones read this file.",
- "name": "Order Aruba",
+ "_readme": "Edit this file to change the WhatsApp number, hours, delivery areas or which restaurants are open. Prices in cents (1295 = f12.95). Pidi is the delivery app (name); customers' phones read this file.",
+ "name": "Pidi",
  "whatsapp": "2977477794",
  "whatsappConfirmed": true,
  "deliveryFee": 500,

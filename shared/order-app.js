@@ -1,8 +1,8 @@
-/* Order Aruba: a late-night delivery app, like Uber Eats. The home page lists the restaurants; each
-   restaurant page is its own shop. Restaurants marked "mix" in site.json share one order and one
+/* Pidi: a late-night delivery app, like Uber Eats. The app's name is site.json "name". The home page lists the
+   restaurants; each restaurant page is its own shop. Restaurants marked "mix" in site.json share one order and one
    delivery fee (the app's perk, like DoorDash's Double Dash); any other restaurant has its own order.
-   Menus live in <restaurant>/menu.json. Shop settings (WhatsApp number, hours, areas, delivery fee,
-   which restaurants are open) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
+   Menus live in <restaurant>/menu.json. App settings (WhatsApp number, hours, areas, delivery fee, delivery time,
+   which restaurants are open, how orders go in) live in shared/site.json. Prices are in cents: 1295 = ƒ12.95.
    No framework, no build step. */
 (function () {
   "use strict";
@@ -12,7 +12,7 @@
   var PAGE = BODY.getAttribute("data-page") || "";
   var HERE = BODY.getAttribute("data-brand") || "";
   var KEY = "", LAST_KEY = "", ALLOWED = [];   // set by setOrder() once site.json is in
-  var MIX_KEY = "orderaruba.cart.v2", MIX_LAST = "orderaruba.last.v1";
+  var MIX_KEY = "pidi.cart.v1", MIX_LAST = "pidi.last.v1";
   var MAX_QTY = 20;
   var OTHER = "Other area";
   var OTHER_NOTE = "Outside our usual area. We\u2019ll confirm on WhatsApp if we can reach you, and the fee.";
@@ -62,8 +62,21 @@
      at the bottom of each page. Translations live in shared/lang/<code>.json ({"English text": "translation"});
      anything missing shows in English. The WhatsApp ticket, menu names and descriptions stay in English. */
   var LANGS = ["en", "pap", "nl", "es"];
-  var LANG_KEY = "orderaruba.lang.v1";
+  var LANG_KEY = "pidi.lang.v1";
   var WORDS = {};
+  /* The app was renamed Pidi (16 Oct 2026). A phone that saved an order, an "Order again" or a language under the
+     old names gets them moved to the new ones once, so nobody loses a cart: the old key is read only while the new
+     one is missing, then removed. These old names are the only place they still appear. */
+  var OLD_KEYS = { "pidi.cart.v1": "orderaruba.cart.v2", "pidi.last.v1": "orderaruba.last.v1", "pidi.lang.v1": "orderaruba.lang.v1" };
+  function moveKey(to, from) {
+    try {
+      var old = localStorage.getItem(from);
+      if (old === null) return;
+      if (localStorage.getItem(to) === null) localStorage.setItem(to, old);
+      localStorage.removeItem(from);
+    } catch (e) { /* private mode */ }
+  }
+  Object.keys(OLD_KEYS).forEach(function (k) { moveKey(k, OLD_KEYS[k]); });
   function pickLang() {
     try { var saved = localStorage.getItem(LANG_KEY); if (LANGS.indexOf(saved) >= 0) return saved; } catch (e) { /* private mode */ }
     var list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
@@ -136,7 +149,7 @@
       return r.json();
     });
   }
-  function loadSite() { return getJSON("shared/site.json").then(function (s) { SITE = s; return s; }); }
+  function loadSite() { return getJSON("shared/site.json").then(function (s) { SITE = s; moveBrandKeys(); return s; }); }
   function loadMenu(id) {
     if (MENU[id]) return Promise.resolve(MENU[id]);
     if (!pending[id]) {
@@ -155,8 +168,17 @@
   function mixGroup() { return (SITE.brands || []).filter(function (b) { return b.mix; }).map(function (b) { return b.id; }); }
   function inMix(b) { return mixGroup().indexOf(b) >= 0; }
   function setOrder() {
-    if (inMix(HERE)) { KEY = MIX_KEY; LAST_KEY = MIX_LAST; ALLOWED = mixGroup(); }
-    else { KEY = "order." + HERE + ".v1"; LAST_KEY = "last." + HERE + ".v1"; ALLOWED = [HERE]; }
+    if (!HERE || inMix(HERE)) { KEY = MIX_KEY; LAST_KEY = MIX_LAST; ALLOWED = mixGroup(); }
+    else { KEY = orderKey(HERE); LAST_KEY = lastKey(HERE); ALLOWED = [HERE]; }
+  }
+  /* a restaurant's own order, for one outside the mix (before 16 Oct 2026: "order.<id>.v1" and "last.<id>.v1") */
+  function orderKey(b) { return "pidi.order." + b + ".v1"; }
+  function lastKey(b) { return "pidi.last." + b + ".v1"; }
+  function moveBrandKeys() {
+    (SITE.brands || []).forEach(function (b) {
+      moveKey(orderKey(b.id), "order." + b.id + ".v1");
+      moveKey(lastKey(b.id), "last." + b.id + ".v1");
+    });
   }
   /* a dish can't be ordered when it's sold out, and a family deal can't when one of the dishes inside it is */
   function isOut(menu, item) {
@@ -243,12 +265,12 @@
     s.lines.forEach(function (l) { l.q = Math.max(0, Math.min(MAX_QTY, Math.floor(+l.q) || 0)); l.p = Math.max(0, Math.round(+l.p) || 0); });
     return s;
   }
-  /* For a few hours on 9 Oct 2026 every restaurant had its own order (order.<id>.v1). A mix restaurant's
+  /* For a few hours on 9 Oct 2026 every restaurant had its own order (now pidi.order.<id>.v1). A mix restaurant's
      unsent lines from then join the shared order once, and the old key goes. */
   function absorb(s) {
     try {
       ALLOWED.forEach(function (b) {
-        var k = "order." + b + ".v1", o = JSON.parse(localStorage.getItem(k));
+        var k = orderKey(b), o = JSON.parse(localStorage.getItem(k));
         if (!o) return;
         localStorage.removeItem(k);
         if (!Array.isArray(o.lines) || o.sentAt || s.sentAt) return;
@@ -1086,6 +1108,7 @@
   /* ---------------------------------------------------------------- shared bits */
   function setHTML(sel, html) { $$(sel).forEach(function (n) { if (n._html !== html) { n._html = html; n.innerHTML = html; } }); }
   function fillCommon() {
+    $$("[data-oa-app]").forEach(function (n) { if (SITE.name && n.textContent !== SITE.name) n.textContent = SITE.name; });
     $$("[data-oa-fee]").forEach(function (n) { n.textContent = shortMoney(SITE.deliveryFee); });
     setHTML("[data-oa-hero]", mixGroup().length > 1
       ? keep(tr("Order from several restaurants at once.")) + " <b>" + keep(tr("You pay {fee} delivery once.", { fee: shortMoney(SITE.deliveryFee) })) + "</b>"
@@ -1274,7 +1297,7 @@
     main.innerHTML = html;
     wireVideo(main);
     paintAgain();
-    // like any delivery app: other restaurants on Order Aruba, at the very end. Never in the order itself.
+    // like any delivery app: the other restaurants on the app, at the very end. Never in the order itself.
     later(function () {
       var others = (SITE.brands || []).filter(function (x) { return x.id !== b && x.status !== "hidden"; }).map(function (x) { return x.id; });
       others = others.filter(function (x) { return brandStatus(x) === "open"; }).concat(others.filter(function (x) { return brandStatus(x) !== "open"; }));
@@ -1615,7 +1638,7 @@
         esc(o.sentAt ? tr("Sent: see order") : plural(n, "item", "items") + " \u00b7 " + money(sum)) + "</span></a>";
     }
     var mix = mixGroup();
-    var rows = row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row("order." + b + ".v1", [b]); }).join("");
+    var rows = row(MIX_KEY, mix) + ids.filter(function (b) { return mix.indexOf(b) < 0; }).map(function (b) { return row(orderKey(b), [b]); }).join("");
     box.innerHTML = rows;
     box.hidden = !rows;
   }
