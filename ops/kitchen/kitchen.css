@@ -390,8 +390,13 @@ mark.skip { background: var(--hot); color: #fff; text-transform: uppercase; font
 }
 
 /* ---------- Orders from the app (live.js) ---------- */
-.big-mode.live { background: var(--go); color: var(--ink); text-decoration: none; }
-.big-mode.live.lv-has-new { background: var(--sodium); animation: lv-pulse 1.2s ease-in-out infinite alternate; }
+/* a test for now (website orders come on WhatsApp), so a quiet tile at the end */
+.big-mode.live { background: var(--night-2); color: var(--cream); text-decoration: none; box-shadow: inset 0 0 0 2px var(--rule); }
+.big-mode.live b { font-size: 40px; }
+.big-mode.live.lv-has-new { background: var(--sodium); color: var(--ink); animation: lv-pulse 1.2s ease-in-out infinite alternate; }
+.big-mode.live.lv-failed .count { color: #FFB3B5; }
+.lv-howto { margin: 0 0 14px; }
+.lv-howto a { color: var(--sodium); text-decoration: underline; }
 @keyframes lv-pulse { from { box-shadow: inset 0 0 0 0 var(--hot); } to { box-shadow: inset 0 0 0 10px var(--hot); } }
 @media (prefers-reduced-motion: reduce) { .big-mode.live.lv-has-new { animation: none; box-shadow: inset 0 0 0 8px var(--hot); } }
 .lv-pin { max-width: 420px; margin: 8px auto 0; }
@@ -418,3 +423,23 @@ mark.skip { background: var(--hot); color: #fff; text-transform: uppercase; font
 .lv-empty b { display: block; font-size: 30px; font-stretch: 75%; text-transform: uppercase; }
 .lv-empty span { display: block; margin-top: 8px; color: var(--haze); }
 .lv-out { margin-top: 30px; }
+
+/* ---------- order checks: no recipe card, ticket name, replaced orders ---------- */
+.item.nocard { border-bottom-style: dashed; border-bottom-color: var(--sodium); }
+.item.nocard .box { flex: 0 0 auto; }
+.item .it .nocard-t { color: var(--sodium); font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+.item .it .nocard-d { color: var(--cream); font-weight: 600; }
+.item .it .nocard-d b { display: inline; font-size: inherit; }
+.item .it .said { color: var(--sodium); font-weight: 800; }
+.banner.said { background: var(--paper); color: var(--ink); border-left: 8px solid var(--sodium); font-size: 22px; }
+.banner.said small { margin-top: 4px; text-transform: none; letter-spacing: 0; font-size: 16px; }
+.banner.replaces { font-size: 21px; }
+.banner-link { display: flex; align-items: center; min-height: 48px; margin-top: 8px; padding: 0 12px; border-radius: 8px; background: rgba(0,0,0,.25); color: #fff; font-size: 18px; text-decoration: none; }
+.oo--replaced { border-left: 8px solid var(--hot); }
+.oo--replaced b { text-decoration: line-through; text-decoration-thickness: 3px; }
+.oo .oo-flag { display: inline-block; margin: 4px 0 2px; padding: 3px 8px; background: var(--hot); color: #fff; font-size: 16px; font-weight: 900; }
+.oo .oo-flag--new { background: var(--sodium); color: var(--ink); }
+.me-row .me-noimg { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 10px; background: var(--night-3); display: grid; place-items: center; text-align: center; font-size: 13px; font-weight: 800; line-height: 1.15; color: var(--haze); padding: 4px; }
+.me-photo .me-noimg { display: grid; place-items: center; aspect-ratio: 780 / 446; border-radius: 12px; margin-bottom: 10px; background: var(--night-2); color: var(--haze); font-weight: 800; text-align: center; padding: 12px; }
+@media (max-width: 360px) { .me-row .me-noimg { width: 56px; height: 56px; flex-basis: 56px; } }
+.me-photo .me-noimg[hidden] { display: none; }

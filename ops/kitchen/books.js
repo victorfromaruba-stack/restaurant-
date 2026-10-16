@@ -31,8 +31,20 @@
       method: 'POST', headers: { Authorization: 'Bearer ' + key() }, body: form, cache: 'no-store', signal: ctl ? ctl.signal : undefined
     }).then(function (r) {
       clearTimeout(timer);
-      return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, body: j }; });
+      // json: false when the answer isn't Book Keeper's own (a gateway's error page); cut: the answer broke off
+      return r.text().then(function (t) {
+        var j = null;
+        try { j = t ? JSON.parse(t) : null; } catch (e) { j = null; }
+        return { status: r.status, body: j && typeof j === 'object' ? j : {}, json: !!j };
+      }, function () { return { status: r.status, body: {}, json: false, cut: true }; });
     }, function (e) { clearTimeout(timer); throw e; });
+  }
+  /* Answers that don't say whether the photo arrived: the gateway gave up waiting (502, 504), an error page that
+     isn't Book Keeper's (a 5xx without JSON), or the answer broke off. Book Keeper saves the photo before it reads
+     it, so it may be there: never "just send again". */
+  function unsure(res) {
+    if (res.status === 201) return false;
+    return res.status === 502 || res.status === 504 || (res.status >= 500 && !res.json) || !!res.cut;
   }
   function problem(res) {
     if (res.status === 401) return 'This phone’s Book Keeper key doesn’t work (wrong, or switched off). Connect again with a new key.';
@@ -132,6 +144,14 @@
     foot.innerHTML = '';
   }
 
+  // The receipt may have arrived: say so, and never offer to send it again from here.
+  function noAnswer(r, title) {
+    remember('unsure', r.thumb);
+    pending = null;
+    UI.openSheet('<h2>' + esc(title) + '</h2><p>The receipt may have arrived anyway. Don’t send it again: ask Victor to look in Book Keeper’s receipt list first.</p>');
+    if (onScreen()) show();   // not UI.render(): that would close the sheet
+  }
+
   // ---------------------------------------------------------------- actions
   var ACT = {
     savekey: function () {
@@ -157,6 +177,7 @@
       UI.toast('Sending…', 1500);   // replaces any earlier message still showing
       post(form, 90000).then(function (res) {
         busy = false;
+        if (unsure(res)) { noAnswer(r, 'No clear answer from Book Keeper'); return; }
         if (res.status === 201) {
           var manual = res.body && res.body.status === 'extraction_failed';
           remember(manual ? 'manual' : 'ok', r.thumb);
@@ -169,12 +190,8 @@
         if (onScreen()) UI.render();
       }, function () {
         busy = false;
-        if (!navigator.onLine) { UI.toast('The internet dropped. Send it again when the phone is online.', 6000); if (onScreen()) UI.render(); return; }
-        // Book Keeper saves the photo before reading it, so it may be there even without an answer.
-        remember('unsure', r.thumb);
-        pending = null;
-        UI.openSheet('<h2>No answer from Book Keeper</h2><p>The receipt may have arrived anyway. Don’t send it again: ask Victor to look in Book Keeper’s receipt list first.</p>');
-        if (onScreen()) show();   // not UI.render(): that would close the sheet
+        // The phone was online when it started, so the photo may already be in Book Keeper, even if the internet dropped.
+        noAnswer(r, navigator.onLine ? 'No answer from Book Keeper' : 'The internet dropped while sending');
       });
     },
     again: function () { pending = null; UI.render(); },
