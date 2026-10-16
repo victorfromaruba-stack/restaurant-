@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """Apply PIDI_SETUP.sql twice on a throwaway Postgres and run the order flow as anon.
 
-The database is local. Nothing here contacts Supabase.
+The database is local. Nothing here contacts Supabase. Also: prices from the database (pidi_menu, filled
+with the repo's own menu.json files), and the paste files for the live database (PIN_FIX, SETTINGS,
+MENU_PRICES): the live database's setup plus those pastes ends up the same as a fresh install of
+PIDI_SETUP.sql, and in any other project each paste stops at its first check and changes nothing.
+
+Local Postgres (lessons.md): a cluster under /var/lib/postgresql/<name>, socket /var/run/postgresql. Point
+PGPORT and PGUSER at it (for example PGPORT=5499 PGUSER=postgres).
 """
 
 import json
+import os
 import re
+import subprocess
 import sys
 import threading
 from pathlib import Path
@@ -158,6 +166,7 @@ ALLOWED = [
     "pidi_find_order(text)",
     "pidi_public_state()",
     "pidi_kitchen_set_busy(text,integer)",
+    "pidi_kitchen_sync_menu(text,text,text,jsonb,boolean)",
     "pidi_kitchen_login(text)",
     "pidi_kitchen_feed(text)",
     "pidi_kitchen_accept(text,uuid)",
@@ -281,8 +290,454 @@ def apply_sql(conn):
     conn.commit()
 
 
+REPO = ROOT.parents[2]
+PASTES = ["PIN_FIX_2026-10-16.sql", "SETTINGS_2026-10-16.sql", "MENU_PRICES_2026-10-16.sql"]
+# The database as it is live (before 16 Oct 2026): PIDI_SETUP.sql at this commit. The upgrade test needs it.
+LIVE_SETUP_COMMIT = "76cdd53"
+
+
+def menu_rows(menu):
+    """What the kitchen app sends pidi_kitchen_sync_menu: menu.json's items, only the fields pricing needs."""
+    rows = []
+    for i in menu["items"]:
+        rows.append({
+            "id": i["id"], "name": i["name"], "price": i["price"], "soldOut": bool(i.get("soldOut")),
+            "includes": i.get("includes") or [],
+            "options": [{"id": g["id"], "label": g.get("label", ""), "type": g["type"], "default": g.get("default"),
+                         "choices": [{"id": c["id"], "label": c["label"], "price": c.get("price") or 0} for c in g["choices"]]}
+                        for g in i.get("options") or []],
+        })
+    return rows
+
+
+def describe(item, chosen):
+    """The website's words for chosen options (order-app.js describe()): the ticket line is the dish name and these, joined by ' · '."""
+    out = []
+    for g in item.get("options") or []:
+        v = chosen.get(g["id"])
+        if g["type"] == "one":
+            if v and v != g.get("default"):
+                c = next((x for x in g["choices"] if x["id"] == v), None)
+                if c:
+                    out.append(g["label"] + ": " + c["label"])
+        elif isinstance(v, list) and v:
+            labels = [c["label"] for c in g["choices"] if c["id"] in v]
+            if g["id"] == "leave":
+                out += labels
+            else:
+                out.append(g["label"] + ": " + ", ".join(labels))
+    return out
+
+
+def variants(item):
+    """Every way the website can send a dish: as it comes, each other choice of a one-choice option, each
+    choice of a many-choice option on its own, and all of them at once. (chosen options, extra cents)"""
+    out = [({}, 0)]
+    for g in item.get("options") or []:
+        if g["type"] == "one":
+            for c in g["choices"]:
+                if c["id"] != g.get("default"):
+                    out.append(({g["id"]: c["id"]}, c.get("price") or 0))
+        else:
+            for c in g["choices"]:
+                out.append(({g["id"]: [c["id"]]}, c.get("price") or 0))
+            if len(g["choices"]) > 1:
+                out.append(({g["id"]: [c["id"] for c in g["choices"]]}, sum(c.get("price") or 0 for c in g["choices"])))
+    return out
+
+
+def menu_prices(conn, token):
+    """Prices come from the database: pidi_menu, filled by the kitchen app (pidi_kitchen_sync_menu)."""
+    phone = [7700000]
+
+    def next_phone():
+        phone[0] += 1
+        return "29" + str(phone[0])
+
+    def order(items, pay="transfer", pays=None, **more):
+        body = {"name": "Menu TEST", "phone": next_phone(), "area": "Noord", "address": "TEST", "pay": pay,
+                "items": items, "test": True}
+        if pays is not None:
+            body["pays_with_cents"] = pays
+        body.update(more)
+        return body
+
+    def place(body):
+        return scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
+
+    def attempt(body):
+        q(conn, "SAVEPOINT pidi_menu_try")
+        try:
+            row = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
+        except psycopg2.Error as err:
+            q(conn, "ROLLBACK TO SAVEPOINT pidi_menu_try")
+            return None, err.diag.message_primary
+        q(conn, "RELEASE SAVEPOINT pidi_menu_try")
+        return row, None
+
+    def code(body):
+        q(conn, "SAVEPOINT pidi_menu_code")
+        try:
+            q(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
+        except psycopg2.Error as err:
+            q(conn, "ROLLBACK TO SAVEPOINT pidi_menu_code")
+            return err.diag.message_primary
+        q(conn, "RELEASE SAVEPOINT pidi_menu_code")
+        return "no error"
+
+    def sync(slug, status, items, from_save=False, session=None):
+        row = scalar(conn, "select public.pidi_kitchen_sync_menu(%s, %s, %s, %s::jsonb, %s)",
+                     [session or token, slug, status, None if items is None else json.dumps(items), from_save])
+        conn.commit()
+        return row
+
+    def owner(sql, args=None):
+        q(conn, "reset role")
+        rows = q(conn, sql, args)
+        conn.commit()
+        q(conn, "set role anon")
+        return rows
+
+    site = json.loads((REPO / "shared" / "site.json").read_text(encoding="utf-8"))
+    menus = {b["id"]: json.loads((REPO / b["id"] / "menu.json").read_text(encoding="utf-8")) for b in site["brands"]}
+    check("the repo's menus are here for the menu tests", set(menus) >= {"taco-brava", "oranje-snack", "smash-shack"}, str(list(menus)))
+
+    # --- who may send a menu, and what it must look like
+    ok, detail = explodes(conn, "select public.pidi_kitchen_sync_menu(%s, %s, %s, %s::jsonb, %s)",
+                          ["x" * 64, "taco-brava", "open", json.dumps(menu_rows(menus["taco-brava"])), False], "sign in again")
+    check("sending a menu needs a kitchen session", ok, detail)
+    conn.commit()
+    nowhere = sync("nowhere", "open", menu_rows(menus["taco-brava"]))
+    check("a restaurant the database doesn't know is answered, not raised", nowhere.get("ok") is False, str(nowhere))
+    tb_rows = menu_rows(menus["taco-brava"])
+    for label, items, needle in [
+        ("a price like 12.95", [dict(tb_rows[0], price=12.95)], "can't be read"),
+        ("the same dish twice", [tb_rows[0], tb_rows[0]], "can't be read"),
+        ("no dishes", [], "no dishes"),
+        ("an option price like 1.50", [dict(tb_rows[0], options=[{"id": "x", "label": "Add", "type": "many",
+                                                                    "choices": [{"id": "y", "label": "Cheese", "price": 1.5}]}])], "can't be read"),
+        ("an option without choices", [dict(tb_rows[0], options=[{"id": "x", "label": "Add", "type": "many"}])], "can't be read"),
+    ]:
+        ok, detail = explodes(conn, "select public.pidi_kitchen_sync_menu(%s, %s, %s, %s::jsonb, %s)",
+                              [token, "taco-brava", "open", json.dumps(items), False], needle)
+        check("a menu with %s is refused" % label, ok, detail)
+        conn.commit()
+    ok, detail = explodes(conn, "select public.pidi_kitchen_sync_menu(%s, %s, %s, %s::jsonb, %s)",
+                          [token, "taco-brava", "closed", json.dumps(tb_rows), False], "open, soon or hidden")
+    check("a status other than open, soon or hidden is refused", ok, detail)
+    conn.commit()
+    ok, detail = explodes(conn, "select count(*) from public.pidi_menu", None, "permission denied")
+    check("anon select on the menu is denied", ok, detail)
+    conn.commit()
+
+    # --- a restaurant with no menu rows yet keeps the phone's price (today's rule)
+    before = place(order([{"restaurant": "taco-brava", "name": "Birria tacos (3) with consommé", "qty": 1, "price_cents": 100}]))
+    conn.commit()
+    check("no menu rows yet: the phone's price is kept, as before", before["food_cents"] == 100 and before.get("repriced") is False, str(before)[:200])
+
+    # --- every restaurant's real menu, open
+    for slug, menu in menus.items():
+        got = sync(slug, "open", menu_rows(menu))
+        check("%s's menu is taken (%s dishes)" % (slug, len(menu["items"])), got.get("ok") is True and got.get("items") == len(menu["items"]), str(got))
+    stored = owner("select count(*) from public.pidi_menu")[0][0]
+    check("one row per dish", stored == sum(len(m["items"]) for m in menus.values()), str(stored))
+
+    # --- a client that sends a wrong price gets the menu's price
+    bt = next(i for i in menus["taco-brava"]["items"] if i["id"] == "bt")
+    wrong = place(order([{"restaurant": "taco-brava", "name": bt["name"] + " · No onion", "qty": 2, "price_cents": 100}]))
+    conn.commit()
+    check("a wrong price from the phone is replaced by the menu's",
+          wrong["food_cents"] == 2 * bt["price"] and wrong["total_cents"] == 2 * bt["price"] + 500 and wrong.get("repriced") is True,
+          str(wrong)[:300])
+    check("the order's line carries the menu's price and words",
+          wrong["items"] == [{"restaurant": "taco-brava", "name": bt["name"] + " · No onion", "qty": 2, "price_cents": bt["price"]}],
+          str(wrong["items"]))
+    right = place(order([{"restaurant": "taco-brava", "name": bt["name"], "qty": 1, "price_cents": bt["price"]}]))
+    conn.commit()
+    check("the right price is not flagged as changed", right["food_cents"] == bt["price"] and right.get("repriced") is False, str(right)[:200])
+    no_price = place(order([{"restaurant": "taco-brava", "name": bt["name"], "qty": 1}]))
+    conn.commit()
+    check("a line with no price is priced from the menu", no_price["food_cents"] == bt["price"] and no_price.get("repriced") is False, str(no_price)[:200])
+    feed = scalar(conn, "select public.pidi_kitchen_feed(%s)", [token])
+    conn.commit()
+    k = next((o for o in feed["orders"] if str(o["id"]) == str(wrong["order_id"])), {})
+    k_items = [i for g in (k.get("restaurants") or []) for i in g["items"]]
+    check("the kitchen sees the menu's price, not the phone's", k_items and all(i["price_cents"] == bt["price"] for i in k_items), str(k_items))
+    # cash: what the customer hands over is judged against the menu's total
+    check("cash that covers only the phone's wrong total is CASH_SHORT",
+          code(order([{"restaurant": "taco-brava", "name": bt["name"], "qty": 1, "price_cents": 100}], pay="cash", pays=600)) == "CASH_SHORT")
+    conn.commit()
+    cash = place(order([{"restaurant": "taco-brava", "name": bt["name"], "qty": 1, "price_cents": 100}], pay="cash", pays=5000))
+    conn.commit()
+    check("change is worked out from the menu's total", cash["change_due_cents"] == 5000 - bt["price"] - 500, str(cash)[:200])
+
+    # --- by menu id; the words in any case; the menu's own name is stored
+    by_id = place(order([{"restaurant": "taco-brava", "id": "bt", "name": "Old name of the dish · No cilantro", "qty": 1, "price_cents": 1}]))
+    conn.commit()
+    check("a line with the menu id is priced from that dish, under the menu's name",
+          by_id["items"][0]["name"] == bt["name"] + " · No cilantro" and by_id["food_cents"] == bt["price"], str(by_id["items"]))
+    loose = place(order([{"restaurant": "taco-brava", "name": "  BIRRIA tacos (3)   with consommé · no ONION ", "qty": 1}]))
+    conn.commit()
+    check("capitals and extra spaces don't matter; the menu's spelling is stored",
+          loose["items"][0]["name"] == bt["name"] + " · no ONION" and loose["food_cents"] == bt["price"], str(loose["items"]))
+
+    # --- refusals, with the short codes the website turns into sentences
+    good_line = {"restaurant": "taco-brava", "name": bt["name"], "qty": 1, "price_cents": bt["price"]}
+    for want, line in [
+        ("BAD_ITEM:1", {"restaurant": "taco-brava", "name": "Lobster tacos", "qty": 1, "price_cents": 100}),
+        ("BAD_ITEM:1", {"restaurant": "taco-brava", "id": "zz", "name": bt["name"], "qty": 1}),
+        ("BAD_ITEM:1", {"restaurant": "taco-brava", "name": bt["name"] + " · Extra steak", "qty": 1}),
+        ("BAD_ITEM:1", {"restaurant": "taco-brava", "name": "Ground beef street tacos (3) · Salsa: On top, On the side", "qty": 1}),
+        ("BAD_ITEM:1", {"restaurant": "taco-brava", "name": "Ground beef street tacos (3) · Salsa: Extra hot", "qty": 1}),
+        ("BAD_ITEM:1", {"restaurant": "taco-brava", "name": bt["name"] + " ·  · No onion", "qty": 1}),
+    ]:
+        got = code(order([good_line, line]))
+        check("refused %s: %s" % (want, line["name"][:50]), got == want, got)
+    conn.commit()
+
+    # --- sold out: the dish, and a bundle holding it
+    lb = next(i for i in menus["taco-brava"]["items"] if i["id"] == "lb")
+    rows = [dict(r, soldOut=True) if r["id"] == "lb" else r for r in tb_rows]
+    sync("taco-brava", "open", rows, from_save=True)
+    check("a sold-out dish is refused with SOLD_OUT",
+          code(order([good_line, {"restaurant": "taco-brava", "name": lb["name"], "qty": 1, "price_cents": lb["price"]}])) == "SOLD_OUT:1")
+    conn.commit()
+    sync("taco-brava", "open", tb_rows, from_save=True)
+    back = place(order([{"restaurant": "taco-brava", "name": lb["name"], "qty": 1}]))
+    conn.commit()
+    check("back on: it can be ordered again", back["food_cents"] == lb["price"], str(back)[:120])
+    dw = menus["dushi-wok"]
+    ft = next((i for i in dw["items"] if i.get("includes")), None)
+    if ft:
+        part = ft["includes"][0]
+        dw_rows = [dict(r, soldOut=True) if r["id"] == part else r for r in menu_rows(dw)]
+        sync("dushi-wok", "open", dw_rows, from_save=True)
+        check("a bundle holding a sold-out dish is SOLD_OUT (like the website)",
+              code(order([{"restaurant": "dushi-wok", "name": ft["name"], "qty": 1}])) == "SOLD_OUT:0")
+        conn.commit()
+        sync("dushi-wok", "open", menu_rows(dw), from_save=True)
+
+    # --- the restaurant's own status from site.json
+    sync("dushi-wok", "soon", None, from_save=True)
+    fr = dw["items"][1]
+    check("a restaurant set to Opening soon takes no orders (REST_CLOSED)",
+          code(order([{"restaurant": "dushi-wok", "name": fr["name"], "qty": 1}])) == "REST_CLOSED:dushi-wok")
+    conn.commit()
+    kept = owner("select count(*) from public.pidi_menu m join public.pidi_restaurants r on r.id = m.restaurant_id where r.slug = 'dushi-wok' and m.listed")[0][0]
+    check("a status-only update keeps the dishes", kept == len(dw["items"]), str(kept))
+    sync("dushi-wok", "open", None, from_save=True)
+    check("open again: it takes orders", place(order([{"restaurant": "dushi-wok", "name": fr["name"], "qty": 1}]))["food_cents"] == fr["price"])
+    conn.commit()
+
+    # --- an older copy from the website never undoes a Menu-tile save made in the last 15 minutes
+    up = [dict(r, price=r["price"] + 100) if r["id"] == "bt" else r for r in tb_rows]
+    sync("taco-brava", "open", up, from_save=True)
+    stale = sync("taco-brava", "open", tb_rows, from_save=False)
+    price_now = place(order([{"restaurant": "taco-brava", "name": bt["name"], "qty": 1}]))["food_cents"]
+    conn.commit()
+    check("a website copy right after a save is skipped; the saved price holds",
+          stale.get("skipped") is True and price_now == bt["price"] + 100, "%s %s" % (stale, price_now))
+    owner("update public.pidi_restaurants set menu_saved_at = now() - interval '16 minutes' where slug = 'taco-brava'")
+    later = sync("taco-brava", "open", tb_rows, from_save=False)
+    price_now = place(order([{"restaurant": "taco-brava", "name": bt["name"], "qty": 1}]))["food_cents"]
+    conn.commit()
+    check("after 15 minutes the website's copy is taken", later.get("skipped") is False and price_now == bt["price"], "%s %s" % (later, price_now))
+
+    # --- a dish taken off the menu: refused, its row kept (nothing is removed)
+    sync("taco-brava", "open", [r for r in tb_rows if r["id"] != "st"], from_save=True)
+    st = next(i for i in menus["taco-brava"]["items"] if i["id"] == "st")
+    check("a dish taken off the menu is refused", code(order([{"restaurant": "taco-brava", "name": st["name"], "qty": 1}])) == "BAD_ITEM:0")
+    conn.commit()
+    row = owner("select listed from public.pidi_menu m join public.pidi_restaurants r on r.id = m.restaurant_id where r.slug = 'taco-brava' and m.item_id = 'st'")
+    check("its row is kept, marked not listed", row == [(False,)], str(row))
+    sync("taco-brava", "open", tb_rows, from_save=True)
+    check("put back, it can be ordered again", place(order([{"restaurant": "taco-brava", "name": st["name"], "qty": 1}]))["food_cents"] == st["price"])
+    conn.commit()
+
+    # --- options with an extra price (the website supports them: order-app.js unitPrice)
+    test_menu = [
+        {"id": "pz", "name": "Test pizza", "price": 1500, "soldOut": False, "includes": [], "options": [
+            {"id": "size", "label": "Size", "type": "one", "default": "big", "choices": [
+                {"id": "small", "label": "Small", "price": 0}, {"id": "big", "label": "Big", "price": 300}]},
+            {"id": "extra", "label": "Add", "type": "many", "choices": [
+                {"id": "cheese", "label": "Extra cheese", "price": 150}, {"id": "olives", "label": "Olives", "price": 100}]},
+            {"id": "leave", "label": "Leave out", "type": "many", "choices": [{"id": "onion", "label": "No onion", "price": 0}]}]},
+    ]
+    sync("partner-test", "open", test_menu, from_save=True)
+    for words, cents in [
+        ("Test pizza", 1800),                                          # the default size (Big) carries 300
+        ("Test pizza · Size: Small", 1500),
+        ("Test pizza · Add: Extra cheese", 1950),
+        ("Test pizza · Add: Extra cheese, Olives · No onion", 2050),
+        ("Test pizza · Size: Small · Add: Olives · Add: Olives", 1600),   # a choice named twice counts once
+        ("Test pizza · Extra cheese, Olives", 2050),
+    ]:
+        got = place(order([{"restaurant": "partner-test", "name": words, "qty": 2, "price_cents": 1}]))
+        conn.commit()
+        check("option prices: %s = %s" % (words, cents), got["food_cents"] == 2 * cents and got["items"][0]["price_cents"] == cents,
+              str(got["items"]))
+    check("two sizes at once is refused", code(order([{"restaurant": "partner-test", "name": "Test pizza · Size: Small, Big", "qty": 1}])) == "BAD_ITEM:0")
+    conn.commit()
+
+    # --- every dish of every real menu, with every choice, as the website writes the ticket line
+    for slug, menu in menus.items():
+        lines, want = [], []
+        for item in menu["items"]:
+            out = item.get("soldOut") or any(x.get("soldOut") for x in menu["items"] if x["id"] in (item.get("includes") or []))
+            if out:
+                continue
+            for chosen, extra in variants(item):
+                lines.append({"restaurant": slug, "name": " · ".join([item["name"]] + describe(item, chosen)), "qty": 1,
+                              "price_cents": item["price"] + extra})
+                want.append(item["price"] + extra)
+        bad = []
+        for start in range(0, len(lines), 50):
+            placed, got = attempt(order(lines[start:start + 50]))
+            conn.commit()
+            if got:
+                bad.append(got)
+            elif placed.get("repriced") or placed["food_cents"] != sum(want[start:start + 50]):
+                bad.append("priced %s, menu %s" % (placed["food_cents"], sum(want[start:start + 50])))
+        check("%s: every dish and every choice, written as the website writes it, is priced as the menu (%s lines)" % (slug, len(lines)),
+              not bad and lines, str(bad)[:300])
+
+    # --- the menus go back to the website's own copy for whatever runs next
+    for slug, menu in menus.items():
+        sync(slug, "open", menu_rows(menu), from_save=True)
+
+
+def fresh_db(name):
+    admin = psycopg2.connect(DSN_ADMIN)
+    admin.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    admin.cursor().execute("drop database if exists " + name)
+    admin.cursor().execute("create database " + name)
+    admin.close()
+    conn = psycopg2.connect("dbname=%s host=/var/run/postgresql" % name)
+    conn.autocommit = True
+    q(conn, "create schema if not exists extensions")
+    q(conn, "create extension if not exists pgcrypto with schema extensions")
+    q(conn, """
+        do $role$ begin
+          if not exists (select 1 from pg_roles where rolname = 'anon') then
+            create role anon nologin noinherit;
+          end if;
+        end $role$
+    """)
+    supabase_defaults(conn)
+    return conn
+
+
+def gone_db(conn, name):
+    conn.close()
+    admin = psycopg2.connect(DSN_ADMIN)
+    admin.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    admin.cursor().execute("drop database if exists " + name)
+    admin.close()
+
+
+def shape(conn):
+    """Everything a pidi_ paste can change, to compare an upgraded database with a fresh one."""
+    return {
+        "functions": q(conn, """
+            select p.oid::regprocedure::text, md5(p.prosrc), p.prosecdef, p.provolatile::text,
+                   coalesce(array_to_string(p.proconfig, ','), ''), pg_get_function_result(p.oid),
+                   has_function_privilege('anon', p.oid, 'execute'), has_function_privilege('authenticated', p.oid, 'execute')
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname like 'pidi\\_%' escape '\\' order by 1"""),
+        "columns": q(conn, """
+            select table_name, column_name, data_type, is_nullable, coalesce(column_default, '')
+            from information_schema.columns where table_schema = 'public' and table_name like 'pidi\\_%' escape '\\'
+            order by 1, 2"""),
+        "constraints": q(conn, """
+            select c.conrelid::regclass::text, c.conname, pg_get_constraintdef(c.oid)
+            from pg_constraint c join pg_namespace n on n.oid = c.connamespace
+            where n.nspname = 'public' and c.conname like 'pidi\\_%' escape '\\' order by 1, 2"""),
+        "policies": q(conn, """
+            select tablename, policyname, cmd, roles::text, coalesce(qual, ''), coalesce(with_check, '')
+            from pg_policies where schemaname = 'public' and tablename like 'pidi\\_%' escape '\\' order by 1, 2"""),
+        "rls": q(conn, """
+            select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relkind = 'r' and c.relname like 'pidi\\_%' escape '\\' order by 1"""),
+        "table_rights": q(conn, """
+            select grantee, table_name, privilege_type from information_schema.role_table_grants
+            where table_schema = 'public' and table_name like 'pidi\\_%' escape '\\' and grantee in ('anon', 'authenticated', 'PUBLIC')
+            order by 1, 2, 3"""),
+        "settings": q(conn, """
+            select key, value from public.pidi_settings
+            where key not in ('kitchen_topic', 'admin_pin_hash') order by 1"""),
+    }
+
+
+def upgrade_matches_fresh():
+    """The live database (PIDI_SETUP.sql as it was live) + the paste files == a fresh install of today's file."""
+    old_path = os.environ.get("PIDI_OLD_SETUP")
+    old = Path(old_path).read_text(encoding="utf-8") if old_path else None
+    if old is None:
+        try:
+            old = subprocess.run(["git", "show", LIVE_SETUP_COMMIT + ":driver/v2/supabase/PIDI_SETUP.sql"], cwd=REPO,
+                                 capture_output=True, text=True, check=True).stdout
+        except (OSError, subprocess.CalledProcessError):
+            print("skip  the upgrade test: PIDI_SETUP.sql at %s is not in this checkout (set PIDI_OLD_SETUP)" % LIVE_SETUP_COMMIT)
+            return
+    up = fresh_db("pidi_v2_upgrade")
+    q(up, old)
+    # an order placed before the pastes, by the old rules (the phone's price, a ƒ24 minimum)
+    q(up, "update public.pidi_settings set value = 'flag' where key = 'hours_mode'")
+    q(up, "set role anon")
+    before = scalar(up, "select public.pidi_place_order(%s::jsonb)", [json.dumps({
+        "name": "Old TEST", "phone": "2977100001", "area": "Noord", "address": "TEST", "pay": "transfer", "test": True,
+        "items": [{"restaurant": "taco-brava", "name": "Birria tacos (3) with consommé", "qty": 1, "price_cents": 2700}]})])
+    q(up, "reset role")
+    q(up, "update public.pidi_settings set value = 'reject' where key = 'hours_mode'")
+    for name in PASTES + PASTES:   # twice: safe to run twice
+        q(up, (ROOT / name).read_text(encoding="utf-8"))
+    fresh = fresh_db("pidi_v2_fresh")
+    q(fresh, SQL_PATH.read_text(encoding="utf-8"))
+    a, b = shape(up), shape(fresh)
+    for part in a:
+        check("upgrade = fresh install: %s" % part, a[part] == b[part],
+              str([x for x in a[part] if x not in b[part]][:3]) + " / " + str([x for x in b[part] if x not in a[part]][:3]))
+    kept = scalar(up, "select count(*) from public.pidi_orders where id = %s", [before["order_id"]])
+    check("the order placed before the pastes is still there", kept == 1)
+    gone_db(up, "pidi_v2_upgrade")
+    gone_db(fresh, "pidi_v2_fresh")
+
+
+def paste_guards():
+    """In another project (no pidi_ tables) each paste stops at its first check and changes nothing."""
+    conn = fresh_db("pidi_v2_other")
+    q(conn, "create table public.bookkeeping_dummy (id integer primary key, note text)")
+    q(conn, "insert into public.bookkeeping_dummy values (1, 'do not touch')")
+    for name in PASTES:
+        ok, detail = False, "no error"
+        try:
+            q(conn, (ROOT / name).read_text(encoding="utf-8"))
+        except psycopg2.Error as err:
+            detail = err.diag.message_primary or str(err)
+            ok = "not the Pidi database" in detail
+            q(conn, "rollback")   # the paste's own begin left an aborted transaction open
+        made = scalar(conn, "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relname like 'pidi\\_%' escape '\\'")
+        funcs = scalar(conn, "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname like 'pidi\\_%' escape '\\'")
+        check("%s in another project stops and changes nothing" % name, ok and made == 0 and funcs == 0, "%s; tables %s, functions %s" % (detail, made, funcs))
+    check("the other project's own row is untouched", scalar(conn, "select note from public.bookkeeping_dummy") == "do not touch")
+    gone_db(conn, "pidi_v2_other")
+
+
+def static_pastes():
+    for name in PASTES:
+        text = (ROOT / name).read_text(encoding="utf-8")
+        code_only = "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("--"))
+        check("%s has no drop, delete or truncate (the SQL editor would ask, and nothing is removed)" % name,
+              not re.search(r"\b(drop|delete|truncate)\b", text, re.I))
+        body = code_only.strip()
+        check("%s is one transaction that starts with the Pidi check" % name,
+              re.match(r"begin;\s*do \$guard\$ begin\s*if to_regclass\('public\.pidi_orders'\) is null", body) is not None
+              and "\ncommit;" in body, body[:120])
+
+
 def main():
     static_sql()
+    static_pastes()
     admin = psycopg2.connect(DSN_ADMIN)
     admin.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     admin.cursor().execute("drop database if exists pidi_v2_test")
@@ -339,6 +794,9 @@ def main():
     bad_names = [item for item in fresh if item[0] != "public" or not item[1].startswith("pidi_")]
     check("new relations are public.pidi_ only", not bad_names, str(bad_names))
     check("five restaurants", scalar(conn, "select count(*) from public.pidi_restaurants") == 5)
+    settings = dict(q(conn, "select key, value from public.pidi_settings where key in ('min_food_cents', 'eta_min', 'eta_max')"))
+    check("no minimum and 35 to 50 minutes are the defaults (Victor, 16 Oct 2026)",
+          settings == {"min_food_cents": "0", "eta_min": "35", "eta_max": "50"}, str(settings))
     leaks, missing, tables = privileges(conn)
     check("anon runs only the app's functions, authenticated none", not leaks, str(leaks))
     check("anon runs every app function", not missing, str(missing))
@@ -381,13 +839,14 @@ def main():
     q(conn, "set role anon")
     ok, detail = explodes(conn, "select public.pidi_dispatch()", None, "permission denied")
     check("anon cannot call dispatch directly", ok, detail)
-    ok, detail = explodes(
+    # No minimum order (Victor, 16 Oct 2026): a ƒ1 order goes in.
+    small = scalar(
         conn,
         "select public.pidi_place_order(%s::jsonb)",
-        ['{"restaurant":"dushi-wok","name":"A","phone":"2975550001","area":"Noord","address":"1","pay":"cash","pays_with_cents":5000,"items":[{"name":"Fries","qty":1,"price_cents":100}]}'],
-        "MIN_FOOD",
+        ['{"restaurant":"dushi-wok","name":"A","phone":"2975550001","area":"Noord","address":"1","pay":"cash","pays_with_cents":5000,"items":[{"name":"Fries","qty":1,"price_cents":100}],"test":true}'],
     )
-    check("minimum ƒ24 rejected", ok, detail)
+    conn.commit()
+    check("no minimum: a ƒ1 order goes in", small and small["food_cents"] == 100 and small["total_cents"] == 600, str(small)[:200])
     ok, detail = explodes(conn, "select count(*) from public.pidi_orders", None, "permission denied")
     check("anon select on orders is denied", ok, detail)
     ok, detail = explodes(conn, "select count(*) from public.pidi_drivers", None, "permission denied")
@@ -436,24 +895,12 @@ def main():
             body["pays_with_cents"] = pays
         return scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(body)])
 
-    ok, detail = explodes(
-        conn,
-        "select public.pidi_place_order(%s::jsonb)",
-        [json.dumps({
-            "name": "Low TEST",
-            "phone": "2975990098",
-            "area": "Noord",
-            "address": "TEST",
-            "pay": "cash",
-            "pays_with_cents": 5000,
-            "items": [
-                {"restaurant": "dushi-wok", "name": "Rice", "qty": 1, "price_cents": 1500},
-                {"restaurant": "taco-brava", "name": "Taco", "qty": 1, "price_cents": 800},
-            ],
-        })],
-        "MIN_FOOD",
-    )
-    check("mixed cart of ƒ15 + ƒ8 is refused", ok, detail)
+    low = place_items([
+        {"restaurant": "dushi-wok", "name": "Rice", "qty": 1, "price_cents": 1500},
+        {"restaurant": "taco-brava", "name": "Taco", "qty": 1, "price_cents": 800},
+    ], pays=5000, name="Low TEST", phone="2975990098")
+    conn.commit()
+    check("a mixed cart of ƒ15 + ƒ8 goes in (no minimum)", low["food_cents"] == 2300 and low["fee_cents"] == 500, str(low)[:200])
     own_mix = place_items([
         {"restaurant": "dushi-wok", "name": "Rice", "qty": 1, "price_cents": 1500},
         {"restaurant": "taco-brava", "name": "Tacos", "qty": 1, "price_cents": 1200},
@@ -827,6 +1274,14 @@ def main():
     q(conn, "update public.pidi_settings set value = '2400' where key = 'min_food_cents'")
     conn.commit()
     q(conn, "set role anon")
+    # A minimum set again later still works: ƒ15 of food under a ƒ24 minimum is refused.
+    check("a minimum set again later refuses a smaller order",
+          code_of(dict(good, phone="2975990079", items=[{"restaurant": "dushi-wok", "name": "Rice", "qty": 1, "price_cents": 1500}])) == "MIN_FOOD")
+    conn.commit()
+    q(conn, "reset role")
+    q(conn, "update public.pidi_settings set value = '0' where key = 'min_food_cents'")
+    conn.commit()
+    q(conn, "set role anon")
 
     # --- US dollars, night numbers, busy minutes
     usd = scalar(conn, "select public.pidi_place_order(%s::jsonb)", [json.dumps(dict(good, phone="2975990081", pays_in_usd=True, pays_with_cents=None))])
@@ -863,6 +1318,9 @@ def main():
     conn.commit()
     check("a third waiting order from one phone is refused", code_of(dict(flood, phone="+297-599-0083")) == "RATE_LIMIT")
     conn.commit()
+
+    # --- prices from the database's copy of the menus
+    menu_prices(conn, kitchen["token"])
     listed = scalar(conn, "select public.pidi_admin_list_drivers(%s)", ["42424242"])
     blob = json.dumps(listed)
     check("driver list has no PIN hash", listed.get("ok") is True and "pin_hash" not in blob and "$2" not in blob, blob[:240])
@@ -1067,6 +1525,8 @@ def main():
           stale.get("ok") is False and "does not match" in stale.get("error", "").lower(), str(stale))
 
     seed_when_placeholder_replaced()
+    upgrade_matches_fresh()
+    paste_guards()
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

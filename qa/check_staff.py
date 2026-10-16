@@ -1,6 +1,6 @@
 """Staff screens check: the kitchen's Orders screen (ops/kitchen/, live.js) and the driver app (driver/v2/).
 
-    python3 qa/check_staff.py                 (qa/check_site.py runs it too)
+    python3 qa/check_staff.py                 (after any change in ops/kitchen/ or driver/)
     STAFF_SHOTS=/some/folder python3 qa/check_staff.py   also saves phone screenshots there
 
 Fakes only. Every call to the order database is answered here with Playwright routes (service workers
@@ -37,20 +37,20 @@ DRIVER_SESSION = "qa-fake-driver-session-0000"
 A, B, C = "00000000-0000-4000-8000-0000000000a1", "00000000-0000-4000-8000-0000000000b2", "00000000-0000-4000-8000-0000000000c3"
 def item(name, qty, cents): return {"name": name, "qty": qty, "price_cents": cents}
 FEED = {"orders": [
-    # C: a bank-transfer pre-order for 1:00 AM, accepted, not due yet (start at 11:45 PM = due minus the usual 60 min
+    # C: a bank-transfer pre-order for 1:00 AM, accepted, not due yet (start at 11:55 PM = due minus the usual 50 min
     #    and tonight's 15 busy minutes)
     {"id": C, "status": "accepted", "name": "Carla", "phone": "297 599 0003", "area": "Santa Cruz", "address": "Near the church, green house",
      "note": None, "pay": "transfer", "food_cents": 3390, "fee_cents": 500, "total_cents": 3890, "pays_with_cents": None,
      "change_due_cents": None, "transfer_status": "awaiting", "outside_hours": False, "test": False,
      "created_at": ago(20), "due_at": at(datetime(2026, 10, 11, 1, 0, tzinfo=AW)), "pays_in_usd": False, "night_no": 11,
-     "eta_min": 45, "eta_max": 60, "busy_min": "15", "restaurant": "Nonna's Night In",
+     "eta_min": 35, "eta_max": 50, "busy_min": "15", "restaurant": "Nonna's Night In",
      "restaurants": [{"restaurant": "Nonna's Night In", "slug": "nonnas-night-in", "food_cents": 3390, "ready": False,
-                      "items": [item("Penne arrabbiata (vegetarian) · Heat: Extra spicy", 2, 1695)]}]},
+                      "items": [item("Penne arrabbiata · Heat: Extra spicy", 2, 1695)]}]},
     # A: as soon as possible, cash in florins, two restaurants, options with the right prices
     {"id": A, "status": "new", "name": "Ana", "phone": "297 599 0001", "area": "Noord", "address": "Palm Beach 12, blue gate",
      "note": "Ring twice", "pay": "cash", "food_cents": 3045, "fee_cents": 500, "total_cents": 3545, "pays_with_cents": 5000,
      "change_due_cents": 1455, "transfer_status": None, "outside_hours": False, "test": False,
-     "created_at": ago(8), "due_at": ago(8), "pays_in_usd": False, "night_no": 12, "eta_min": 45, "eta_max": 60, "busy_min": "15",
+     "created_at": ago(8), "due_at": ago(8), "pays_in_usd": False, "night_no": 12, "eta_min": 35, "eta_max": 50, "busy_min": "15",
      "restaurant": "Oranje Snack, Taco Brava",
      "restaurants": [
         {"restaurant": "Oranje Snack", "slug": "oranje-snack", "food_cents": 1295, "ready": False,
@@ -61,7 +61,7 @@ FEED = {"orders": [
     {"id": B, "status": "cooking", "name": "Ben", "phone": "297 599 0002", "area": "Palm Beach", "address": "Hotel lobby, room 214",
      "note": None, "pay": "cash", "food_cents": 3895, "fee_cents": 500, "total_cents": 4395, "pays_with_cents": 4395,
      "change_due_cents": 0, "transfer_status": None, "outside_hours": False, "test": True,
-     "created_at": ago(4), "due_at": ago(4), "pays_in_usd": True, "night_no": 13, "eta_min": 45, "eta_max": 60, "busy_min": "15",
+     "created_at": ago(4), "due_at": ago(4), "pays_in_usd": True, "night_no": 13, "eta_min": 35, "eta_max": 50, "busy_min": "15",
      "restaurant": "Smash Shack",
      "restaurants": [{"restaurant": "Smash Shack", "slug": "smash-shack", "food_cents": 3895, "ready": False,
                       "items": [item("Smash cheeseburger · No onion", 1, 100), item("Loaded fries (cheddar sauce, beef, scallion)", 1, 1195),
@@ -100,6 +100,13 @@ STUB = """export function createClient(url, key) {
 }"""
 NO_SOCKETS = """window.__sockets = [];
 window.WebSocket = class { constructor(u) { window.__sockets.push(String(u)); this.readyState = 3; } send() {} close() {} addEventListener() {} removeEventListener() {} };"""
+
+def menu_rows(menu):
+    """What the Orders screen sends pidi_kitchen_sync_menu (live.js menuRows): only the fields pricing needs."""
+    return [{"id": i["id"], "name": i["name"], "price": i["price"], "soldOut": bool(i.get("soldOut")), "includes": i.get("includes") or [],
+             "options": [{"id": g["id"], "label": g.get("label") or "", "type": g["type"], "default": g.get("default") or None,
+                          "choices": [{"id": c["id"], "label": c["label"], "price": c.get("price") or 0} for c in g.get("choices") or []]}
+                         for g in i.get("options") or []]} for i in menu["items"]]
 
 class Fake:
     """Answers the database calls one context makes, and remembers them."""
@@ -160,8 +167,13 @@ async def kitchen(b, w, h, deep):
         for o in state["orders"]:
             if o["id"] == a["order_id"]: o["transfer_status"] = "paid"
         return ok({"ok": True, "transfer_status": "paid"})
+    synced = []
+    def sync_menu(a):
+        synced.append(a)
+        return ok({"ok": True, "skipped": False, "items": len(a.get("items") or [])})
     fake = Fake({"pidi_kitchen_feed": lambda a: ok(copy.deepcopy(state)), "pidi_kitchen_set_busy": set_busy,
-                 "pidi_kitchen_transfer_paid": paid, "pidi_public_state": lambda a: ok({"ok": True, "busy_min": public_busy["v"], "eta_min": 45, "eta_max": 60})})
+                 "pidi_kitchen_transfer_paid": paid, "pidi_kitchen_sync_menu": sync_menu,
+                 "pidi_public_state": lambda a: ok({"ok": True, "busy_min": public_busy["v"], "eta_min": 35, "eta_max": 50})})
     init = "localStorage.setItem('pidi.kitchen.session', JSON.stringify({ token: '%s', expires_at: '2099-01-01T00:00:00Z' }));" % KITCHEN_SESSION
     ctx = await new_ctx(b, fake, w, h, init)
     pg = await ctx.new_page()
@@ -178,8 +190,8 @@ async def kitchen(b, w, h, deep):
     head = await text(pg, ".lv-later h2")
     check(head == ["Later tonight"], f"{tag} the group is called Later tonight")
     c = (await text(pg, ".lv-later .lv-card .ohead"))[0] if later else ""
-    check(re.search(r"Deliver at 1:00\sAM", c) and re.search(r"Start cooking at 11:45\sPM", c),
-          f"{tag} pre-order says Deliver at 1:00 AM and Start cooking at 11:45 PM (usual 60 min + 15 busy, Aruba time): {c[:160]!r}")
+    check(re.search(r"Deliver at 1:00\sAM", c) and re.search(r"Start cooking at 11:55\sPM", c),
+          f"{tag} pre-order says Deliver at 1:00 AM and Start cooking at 11:55 PM (usual 50 min + 15 busy, Aruba time): {c[:160]!r}")
     cards = await text(pg, ".lv-card .ohead")
     check(re.search(r"Came in 11:22\sPM · 8 min ago", cards[0]) is not None, f"{tag} Order 12 shows when it came in (11:22 PM Aruba): {cards[0][:80]!r}")
     check("Deliver at" not in cards[0] and "Deliver at" not in cards[1], f"{tag} as-soon-as-possible orders show no delivery time")
@@ -206,6 +218,17 @@ async def kitchen(b, w, h, deep):
     check(wide[0] <= wide[1], f"{tag} the Orders list doesn't scroll sideways: {wide}")
     await shot(pg, f"kitchen-orders-{w}x{h}.png")
     await shot(pg, f"kitchen-first-screen-{w}x{h}.png", full=False)
+    site = json.load(open(os.path.join(ROOT, "shared/site.json"), encoding="utf-8"))
+    brands = {b["id"]: b.get("status", "open") for b in site["brands"]}
+    for _ in range(50):
+        if len(synced) >= len(brands): break
+        await pg.wait_for_timeout(100)
+    got = {a["restaurant"]: a for a in synced}
+    want = {bid: menu_rows(json.load(open(os.path.join(ROOT, bid, "menu.json"), encoding="utf-8"))) for bid in brands}
+    check(len(synced) == len(brands) and sorted(got) == sorted(brands)
+          and all(got[b]["items"] == want[b] and got[b]["status"] == brands[b] and got[b]["from_save"] is False for b in brands),
+          f"{tag} each restaurant's menu and open / soon / hidden go to the order database once, as menu.json has them: "
+          f"{[(a['restaurant'], a['status'], len(a.get('items') or []), a['from_save']) for a in synced]}")
     if deep:
         await pg.click(".lv-segb[data-min='0']")
         await pg.wait_for_function("document.querySelector('.lv-segb[data-min=\"0\"]').getAttribute('aria-pressed') === 'true'")
@@ -226,8 +249,8 @@ async def kitchen(b, w, h, deep):
         await pg.wait_for_selector(".order-wrap .ohead")
         head = (await text(pg, ".order-wrap .ohead"))[0]
         reply = (await text(pg, ".reply"))[0]
-        check(re.search(r"Ready for 1:00\sAM", head) and re.search(r"booked for 1:00\sAM", reply) and "Paid by bank transfer" in head,
-              f"{tag} the pre-order's cook screen says Ready for 1:00 AM and Paid by bank transfer, the Confirm reply booked for 1:00 AM: {head[:120]!r} / {reply[:90]!r}")
+        check(re.search(r"Deliver at 1:00\sAM", head) and re.search(r"booked for 1:00\sAM", reply) and "Paid by bank transfer" in head,
+              f"{tag} the pre-order's cook screen says Deliver at 1:00 AM and Paid by bank transfer, the Confirm reply booked for 1:00 AM: {head[:120]!r} / {reply[:90]!r}")
         await shot(pg, f"kitchen-cook-preorder-{w}x{h}.png", full=False)
         await pg.goto(BASE + "ops/kitchen/index.html#/live")
         await pg.wait_for_selector(f".lv-card [data-live='cook'][data-id='{B}']")
@@ -256,6 +279,13 @@ async def kitchen(b, w, h, deep):
             restaurants=[{"restaurant": "Oranje Snack", "slug": "oranje-snack", "food_cents": 1295, "ready": False, "items": [item("Bitterballen (8) · Dip: Mustard", 1, 1295)]}]))
         await pg.evaluate("window.KitchenLive.show()")
         await pg.wait_for_function("document.querySelectorAll('.lv-price').length >= 2", timeout=10000)
+        for _ in range(30):
+            if len(synced) > len(brands): break
+            await pg.wait_for_timeout(100)
+        new = synced[len(brands):]
+        bb = [r for a in new for r in (a.get("items") or []) if r["name"] == "Bitterballen (8)"]
+        check([a["restaurant"] for a in new] == ["oranje-snack"] and bb and bb[0]["price"] == 1395,
+              f"{tag} after the reloads only the changed menu goes to the database again, with the new price: {[(a['restaurant'], len(a.get('items') or [])) for a in new]}")
         nos = await text(pg, ".lv-no")
         check(await pg.locator(".lv-later").count() == 0 and "Order 11" in nos, f"{tag} at 12:05 AM the pre-order is with the orders to cook now: {nos}")
         per = await pg.evaluate("Array.from(document.querySelectorAll('.lv-card')).map(c => [c.querySelector('.lv-no').textContent, Array.from(c.querySelectorAll('.lv-price')).map(e => e.textContent)])")
@@ -319,8 +349,8 @@ async def kitchen_edges(b, w, h):
         dict(base, id="00000000-0000-4000-8000-0000000000a8", night_no=18, status="accepted", name="Sunday",
              created_at=ago(30), due_at=at(datetime(2026, 10, 11, 22, 30, tzinfo=AW)),
              restaurants=one("taco-brava", "Taco Brava", item("Coca-Cola (can)", 1, 300)))]}
-    fake = Fake({"pidi_kitchen_feed": lambda a: ok(copy.deepcopy(state)),
-                 "pidi_public_state": lambda a: ok({"ok": True, "busy_min": 0, "eta_min": 45, "eta_max": 60})})
+    fake = Fake({"pidi_kitchen_feed": lambda a: ok(copy.deepcopy(state)), "pidi_kitchen_sync_menu": lambda a: ok({"ok": True, "skipped": False}),
+                 "pidi_public_state": lambda a: ok({"ok": True, "busy_min": 0, "eta_min": 35, "eta_max": 50})})
     init = "localStorage.setItem('pidi.kitchen.session', JSON.stringify({ token: '%s', expires_at: '2099-01-01T00:00:00Z' }));" % KITCHEN_SESSION
     ctx = await new_ctx(b, fake, w, h, init)
     pg = await ctx.new_page()
@@ -337,7 +367,7 @@ async def kitchen_edges(b, w, h):
     check(wide[0] <= wide[1], f"{tag} a Google Maps link as address or note doesn't push the list sideways: {wide}")
     heads = await text(pg, ".lv-card .ohead")
     check(re.search(r"Came in 4:05\sPM · 7 hours ago", heads[1]) is not None, f"{tag} an afternoon pre-order says 7 hours ago, not 445 min: {heads[1][:60]!r}")
-    check(re.search(r"Deliver Sunday night at 10:30\sPM", heads[2]) and re.search(r"Start cooking Sunday night at 9:30\sPM", heads[2]),
+    check(re.search(r"Deliver Sunday night at 10:30\sPM", heads[2]) and re.search(r"Start cooking Sunday night at 9:40\sPM", heads[2]),
           f"{tag} a pre-order for tomorrow night names the night: {heads[2][:120]!r}")
     check(await text(pg, ".lv-later h2") == ["Pre-orders for later"], f"{tag} with a pre-order for another night the group is Pre-orders for later")
     await shot(pg, f"kitchen-edges-first-{w}x{h}.png", full=False)

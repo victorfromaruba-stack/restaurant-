@@ -35,7 +35,7 @@ Money is florin cents (`int`). Times are `timestamptz`. The service night is `(c
 | Table | Holds |
 |---|---|
 | `pickup_points` | One row for Victor's pickup, plus one per partner later. Address, pin, geofence (75 m), hours as data, `show_pin_to_customers` false for his own pickup. |
-| `restaurants` | `dushi-wok`, `taco-brava`, `smash-shack`, `nonnas-night-in`, `oranje-snack`, later partners. `owner` is `own` or `partner`. `mix` only for his five. Min 2400, fee 500. |
+| `restaurants` | `dushi-wok`, `taco-brava`, `smash-shack`, `nonnas-night-in`, `oranje-snack`, later partners. `owner` is `own` or `partner`. `mix` only for his five. No minimum (16 Oct 2026), fee 500. |
 | `staff` | admin, kitchen, partner, driver. Name, phone, active flag. A driver has a vehicle line. Tied to `auth.users`. |
 | `orders` | One row per order. `kitchen_status` and `delivery_status` move separately. Items, totals, `pay_method` of `cash` or `bank_transfer` only (no card column in the product, even if an old spec mentioned one). `pays_with_cents`, `transfer_seen`, customer name, phone, area, address, drop pin, order code from WhatsApp. |
 | `order_events` | Who changed what, and when. |

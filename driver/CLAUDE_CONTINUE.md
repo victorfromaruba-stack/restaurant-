@@ -6,7 +6,7 @@ v1 (this folder's `index.html`) is the live driver app. v2 is prepared in `/driv
 
 Live: https://victorfromaruba-stack.github.io/restaurant-/driver/
 
-Pidi Blue is `#2D3BE8`. Night background is Pidi Ink `#12143A`. The wordmark, icons and "X by Pidi" logos are the real files in `brand/`. Payment is cash or bank transfer only. Currency is the Aruban florin (ƒ). Rules in the app: ƒ24 food before the fee, ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp is +297 747 7794 (`2977477794`).
+Pidi Blue is `#2D3BE8`. Night background is Pidi Ink `#12143A`. The wordmark, icons and "X by Pidi" logos are the real files in `brand/`. Payment is cash or bank transfer only. Currency is the Aruban florin (ƒ). Rules in the app: no minimum order (since 16 Oct 2026; `MIN_FOOD` is 0), ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp is +297 747 7794 (`2977477794`).
 
 ## 1. Screens
 
@@ -18,7 +18,7 @@ Pidi Blue is `#2D3BE8`. Night background is Pidi Ink `#12143A`. The wordmark, ic
 | Drop | `run.html` | One drop at a time, up to 2. Name, area, money box, then Google Maps, Waze, Call and WhatsApp (those four sit above the Delivered bar on a 390×664 phone). Address, note and items follow. Every step starts at the top. One button: Delivered. |
 | Run done | `run.html` | Cash collected on this run. Button: Count the cash. |
 | Cash count | `cash.html` | Sum of delivered cash drops for this service night, across every run on the phone. Transfer drops are listed as awaiting or paid, and they add ƒ0. Type the florins counted, then Compare. A match says "It matches." A gap under ƒ9 is "Small difference, noted." ƒ9 to ƒ36 is "Check within 24 hours." Over ƒ36 is "Check now." |
-| Send a run | `dispatch.html` | Form for one pickup and one or two drops. Checks the ƒ24 food floor and adds ƒ5. "Send to driver on WhatsApp" opens `wa.me` with the run link. Default number is 2977477794. Copy and "Open this run on this phone" are there too. |
+| Send a run | `dispatch.html` | Form for one pickup and one or two drops. Adds ƒ5 (no minimum order since 16 Oct 2026). "Send to driver on WhatsApp" opens `wa.me` with the run link. Default number is 2977477794. Copy and "Open this run on this phone" are there too. |
 | Help | `help.html` | Hand over at the door. Call 911, police 100, WhatsApp the order number. |
 | Install | `install/index.html` | iPhone: Safari, Share, Add to Home Screen. Android: Chrome menu, Install app. A computer shows a QR code of the install page. TestFlight and the Android file are not built yet. |
 
@@ -111,7 +111,7 @@ Money is integer florin cents. Pins are strings, so `12.5696` is not turned into
 | `drops[].area` `note` | no | |
 | `drops[].items[]` | at least one | `{ name, qty }` |
 | `drops[].pay` | yes | `cash` or `transfer` |
-| `drops[].food` `fee` `total` | `total` required | Cents. Dispatcher sets `fee` to 500 and `total` to food + fee. Food must be at least 2400 before send. |
+| `drops[].food` `fee` `total` | `total` required | Cents. Dispatcher sets `fee` to 500 and `total` to food + fee. No minimum since 16 Oct 2026 (`Pidi.MIN_FOOD` is 0). |
 | `drops[].paysWith` | cash only | Cents they hand over. Change = paysWith − total. |
 | `drops[].transfer` | transfer only | `awaiting` (default) or `paid`. No cash is collected. |
 
@@ -170,7 +170,7 @@ Paste this:
 ```
 You are continuing the Pidi driver app in /driver/ of victorfromaruba-stack/restaurant-. Read /driver/CLAUDE_CONTINUE.md and /driver/V2_NOTES.md first. The app is vanilla HTML/CSS/JS with no build step. Do not edit any file outside /driver/ unless Victor explicitly asks. Do not create accounts, Supabase projects, or store listings, and do not spend money.
 
-Pidi is the name (capital P, rest lowercase). Pidi Blue is #2D3BE8. Payment is cash or bank transfer only. ƒ24 food minimum, ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp 2977477794. The five restaurants are Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In and Oranje Snack. A partner pickup is allowed in the data (restaurantName) but has no logo yet.
+Pidi is the name (capital P, rest lowercase). Pidi Blue is #2D3BE8. Payment is cash or bank transfer only. No minimum order, ƒ5 delivery, at most 2 drops a run, delivery only, 10 PM to 2 AM. Order WhatsApp 2977477794. The five restaurants are Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In and Oranje Snack. A partner pickup is allowed in the data (restaurantName) but has no logo yet.
 
 The driver UI stays one step per screen, big buttons (56px), plain words, restaurant logos, no internal codes on screen. Run links are a base64url JSON hash documented in CLAUDE_CONTINUE.md. Keep tests/flow.py passing on the live URL with Playwright device profiles iPhone 13 and Pixel 7. Bump the CACHE name in sw.js when you change cached files. The service worker scope must stay the /driver/ folder only.
 

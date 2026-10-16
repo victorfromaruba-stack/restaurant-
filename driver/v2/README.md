@@ -34,17 +34,50 @@ Set it back to `reject` when the test is over. `flag` keeps the order and marks 
 
 Kitchen: sign in with the kitchen PIN, Accept, Cooking, then Ready on each restaurant's bag. The order goes to a driver when every bag is ready. An online driver gets the offer for 45 seconds. The first Accept wins. A second order joins that run when it is ready, or due within 10 minutes, and the drop is under 3 km from the first. A run holds at most 2 orders. Pickup lists the bags per restaurant. Offers refresh when a driver opens the offer list, so no cron job is required.
 
-One order can include several restaurants. The ƒ24 minimum is the food in the whole cart. Delivery is one fee: ƒ5 when every dish is from Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In, or Oranje Snack. ƒ10 when any dish is from a partner restaurant. Those amounts are `fee_own` (500) and `fee_partner` (1000) in `pidi_settings`.
+One order can include several restaurants. There is no minimum order (Victor, 16 Oct 2026). Delivery is one fee: ƒ5 when every dish is from Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In, or Oranje Snack. ƒ10 when any dish is from a partner restaurant. Those amounts are `fee_own` (500) and `fee_partner` (1000) in `pidi_settings`.
 
 The customer link is `/driver/v2/status/#t=` plus the public token from `pidi_place_order`. A second order can be `&u=`.
 
 ## Local proof
 
 ```bash
-python3 driver/v2/supabase/tests/run_local.py
+pg_createcluster 16 pidistaff -p 5499 -d /var/lib/postgresql/pidi_staff_test -e UTF8 --locale C.UTF-8 -- -A trust
+pg_ctlcluster 16 pidistaff start
+PGPORT=5499 PGUSER=postgres python3 driver/v2/supabase/tests/run_local.py
+pg_ctlcluster 16 pidistaff stop && pg_dropcluster 16 pidistaff
 ```
 
-Needs local Postgres. It does not call Supabase. It applies the file twice, checks a dummy bookkeeping table is unchanged, then runs the order as the `anon` role.
+Needs local Postgres with a UTF8 database (the SQL has "·" and curly quotes). It does not call Supabase. It applies the file twice, checks a dummy bookkeeping table is unchanged, then runs the order as the `anon` role, prices orders from the repo's own menu.json files, and checks the three paste files (upgrade = fresh install; in another project they change nothing).
+
+## Pastes for the live database (16 Oct 2026, not run yet)
+
+`PIDI_SETUP.sql` already holds all of this for a fresh install. The live database was set up before it, so it
+gets three short pastes, in this order, each in the Pidi project's SQL editor
+(https://supabase.com/dashboard/project/cdkopyphjvfxjqhasrae/sql/new): paste the whole file, press Run.
+Each is safe to run twice, and in any other project it stops at its first line and changes nothing.
+
+1. `PIN_FIX_2026-10-16.sql`: PIN tries at once count one by one; a new kitchen PIN is 6 to 8 digits.
+2. `SETTINGS_2026-10-16.sql`: no minimum order (`min_food_cents` 0), delivery 35 to 50 minutes.
+3. `MENU_PRICES_2026-10-16.sql`: the database works out every price itself from its copy of the menus
+   (`pidi_menu`). The kitchen app fills that copy when the chef signs in to Orders; until then a restaurant
+   keeps the old rule (the phone's prices).
+
+`tests/run_local.py` proves it: the live setup (this file at 76cdd53) plus the three pastes is the same as a
+fresh install of today's file, function by function (`md5(prosrc)`), column by column, and right by right.
+
+## Prices from the database (16 Oct 2026)
+
+`pidi_place_order` no longer trusts the prices a phone sends. For each restaurant whose menu is in `pidi_menu`
+it finds the dish (by its menu `id`, or by name) and adds the extra price of each option the line's words name
+("Dip: Mustard", "No onion"); a one-choice option nobody named is the menu's default. It refuses a dish that
+isn't on the menu or an option that isn't (`BAD_ITEM:<line>`), a sold-out dish or a Family Table holding one
+(`SOLD_OUT:<line>`), and a restaurant set to Opening soon or hidden (`REST_CLOSED:<slug>`). The answer has the
+real prices and `repriced: true` when the phone's price was different.
+
+The kitchen app keeps `pidi_menu` in step (`pidi_kitchen_sync_menu`, kitchen session only): after sign-in, every
+10 minutes when the website's menu.json or site.json changed, and right after a save on the Menu tile. A copy
+read from the website is ignored for 15 minutes after a Menu-tile save, so an older copy never undoes a save.
+A dish taken off the menu is marked `listed = false`; no row is ever removed.
 
 ## Database changes made for these screens (10 Oct 2026, live)
 

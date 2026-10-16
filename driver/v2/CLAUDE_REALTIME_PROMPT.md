@@ -8,7 +8,7 @@ Edit only `/ops/kitchen/` and the customer site (`shared/order-app.js` and a sma
 
 v1 (`/driver/index.html` and its scripts) stays the live driver app. The new driver UI is `/driver/v2/` and it stays on "Not connected yet" until `config.js` has an anon key and `pidi_ping()` returns `{"ok":true}`.
 
-Payment is cash or bank transfer. Prices are florin cents (2895 = ƒ28.95). One order can include several restaurants. The ƒ24 food minimum is the whole cart. Delivery is one fee, set by the database from `pidi_settings`: `fee_own` is 500 (ƒ5) when every dish is from Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In, or Oranje Snack. `fee_partner` is 1000 (ƒ10) when any dish is from a partner restaurant. Hours are 10 PM to 2 AM America/Aruba. Do not write anything a customer can see that says the restaurants share a kitchen.
+Payment is cash or bank transfer. Prices are florin cents (2895 = ƒ28.95). One order can include several restaurants. There is no minimum order (Victor, 16 Oct 2026: `min_food_cents` is 0). Delivery is one fee, set by the database from `pidi_settings`: `fee_own` is 500 (ƒ5) when every dish is from Dushi Wok, Taco Brava, Smash Shack, Nonna's Night In, or Oranje Snack. `fee_partner` is 1000 (ƒ10) when any dish is from a partner restaurant. Hours are 10 PM to 2 AM America/Aruba. Do not write anything a customer can see that says the restaurants share a kitchen.
 
 ## API contract
 
@@ -33,13 +33,17 @@ There is no JWT. A kitchen or driver session is a random token returned by the l
   "pays_with_cents": 5000,
   "client_token": "stable-id-for-this-tap",
   "items": [
-    { "restaurant": "dushi-wok", "name": "Chicken fried rice", "qty": 1, "price_cents": 1500 },
-    { "restaurant": "taco-brava", "name": "Tacos", "qty": 1, "price_cents": 1200 }
+    { "restaurant": "dushi-wok", "id": "fr", "name": "Chicken fried rice · No onion", "qty": 1, "price_cents": 1295 },
+    { "restaurant": "taco-brava", "id": "gt", "name": "Ground beef street tacos (3) · Salsa: On the side", "qty": 1, "price_cents": 1450 }
   ]
 }
 ```
 
-`pay` is `cash` or `transfer`. Do not send a fee. The database sets `fee_cents` to 500 or 1000. Cash must cover food plus that fee. The same `client_token` returns the same order. Errors are plain sentences (minimum, hours, phone). Each item keeps its restaurant, so a station only sees its own dishes.
+`pay` is `cash` or `transfer`. Do not send a fee. The database sets `fee_cents` to 500 or 1000. Cash must cover food plus that fee. The same `client_token` returns the same order. Each item keeps its restaurant, so a station only sees its own dishes.
+
+Prices come from the database (16 Oct 2026). Each item is the dish's menu `id` (optional but best), its ticket `name` (the dish name, then each chosen option after " · ", exactly as the website writes it: "Bitterballen (8) · Dip: Mustard", "Smash cheeseburger · No onion · No pickles") and `qty`. `price_cents` is what the phone showed; the database ignores it for a restaurant whose menu it has (`pidi_menu`, kept in step by the kitchen app) and works out each line from the menu: the dish plus the extra price of each named option. The answer carries the real prices (`items`, `food_cents`, `total_cents`) and `repriced: true` when the phone's price was not the menu's: show the answer's total. A restaurant with no menu rows yet still takes the phone's `price_cents`.
+
+Errors are short codes, never sentences; the website says each in the customer's language: `BAD_PAYLOAD`, `MISSING`, `BAD_PHONE`, `NO_ITEMS`, `BAD_ITEM:<n>` (line n, from 0: not on the menu, or an option that isn't), `SOLD_OUT:<n>` (line n is sold out tonight), `REST_CLOSED:<slug>` (not taking orders: "Opening soon" or hidden), `CASH_SHORT`, `BAD_PAY`, `BAD_PIN`, `BAD_TIME`, `CLOSED`, `DELIVERY_ONLY`, `RATE_LIMIT`, and `MIN_FOOD` only if a minimum is ever set again.
 
 `pidi_order_status(token text)` → `{status, label, restaurant, restaurants, fee_cents, food_cents, total_cents, topic}`
 
@@ -54,6 +58,8 @@ Labels: Received (new, accepted), Cooking (cooking, ready), On the way (assigned
 `pidi_kitchen_set_status(session text, order_id uuid, status text)` allows `cooking` only from `accepted`. `ready` on this call is only for an order with one restaurant. It cannot set delivered.
 
 `pidi_kitchen_mark_ready(session text, order_id uuid, restaurant text)` marks that restaurant's bag ready. `restaurant` is the slug. The order becomes `ready` when every restaurant on it is ready, and that is when dispatch runs (`pidi_settings.dispatch_when` is `ready`; `accepted` is the other option). Drivers, pairing, and the 45 second timeout are already in the database.
+
+`pidi_kitchen_sync_menu(session text, restaurant text, status text, items jsonb, from_save boolean)` keeps the database's copy of one restaurant's menu: `status` is open / soon / hidden from site.json (null leaves it), `items` is menu.json's items with `id, name, price, soldOut, includes, options` (null leaves them). The kitchen app sends it after sign-in, whenever the website's copy changed (read with `?fresh=`), and straight after a Menu-tile save (`from_save: true`); for 15 minutes after a save a website copy is not taken.
 
 Realtime is a public broadcast ping, not a row subscription. Topics come back from the login or the status call (`pidi:k:…`, `pidi:driver:<uuid>`, `pidi:order:<token>`). The payload is only `{"ping":"changed"}`. Subscribe with `private: false` and event `changed`, then refetch through the RPC. Also poll every 8 seconds. If broadcast never arrives, polling is enough.
 

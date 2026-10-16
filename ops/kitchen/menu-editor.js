@@ -56,11 +56,20 @@
     return readJson(p).then(function (f) {
       var err = change(f.data);
       if (err) { var x = new Error(err); x.plain = true; throw x; }
-      return putFile(p, b64text(JSON.stringify(f.data, null, 1)), f.sha, message);
+      return putFile(p, b64text(JSON.stringify(f.data, null, 1)), f.sha, message).then(function (r) { tellOrders(p, f.data); return r; });
     }).catch(function (e) {
       if (!retried && (e.status === 409 || e.status === 422)) return updateJson(p, change, message, true);
       throw e;
     });
+  }
+  /* App orders are priced by the order database from its own copy of the menus. Right after a save, a phone
+     signed in to Orders sends it the saved menu (or the restaurants' open / soon / hidden) at once, so a dish
+     marked sold out can't be ordered a minute later. Another phone's Orders screen catches up from the website. */
+  function tellOrders(p, data) {
+    var L = window.KitchenLive, m = /^([a-z0-9-]+)\/menu\.json$/.exec(p);
+    if (!L || !L.menuSaved) return;
+    if (m) L.menuSaved(m[1], data, null);
+    else if (p === 'shared/site.json') (data.brands || []).forEach(function (b) { L.menuSaved(b.id, null, b.status || 'open'); });
   }
   /* Plain words for the chef, never GitHub's own English sentences. */
   function explain(e) {
@@ -116,10 +125,24 @@
       return encode(full, 'image/webp', 0.8).then(function (b) {
         var webp = b && b.type === 'image/webp';
         return Promise.all([webp ? b : encode(full, 'image/jpeg', 0.82), encode(sq, webp ? 'image/webp' : 'image/jpeg', webp ? 0.76 : 0.8)]).then(function (bs) {
-          return Promise.all([blob64(bs[0]), blob64(bs[1])]).then(function (x) { return { ext: webp ? 'webp' : 'jpg', full: x[0], thumb: x[1], preview: full.toDataURL('image/jpeg', 0.8) }; });
+          return Promise.all([blob64(bs[0]), blob64(bs[1])]).then(function (x) { return { ext: webp ? 'webp' : 'jpg', full: x[0], thumb: x[1], preview: full.toDataURL('image/jpeg', 0.8), ph: average(full) }; });
         });
       });
     });
+  }
+  /* The photo's average colour ("#7A5B3C"): the website shows it in the picture's box while the picture loads.
+     The plain mean of every pixel, the same as build/thumbs.py works it out. */
+  function average(cv) {
+    var d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, t = [0, 0, 0], n = d.length / 4;
+    for (var i = 0; i < d.length; i += 4) { t[0] += d[i]; t[1] += d[i + 1]; t[2] += d[i + 2]; }
+    return '#' + t.map(function (v) { return ('0' + Math.round(v / n).toString(16)).slice(-2); }).join('').toUpperCase();
+  }
+  /* "ph" goes right after "img", where build/thumbs.py puts it, so a save changes one line, not the dish's layout */
+  function setPh(it, ph) {
+    var keys = Object.keys(it), vals = {};
+    keys.forEach(function (k) { vals[k] = it[k]; delete it[k]; });
+    keys.forEach(function (k) { if (k !== 'ph') it[k] = vals[k]; if (k === 'img') it.ph = ph; });
+    if (!('ph' in it)) it.ph = ph;
   }
   function thumbOf(img) { return img.replace(/([^/]+)$/, 'thumbs/$1'); }
   /* Save the photo. Same file name as before when possible, so every screen that shows this dish updates. */
@@ -343,7 +366,7 @@
       if (clash) { UI.toast('There’s already a dish called ' + clash.name + '.', 3500); return; }
       var item = id ? menu.items.filter(function (i) { return i.id === id; })[0] : { id: newId(menu, f.name), img: '' };
       var msg = 'Menu (kitchen app): ' + menu.name + ' · ' + (id ? 'changed ' : 'new dish ') + f.name;
-      var picStep = pics ? savePictures(brand, item, pics, msg) : Promise.resolve(item.img), newPhoto = !!pics;
+      var picStep = pics ? savePictures(brand, item, pics, msg) : Promise.resolve(item.img), newPhoto = !!pics, ph = pics && pics.ph;
       saving(picStep.then(function (imgPath) {
         return updateJson(brand + '/menu.json', function (m) {
           var it = id ? m.items.filter(function (i) { return i.id === id; })[0] : null;
@@ -360,6 +383,7 @@
           // "hidePhoto": the old picture didn't match the words, so the site showed the dish without one.
           // A new photo of the real dish replaces it, so the site shows the picture again.
           if (newPhoto) delete it.hidePhoto;
+          if (newPhoto && ph) setPh(it, ph);
         }, msg);
       }), function () { UI.go('#/menu/' + brand); });
     },
