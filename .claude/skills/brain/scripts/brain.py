@@ -14,11 +14,13 @@
 `add` puts today's date on the entry and inserts it where that file keeps its newest lines.
 """
 import datetime
+import json
 import re
 import sys
 from pathlib import Path
 
 BRAIN = Path(__file__).resolve().parents[3] / "brain"
+ROOT = Path(__file__).resolve().parents[4]
 FILES = {"lessons": "lessons.md", "victor": "victor.md", "journal": "journal.md", "idea": "ideas.md",
          "ideas": "ideas.md", "question": "questions.md", "questions": "questions.md"}
 LIMITS = {"lessons.md": 60, "victor.md": 50, "questions.md": 30, "ideas.md": 60, "journal.md": 110}
@@ -32,6 +34,20 @@ NEVER = [
 ]
 
 
+def shop_numbers():
+    """The shop's own WhatsApp numbers (site.json, public on every page anyway): not a privacy problem in the brain."""
+    try:
+        site = json.loads((ROOT / "shared" / "site.json").read_text(encoding="utf-8"))
+    except Exception:
+        return set()
+    nums = [site.get("whatsapp", "")] + [b.get("whatsapp", "") for b in site.get("brands", [])]
+    return {re.sub(r"\D", "", str(n)) for n in nums if n}
+
+
+def is_shop_number(match):
+    return re.sub(r"\D", "", match) in shop_numbers()
+
+
 def today():
     return datetime.date.today().isoformat()
 
@@ -41,7 +57,8 @@ def add(kind, text):
     if not name:
         sys.exit(f"Unknown file '{kind}'. Use one of: lessons, victor, journal, idea, question.")
     for pat, what in NEVER:
-        if re.search(pat, text, flags=re.I):
+        hits = [m.group(0) for m in re.finditer(pat, text, flags=re.I)]
+        if any(not (what.startswith("a phone") and is_shop_number(h)) for h in hits):
             sys.exit(f"Not written: this looks like {what}. The brain lives in a public repo.")
     path = BRAIN / name
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -77,7 +94,7 @@ def check():
             problems.append(f"{name} has {n} lines (limit {limit}): merge, prune, or move settled rules into CLAUDE.md")
         for pat, what in NEVER:
             for m in re.finditer(pat, text, flags=re.I):
-                if what.startswith("a phone") and "site.json" in text[max(0, m.start() - 80):m.end() + 80]:
+                if what.startswith("a phone") and (is_shop_number(m.group(0)) or "site.json" in text[max(0, m.start() - 80):m.end() + 80]):
                     continue
                 problems.append(f"{name}:{text.count(chr(10), 0, m.start()) + 1} looks like {what}: remove it")
         if name in ("lessons.md", "journal.md"):
