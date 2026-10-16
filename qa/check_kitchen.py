@@ -8,7 +8,7 @@ What it proves (pre-launch audit, 16 Oct 2026):
     A new dish without a card says "No recipe card yet" with the menu's words; a renamed dish shows
     "Ticket says: ..."; a close name only ever matches inside its own restaurant
  3. a dish whose picture is hidden on the website ("hidePhoto") shows no picture in the chef app
- 4. a chosen time reads "Deliver at 10:30 PM"
+ 4. a chosen time reads "Deliver at <the ticket's time>"
  5. WhatsApp copy marks and "[22:14, 15/10/2026] Ana: " prefixes are ignored; the receipt finds the restaurant
  6. "Replaces order #..." puts a red banner on the new order and marks the old one; nothing is deleted
  7. "Orders" (the app's orders, live) is the first tile and "Cook an order" the second; both say when the
@@ -241,7 +241,8 @@ async def test_orders(browser):
     await paste(pg, samples[0]["message"])
     when = await text(pg, ".ohead .when")
     body = await text(pg, "#main")
-    check(when == "Deliver at 10:30 PM" and "Ready for" not in body, f"[4] a chosen time reads 'Deliver at 10:30 PM': {when!r}")
+    picked = re.search(r"^Time: (.+)$", samples[0]["message"], re.M).group(1).replace("\u00a0", " ").strip()
+    check(when.replace("\u00a0", " ") == "Deliver at " + picked and "Ready for" not in body, f"[4] a chosen time reads 'Deliver at {picked}': {when!r}")
     check("pickup" not in body.lower(), "[11] the order screen never mentions pickup")
     await shot(pg, "4-deliver-at")
 
