@@ -7,7 +7,7 @@ commit when shipped, and move shipped lines to the bottom section. Keep the open
 under 25 lines: drop ideas that stopped making sense.
 
 ## Open
-- [ ] M · S · Skills and the daily routine still say Order Aruba and WhatsApp ordering (human-touch, daily-improvement, anti-ai-slop references, the routine's stored prompt): update them to Pidi with in-app ordering, and add qa/check_api.py, check_kitchen.py and check_staff.py to the daily run's health step · done when: no skill tells a session to protect WhatsApp ordering, and the daily run runs all four checks
+- [ ] H · S · Fresh-eyes run of Pidi's ordering as a first-time customer at 11 PM (screenshots only, a subagent, no edits): restaurant → order sheet → checkout → order page, in English and Papiamento, at 320 and 390 px. The 8 Oct one found 8 real problems after 0 fail · done when: findings are in ideas.md and the worst one is fixed
 - [ ] H · S · Pidi branch follows Victor's 15–16 Oct decisions before go-live: the lively Order Aruba look (not the 9 Oct redesign's), no minimum order, 35–50 min; its own CLAUDE.md still says otherwise · done when: pidi-site's CLAUDE.md, site.json and screens agree with victor.md
 - [ ] M · S · Smash Shack's three burgers show no picture (hidePhoto: the pictures have thick patties) and its cover is the loaded fries. One real phone photo of the smash cheeseburger (chef app Menu tile) fixes it: then make it the cover and drop hidePhoto (needs Victor) · done when: Smash Shack's page opens on a true smash burger
 - [ ] M · S · Diet filters on each restaurant page: vegetarian, no pork, no shrimp, no peanuts (labels already exist; none of the 8 big apps has them, Baymard 2026) · done when: filters work on every restaurant page in 4 languages
@@ -23,6 +23,7 @@ under 25 lines: drop ideas that stopped making sense.
 - [ ] M · S · Picture look per restaurant: build/grade.py gives all five the same warm grain, which makes them read as one set. A grade per restaurant, regrading from the originals in git history · done when: thumbnails per restaurant look distinct, qa passes
 
 ## Shipped
+- [x] 2026-10-17 · M · S · Daily run and skills follow Pidi: qa/check_all.py runs the four checks, the live pages and a read-only database question in one go; daily-improvement, human-touch and brain skills say Pidi and in-app ordering, and forbid touching the ordering switch or the live database
 - [x] 2026-10-16 · M · S · Security lock (Content-Security-Policy) on the home page, the five restaurant pages and 404: only this site's scripts, no inline code, forms go nowhere; QA checks it on every page (3d0688a)
 - [x] 2026-10-16 · H · M · Pidi: the database works out every price from its menu copy (pidi_menu, synced by the chef app), never from the phone's numbers; on pidi-live (494e5ce), live once Victor runs the MENU_PRICES paste
 - [x] 2026-10-09 · H · L · Big redesign (Victor: "looks a lot like AI build it"): two audits, four directions, two judges; shipped a hybrid. Each restaurant its own shop (own stylesheet, fonts, ground, printed-menu rows, small honest pictures, mismatched pictures hidden), Order Aruba as the warm-black app layer with one facts line, time-aware greeting, paper-ticket order sheet

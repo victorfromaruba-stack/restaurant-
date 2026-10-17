@@ -1,6 +1,6 @@
 ---
 name: daily-improvement
-description: The once-a-day improvement run for Order Aruba (site and chef app). Check the site is healthy, pick one safe improvement from .claude/brain/ideas.md or find one with the human-touch audit, build it, prove it, ship it to main, write it into the brain, and tell Victor in three plain lines. Use it when the daily routine fires, and whenever Victor asks to "improve something", "do today's improvement", "keep making it better", "what can you improve", or "make it better" without naming a specific change.
+description: The once-a-day improvement run for Pidi, the delivery app (called Order Aruba until 16 Oct 2026): site, checkout, chef app and driver app. Check the site is healthy, pick one safe improvement from .claude/brain/ideas.md or find one with the human-touch audit, build it, prove it, ship it to main, write it into the brain, and tell Victor in three plain lines. Use it when the daily routine fires, and whenever Victor asks to "improve something", "do today's improvement", "keep making it better", "what can you improve", or "make it better" without naming a specific change.
 ---
 
 # Daily improvement
@@ -21,11 +21,16 @@ Victor, not less.
    line, read it before touching anything near it.
 2. **Health first.** In a fresh cloud container first run `python3 -m pip install -q
    playwright==1.56.0 pillow` (the plain `pip` can belong to another Python). Then
-   `python3 qa/check_site.py`; it serves the repo itself, no server to start. If anything
-   fails, fixing that *is* today's improvement. Also open the live home page and one
-   restaurant page and make sure they load. (Since 9 Oct 2026 Order Aruba is a delivery
-   app like Uber Eats and each restaurant is its own business: see the rule in CLAUDE.md.
-   Never build anything that hints at a shared kitchen.)
+   run `python3 qa/check_all.py` and check its exit code. It runs the four checks
+   (`qa/check_site.py` pages, menus, languages; `qa/check_api.py` checkout and the order
+   page; `qa/check_kitchen.py` chef app; `qa/check_staff.py` live orders, driver and admin
+   screens; each serves the repo itself and fakes every database call), then checks the
+   live site loads (home, a restaurant, `checkout/`, `order/`, chef and driver apps) and asks
+   the live order database one read-only question (`pidi_public_state`: the delivery time).
+   If anything fails, fixing that *is* today's improvement. Never place a real order or call
+   anything that changes the live database. (Pidi is a delivery app like Uber Eats and each restaurant is its own business:
+   see the rule in CLAUDE.md. Customers order inside the app since 16 Oct 2026; WhatsApp is
+   for questions and the fallback. Never build anything that hints at a shared kitchen.)
 3. **Pick one thing.** Take the open idea in `ideas.md` with the best impact for its
    effort that you're allowed to do alone (rules below). No good idea left? Run the
    human-touch audit (`shoot.py` + `check.py`, then look), add what you find to
@@ -34,7 +39,10 @@ Victor, not less.
    the human-touch skill. Keep the change small: one idea, roughly under 300 changed
    lines, something one `git revert` would cleanly undo.
 5. **Prove it.**
-   - `qa/check_site.py`: 0 problems. Run it on its own and check the exit code.
+   - `python3 qa/check_all.py --local` (the four checks): "all good" and exit code 0.
+     After the push, `python3 qa/check_all.py` once more against the live site.
+     A change that touches ordering (order-app.js, checkout, the order page, site.json) is
+     only proven once `qa/check_api.py` passes too.
    - `.claude/skills/human-touch/scripts/check.py`: no new FAIL.
    - Screenshots before and after (`shoot.py --out /tmp/before` before you start,
      `--out /tmp/after` at the end). Look at both. Better, or just different? Only
@@ -76,6 +84,8 @@ screens, the brain and the skills themselves.
 
 **No, not even if an idea in the list says so:** prices, adding or removing dishes,
 hours, delivery areas or fee, payment methods, the WhatsApp number, restaurant status,
+the ordering switch (`"ordering"` in site.json), anything that writes to the live order
+database (SQL, paste files, settings),
 restaurant names or logos, new food pictures, anything claimed as fact about the
 business, removing a feature, the private kitchen files, Book Keeper, new third-party
 scripts or trackers, anything that costs money (Gemini, paid APIs). If the best idea

@@ -1,6 +1,6 @@
 ---
 name: brain
-description: Order Aruba's memory between Claude Code sessions, kept as short files in .claude/brain/ (lessons, Victor's decisions, open questions, the idea backlog, a journal). Use it before your final reply in every session that changed or learned something, whenever Victor decides, corrects or prefers something, whenever a gotcha costs you time, and whenever anyone says remember, don't forget, note this, learn from this, what did we do last time, what's still open, or what should we do next. Without it the next session starts from zero.
+description: Pidi's memory between Claude Code sessions (the delivery app, called Order Aruba until 16 Oct 2026), kept as short files in .claude/brain/ (lessons, Victor's decisions, open questions, the idea backlog, a journal). Use it before your final reply in every session that changed or learned something, whenever Victor decides, corrects or prefers something, whenever a gotcha costs you time, and whenever anyone says remember, don't forget, note this, learn from this, what did we do last time, what's still open, or what should we do next. Without it the next session starts from zero.
 ---
 
 # Brain

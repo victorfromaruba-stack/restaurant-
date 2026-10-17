@@ -1,6 +1,6 @@
 ---
 name: human-touch
-description: Make the Order Aruba site (this repo) look and read like a real late-night kitchen in Aruba made it, not a generator. Use it whenever you change, review or add anything a customer sees (pages, menus, dish text, pictures, headings, buttons, colours, icons) and whenever Victor says the site looks fake, AI-made, generic, like a template, cheap, or asks to make it nicer, better or more real, even if he never says "AI". Also use it for the audit in a daily improvement run. Comes with check.py (counts the tells, must say 0 fail) and shoot.py (phone screenshots to look at).
+description: Make the Pidi site (this repo; called Order Aruba until 16 Oct 2026) look and read like a real late-night kitchen in Aruba made it, not a generator. Use it whenever you change, review or add anything a customer sees (pages, menus, dish text, pictures, headings, buttons, colours, icons) and whenever Victor says the site looks fake, AI-made, generic, like a template, cheap, or asks to make it nicer, better or more real, even if he never says "AI". Also use it for the audit in a daily improvement run. Comes with check.py (counts the tells, must say 0 fail) and shoot.py (phone screenshots to look at).
 ---
 
 # Human touch
@@ -30,7 +30,8 @@ believe a real kitchen is behind this?**
    fake it: write a one-line ask in `.claude/brain/questions.md` (real photos, his
    words, a fact to confirm).
 5. **Prove it.** Shoot again with `--out /tmp/after`, put before and after side by
-   side, run `python3 qa/check_site.py` (0 problems; it serves the repo itself), and
+   side, run `python3 qa/check_site.py` (0 problems; it serves the repo itself; also
+   `python3 qa/check_api.py` when you touched the checkout or the order page), and
    send Victor the before/after pair with three plain lines on what changed.
 
 ## Yours to change, Victor's to decide
@@ -78,15 +79,16 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
    `shared/lang/pap.json`, `nl.json`, `es.json`; `python3 build/lang_keys.py` lists
    what's missing. Dish names, descriptions, taglines and the WhatsApp ticket stay
    English. Victor checks Papiamento, so keep new Papiamento short and simple.
-8. **Order Aruba is a delivery app, like Uber Eats; each restaurant is its own
-   business** (Victor, 9 Oct 2026). The app may list them together (home page, "More on
-   Order Aruba"), and the five `mix` restaurants share one order and one ƒ5 delivery as
+8. **Pidi is a delivery app, like Uber Eats; each restaurant is its own
+   business** (Victor, 9 Oct 2026; the app was called Order Aruba until 16 Oct). The app may
+   list them together (home page, "More on Pidi"), and the five `mix` restaurants share one order and one ƒ5 delivery as
    the app's perk. But nothing a customer can see or load may say or hint that they share
    a kitchen or an owner. Delivery only.
    check.py and `qa/check_site.py` fail on it. Honest stays honest: the allergen line
    still says traces of the other big allergens are possible (and fried food shares the oil), and we never claim
    the restaurants are independent or "local partners" either. We just don't say more.
-9. **Ordering keeps working.** After any change: `qa/check_site.py` = 0 problems. If you
+9. **Ordering keeps working.** Customers order inside the app (checkout, then the live
+   order page). After any change: `qa/check_site.py` and `qa/check_api.py` = 0 problems. If you
    changed taglines or menus, also run `python3 build/seo.py` and
    `python3 build/og/make_og.py` so Google and the link previews match.
 
@@ -95,7 +97,7 @@ exactly what its text says), removing anything customers use. Ask, or leave it.
 | File | Use |
 |---|---|
 | `references/tells.md` | what makes a food site look generated, by pictures, layout and copy, with what we do instead |
-| `references/voice.md` | how Order Aruba writes, banned words with reasons, before/after from our pages |
+| `references/voice.md` | how Pidi writes, banned words with reasons, before/after from our pages |
 | `scripts/check.py` | counts copy, picture and style tells across the customer site. `--show` prints all copy it read. Pass files to check just those |
 | `scripts/shoot.py` | phone screenshots (`--closed`, `--width 320`, `--lang nl-NL`, `--out DIR`); flags broken pictures, sideways scroll, repeats on the first screen |
 | `allow.txt` | phrases Victor confirmed as true, so check.py lets them through |
