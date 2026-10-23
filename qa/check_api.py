@@ -610,6 +610,7 @@ async def status_checks(br, width=390):
         return await pg.evaluate("""() => ({t: (document.querySelector('.st__t') || {}).textContent, eta: (document.querySelector('.st__eta') || {}).textContent || '',
             line: (document.querySelector('.st__line') || {}).textContent, k: (document.querySelector('.st__k') || {}).textContent,
             track: Array.from(document.querySelectorAll('.track__s')).map(s => s.className.replace('track__s is-', '') + (s.querySelector('.track__t') ? '@' + s.querySelector('.track__t').textContent : '')),
+            first: (document.querySelector('.track__s .track__l') || {}).textContent || '',
             pay: (document.querySelector('.st-pay') || {}).textContent, wa: (document.querySelector('.st-wa') || {}).href || ''})""")
     r = await read()
     check(r["t"] == "Received" and r["k"] == "Order 11 for Maria · Noord" and r["eta"] == "Arrives between 12:05 and 12:20 AM"
@@ -627,10 +628,15 @@ async def status_checks(br, width=390):
         r = await read()
         i = {"accepted": 0, "cooking": 1, "ready": 1, "assigned": 2, "picked_up": 2, "delivered": 3}[status]
         want = {"cooking": f"Your order is being made right now.", "picked_up": "The driver has your order. Keep your phone close."}.get(status)
-        ok = r["t"] == STAGE_WORDS[i] and (status == "delivered" or r["track"][i].startswith("now")) and (not want or r["line"] == want)
+        word = "Confirmed" if status == "accepted" else STAGE_WORDS[i]
+        if status == "accepted":
+            want = f"{NAMES[A]} and {NAMES[B]} confirmed your order."
+        ok = r["t"] == word and (status == "delivered" or r["track"][i].startswith("now")) and (not want or r["line"] == want)
+        # once the restaurant accepted it, the first step says so, with the time it did
+        ok = ok and r["first"] == "Confirmed" and r["track"][0].endswith("@" + at_clock(1))
         if status == "delivered":
             ok = ok and r["line"] == f"Delivered at {at_clock(41)}. Danki." and all(x.startswith("done@") for x in r["track"]) and r["eta"] == ""
-        check(ok, f"[{width}px] {status}: the page asks again by itself within 15 s and shows \"{STAGE_WORDS[i]}\" ({r['t']}, {r['track']})")
+        check(ok, f"[{width}px] {status}: the page asks again by itself within 15 s and shows \"{word}\", the first step \"Confirmed\" at {at_clock(1)} ({r['t']}, {r['first']}, {r['track']})")
         if status in ("cooking", "picked_up", "delivered"):
             await shot(pg, "status-" + {"cooking": "3-cooking", "picked_up": "4-on-the-way", "delivered": "5-delivered"}[status], end=True)
     n_calls = len([c for c in fake.calls if c[0] == "pidi_order_status"])
@@ -644,13 +650,14 @@ async def status_checks(br, width=390):
     o4.update(status="cooking", transfer_status="paid", events=[{"status": "new", "at": at(0)}, {"status": "cooking", "at": at(2)}])
     fake.orders.update({"tok-2": o2, "tok-3": o3, "tok-4": o4})
     await pg.evaluate("ts => ts.forEach(t => OrderApp.rememberOrder({public_token: t, night_no: 12, total_cents: 4321, created_at: '" + T_LATE + "', restaurants: [{slug: 'x', name: 'Taco Brava'}]}))", ["tok-3", "tok-2"])
-    for tokn, name, want in (("tok-2", "status-6-cancelled", {"t": "Cancelled", "pay": "Bank transfer. We send the bank details on WhatsApp when we confirm."}),
+    for tokn, name, want in (("tok-2", "status-6-cancelled", {"t": "Cancelled", "pay": None}),
                               ("tok-3", "status-7-usd", {"t": "Received", "pay": "Cash in US dollars. The driver tells you the amount at the door."}),
                               ("tok-4", "status-8-transfer-paid", {"t": "Cooking", "pay": "Bank transfer: received. Danki."})):
         await pg.goto(BASE + "order/#t=" + tokn, wait_until="networkidle"); await pg.reload(wait_until="networkidle"); await pg.wait_for_timeout(300)
         r = await read()
         ok = all(r[k] == v for k, v in want.items()) and (tokn != "tok-2" or (r["track"] == [] and r["eta"] == ""))
-        check(ok, f"[{width}px] {name.split('-', 2)[-1]}: \"{want['t']}\", and how they pay: \"{want['pay']}\"" + ("" if ok else f" ({r})"))
+        ok = ok and r["wa"].startswith("https://wa.me/")
+        check(ok, f"[{width}px] {name.split('-', 2)[-1]}: \"{want['t']}\", and " + (f"how they pay: \"{want['pay']}\"" if want["pay"] else "no payment line (nothing to pay on a cancelled order), WhatsApp still there") + ("" if ok else f" ({r})"))
         await shot(pg, name, end=True)
     others = await pg.evaluate("Array.from(document.querySelectorAll('.ord')).map(a => a.getAttribute('href'))")
     check(others == ["#t=tok-2", "#t=tok-3"] or set(others) >= {"#t=tok-2"}, f"[{width}px] under it, this phone's other orders link to their own status ({others})")

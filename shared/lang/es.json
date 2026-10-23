@@ -362,5 +362,8 @@
  "Say where to bring it and how you’ll pay. No account needed.": "Dinos dónde lo llevamos y cómo vas a pagar. No hace falta cuenta.",
  "Follow it to your door": "Síguelo hasta tu puerta",
  "You see when it’s cooking and when it’s on the way.": "Ves cuándo se está cocinando y cuándo va en camino.",
- "Track it": "Seguir"
+ "Track it": "Seguir",
+ "Confirmed": "Confirmado",
+ "{names} confirmed your order.": "{names} confirmó tu pedido.",
+ "{names} confirmed your pre-order.": "{names} confirmó tu pedido anticipado."
 }

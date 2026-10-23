@@ -362,5 +362,8 @@
  "Say where to bring it and how you’ll pay. No account needed.": "Bisa unda nos ta trece e y con bo ta paga. No mester di un cuenta.",
  "Follow it to your door": "Sigui e te na bo porta",
  "You see when it’s cooking and when it’s on the way.": "Bo ta mira ora e ta cocinando y ora e ta na caminda.",
- "Track it": "Sigui e"
+ "Track it": "Sigui e",
+ "Confirmed": "Confirmá",
+ "{names} confirmed your order.": "{names} a confirmá bo orden.",
+ "{names} confirmed your pre-order.": "{names} a confirmá bo pre-orden."
 }

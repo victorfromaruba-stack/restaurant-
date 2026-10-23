@@ -362,5 +362,8 @@
  "Say where to bring it and how you’ll pay. No account needed.": "Zeg waar we het brengen en hoe je betaalt. Geen account nodig.",
  "Follow it to your door": "Volg het tot aan je deur",
  "You see when it’s cooking and when it’s on the way.": "Je ziet wanneer het gemaakt wordt en wanneer het onderweg is.",
- "Track it": "Volgen"
+ "Track it": "Volgen",
+ "Confirmed": "Bevestigd",
+ "{names} confirmed your order.": "{names} heeft je bestelling bevestigd.",
+ "{names} confirmed your pre-order.": "{names} heeft je voorbestelling bevestigd."
 }

@@ -35,6 +35,11 @@
     var ev = (o.events || []).filter(function (e) { return STAGES[i].from.indexOf(e.status) >= 0; })[0];
     return ev ? at(ev.at) : "";
   }
+  /* when the restaurant accepted it: after Place order the first worry is whether anyone saw it */
+  function confirmedAt(o) {
+    var ev = (o.events || []).filter(function (e) { return e.status === "accepted"; })[0];
+    return ev ? at(ev.at) : "";
+  }
   function preorder(o) { return Date.parse(o.due_at || "") - Date.parse(o.created_at || "") > 5 * 60000; }
   function names(o) {
     var list = (o.restaurants || []).map(function (r) { var m = A.menu(r.slug); return m ? m.name : r.name; });
@@ -45,11 +50,13 @@
   /* ---------------------------------------------------------------- drawing */
   function topHTML(o) {
     var i = stageOf(o.status), done = o.status === "delivered", off = o.status === "cancelled";
-    var big = off ? tr("Cancelled") : tr(STAGES[i].label);
+    var ok = o.status === "accepted";
+    var big = off ? tr("Cancelled") : ok ? tr("Confirmed") : tr(STAGES[i].label);
     var line = off ? tr("This order was cancelled. If that’s news to you, WhatsApp us.")
       : done ? tr("Delivered at {time}. Danki.", { time: when(o, 3) || at(new Date().toISOString()) })
       : i === 2 ? tr("The driver has your order. Keep your phone close.")
       : i === 1 ? tr("Your order is being made right now.")
+      : ok ? (preorder(o) ? tr("{names} confirmed your pre-order.", { names: names(o) }) : tr("{names} confirmed your order.", { names: names(o) }))
       : preorder(o) ? tr("{names} got your pre-order.", { names: names(o) })
       : tr("{names} got your order.", { names: names(o) });
     var eta = off || done ? "" : preorder(o) ? tr("Arrives around {time}", { time: at(o.due_at) })
@@ -68,9 +75,10 @@
   function trackHTML(o) {
     var now = stageOf(o.status);
     return '<ol class="track">' + STAGES.map(function (s, i) {
-      var t = when(o, i), state = i < now || o.status === "delivered" ? "done" : i === now ? "now" : "todo";
+      // the first step reads "Confirmed" with its time once the restaurant accepted the order
+      var conf = i === 0 && confirmedAt(o), t = conf || when(o, i), state = i < now || o.status === "delivered" ? "done" : i === now ? "now" : "todo";
       return '<li class="track__s is-' + state + '"' + (state === "now" ? ' aria-current="step"' : "") + '><span class="track__dot" aria-hidden="true"></span>' +
-        '<span class="track__l">' + esc(tr(s.label)) + "</span>" + (t && state !== "todo" ? '<span class="track__t">' + esc(t) + "</span>" : "") + "</li>";
+        '<span class="track__l">' + esc(tr(conf ? "Confirmed" : s.label)) + "</span>" + (t && state !== "todo" ? '<span class="track__t">' + esc(t) + "</span>" : "") + "</li>";
     }).join("") + "</ol>";
   }
   function itemsHTML(o) {
@@ -128,7 +136,10 @@
   }
   function moreHTML(o) {
     var hi = "Hi! About my order" + (o.night_no ? " " + o.night_no : "") + (o.first_name ? " (" + o.first_name + ")" : "") + ": ";
-    return '<section class="st-sec" aria-labelledby="st-pay"><h2 class="st-sec__t" id="st-pay">' + esc(tr("Pay")) + "</h2>" + payHTML(o) +
+    // a cancelled order asks for no money: only the way to ask about it stays
+    var head = o.status === "cancelled" ? '<section class="st-sec">'
+      : '<section class="st-sec" aria-labelledby="st-pay"><h2 class="st-sec__t" id="st-pay">' + esc(tr("Pay")) + "</h2>" + payHTML(o);
+    return head +
       '<a class="btn btn--wa st-wa" href="' + esc(A.waLink(hi)) + '" target="_blank" rel="noopener">' + WA + '<span>' +
       esc(tr("Questions about this order?")) + "</span></a></section>";
   }
