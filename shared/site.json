@@ -5,6 +5,7 @@
  "whatsappConfirmed": true,
  "ordering": "app",
  "deliveryFee": 500,
+ "minFood": 1500,
  "eta": "35–50 min",
  "payment": "We take cash in florins or US dollars, or a bank transfer.",
  "payWith": [

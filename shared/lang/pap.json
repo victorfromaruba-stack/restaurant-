@@ -365,5 +365,6 @@
  "Track it": "Sigui e",
  "Confirmed": "Confirmá",
  "{names} confirmed your order.": "{names} a confirmá bo orden.",
- "{names} confirmed your pre-order.": "{names} a confirmá bo pre-orden."
+ "{names} confirmed your pre-order.": "{names} a confirmá bo pre-orden.",
+ "The minimum order is ƒ15 in food. Add a little more and try again.": "E orden minimo ta ƒ15 na cuminda. Pone un poco mas y purba atrobe."
 }

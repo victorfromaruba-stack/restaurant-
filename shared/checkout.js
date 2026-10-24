@@ -1,6 +1,6 @@
 /* Checkout (checkout/): one step per screen, then the order goes straight in through the order database
    (Pidi.rpc "pidi_place_order", shared/pidi.js) and the customer lands on its status page (order/#t=<token>).
-   Built on window.OrderApp, the API at the top of shared/order-app.js. Delivery only. No minimum order.
+   Built on window.OrderApp, the API at the top of shared/order-app.js. Delivery only. Minimum order ƒ15 in food (Victor, 24 Oct 2026).
      1 where   when (as soon as possible while open, else a 15-minute time tonight) and where (area, address, an
                optional map pin from the phone)
      2 you     name and a phone number for the driver, kept on this phone for next time
@@ -501,7 +501,7 @@
       case "SOLD_OUT":
         var so = A.lines()[+arg];
         return { text: so ? tr("Sorry, {dish} just sold out tonight. Remove it to send the order.", { dish: so.title }) : tr("Sorry, a dish in your order just sold out tonight. Remove it to send the order."), edit: true, drop: true };
-      case "MIN_FOOD": return { text: tr("Add a little more food to this order and try again."), edit: true, drop: true };
+      case "MIN_FOOD": return { text: tr("The minimum order is ƒ15 in food. Add a little more and try again."), edit: true, drop: true };
       case "CASH_SHORT": return { text: tr("The cash you pay with doesn\u2019t cover the whole total. Pick a bigger amount."), step: "pay", drop: true };
       case "BAD_PAY": return { text: tr("Pick how you’ll pay."), step: "pay", drop: true };
       case "BAD_PIN": visit.loc = null; keepVisit(); return { text: tr("Your location didn’t come through, so we took it out. Tap Place order again."), drop: true };

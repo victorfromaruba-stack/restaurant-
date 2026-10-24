@@ -365,5 +365,6 @@
  "Track it": "Seguir",
  "Confirmed": "Confirmado",
  "{names} confirmed your order.": "{names} confirmó tu pedido.",
- "{names} confirmed your pre-order.": "{names} confirmó tu pedido anticipado."
+ "{names} confirmed your pre-order.": "{names} confirmó tu pedido anticipado.",
+ "The minimum order is ƒ15 in food. Add a little more and try again.": "El pedido mínimo es de ƒ15 en comida. Añade un poco más e inténtalo de nuevo."
 }

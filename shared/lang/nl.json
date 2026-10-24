@@ -365,5 +365,6 @@
  "Track it": "Volgen",
  "Confirmed": "Bevestigd",
  "{names} confirmed your order.": "{names} heeft je bestelling bevestigd.",
- "{names} confirmed your pre-order.": "{names} heeft je voorbestelling bevestigd."
+ "{names} confirmed your pre-order.": "{names} heeft je voorbestelling bevestigd.",
+ "The minimum order is ƒ15 in food. Add a little more and try again.": "De minimale bestelling is ƒ15 aan eten. Voeg wat meer toe en probeer opnieuw."
 }

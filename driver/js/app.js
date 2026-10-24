@@ -3,7 +3,7 @@ var Pidi = (function () {
   var STORE = "pidi.driver.v1";
   var ORDER_WHATSAPP = "2977477794";
   var FEE = 500;
-  var MIN_FOOD = 0;   // no minimum order (Victor, 16 Oct 2026); the website has none either
+  var MIN_FOOD = 1500;   // ƒ15 minimum in food (Victor, 24 Oct 2026); same as the website and the database
   var MAX_URL = 1800;
 
   var RESTAURANTS = [
