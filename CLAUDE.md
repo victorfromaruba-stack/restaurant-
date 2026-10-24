@@ -61,7 +61,7 @@ Haus Kitchen (German) and Warung Sranan (Surinamese) were removed on 7 Oct 2026.
 - WhatsApp `2977477794` is correct.
 - Open every night 10 PM to 2 AM (hours cross midnight; site.json uses `["22:00","02:00"]`).
 - Delivery area: Santa Cruz to Noord (Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera, Santa Cruz). Other areas: customer asks on WhatsApp.
-- Usual delivery time 35–50 min (confirmed again 16 Oct 2026). No minimum order (16 Oct 2026).
+- Usual delivery time 35–50 min (confirmed again 16 Oct 2026). Minimum order ƒ15 in food (Victor, 24 Oct 2026, made by his server's bot: site.json `"minFood": 1500`, the checkout's MIN_FOOD message, the driver app); from 16 to 24 Oct there was none.
 - Last orders 1:30 AM (`"lastOrder": "01:30"`). Customers pay cash in florins or US dollars, or by bank transfer (`payment`, `payWith`). Frikandel contains pork (keep the flag).
 
 ## Rules (keep these)

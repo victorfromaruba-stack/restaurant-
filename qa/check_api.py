@@ -3,7 +3,7 @@
 
 The checkout and the order status pages (checkout/, order/) are built on window.OrderApp from shared/order-app.js
 (the API is written out at the top of that file). This boots those pages in app mode and checks that every member is
-there and does what it says: one ƒ5 delivery for a cart from two restaurants, no minimum order, cart lines with their
+there and does what it says: one ƒ5 delivery for a cart from two restaurants, the minimum from site.json, cart lines with their
 options after " · ", the delivery times on the Aruba clock while the phone is set to another time zone, the delivery
 time read from site.json "eta", the customer's details and the remembered orders, the move from the old storage keys
 (orderaruba.*) to pidi.*, the four languages, and that both pages wear the lively look (night blue, Archivo,
@@ -100,7 +100,8 @@ async def api_checks(br):
           f"app mode draws no order bar or sheet, fills the language switch and the app's name ({drawn})")
     r = await pg.evaluate("[OrderApp.lang(), OrderApp.site().name, OrderApp.minFood(), OrderApp.shortBy(), OrderApp.tr('{name} added', {name: 'Fries'}), OrderApp.ordering()]")
     want_mode = "app" if site.get("ordering") == "app" else "whatsapp"
-    check(r == ["en", site["name"], 0, 0, "Fries added", want_mode], f"lang(), site(), no minimum (minFood 0, shortBy 0), tr() with a value, ordering() ({r})")
+    MINF = site.get("minFood") or 0   # Victor, 24 Oct 2026: ƒ15 in food (16 Oct: none)
+    check(r == ["en", site["name"], MINF, MINF, "Fries added", want_mode], f"lang(), site(), the minimum from site.json (minFood {MINF}, an empty cart is short by all of it), tr() with a value, ordering() ({r})")
     e = await pg.evaluate("[OrderApp.eta(), OrderApp.site().etaMin, OrderApp.site().etaMax]")
     check(e == [{"min": ETA[0], "max": ETA[1], "text": site["eta"]}, ETA[0], ETA[1]], f"eta() and site().etaMin/etaMax come from site.json \"eta\" ({e})")
     m = await pg.evaluate("[OrderApp.money(1295), OrderApp.money(1295, true), OrderApp.money(500)]")
@@ -178,7 +179,8 @@ async def api_checks(br):
         await pg.evaluate("OrderApp.clear()")
         await pg.evaluate("a => OrderApp.addItem(a, 'ck', {}, 1)", A)
         r = await pg.evaluate("[OrderApp.food(), OrderApp.shortBy(), OrderApp.fee(), OrderApp.total()]")
-        check(r == [300, 0, FEE, 300 + FEE], f"one can on its own is an order: food ƒ3.00, nothing short, {money(FEE)} delivery ({r})")
+        short = max(0, (site.get("minFood") or 0) - 300)
+        check(r == [300, short, FEE, 300 + FEE], f"one can on its own: food ƒ3.00, short by {money(short)} of the minimum, {money(FEE)} delivery ({r})")
         await pg.evaluate("OrderApp.clear()")
         r = await pg.evaluate("[OrderApp.lines().length, OrderApp.food(), OrderApp.fee(), OrderApp.total()]")
         check(r == [0, 0, 0, 0], f"clear() empties the cart; an empty cart has no fee ({r})")
@@ -485,7 +487,7 @@ async def checkout_cases(br):
              ("BAD_TIME", "That delivery time can’t be booked any more. Pick another time.", "where", ""),
              ("CLOSED", "We just stopped taking orders for right now. Pick a time for later.", "where", ""),
              ("RATE_LIMIT", "This phone number already has orders waiting. To add something, message us on WhatsApp.", "check", "wa"),
-             ("MIN_FOOD", "Add a little more food to this order and try again.", "check", "edit"),
+             ("MIN_FOOD", "The minimum order is ƒ15 in food. Add a little more and try again.", "check", "edit"),
              ("FEE_NOT_SET", "Something went wrong on our side. Try again in a minute, or send this order on WhatsApp.", "check", "wa")]
     for n, (code, text, where, extra) in enumerate(cases):
         fake.place = [code]
