@@ -11,6 +11,7 @@ Public repo: nothing private here (no costs, margins, buyer prices, plans, conta
 - Money is tight (8 Oct 2026: "Don't have the money now use what you can"). No paid APIs, no Gemini spend, no paid tools without asking.
 
 ## Decisions (dated)
+- 2026-10-24: Minimum order ƒ15 in food again (24 Oct, set through his server's bot, commit 39c2678 'Minimum order ƒ15 in food (Victor, 24 Oct 2026)'): site.json minFood 1500, the checkout's MIN_FOOD sentence, the driver app. Replaces the 16 Oct 'no minimum'.
 - 2026-10-16: 'Pidi live' (16 Oct, 3 PM Aruba): main now is Pidi: ordering inside the app (checkout, live order page), the name Pidi, chef app Orders first, driver v2, prices from the database's menu copy. WhatsApp stays for questions and as the fallback.
 - 2026-10-16: Pidi review: 'screenshots looks good', the neon PIDI sign icon 'oke', and pre-orders 'can be even earlier as long if it's after 10pm the delivery time': the first pre-order delivery time is 10:15 PM (a quarter hour after opening), on main and on Pidi; ordering earlier in the day was already possible.
 - 2026-10-16: Ran the three Pidi database pastes himself ('Done', 16 Oct): PIN lock, no minimum + 35–50 min, prices from the menu. Checked from here with read-only calls: pidi_public_state answers eta 35–50, pidi_kitchen_sync_menu exists and refuses a fake session.
