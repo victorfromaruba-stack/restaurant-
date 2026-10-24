@@ -331,9 +331,11 @@
       render(false);
       var first = $(".is-bad", main);
       if (first) {
+        // the red line under the field already says what's missing: no pop-up on top of it
         first.scrollIntoView({ behavior: "smooth", block: "center" });
         var inp = $("input:checked", first) || $("input,textarea", first);
         if (inp) inp.focus({ preventScroll: true });
+        return;
       }
       A.toast(tr("Fill in the missing details"));
       return;
