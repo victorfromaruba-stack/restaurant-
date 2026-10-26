@@ -4,6 +4,7 @@ One line per working session or daily run, newest on top: date · who · what sh
 (commit) · what's waiting. Read the last ten lines before planning work. When the
 file passes 100 lines, fold the oldest month into one summary line.
 
+- 2026-10-26 · claude (cloud) · daily run 26 Oct: nothing new on main; all 4 checks 0 problems, live fine; shipped: home logo row puts open restaurants first (Dushi Wok, opening soon, last and dimmed), search hint only names dishes from open restaurants, opening-soon page says 'Not taking orders yet.' (67e0e9d); new check fails on the old code · still waiting on Victor: yes/no to showing the ƒ15 minimum before checkout
 - 2026-10-25 · claude (cloud) · daily run 25 Oct: nothing new on main; all 4 checks 0 problems; shipped the parked checkout pop-up fix (e775687) after making its check real (it passed on the old code at first); old branch daily/checkout-popup left on GitHub (delete refused)
 - 2026-10-24 · claude (cloud) · daily run 24 Oct: health found 4 failures from the server bot's ƒ15 minimum (39c2678); checks now follow it, old phrase pruned (44b45b0), all 4 checks 0 problems; checkout pop-up fix parked on branch daily/checkout-popup; new top idea: tell customers the minimum before Place order
 - 2026-10-23 · claude (cloud) · daily run 23 Oct (22 Oct's firing skipped as stale): health all good; fresh-eyes customer review of Pidi; fixed: order page says Confirmed with the time, cancelled orders ask no money (3b5df56); other findings in ideas and questions
