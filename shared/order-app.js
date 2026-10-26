@@ -1502,7 +1502,7 @@
           "<li>" + esc(tr("{fee} delivery", { fee: shortMoney(SITE.deliveryFee) })) + "</li>" +
           (status === "open" && SITE.eta ? '<li><span class="nw">' + esc(SITE.eta) + "</span></li>" : "") +
         "</ul>" +
-        (status === "soon" ? '<p class="note note--warn">' + esc(tr("Opening soon. Ordering starts shortly.")) + "</p>" : "") +
+        (status === "soon" ? '<p class="note note--warn">' + esc(tr("Not taking orders yet.")) + "</p>" : "") +
         (status === "hidden" ? '<p class="note note--warn">' + esc(tr("Not taking orders right now.")) + "</p>" : "") +
       "</header>" +
       '<section class="track-sec" id="oa-track" hidden></section>' +
@@ -1703,16 +1703,20 @@
     "sweet & sour": "sweet sour zoetzuur agridulce", "fried rice": "nasi bami", "frikandel": "frikadel", vegetarian: "veggie vega vegetariano"
   };
   var SUGGEST = ["Chicken", "Fries", "Tacos", "Pasta", "Burgers", "Shrimp", "Bitterballen"];
-  /* the search box hint: the long one ("Search tacos, fried rice, bitterballen") when it fits the box in this
-     language, else the short one, so it's never cut off on a small phone */
+  /* one word per restaurant for the search box hint, in this order; only restaurants taking orders are named */
+  var HINT_WORDS = { "taco-brava": "tacos", "dushi-wok": "fried rice", "oranje-snack": "bitterballen", "smash-shack": "burgers", "nonnas-night-in": "pasta" };
+  /* the search box hint: three dishes you can order tonight ("Search tacos, bitterballen, burgers") when it fits the
+     box in this language, else the short one, so it's never cut off on a small phone */
   function fitSearchHint() {
     var input = $("#oa-q");
     if (!input) return;
-    var long = tr("Search tacos, fried rice, bitterballen"), short = tr("Search all menus");
+    var words = Object.keys(HINT_WORDS).filter(function (b) { return MENU[b] && brandStatus(b) === "open"; }).slice(0, 3)
+      .map(function (b) { return tr(HINT_WORDS[b]); });
+    var long = words.length > 1 ? tr("Search {dishes}", { dishes: words.join(", ") }) : "", short = tr("Search all menus");
     var cs = getComputedStyle(input), c = document.createElement("canvas").getContext("2d");
     c.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
     var room = input.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 4;
-    input.placeholder = c.measureText(long).width <= room ? long : short;
+    input.placeholder = long && c.measureText(long).width <= room ? long : short;
   }
   function setupSearch(ids) {
     var input = $("#oa-q"), out = $("#oa-results"), browse = $("#oa-browse");
@@ -1777,11 +1781,14 @@
   function quickRow(ids) {
     var row = $("#oa-quick");
     if (!row) return;
-    row.innerHTML = ids.filter(function (b) { return MENU[b]; }).map(function (b) {
-      var m = MENU[b];
-      return '<a class="qk" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
+    // open restaurants first, like the list below: one that's opening soon doesn't lead the row
+    var open = ids.filter(function (b) { return brandStatus(b) === "open"; });
+    row.innerHTML = open.concat(ids.filter(function (b) { return open.indexOf(b) < 0; })).filter(function (b) { return MENU[b]; }).map(function (b) {
+      var m = MENU[b], soon = brandStatus(b) !== "open";
+      return '<a class="qk' + (soon ? " is-soon" : "") + '" href="' + path(b + "/index.html") + '" style="--shop:' + esc(m.color) + '">' +
         '<img src="' + esc(path(m.mark)) + '" alt="" width="64" height="64" decoding="async">' +
-        '<span class="qk__c">' + esc(tr(m.cuisine)) + '</span><span class="qk__n">' + esc(m.name) + "</span></a>";
+        '<span class="qk__c">' + esc(tr(m.cuisine)) + '</span><span class="qk__n">' + esc(m.name) + "</span>" +
+        (soon ? '<span class="sr">' + esc(tr("Opening soon")) + "</span>" : "") + "</a>";
     }).join("");
   }
   function renderHub() {

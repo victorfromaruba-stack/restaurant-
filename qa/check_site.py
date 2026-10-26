@@ -213,6 +213,29 @@ async def ordering_modes(br, open_ids):
         check(not errs, f"[{mode}] the order sheet runs with no errors" + (f": {errs}" if errs else ""))
         await ctx.close()
 
+async def opening_soon(br):
+    """One restaurant set to "soon" (Taco Brava here, whatever site.json says tonight): the home page's logo row puts it
+    last and dimmed, the search hint names no dish of it, and its own page says it isn't taking orders, without
+    promising when (fresh-eyes 23 Oct: "Opening soon" led the logo row and the hint said its fried rice)."""
+    soon = "taco-brava"
+    conf = dict(site, brands=[dict(x, status="soon" if x["id"] == soon else "open") for x in site["brands"]])
+    ctx = await br.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+    body = json.dumps(conf)
+    await ctx.route("**/shared/site.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=body))
+    await ctx.route("**/rest/v1/**", lambda r: r.abort())
+    pg = await ctx.new_page()
+    await pg.goto(BASE + "index.html", wait_until="networkidle"); await pg.wait_for_timeout(500)
+    row = await pg.evaluate("Array.from(document.querySelectorAll('#oa-quick .qk')).map(a => [a.getAttribute('href').split('/')[0], a.classList.contains('is-soon')])")
+    check(len(row) == len(brands) and row[-1] == [soon, True] and not any(d for _, d in row[:-1]),
+          f"home logo row: open restaurants first, the one opening soon last and dimmed ({row})")
+    hint = await pg.evaluate("document.getElementById('oa-q').placeholder")
+    check("taco" not in hint.lower() and "," in hint, f"home search hint names only dishes you can order tonight ({hint})")
+    await pg.goto(BASE + soon + "/index.html", wait_until="networkidle"); await pg.wait_for_timeout(300)
+    head = await pg.evaluate("document.querySelector('header.store').innerText")
+    check(head.count("Opening soon") == 1 and "shortly" not in head and "Not taking orders yet." in head,
+          f"{soon} set to soon: says Opening soon once and Not taking orders yet, no promise of when")
+    await ctx.close()
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -309,6 +332,7 @@ async def main():
         # how orders go in: site.json "ordering". "app": the order sheet ends with Continue to checkout/ (no WhatsApp form);
         # "whatsapp" (the default when the line is missing): everything as before, WhatsApp opens with the order typed out
         await ordering_modes(b, [x for x in mix if is_open.get(x)] or [x for x in brands if is_open.get(x)])
+        await opening_soon(b)
         # the home page: every restaurant listed, and every card opens the dish on its own restaurant's page
         await pg.goto(BASE + "index.html", wait_until="networkidle"); await pg.wait_for_timeout(500)
         listed = await pg.evaluate("Array.from(document.querySelectorAll('#oa-list .shop')).map(a => a.getAttribute('href'))")

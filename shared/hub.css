@@ -45,6 +45,7 @@
 .qk__c{max-width:100%;font:700 13px/1.15 var(--font);font-stretch:84%;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qk__n{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .qk:hover img{transform:translateY(-2px)}
+.qk.is-soon img{filter:saturate(.3) brightness(.7)}
 @media (prefers-reduced-motion:no-preference){.qk img{transition:transform .2s}}
 @media (max-width:359px){.quick{gap:6px}.qk__c{font-size:11.5px}}
 

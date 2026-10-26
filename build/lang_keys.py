@@ -49,7 +49,7 @@ def keys():
     for name in ("DAY_NAMES", "SUGGEST"):
         arr = re.search(name + r" = \[([^\]]*)\]", js).group(1)
         for lit in re.findall(r'"((?:[^"\\]|\\.)*)"', arr): add(js_string(lit))
-    for name in ("ALLERGEN_NAMES", "FLAG_NAMES"):
+    for name in ("ALLERGEN_NAMES", "FLAG_NAMES", "HINT_WORDS"):
         obj = re.search(name + r" = \{([^}]*)\}", js).group(1)
         for lit in re.findall(r':\s*"((?:[^"\\]|\\.)*)"', obj): add(js_string(lit))
     for name in ("OTHER", "OTHER_NOTE"):
