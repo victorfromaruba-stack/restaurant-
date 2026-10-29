@@ -124,6 +124,7 @@ def others_in(text, here):
     return [n for b, n in names.items() if b != here and (n in text or n.replace("’", "'") in text)]
 # public files the pages load: nothing in them may hint at a shared kitchen
 pub = ["index.html", "404.html", "sw.js", "shared/site.json", "shared/order.css", "shared/hub.css", "shared/order-app.js",
+       "checkout/index.html", "order/index.html", "shared/checkout.js", "shared/status.js", "shared/pidi.js", "shared/app.css",
        "shared/lang/pap.json", "shared/lang/nl.json", "shared/lang/es.json"] + [f"{b}/index.html" for b in brands] + [f"{b}/menu.json" for b in brands]
 for f in pub:
     bad = talk(open(os.path.join(ROOT, f), encoding="utf-8").read())
@@ -153,7 +154,7 @@ check(not os.path.exists(os.path.join(ROOT, "cart.html")), "no shared cart page:
 # The app is called site.json "name" (Pidi since 16 Oct 2026). The old name stays only in the storage keys a phone may
 # still have (moved once to the new ones: order-app.js OLD_KEYS) and the old offline cache sw.js clears.
 APP = site["name"]
-renamed = pub_code + ["checkout/index.html", "order/index.html", "shared/checkout.js", "shared/status.js"]
+renamed = pub_code
 for f in renamed:
     fp = os.path.join(ROOT, f)
     if not os.path.exists(fp):

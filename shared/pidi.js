@@ -1,6 +1,6 @@
-/* Pidi's order system: where orders go, for the website and the kitchen app.
+/* Pidi's order system: where orders go, for the website and the staff apps.
    The address and the key below are public on purpose. The key only lets a phone run the
-   handful of order steps the database allows (place an order, read its status, the kitchen
+   handful of order steps the database allows (place an order, read its status, the restaurant
    and driver steps behind their PINs). The same key is in driver/v2/config.js. */
 (function () {
   'use strict';

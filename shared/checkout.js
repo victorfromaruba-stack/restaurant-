@@ -124,7 +124,7 @@
         (ts.length ? pick("ck-when", "later", later, tr("Later tonight"), tr("Pick a time"), later ? "" : errAttrs("when")) : "") +
         err("when", tr("Pick when you want it.")) + "</fieldset>";
     } else if (ts.length) {
-      html += '<p class="note note--warn">' + keep(tr("We’re closed now.") + " " + st.label + ". " + tr("Pick a time and it’s a pre-order: we start on it when we open.")) + "</p>";
+      html += '<p class="note note--warn">' + keep(tr("We’re closed now.") + " " + st.label + ". " + tr("Pick a time and it’s a pre-order: we bring it at that time.")) + "</p>";
     } else {
       html += '<p class="note note--warn">' + keep(tr("We’re closed now.") + " " + st.label + ".") + "</p>";
     }
@@ -519,7 +519,7 @@
   function waOrder() {
     var d = A.details(), w = when(), s = slotFor(w);
     var ticketTime = !s ? "" : s.m === 0 ? "Midnight" : (function (m) { var h = Math.floor(m / 60) % 24, mm = m % 60; return (h % 12 || 12) + (mm ? ":" + String(mm).padStart(2, "0") : "") + " " + (h >= 12 ? "PM" : "AM"); })(s.m);
-    // the ticket's own words, in English for the kitchen like every WhatsApp order: the pay line is "Cash" or
+    // the ticket's own words, in English like every WhatsApp order: the pay line is "Cash" or
     // "Bank transfer", and what the driver needs to know goes in the note
     var cash = d.pay !== "cash" ? "" : d.usd ? "Pays in US dollars." : paysWith(d) ? "Pays with ƒ" + (paysWith(d) / 100).toFixed(2) + "." : "";
     A._set({ area: d.area, addr: clean(d.addr) + (visit.loc ? " (map pin " + visit.loc.lat + "," + visit.loc.lng + ")" : ""), name: clean(d.name),

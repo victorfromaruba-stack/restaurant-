@@ -578,7 +578,7 @@ async def preorder(br, width=390):
     await pg.goto(BASE + f"checkout/?from={A}", wait_until="networkidle"); await pg.wait_for_timeout(200)
     r = await pg.evaluate("""() => [location.hash, !!document.querySelector('input[name=ck-when]'), (document.querySelector('.note') || {}).textContent,
         Array.from(document.querySelectorAll('.time span')).map(s => s.textContent)]""")
-    check(r[0] == "#where" and not r[1] and r[2] == "We’re closed now. Opens tonight 10 PM. Pick a time and it’s a pre-order: we start on it when we open." and r[3][:1] == ["10:15 PM"]
+    check(r[0] == "#where" and not r[1] and r[2] == "We’re closed now. Opens tonight 10 PM. Pick a time and it’s a pre-order: we bring it at that time." and r[3][:1] == ["10:15 PM"]
           and r[3][-1] == "1:45 AM" and await fits(pg),
           f"[{width}px] 3 PM: closed, no as soon as possible, times tonight from 10:15 PM (a quarter hour after opening; Victor: any time after 10 PM) to 1:45 AM ({r[2]!r}, {r[3][:2]}..)")
     await shot(pg, "checkout-1-preorder", end=True)
