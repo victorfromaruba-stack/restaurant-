@@ -1483,6 +1483,8 @@
       if (!rail.length && s.items.every(function (i) { return i.style; }) && n < secs.length - 1) { out.carry = lead.concat(s.items); return out; }
       out.list.push({ id: s.id, title: s.title, items: lead.concat(s.items) }); out.carry = null; return out;
     }, { list: [], carry: null }).list;
+    // a dish shown without its picture never opens a section: the pictured dishes come first, each keeping its order
+    secs.forEach(function (s) { s.items = s.items.filter(hasPic).concat(s.items.filter(function (i) { return !hasPic(i); })); });
     // cover: not a featured dish and not one inside a bundle picture, so no dish shows twice on the first screen; real photo first
     var featIds = feat.map(function (i) { return i.id; }), inside = [];
     feat.forEach(function (i) { (i.includes || []).forEach(function (x) { inside.push(x); }); });
