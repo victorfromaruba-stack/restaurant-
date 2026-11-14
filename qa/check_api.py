@@ -6,7 +6,7 @@ The checkout and the order status pages (checkout/, order/) are built on window.
 there and does what it says: one ƒ5 delivery for a cart from two restaurants, the minimum from site.json, cart lines with their
 options after " · ", the delivery times on the Aruba clock while the phone is set to another time zone, the delivery
 time read from site.json "eta", the customer's details and the remembered orders, the move from the old storage keys
-(orderaruba.*) to pidi.*, the four languages, and that both pages wear the lively look (night blue, Archivo,
+(orderaruba.*) to pidi.*, the four languages, and that both pages wear the Night Slip look in dark and light (Big Shoulders, Hanken,
 shared/order.css), never the darker drafts' fonts or stylesheet.
 Nothing here places an order: every /rest/v1/ request is answered by a fake, and none is expected."""
 import asyncio, datetime, json, os, re, sys
@@ -249,21 +249,25 @@ async def api_checks(br):
     await ctx.close()
 
 async def look_checks(br):
-    """the app's own pages wear the lively look: night blue, Archivo, shared/order.css (never the darker drafts)"""
+    """the app's own pages wear the Night Slip look (14 Nov 2026) in both colour schemes, each designed on purpose: a warm-black
+    ground in dark, a daylight ground in light, Big Shoulders Display + Hanken Grotesk, shared/order.css"""
     ctx, pg = await new_page(br, tz="America/Aruba")
     await pg.clock.set_fixed_time(T_LATE)
-    for url in ("checkout/index.html", "order/index.html"):
-        await ready(pg, url)
-        await pg.evaluate("document.fonts.ready")
-        f = await pg.evaluate("""() => ({bg: getComputedStyle(document.body).backgroundColor,
-            theme: (document.querySelector('meta[name=theme-color]') || {}).content,
-            sheets: Array.from(document.querySelectorAll('link[rel=stylesheet]')).map(l => l.getAttribute('href').split('/').pop()),
-            font: getComputedStyle(document.querySelector('.top')).fontFamily.replace(/"/g, ''),
-            faces: Array.from(document.fonts).filter(f => f.status === 'loaded').map(f => f.family.replace(/"/g, '')),
-            robots: (document.querySelector('meta[name=robots]') || {}).content, title: document.title})""")
-        ok = f["bg"] == "rgb(11, 29, 58)" and f["theme"] == "#0B1D3A" and f["sheets"][:1] == ["order.css"] and "pidi.css" not in f["sheets"] \
-            and f["font"].startswith("Archivo") and set(f["faces"]) <= {"Archivo"} and f["robots"] == "noindex" and f["title"].startswith(site["name"] + " · ")
-        check(ok, f"{url}: the lively look (night blue, Archivo, order.css), noindex, titled \"{site['name']} · …\"" + ("" if ok else f": {f}"))
+    ground = {"dark": "rgb(16, 14, 12)", "light": "rgb(255, 251, 244)"}
+    for scheme in ("dark", "light"):
+        await pg.emulate_media(color_scheme=scheme)
+        for url in ("checkout/index.html", "order/index.html"):
+            await ready(pg, url)
+            await pg.evaluate("document.fonts.ready")
+            f = await pg.evaluate("""() => ({bg: getComputedStyle(document.body).backgroundColor,
+                themes: Array.from(document.querySelectorAll('meta[name=theme-color]')).map(m => m.content),
+                sheets: Array.from(document.querySelectorAll('link[rel=stylesheet]')).map(l => l.getAttribute('href').split('/').pop()),
+                font: getComputedStyle(document.querySelector('.top')).fontFamily.replace(/"/g, ''),
+                faces: Array.from(document.fonts).filter(f => f.status === 'loaded').map(f => f.family.replace(/"/g, '')),
+                robots: (document.querySelector('meta[name=robots]') || {}).content, title: document.title})""")
+            ok = f["bg"] == ground[scheme] and sorted(f["themes"]) == ["#100E0C", "#FFFBF4"] and f["sheets"][:1] == ["order.css"] and "pidi.css" not in f["sheets"] \
+                and f["font"].startswith("Hanken Grotesk") and set(f["faces"]) <= {"Hanken Grotesk", "Big Shoulders Display"} and f["robots"] == "noindex" and f["title"].startswith(site["name"] + " · ")
+            check(ok, f"{url} ({scheme}): the Night Slip look (order.css, Big Shoulders + Hanken), noindex, titled \"{site['name']} · …\"" + ("" if ok else f": {f}"))
     sitemap = open(os.path.join(ROOT, "sitemap.xml"), encoding="utf-8").read()
     check("/checkout/" not in sitemap and "/order/" not in sitemap, "checkout/ and order/ are not in the sitemap")
     check(not pg._errs, "the look checks ran with no page errors" + (f": {pg._errs}" if pg._errs else ""))
