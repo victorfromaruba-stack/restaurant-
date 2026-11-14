@@ -1598,14 +1598,15 @@
     if (!menu.video || quietMode()) return pic;
     return '<video class="cover__v" muted loop playsinline preload="none" poster="' + esc(path(menu.video.poster || img)) + '" aria-hidden="true">' +
       '<source src="' + esc(path(menu.video.src)) + '" type="video/mp4"></video>' +
-      '<button type="button" class="cover__pp" aria-label="' + esc(tr("Pause video")) + '" data-pp>' + ICON.pause + "</button>";
+      '<button type="button" class="cover__pp" aria-label="' + esc(tr("Play video")) + '" data-pp>' + ICON.play + "</button>";
   }
   function wireVideo(root) {
     $$("video.cover__v", root).forEach(function (v) {
       var btn = v.parentNode.querySelector("[data-pp]");
-      // the poster is what people see first; the loop starts once the page has settled, so it never competes with it
-      var start = function () { var p = v.play && v.play(); if (p && p.catch) p.catch(function () { /* autoplay blocked: poster stays */ }); };
-      if (document.readyState === "complete") setTimeout(start, 2500); else window.addEventListener("load", function () { setTimeout(start, 2500); });
+      // the poster is the cover (it drifts slowly, in CSS); the loop plays when the visitor taps play. A video that starts by itself is
+      // main-thread work on a phone while the menu is still being drawn, and 400 KB nobody asked for.
+      v.addEventListener("play", function () { v.classList.add("is-playing"); });
+      v.addEventListener("pause", function () { v.classList.remove("is-playing"); });
       if (btn) btn.addEventListener("click", function () {
         if (v.paused) { v.play(); btn.innerHTML = ICON.pause; btn.setAttribute("aria-label", tr("Pause video")); }
         else { v.pause(); btn.innerHTML = ICON.play; btn.setAttribute("aria-label", tr("Play video")); }
