@@ -1596,14 +1596,16 @@
   function coverMedia(menu, img) {
     var pic = '<img src="' + esc(path(img)) + '" alt="" width="780" height="446" fetchpriority="high" decoding="async">';
     if (!menu.video || quietMode()) return pic;
-    return '<video class="cover__v" muted loop playsinline autoplay preload="none" poster="' + esc(path(menu.video.poster || img)) + '" aria-hidden="true">' +
+    return '<video class="cover__v" muted loop playsinline preload="none" poster="' + esc(path(menu.video.poster || img)) + '" aria-hidden="true">' +
       '<source src="' + esc(path(menu.video.src)) + '" type="video/mp4"></video>' +
       '<button type="button" class="cover__pp" aria-label="' + esc(tr("Pause video")) + '" data-pp>' + ICON.pause + "</button>";
   }
   function wireVideo(root) {
     $$("video.cover__v", root).forEach(function (v) {
       var btn = v.parentNode.querySelector("[data-pp]");
-      var p = v.play && v.play(); if (p && p.catch) p.catch(function () { /* autoplay blocked: poster stays */ });
+      // the poster is what people see first; the loop starts once the page has settled, so it never competes with it
+      var start = function () { var p = v.play && v.play(); if (p && p.catch) p.catch(function () { /* autoplay blocked: poster stays */ }); };
+      if (document.readyState === "complete") setTimeout(start, 2500); else window.addEventListener("load", function () { setTimeout(start, 2500); });
       if (btn) btn.addEventListener("click", function () {
         if (v.paused) { v.play(); btn.innerHTML = ICON.pause; btn.setAttribute("aria-label", tr("Pause video")); }
         else { v.pause(); btn.innerHTML = ICON.play; btn.setAttribute("aria-label", tr("Play video")); }
@@ -1954,6 +1956,7 @@
       READY_FNS.rej(err);
       if (PAGE === "checkout" || PAGE === "order") return;   // the app's own pages say it their own way
       $$(".oa-skel").forEach(function (n) { n.remove(); });
+      BODY.classList.add("oa-failed");
       ($("#oa-main") || BODY).insertAdjacentHTML("afterbegin", '<div class="fail" role="alert"><p class="fail__t">' + esc(tr("Couldn\u2019t load the menu")) + "</p><p>" +
         esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + '</p><button type="button" class="btn btn--accent" data-retry>' + esc(tr("Try again")) + "</button></div>");
       $$("[data-retry]").forEach(function (r) { r.addEventListener("click", function () { location.reload(); }); });

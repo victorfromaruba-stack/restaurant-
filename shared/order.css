@@ -95,7 +95,7 @@ body.past-cta .top .top__order{opacity:1;visibility:visible;transform:none}
 .bag svg{width:22px;height:22px}
 .bag__n{position:absolute;top:-3px;right:-4px;min-width:21px;height:21px;padding:0 6px;border-radius:11px;background:var(--cta);color:var(--cta-ink);font:800 12px/21px var(--font);text-align:center;font-variant-numeric:tabular-nums}
 .tabs{max-width:720px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
-.tabs:has(.tabs__in:empty){display:none}
+.oa-failed .tabs{display:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs__in{display:flex;gap:6px;padding:0 10px;height:48px;width:max-content}
 .tabs a{display:flex;align-items:center;min-width:48px;justify-content:center;padding:3px 10px 0;text-decoration:none;color:var(--muted);font:700 15px/1 var(--font);border-bottom:3px solid transparent;transition:color .15s}
