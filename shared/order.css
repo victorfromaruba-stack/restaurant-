@@ -97,8 +97,8 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .tabs{max-width:720px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
 .tabs:has(.tabs__in:empty){display:none}
 .tabs::-webkit-scrollbar{display:none}
-.tabs__in{display:flex;gap:26px;padding:0 16px;height:46px;width:max-content}
-.tabs a{display:flex;align-items:center;text-decoration:none;color:var(--muted);font:700 15px/1 var(--font);border-bottom:3px solid transparent;padding-top:3px;transition:color .15s}
+.tabs__in{display:flex;gap:6px;padding:0 10px;height:48px;width:max-content}
+.tabs a{display:flex;align-items:center;min-width:48px;justify-content:center;padding:3px 10px 0;text-decoration:none;color:var(--muted);font:700 15px/1 var(--font);border-bottom:3px solid transparent;transition:color .15s}
 .tabs a.on{color:var(--text);border-bottom-color:var(--tab-line)}
 
 /* ---------- restaurant page */

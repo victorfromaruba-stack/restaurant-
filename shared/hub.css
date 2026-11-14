@@ -9,7 +9,7 @@
 .hero__link{display:block;aspect-ratio:16/10;overflow:hidden;background:var(--bg-3)}
 .hero__link img{width:100%;height:100%;object-fit:cover}
 .hero__cap{display:grid;gap:1px;padding:10px 16px 0;color:var(--muted);font:600 12.5px/1.4 var(--font)}
-.hero__cap a{color:var(--text);font-weight:700;text-decoration:none}
+.hero__cap a{display:block;padding:5px 0;margin:-5px 0;color:var(--text);font-weight:700;text-decoration:none}
 .hero__cap a span{color:var(--muted);font-weight:600}
 .hero__body{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:20px 16px 0;justify-items:start}
 .hero h1{font:900 clamp(64px,20.5vw,128px)/.9 var(--display);text-transform:uppercase;letter-spacing:.005em;word-spacing:.04em;white-space:nowrap;margin:2px 0 0;max-width:100%}
@@ -35,8 +35,8 @@
 
 /* search across every menu */
 .search{position:relative;display:block}
-.search svg{position:absolute;left:16px;top:50%;width:20px;height:20px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
-.search input{width:100%;height:56px;padding:0 16px 0 48px;border:1.5px solid var(--field);border-radius:var(--r);background:var(--bg-3);color:var(--text);font:600 16.5px/1 var(--font);-webkit-appearance:none;appearance:none;transition:border-color .15s,box-shadow .15s}
+.search svg{position:absolute;left:14px;top:50%;width:20px;height:20px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search input{width:100%;height:56px;padding:0 12px 0 44px;border:1.5px solid var(--field);border-radius:var(--r);background:var(--bg-3);color:var(--text);font:500 16px/1 var(--font);letter-spacing:-.01em;-webkit-appearance:none;appearance:none;transition:border-color .15s,box-shadow .15s}
 .search input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 28%,transparent)}
 .results{padding:10px 16px 0}
 .results__n{margin:8px 0 0;color:var(--muted);font:700 14px/1 var(--font)}
@@ -100,3 +100,17 @@
 .mine__row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:10px 16px;border-radius:var(--r);background:var(--bg-3);box-shadow:inset 0 0 0 1.5px var(--shop);text-decoration:none}
 .mine__t{font-weight:700;font-size:15.5px;line-height:1.25}
 .mine__d{flex:none;color:var(--muted);font:700 14px/1.2 var(--font)}
+
+/* loading: the first screen is already there (the picture is in the page); the lists below hold their place and shimmer after 300 ms */
+body:not(.oa-loaded) .quick:empty,body:not(.oa-loaded) #oa-rail:empty,body:not(.oa-loaded) #oa-list:empty{display:block;border-radius:var(--r);background:linear-gradient(100deg,var(--bg-3) 30%,var(--bg-4) 50%,var(--bg-3) 70%) 0 0/300% 100%;animation:sk-in .25s .3s backwards,skel 1.4s linear infinite}
+body:not(.oa-loaded) .quick:empty{height:96px}
+body:not(.oa-loaded) #oa-rail:empty{height:260px}
+body:not(.oa-loaded) #oa-list:empty{height:300px}
+@keyframes sk-in{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){body:not(.oa-loaded) .quick:empty,body:not(.oa-loaded) #oa-rail:empty,body:not(.oa-loaded) #oa-list:empty{animation:none}}
+/* the one orchestrated moment: the greeting block settles in, 60 ms apart */
+@media (prefers-reduced-motion:no-preference){
+  .hero__body>*{animation:rise .5s var(--ease) backwards}
+  .hero__body>:nth-child(2){animation-delay:.06s}.hero__body>:nth-child(3){animation-delay:.12s}.hero__body>:nth-child(4){animation-delay:.18s}.hero__body>:nth-child(5){animation-delay:.24s}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}}
+}
