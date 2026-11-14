@@ -48,6 +48,7 @@
     --pill:rgba(255,251,244,.86);
     --focus:#17120D;
     --ok:#12703F;--bad:#B3261E;--warn-bg:#FFF0C2;--warn-ink:#4A3600;
+    --notch:transparent;
     --shadow:0 14px 34px rgba(23,18,13,.22);
     --shadow-sm:0 4px 14px rgba(23,18,13,.2);
   }
@@ -362,9 +363,9 @@ body.past-cta .top .top__order{opacity:1;visibility:visible;transform:none}
 .sheet__panel--order .qty__b{color:var(--paper-ink)}
 .sheet__panel--order .sugg__img i{background:var(--paper-ink);color:var(--paper)}
 .sheet__panel--order .sum{position:relative;margin-top:30px;padding-top:6px}
-.sheet__panel--order .sum::before{content:"";position:absolute;left:-26px;right:-26px;top:-8px;height:0;border-top:2px dashed var(--paper-line)}
-.sheet__panel--order .sum::after{content:"";position:absolute;left:-30px;top:-17px;width:18px;height:18px;border-radius:50%;background:var(--notch);box-shadow:calc(100% + 42px) 0 0 var(--notch)}
-@media (prefers-color-scheme:light){.sheet__panel--order .sum::after{display:none}}
+/* the tear line above the totals: a dashed rule with a punched half-circle at each edge of the slip */
+.sheet__panel--order .sum::before{content:"";position:absolute;left:-20px;right:-20px;top:-17px;height:18px;
+  background:radial-gradient(circle at 0 9px,var(--notch) 8.5px,transparent 9px) left/50% 100% no-repeat,radial-gradient(circle at 100% 9px,var(--notch) 8.5px,transparent 9px) right/50% 100% no-repeat,repeating-linear-gradient(90deg,var(--paper-line) 0 7px,transparent 7px 13px) 0 8px/100% 2px no-repeat}
 .sheet__panel--order .sum__total{border-top-color:var(--paper-ink)}
 .sheet__panel--order .order__send{background:linear-gradient(to top,var(--paper) 80%,transparent)}
 .sheet__panel--order .btn--accent{background:var(--paper-ink);color:var(--paper)}
