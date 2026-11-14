@@ -15,7 +15,7 @@ body[data-page="checkout"] .top__in,body[data-page="order"] .top__in{max-width:6
 .steps i{height:4px;border-radius:2px;background:var(--bg-4)}
 .steps i.on{background:var(--tab-line)}
 .step__n{margin:16px 0 0;color:var(--muted);font:700 12.5px/1.2 var(--font);letter-spacing:.09em;text-transform:uppercase}
-.step__t{text-wrap:balance;margin:8px 0 6px;font:900 clamp(52px,15vw,68px)/.86 var(--display);text-transform:uppercase;letter-spacing:.005em;word-spacing:.1em}
+.step__t{text-wrap:balance;margin:8px 0 6px;font:900 clamp(52px,15vw,68px)/.93 var(--display);text-transform:uppercase;letter-spacing:.005em;word-spacing:.04em}
 .app .field{margin-top:24px}
 .app .field legend,.app .field__l{font-size:16px}
 .app .field__help{margin-top:2px}
@@ -136,7 +136,7 @@ body[data-page="checkout"] .top__in,body[data-page="order"] .top__in{max-width:6
 /* ---------- order status: the state in big letters, then the four steps with their times */
 .st{padding-top:24px}
 .st__k{margin:0;color:var(--muted);font:700 12.5px/1.2 var(--font);letter-spacing:.09em;text-transform:uppercase;font-variant-numeric:tabular-nums}
-.st__t{margin:8px 0 0;font:900 clamp(72px,22vw,112px)/.82 var(--display);text-transform:uppercase;letter-spacing:.005em;color:var(--hl)}
+.st__t{margin:8px 0 0;font:900 clamp(72px,22vw,112px)/.9 var(--display);text-transform:uppercase;letter-spacing:.005em;color:var(--hl)}
 .st--done .st__t{color:var(--text)}
 .st--off .st__t{color:var(--muted)}
 .st__eta{margin:16px 0 0;font:800 20px/1.3 var(--font);font-variant-numeric:tabular-nums}
@@ -152,12 +152,12 @@ body[data-page="checkout"] .top__in,body[data-page="order"] .top__in{max-width:6
 .track__s.is-now .track__l{font-weight:800}
 .track__t{color:var(--muted);font:600 14.5px/1 var(--font);font-variant-numeric:tabular-nums}
 .st-sec{margin-top:36px}
-.st-sec__t{font:800 36px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.12em}
+.st-sec__t{font:800 36px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.08em}
 .st-pay,.st-to,.st-p{margin:10px 0 0;font-size:15.5px;line-height:1.45}
 .st-to{color:var(--muted)}
 .st-wa{margin-top:18px}
 .st-num{margin:10px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
-.st-t{text-wrap:balance;margin:26px 0 0;font:900 clamp(52px,15vw,68px)/.86 var(--display);text-transform:uppercase}
+.st-t{text-wrap:balance;margin:26px 0 0;font:900 clamp(52px,15vw,68px)/.93 var(--display);text-transform:uppercase}
 .st-t~.btn{margin-top:18px}
 /* "Your food" is the slip */
 .st-sec[aria-labelledby="st-food"]{padding:4px 20px 28px;background:var(--paper);color:var(--paper-ink);border-radius:6px 6px 0 0;

@@ -95,6 +95,7 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .bag svg{width:22px;height:22px}
 .bag__n{position:absolute;top:-3px;right:-4px;min-width:21px;height:21px;padding:0 6px;border-radius:11px;background:var(--cta);color:var(--cta-ink);font:800 12px/21px var(--font);text-align:center;font-variant-numeric:tabular-nums}
 .tabs{max-width:720px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
+.tabs:has(.tabs__in:empty){display:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs__in{display:flex;gap:26px;padding:0 16px;height:46px;width:max-content}
 .tabs a{display:flex;align-items:center;text-decoration:none;color:var(--muted);font:700 15px/1 var(--font);border-bottom:3px solid transparent;padding-top:3px;transition:color .15s}
@@ -109,8 +110,8 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .cover__pp svg{width:18px;height:18px}
 .store{position:relative;padding:0 16px 4px}
 .store__mark{width:72px;height:72px;margin-top:-36px;position:relative;z-index:1;border-radius:16px;border:3px solid var(--bg);background:var(--bg);object-fit:cover;box-shadow:var(--shadow-sm)}
-.store__cap{position:absolute;right:16px;top:8px;max-width:50%;margin:0;color:var(--muted);font:600 12px/1.3 var(--font);text-align:right}
-.store__name{margin-top:14px;font:900 clamp(52px,15vw,84px)/.86 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.12em;text-wrap:balance}
+.store__cap{position:absolute;right:16px;top:44px;max-width:50%;margin:0;color:var(--muted);font:600 12px/1.3 var(--font);text-align:right}
+.store__name{margin-top:14px;font:900 clamp(52px,15vw,84px)/.92 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.04em;text-wrap:balance}
 .store__tag{margin:12px 0 0;color:var(--muted);font-size:17px;line-height:1.4;max-width:34ch;text-wrap:pretty}
 .facts{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;color:var(--muted);font:600 14.5px/1.3 var(--font)}
 .facts li{display:flex;align-items:center;gap:8px}
@@ -119,7 +120,7 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .facts__status.is-open i{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 25%,transparent)}
 
 .sec{padding:40px 16px 0}
-.sec__t{font:800 38px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.12em;margin-bottom:8px}
+.sec__t{font:800 38px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.08em;margin-bottom:8px}
 .note{margin:16px 0 0;padding:13px 15px;border-radius:var(--r-sm);background:var(--bg-4);font-size:15px;line-height:1.45}
 .note--warn{background:var(--warn-bg);color:var(--warn-ink)}
 
@@ -239,7 +240,7 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .dish__cap{margin:0;padding:8px 20px 0;color:var(--muted);font:600 12px/1.3 var(--font)}
 .dish--drink .dish__media img{object-fit:contain;padding:8%}
 .dish__body{padding:16px 20px 8px}
-.dish__name{font:900 40px/.92 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.1em;text-wrap:balance}
+.dish__name{font:900 40px/1 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.06em;text-wrap:balance}
 .dish__price{margin:10px 0 0;font:700 20px/1 var(--font);font-variant-numeric:tabular-nums}
 .dish__desc{margin:14px 0 0;font-size:16.5px;line-height:1.5;color:var(--text)}
 .dish__inc{margin:10px 0 0;padding-left:20px}
@@ -310,6 +311,7 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .field--areas .chip::after{content:"";position:absolute;inset:-2px 0}
 .field--areas.is-bad .chip span{box-shadow:inset 0 0 0 1.5px var(--bad)}
 .field__help,.field__err{margin:0}
+.order__send .minbar{margin:0 0 12px}
 .minbar{margin:22px 0 0;padding:14px 16px;border-radius:var(--r-sm);background:var(--warn-bg);color:var(--warn-ink)}
 .minbar p{margin:0;font:600 15px/1.4 var(--font)}
 .minbar b{font-weight:800;font-variant-numeric:tabular-nums}
@@ -321,7 +323,7 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .sum dd{margin:0;font-variant-numeric:tabular-nums;font-weight:600}
 .sum__total{margin-top:8px;padding-top:12px!important;border-top:1px dashed var(--field)}
 .sum__total dt,.sum__total dd{color:var(--text);font:900 30px/1 var(--display);letter-spacing:.02em;text-transform:uppercase}
-.sum__total dd{font-variant-numeric:normal}
+.sum__total dd{font-variant-numeric:normal;text-transform:none}
 .ticket{margin:18px 0 0}
 .ticket summary{position:relative;cursor:pointer;font:700 14.5px/1.3 var(--font);color:var(--muted);padding:6px 0}
 .ticket summary::after{content:"";position:absolute;inset:-7px 0}
@@ -391,7 +393,7 @@ body.past-cta .top__order{opacity:1;visibility:visible;transform:none}
 .offline{position:sticky;top:61px;z-index:29;margin:0;padding:10px 16px;background:var(--warn-bg);color:var(--warn-ink);font:600 14px/1.35 var(--font);text-align:center}
 /* the page's own data didn't load: say it, offer the retry */
 .fail{margin:36px 16px 0;padding:28px 20px;border-radius:var(--r);background:var(--bg-3);text-align:center;box-shadow:inset 0 0 0 1px var(--line)}
-.fail__t{font:900 36px/.95 var(--display);text-transform:uppercase;margin-bottom:12px}
+.fail .fail__t{font:900 36px/.95 var(--display);text-transform:uppercase;margin:0 0 12px;color:var(--text)}
 .fail p{margin:0 auto 20px;max-width:30ch;color:var(--muted)}
 .fail .btn{width:auto;display:inline-flex;min-width:180px}
 
@@ -432,7 +434,7 @@ body[data-page="brand"] .top__in{max-width:720px}
 .shop.is-soon .shop__media img{filter:saturate(.3) brightness(.7)}
 .shop__txt{display:flex;flex-direction:column;min-width:0}
 .shop__top{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:9px;min-width:0}
-.shop__name{font:800 30px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.1em}
+.shop__name{font:800 30px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.06em}
 .shop__c{flex:none;color:var(--muted);font-size:14px}
 .shop__dishes{margin-top:5px;color:var(--muted);font-size:14.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .shop__meta{margin-top:7px;font:700 14px/1.2 var(--font);color:var(--text)}

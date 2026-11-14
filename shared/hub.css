@@ -11,14 +11,14 @@
 .hero__cap{display:grid;gap:1px;padding:10px 16px 0;color:var(--muted);font:600 12.5px/1.4 var(--font)}
 .hero__cap a{color:var(--text);font-weight:700;text-decoration:none}
 .hero__cap a span{color:var(--muted);font-weight:600}
-.hero__body{display:grid;gap:14px;padding:20px 16px 0;justify-items:start}
-.hero h1{font:900 clamp(78px,22.5vw,128px)/.82 var(--display);text-transform:uppercase;letter-spacing:.005em;white-space:nowrap;margin:2px 0 0}
+.hero__body{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:20px 16px 0;justify-items:start}
+.hero h1{font:900 clamp(64px,20.5vw,128px)/.9 var(--display);text-transform:uppercase;letter-spacing:.005em;word-spacing:.04em;white-space:nowrap;margin:2px 0 0;max-width:100%}
 .hero__sub{margin:0;max-width:30ch;font-size:18px;line-height:1.38;color:var(--muted);text-wrap:pretty}
 .hero__sub b{color:var(--text);font-weight:700}
 .hero__cta{width:100%;min-height:60px;font-size:18px;margin-top:6px}
 .hero__facts{margin:0;font-size:14px}
 .hero__find{display:grid;gap:18px;padding:26px 16px 0}
-@media (max-width:359px){.hero h1{font-size:68px}}
+@media (max-width:359px){.hero h1{font-size:62px}}
 
 /* the OPEN sign: lit when we take orders, the one glowing thing on the page (dark scheme; in light it is a plain outlined plate) */
 .sign{display:inline-flex;align-items:center;gap:10px;max-width:100%;padding:7px 15px 7px 13px;border:1.5px solid var(--field);border-radius:var(--r-pill);color:var(--muted);text-transform:uppercase}
@@ -57,7 +57,7 @@
 @media (max-width:359px){.quick{gap:6px}.qk__c{font-size:11.5px}}
 
 .hsec{padding:46px 16px 0;position:relative}
-.hsec__t{font:800 40px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.12em}
+.hsec__t{font:800 40px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em;word-spacing:.08em}
 /* prev/next arrows for the dish rail: only on wide screens, where a mouse can't swipe */
 .railnav{display:none}
 @media (min-width:760px){
@@ -79,7 +79,9 @@
   .hero__find{grid-area:find;padding:44px 0 0;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:32px}
   .hero__link{border-radius:20px}
   .hero__cap{padding:12px 0 0}
-  .hero h1{font-size:clamp(120px,11vw,168px)}
+  .hero h1{font-size:clamp(72px,9.2vw,150px)}
+  body[data-page="hub"] .top__in{padding:0 24px}
+  .rail .feat{width:calc((100% - 28px) / 3);max-width:420px}
   .hero__cta{width:auto;min-width:280px;padding:0 36px}
   .quick{grid-template-columns:repeat(5,84px);gap:16px;justify-content:end}
   .hsec{padding:64px 24px 0}

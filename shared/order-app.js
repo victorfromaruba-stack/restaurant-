@@ -1144,8 +1144,8 @@
     });
     html += suggestions();
     if (ordering() === "app") {
-      html += minHTML() + totalsHTML() + '<p class="order__hint">' + esc(tr("Next: where to bring it, and how you\u2019ll pay.")) + "</p>" +
-        '<div class="order__send"><a class="btn btn--accent btn--go" data-go' + (shortBy() > 0 && minFood() ? ' aria-disabled="true"' : "") + ' href="' + esc(path("checkout/?from=" + encodeURIComponent(HERE))) + '">' +
+      html += totalsHTML() + '<p class="order__hint">' + esc(tr("Next: where to bring it, and how you\u2019ll pay.")) + "</p>" +
+        '<div class="order__send">' + minHTML() + '<a class="btn btn--accent btn--go" data-go' + (shortBy() > 0 && minFood() ? ' aria-disabled="true"' : "") + ' href="' + esc(path("checkout/?from=" + encodeURIComponent(HERE))) + '">' +
         "<span>" + esc(tr("Continue")) + '</span><span class="btn__total">' + money(total()) + "</span></a></div>";
       node.innerHTML = html;
       wireGo(node);
