@@ -837,7 +837,7 @@
     var h = String(hex || "").replace("#", "");
     if (h.length !== 6) return "#FFFFFF";
     var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#0B1D3A" : "#FFFFFF";
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? "#1A1204" : "#FFFFFF";
   }
   function setAccent(hex) {
     if (!hex) return;
@@ -934,7 +934,7 @@
       '<div class="dish' + (item.kind === "drink" ? " dish--drink" : "") + (hasPic(item) ? "" : " dish--np") + '" style="--accent:' + esc(menu.color) + ";--accent-ink:" + inkFor(menu.color) + '">' +
         '<button type="button" class="x x--float" data-close aria-label="' + esc(tr("Close")) + '">' + ICON.close + "</button>" +
         '<button type="button" class="x x--float x--share" data-share aria-label="' + esc(tr("Share this dish")) + '">' + ICON.share + "</button>" +
-        (hasPic(item) ? '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div>' : "") +
+        (hasPic(item) ? '<div class="dish__media"><img src="' + esc(path(item.img)) + '" alt="' + esc(item.name) + '" decoding="async"></div><p class="dish__cap">' + esc(tr(menu.imageNote || "Pictures are illustrations.")) + "</p>" : "") +
         '<div class="dish__body">' +
           '<h2 class="dish__name" tabindex="-1" data-autofocus>' + keep(item.name) + "</h2>" +
           '<p class="dish__price">' + money(item.price) + "</p>" +
@@ -1144,8 +1144,8 @@
     });
     html += suggestions();
     if (ordering() === "app") {
-      html += totalsHTML() + '<p class="order__hint">' + esc(tr("Next: where to bring it, and how you\u2019ll pay.")) + "</p>" +
-        '<div class="order__send"><a class="btn btn--accent btn--go" data-go href="' + esc(path("checkout/?from=" + encodeURIComponent(HERE))) + '">' +
+      html += minHTML() + totalsHTML() + '<p class="order__hint">' + esc(tr("Next: where to bring it, and how you\u2019ll pay.")) + "</p>" +
+        '<div class="order__send"><a class="btn btn--accent btn--go" data-go' + (shortBy() > 0 && minFood() ? ' aria-disabled="true"' : "") + ' href="' + esc(path("checkout/?from=" + encodeURIComponent(HERE))) + '">' +
         "<span>" + esc(tr("Continue")) + '</span><span class="btn__total">' + money(total()) + "</span></a></div>";
       node.innerHTML = html;
       wireGo(node);
@@ -1198,6 +1198,13 @@
     wireSend(node);
     if (had) restoreFocus(node, fKey, ".qty__b, .x, [data-send]");
   }
+  /* the food minimum (site.json minFood, ƒ15): how far the order is from it, said in the order itself */
+  function minHTML() {
+    var need = minFood(), short = shortBy();
+    if (!need || !short || ordering() !== "app") return "";
+    return '<div class="minbar" role="status"><p>' + esc(tr("Add {amount} more food to reach the {minimum} minimum.", { amount: money(short), minimum: shortMoney(need) })) +
+      '</p><div class="minbar__track" aria-hidden="true"><i style="--p:' + Math.max(0, Math.min(1, food() / need)).toFixed(3) + '"></i></div></div>';
+  }
   /* the mix perk, said where the money is (one order across restaurants, one delivery fee), then the totals */
   function totalsHTML() {
     var html = "";
@@ -1215,6 +1222,7 @@
     if (!a) return;
     a.addEventListener("click", function (e) {
       if (!liveLines().length) { e.preventDefault(); return; }
+      if (minFood() && shortBy() > 0) { e.preventDefault(); toast(tr("Add {amount} more food to reach the {minimum} minimum.", { amount: money(shortBy()), minimum: shortMoney(minFood()) })); return; }
       if (liveLines().some(function (l) { return l.closed; })) { e.preventDefault(); toast(tr("Remove the dishes we can\u2019t take right now first")); return; }
       if (liveLines().some(function (l) { return l.soldOut; })) { e.preventDefault(); toast(tr("Remove the sold-out dish first")); return; }
     });
@@ -1314,7 +1322,9 @@
     if (!n) return;
     var stale = Date.now() - (S().updated || 0) > 2 * 3600 * 1000;
     $(".bar__count", bar).textContent = n;
-    $(".bar__label", bar).textContent = S().sentAt ? tr("Sent: see order") : preOrder() || tr(stale ? "Continue order" : "View order");
+    var short = ordering() === "app" && minFood() ? shortBy() : 0;
+    $(".bar__label", bar).innerHTML = esc(S().sentAt ? tr("Sent: see order") : preOrder() || tr(stale ? "Continue order" : "View order")) +
+      (short > 0 ? '<span class="bar__min">' + esc(tr("{amount} to go for the {minimum} minimum", { amount: money(short), minimum: shortMoney(minFood()) })) + "</span>" : "");
     // food only here; the delivery fee is added at checkout
     $(".bar__total", bar).textContent = money(subtotal());
     $("button", bar).setAttribute("aria-label", tr("View order: {items}, {total} before delivery", { items: plural(n, "item", "items"), total: money(subtotal()) }));
@@ -1453,6 +1463,10 @@
     var sign = $("[data-oa-sign]");
     if (!sign) return;
     var st = shopStatus();
+    BODY.classList.toggle("is-open", !!st.open);
+    // the one action, in the hero and in the top bar once the hero has scrolled away
+    var cta = st.open ? tr("Order now") : tr("Pre-order for tonight");
+    $$("[data-oa-cta]").forEach(function (n) { if (n.textContent !== cta) n.textContent = cta; });
     var html = st.open ? "<b>" + esc(tr("Open")) + "</b><span>" + esc(st.sub) + "</span>" : "<b>" + esc(tr("Closed")) + "</b><span>" + esc(st.label) + "</span>";
     if (sign._html === html) return;   // only touch it when it changes, so screen readers don't repeat it every minute
     sign._html = html;
@@ -1495,6 +1509,7 @@
     var html = '<div class="cover">' + coverMedia(menu, cover) + "</div>" +
       '<header class="store">' +
         '<img class="store__mark" src="' + esc(path(menu.mark)) + '" alt="" width="76" height="76">' +
+        '<p class="store__cap">' + esc(tr(menu.imageNote || "Pictures are illustrations.")) + "</p>" +
         '<h1 class="store__name" id="store-name">' + esc(menu.name) + "</h1>" +
         '<p class="store__tag">' + keep(menu.tagline) + "</p>" +
         // a restaurant that isn't taking orders yet says so here, never "Open now" over its "Opening soon"
@@ -1793,6 +1808,24 @@
         (soon ? '<span class="sr">' + esc(tr("Opening soon")) + "</span>" : "") + "</a>";
     }).join("");
   }
+  /* the lead dish at full width on the first screen. index.html already holds the usual one (Taco Brava's birria) so the picture
+     is on its way before any script runs; this only changes it when another restaurant leads tonight. */
+  function heroPic(b, item) {
+    var fig = $("[data-oa-heropic]"), m = MENU[b];
+    if (!fig || !m || !item) return;
+    var img = $("img", fig), src = path(item.img), href = dishLink(b, item), cap = $("[data-oa-herocap]", fig);
+    if (img && img.getAttribute("src") !== src) img.setAttribute("src", src);
+    $$("[data-oa-herolink]", fig).forEach(function (a) { a.setAttribute("href", href); });
+    if (cap) cap.innerHTML = keep(item.name) + " <span>" + esc(money(item.price) + " \u00b7 " + m.name) + "</span>";
+  }
+  function watchHeroAction() {
+    var cta = $(".hero__cta");
+    if (!cta || !("IntersectionObserver" in window)) return;
+    new IntersectionObserver(function (es) {
+      var e = es[es.length - 1];
+      BODY.classList.toggle("past-cta", !e.isIntersecting && e.boundingClientRect.top < 0);
+    }).observe(cta);
+  }
   function renderHub() {
     var ids = (SITE.brands || []).filter(function (b) { return b.status !== "hidden"; }).map(function (b) { return b.id; });
     paintSign(true);
@@ -1810,7 +1843,8 @@
             m.items.filter(function (i) { return i.style === style && !isOut(m, i) && hasPic(i); }).forEach(function (i) { picks.push([b, i]); });
           });
         });
-        rail.innerHTML = picks.map(function (p, n) { return linkFeatHTML(p[0], p[1], n < 2); }).join("");
+        if (picks.length) { heroPic(picks[0][0], picks[0][1]); picks = picks.slice(1); }
+        rail.innerHTML = picks.map(function (p, n) { return linkFeatHTML(p[0], p[1], false); }).join("");
         railArrows(rail);
       }
       if (list) {
@@ -1823,6 +1857,7 @@
         $$("[data-retry]", list).forEach(function (r) { r.addEventListener("click", function () { location.reload(); }); });
       }
       BODY.classList.add("oa-loaded");
+      watchHeroAction();
       setupSearch(ids);
       paintMine(ids);
     });
@@ -1896,13 +1931,32 @@
     box.hidden = !rows;
   }
 
+  /* a phone with no connection: one slim bar under the top bar. What is already on the phone keeps working (sw.js). */
+  function watchOnline() {
+    var bar = null;
+    function sync() {
+      if (navigator.onLine === false) {
+        if (bar) return;
+        bar = el('<p class="offline" role="status"></p>');
+        bar.textContent = tr("You\u2019re offline. Saved menus still work. Ordering needs a connection.");
+        var top = $(".top");
+        if (top && top.parentNode) top.parentNode.insertBefore(bar, top.nextSibling);
+      } else if (bar) { bar.remove(); bar = null; }
+    }
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    sync();
+  }
   /* ---------------------------------------------------------------- boot */
   function boot() {
     var fail = function (err) {
       console.error(err);
       READY_FNS.rej(err);
       if (PAGE === "checkout" || PAGE === "order") return;   // the app's own pages say it their own way
-      ($("#oa-main") || BODY).insertAdjacentHTML("afterbegin", '<p class="note note--warn">' + esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + "</p>");
+      $$(".oa-skel").forEach(function (n) { n.remove(); });
+      ($("#oa-main") || BODY).insertAdjacentHTML("afterbegin", '<div class="fail" role="alert"><p class="fail__t">' + esc(tr("Couldn\u2019t load the menu")) + "</p><p>" +
+        esc(tr("The menu didn\u2019t load. Check your connection and refresh.")) + '</p><button type="button" class="btn btn--accent" data-retry>' + esc(tr("Try again")) + "</button></div>");
+      $$("[data-retry]").forEach(function (r) { r.addEventListener("click", function () { location.reload(); }); });
     };
     if (PAGE === "checkout" || PAGE === "order") {
       // app mode: the data, the words and the language switch, nothing drawn
@@ -1910,6 +1964,7 @@
         setOrder();
         reload();
         translatePage();
+        watchOnline();
         $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });
         $$("[data-oa-app]").forEach(function (n) { n.textContent = SITE.name || n.textContent; });
         var need = menusInCart();
@@ -1927,6 +1982,7 @@
     if (PAGE === "hub") {
       Promise.all([loadSite(), loadLang()]).then(function () {
         translatePage();
+        watchOnline();
         fillCommon();
         setInterval(fillCommon, 60000);
         $$("[data-oa-langs]").forEach(function (n) { n.innerHTML = langSwitch(); });
@@ -1946,6 +2002,7 @@
       Object.keys(MENU).forEach(function (b) { refreshLines(b); });
       menusInCart().forEach(function (b) { loadMenu(b).catch(function () {}); });   // and the other restaurants' lines, as their menus come in
       translatePage();
+      watchOnline();
       return importHash().then(function () {
         fillCommon();
         setInterval(fillCommon, 60000);

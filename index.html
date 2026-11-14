@@ -6,7 +6,9 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>Pidi · Late-night delivery from 10 PM</title>
 <meta name="description" content="Late-night food delivery in Aruba from 10 PM: Chinese, Mexican, smash burgers, Italian pasta and Dutch snacks. ƒ5 delivery.">
-<meta name="theme-color" content="#0B1D3A">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#100E0C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFBF4" media="(prefers-color-scheme: light)">
 <meta property="og:title" content="Pidi · Late-night delivery">
 <meta property="og:description" content="Late-night food delivery in Aruba from 10 PM. Pick a restaurant and order from your phone.">
 <meta property="og:type" content="website">
@@ -16,7 +18,9 @@
 <link rel="icon" href="shared/icons/app-192.png" type="image/png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="shared/icons/app-180.png">
-<link rel="preload" href="shared/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="shared/fonts/bigshoulders.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="shared/fonts/hanken.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="taco-brava/assets/dishes/bt-hero.webp" as="image" type="image/webp" fetchpriority="high">
 <link rel="stylesheet" href="shared/order.css">
 <link rel="stylesheet" href="shared/hub.css">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://victorfromaruba-stack.github.io/restaurant-/#site","name":"Pidi","url":"https://victorfromaruba-stack.github.io/restaurant-/","publisher":{"@id":"https://victorfromaruba-stack.github.io/restaurant-/#app"}},{"@type":"Organization","@id":"https://victorfromaruba-stack.github.io/restaurant-/#app","name":"Pidi","url":"https://victorfromaruba-stack.github.io/restaurant-/","image":"https://victorfromaruba-stack.github.io/restaurant-/shared/og/home.jpg","telephone":"+297 747 7794","description":"Late-night food delivery in Aruba from 10 PM.","areaServed":[{"@type":"Place","name":"Noord, Aruba"},{"@type":"Place","name":"Palm Beach, Aruba"},{"@type":"Place","name":"Eagle Beach, Aruba"},{"@type":"Place","name":"Oranjestad, Aruba"},{"@type":"Place","name":"Paradera, Aruba"},{"@type":"Place","name":"Santa Cruz, Aruba"}]}]}</script>
@@ -27,19 +31,27 @@
   <div class="top__in">
     <a class="logo" href="index.html"><span class="logo__t" data-oa-app>Pidi</span></a>
     <span class="top__spacer"></span>
+    <a class="btn btn--accent top__order" href="#oa-restaurants" data-oa-cta>Order now</a>
   </div>
 </header>
 
 <main class="home" id="oa-main">
   <section class="hero" aria-labelledby="hero-h">
-    <div class="hero__row">
-      <h1 id="hero-h" data-oa-hello>Bon nochi.</h1>
+    <figure class="hero__fig" data-oa-heropic>
+      <a class="hero__link" href="taco-brava/#d=bt" data-oa-herolink tabindex="-1" aria-hidden="true"><img src="taco-brava/assets/dishes/bt-hero.webp" alt="" width="780" height="446" fetchpriority="high" decoding="async"></a>
+      <figcaption class="hero__cap"><a href="taco-brava/#d=bt" data-oa-herolink data-oa-herocap>Birria tacos (3) with consommé <span>ƒ27.00 · Taco Brava</span></a><span data-t>Pictures are illustrations.</span></figcaption>
+    </figure>
+    <div class="hero__body">
       <div class="sign" data-oa-sign role="status"><b>Open</b><span>Late night from 10 PM</span></div>
+      <h1 id="hero-h" data-oa-hello>Bon nochi.</h1>
+      <p class="hero__sub" data-oa-hero>Order from several restaurants at once. <b>You pay ƒ5 delivery once.</b></p>
+      <a class="btn btn--accent hero__cta" href="#oa-restaurants" data-oa-cta>Order now</a>
+      <ul class="facts hero__facts" data-oa-facts><li>Delivery in 35–50 min</li><li>Noord to Santa Cruz</li></ul>
     </div>
-    <p class="hero__sub" data-oa-hero>Order from several restaurants at once. <b>You pay ƒ5 delivery once.</b></p>
-    <ul class="facts hero__facts" data-oa-facts><li>Delivery in 35–50 min</li><li>Noord to Santa Cruz</li></ul>
-    <label class="search"><span class="sr" data-t>Search all menus</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><input id="oa-q" type="search" placeholder="Search all menus" data-t-attr="placeholder" autocomplete="off" enterkeyhint="search"></label>
-    <nav class="quick" id="oa-quick" aria-label="Restaurants" data-t-attr="aria-label"></nav>
+    <div class="hero__find">
+      <label class="search"><span class="sr" data-t>Search all menus</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><input id="oa-q" type="search" placeholder="Search all menus" data-t-attr="placeholder" autocomplete="off" enterkeyhint="search"></label>
+      <nav class="quick" id="oa-quick" aria-label="Restaurants" data-t-attr="aria-label"></nav>
+    </div>
   </section>
 
   <section class="results" id="oa-results" aria-live="polite" hidden></section>
@@ -50,7 +62,7 @@
       <h2 class="hsec__t" id="sig-h" data-t>Start with these</h2>
       <div class="rail" id="oa-rail"></div>
     </section>
-    <section class="hsec" aria-labelledby="rest-h">
+    <section class="hsec" id="oa-restaurants" aria-labelledby="rest-h">
       <h2 class="hsec__t" id="rest-h" data-t>Restaurants</h2>
       <div class="shops" id="oa-list"></div>
     </section>
@@ -60,10 +72,10 @@
     <h2 class="hsec__t" id="how-h" data-t>How ordering works</h2>
     <ol class="how__steps" data-oa-how>
       <li><b>Pick your dishes.</b> <span>From one restaurant or several, in one order.</span></li>
-      <li><b>Send it on WhatsApp.</b> <span>WhatsApp opens with your order already written out. Just press send.</span></li>
-      <li><b>We reply to confirm.</b> <span>Delivery takes about 35–50 min. We take cash in florins or US dollars, or a bank transfer.</span></li>
+      <li><b>Place your order.</b> <span>Say where to bring it and how you’ll pay. No account needed.</span></li>
+      <li><b>Follow it to your door.</b> <span>You see when it’s cooking and when it’s on the way. Delivery takes about 35–50 min. We take cash in florins or US dollars, or a bank transfer.</span></li>
     </ol>
-    <p class="how__note" data-oa-how-note>Delivery is ƒ5 per order. We only deliver: there’s no pickup or dine-in. Every night from 10 PM.</p>
+    <p class="how__note" data-oa-how-note>Delivery is ƒ5 per order, even with dishes from several restaurants. We only deliver: there’s no pickup or dine-in. Every night from 10 PM.</p>
     <p class="areas" data-oa-deliver-to>We deliver to <span data-oa-areas>Noord, Palm Beach, Eagle Beach, Oranjestad, Paradera and Santa Cruz</span>. Elsewhere? <span class="nw"><a data-oa-ask href="#" target="_blank" rel="noopener">Ask us</a>.</span></p>
     <p class="areas" data-oa-contact>Questions? WhatsApp us on <span class="nw"><a href="https://wa.me/2977477794" target="_blank" rel="noopener">+297&nbsp;747&nbsp;7794</a>.</span></p>
   </section>

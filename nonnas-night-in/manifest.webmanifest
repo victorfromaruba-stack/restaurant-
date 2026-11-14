@@ -3,8 +3,8 @@
  "short_name": "Nonna’s Night In",
  "start_url": "./",
  "display": "standalone",
- "background_color": "#0B1D3A",
- "theme_color": "#0B1D3A",
+ "background_color": "#100E0C",
+ "theme_color": "#100E0C",
  "icons": [
   {
    "src": "assets/icon-192.png",

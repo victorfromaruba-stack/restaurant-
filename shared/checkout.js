@@ -257,28 +257,38 @@
   }
   function checkHTML() {
     var d = A.details(), w = when(), ls = A.lines(), out = ls.some(function (l) { return l.soldOut; });
+    var short = A.minFood() > 0 && A.shortBy() > 0;   // under the ƒ15 food minimum: the database would refuse it, so we say so here
     var brands = []; ls.forEach(function (l) { if (!l.drink && brands.indexOf(l.b) < 0) brands.push(l.b); });
     var html = head("check");
     if (w && w !== "asap") html += '<p class="note note--warn">' + esc(whenText(w)) + "</p>";
-    html += linesHTML() + '<a class="link ck-edit" href="' + esc(menuHref()) + '">' + esc(tr("Change the order")) + "</a>";
+    html += '<div class="slip">' + linesHTML() + '<a class="link ck-edit" href="' + esc(menuHref()) + '">' + esc(tr("Change the order")) + "</a>";
     html += '<dl class="recap">' +
       recap("where", tr("When"), whenText(w)) +
       recap("where", tr("Deliver to"), tr(d.area) + ", " + clean(d.addr) + (visit.loc ? " · " + tr("location added") : "")) +
       recap("you", tr("Name and phone"), clean(d.name) + ", " + clean(d.phone)) +
       recap("pay", tr("Pay"), payText(d)) + "</dl>";
-    html += '<div class="field"><label class="field__l" for="ck-note">' + esc(tr("Note")) + " <em>" + esc(tr("optional")) + "</em></label>" +
-      '<textarea id="ck-note" data-d="note" rows="2" maxlength="160" placeholder="' + esc(tr("Allergies, gate code")) + '">' + esc(d.note) + "</textarea></div>";
     if (brands.length > 1) {
       html += '<p class="order__mix">' + keep(tr("Order from several restaurants at once.")) + " <b>" + keep(tr("You pay {fee} delivery once.", { fee: "ƒ" + (A.site().deliveryFee / 100) })) + "</b></p>";
     }
     html += '<dl class="sum"><div><dt>' + esc(tr("Food")) + "</dt><dd>" + m$(A.food()) + "</dd></div>" +
       "<div><dt>" + esc(tr("Delivery")) + "</dt><dd>" + m$(A.fee()) + "</dd></div>" +
-      '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + m$(total()) + "</dd></div></dl>";
+      '<div class="sum__total"><dt>' + esc(tr("Total")) + "</dt><dd>" + m$(total()) + "</dd></div></dl></div>";
+    html += '<div class="field"><label class="field__l" for="ck-note">' + esc(tr("Note")) + " <em>" + esc(tr("optional")) + "</em></label>" +
+      '<textarea id="ck-note" data-d="note" rows="2" maxlength="160" placeholder="' + esc(tr("Allergies, gate code")) + '">' + esc(d.note) + "</textarea></div>";
     if (out) html += '<p class="note note--warn">' + esc(tr("Remove the dishes we can’t take right now first")) + "</p>";
+    if (short) html += minNote();
     html += problem();
     var label = busy ? "<span>" + esc(tr("Placing your order…")) + "</span>"
       : "<span>" + esc(tr("Place order")) + '</span><span class="btn__total">' + m$(total()) + "</span>";
-    return html + go(label, (busy || out ? " disabled" : "") + (busy ? ' aria-busy="true"' : "") + " data-place");
+    return html + go(label, (busy || out || short ? " disabled" : "") + (busy ? ' aria-busy="true"' : "") + " data-place");
+  }
+  /* the minimum, with a way back to the menu */
+  function minText() {
+    return tr("Add {amount} more food to reach the {minimum} minimum.", { amount: A.money(A.shortBy()), minimum: "ƒ" + (A.minFood() / 100) });
+  }
+  function minNote() {
+    return '<div class="minbar" role="status"><p>' + esc(minText()) + '</p><div class="minbar__track" aria-hidden="true"><i style="--p:' +
+      Math.max(0, Math.min(1, A.food() / A.minFood())).toFixed(3) + '"></i></div></div>';
   }
   function recap(st, label, text) {
     return "<div><dt>" + esc(label) + "</dt><dd>" + keep(text) + '</dd><dd class="recap__go"><button type="button" class="link" data-goto="' + st + '" aria-label="' +
@@ -459,6 +469,7 @@
       return;
     }
     if (A.lines().some(function (l) { return l.soldOut; })) { A.toast(tr("Remove the dishes we can’t take right now first")); return; }
+    if (A.minFood() > 0 && A.shortBy() > 0) { error = { text: minText(), edit: true }; render(false); return; }
     if (!window.Pidi) { error = fault({ offline: true }); render(false); return; }
     busy = true; error = null; render(false);
     var p = payload("");

@@ -370,5 +370,10 @@
  "Confirmed": "Confirmá",
  "{names} confirmed your order.": "{names} a confirmá bo orden.",
  "{names} confirmed your pre-order.": "{names} a confirmá bo pre-orden.",
- "The minimum order is ƒ15 in food. Add a little more and try again.": "E orden minimo ta ƒ15 na cuminda. Pone un poco mas y purba atrobe."
+ "The minimum order is ƒ15 in food. Add a little more and try again.": "E orden minimo ta ƒ15 na cuminda. Pone un poco mas y purba atrobe.",
+ "Order now": "Ordena awor",
+ "Add {amount} more food to reach the {minimum} minimum.": "Agrega {amount} mas cuminda pa yega na e minimo di {minimum}.",
+ "{amount} to go for the {minimum} minimum": "Falta {amount} pa e minimo di {minimum}",
+ "You’re offline. Saved menus still work. Ordering needs a connection.": "No tin conexion. Menunan guardá ta sigui funcioná. Pa ordena bo mester conexion.",
+ "Couldn’t load the menu": "E menu no a carga"
 }

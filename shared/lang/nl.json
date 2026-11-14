@@ -370,5 +370,10 @@
  "Confirmed": "Bevestigd",
  "{names} confirmed your order.": "{names} heeft je bestelling bevestigd.",
  "{names} confirmed your pre-order.": "{names} heeft je voorbestelling bevestigd.",
- "The minimum order is ƒ15 in food. Add a little more and try again.": "De minimale bestelling is ƒ15 aan eten. Voeg wat meer toe en probeer opnieuw."
+ "The minimum order is ƒ15 in food. Add a little more and try again.": "De minimale bestelling is ƒ15 aan eten. Voeg wat meer toe en probeer opnieuw.",
+ "Order now": "Bestel nu",
+ "Add {amount} more food to reach the {minimum} minimum.": "Voeg nog {amount} aan eten toe voor het minimum van {minimum}.",
+ "{amount} to go for the {minimum} minimum": "Nog {amount} voor het minimum van {minimum}",
+ "You’re offline. Saved menus still work. Ordering needs a connection.": "Je bent offline. Opgeslagen menu’s werken nog. Bestellen kan alleen met verbinding.",
+ "Couldn’t load the menu": "Het menu laadt niet"
 }

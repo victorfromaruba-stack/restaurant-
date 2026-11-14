@@ -4,21 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#100E0C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFBF4" media="(prefers-color-scheme: light)">
 <meta name="robots" content="noindex">
 <title>Page not found</title>
 <style>
-html,body{margin:0;background:#0B1D3A;color:#FFF4DF;font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:520px;padding:64px 24px}
-h1{margin:0 0 10px;font-size:28px;line-height:1.15}
-p{margin:0;color:#A9B6CC}
-a{display:inline-flex;align-items:center;min-height:44px;margin-top:14px;color:#FFF4DF;font-weight:700;text-underline-offset:3px}
+@font-face{font-family:"Big Shoulders Display";src:url(/restaurant-/shared/fonts/bigshoulders.woff2) format("woff2");font-weight:700 900;font-display:swap}
+@font-face{font-family:"Hanken Grotesk";src:url(/restaurant-/shared/fonts/hanken.woff2) format("woff2");font-weight:400 800;font-display:swap}
+:root{color-scheme:dark;--bg:#100E0C;--text:#F5EDE0;--muted:#B8AC9C;--hl:#FFC93C;--ink:#1A1204;--plate:transparent;--plate-ink:#FFC93C;--focus:#FFC93C}
+@media (prefers-color-scheme:light){:root{color-scheme:light;--bg:#FFFBF4;--text:#17120D;--muted:#5F5547;--hl:#8A5A00;--ink:#FFC93C;--plate:#FFC93C;--plate-ink:#17120D;--focus:#17120D}}
+html,body{margin:0;background:var(--bg);color:var(--text);font:17px/1.5 "Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;padding:48px 24px}
+.mark{display:inline-block;margin:0 0 36px;padding:3px 12px 0;border-radius:9px;background:var(--plate);color:var(--plate-ink);font:900 30px/1.2 "Big Shoulders Display","Arial Narrow",Impact,sans-serif;letter-spacing:.03em;text-transform:uppercase}
+h1{margin:0 0 14px;font:900 clamp(64px,20vw,104px)/.84 "Big Shoulders Display","Arial Narrow",Impact,sans-serif;text-transform:uppercase}
+p{margin:0;color:var(--muted)}
+a.go{display:inline-flex;align-items:center;min-height:56px;margin-top:28px;padding:0 24px;border-radius:14px;background:var(--text);color:var(--bg);font-weight:700;text-decoration:none}
+a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 </style>
 </head>
 <body>
 <main>
+<span class="mark">Pidi</span>
 <h1>Page not found</h1>
 <p>This link doesn’t go anywhere. Check the address and try again.</p>
-<a href="https://victorfromaruba-stack.github.io/restaurant-/" data-oa-go>Go to Pidi</a>
+<a class="go" href="https://victorfromaruba-stack.github.io/restaurant-/" data-oa-go>Go to Pidi</a>
 </main>
 </body>
 </html>

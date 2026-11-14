@@ -370,5 +370,10 @@
  "Confirmed": "Confirmado",
  "{names} confirmed your order.": "{names} confirmó tu pedido.",
  "{names} confirmed your pre-order.": "{names} confirmó tu pedido anticipado.",
- "The minimum order is ƒ15 in food. Add a little more and try again.": "El pedido mínimo es de ƒ15 en comida. Añade un poco más e inténtalo de nuevo."
+ "The minimum order is ƒ15 in food. Add a little more and try again.": "El pedido mínimo es de ƒ15 en comida. Añade un poco más e inténtalo de nuevo.",
+ "Order now": "Pide ahora",
+ "Add {amount} more food to reach the {minimum} minimum.": "Añade {amount} más de comida para llegar al mínimo de {minimum}.",
+ "{amount} to go for the {minimum} minimum": "Faltan {amount} para el mínimo de {minimum}",
+ "You’re offline. Saved menus still work. Ordering needs a connection.": "Estás sin conexión. Los menús guardados siguen funcionando. Para pedir hace falta conexión.",
+ "Couldn’t load the menu": "No se pudo cargar el menú"
 }
