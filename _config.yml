@@ -6,6 +6,7 @@ exclude:
   - HANDOFF.md
   - README.md
   - SOURCES.md
+  - DIRECTION.md
   - build/
   - qa/
   - "*.py"
