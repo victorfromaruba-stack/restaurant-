@@ -83,7 +83,9 @@ Driver (`driver-next/`, a copy of `driver/v2/`):
 
 Same phone, two apps: the previews use the same origin, so the kitchen preview shares the kitchen's sign-in and
 saved orders on a phone that has both (the formats are unchanged, so nothing breaks; signing out of one signs out
-of the other). The driver keeps its sign-in per browser tab, as before.
+of the other, and an order that already rang in one doesn't ring again in the other on that phone). Nothing is
+shared between phones, so the chef's tablet running the live app is not affected by a test on Victor's phone.
+The driver keeps its sign-in per browser tab, as before.
 
 ## 3. Victor's real test (one TEST order, about 10 minutes)
 
@@ -113,7 +115,7 @@ Then tell me "part 2 passed" and the swap goes live (section 6).
 | qa/check_staff.py | live Orders, driver v2, old addresses, live driver offline cache | 113 passed, 0 failed |
 | qa/check_staff.py (STAFF_KITCHEN, STAFF_DRIVER = the previews) | K2-K7 and D3-D9 on both previews (old-address and live-cache checks only apply to live) | 91 passed, 0 failed |
 | qa/check_part2.py | the listed states on both previews + service-worker rules | 79 passed, 0 failed |
-| swap rehearsal: build/swap_part2.py on a scratch copy, then check_staff.py and check_kitchen.py | the live folders as they will be after the swap | 113 + 133 passed, 0 failed |
+| swap rehearsal: build/swap_part2.py on a scratch copy, then check_staff.py, check_kitchen.py and check_site.py | the live folders as they will be after the swap | 113 + 133 + 511 passed, 0 failed |
 | driver/tests/flow.py | v1 run links | red before this work started (tests v1 screens that only forward to v2 since 10 Oct) |
 
 qa/check_part2.py covers, by name: orders arriving (ring, NEW, the lines exactly as sent, minutes), ringing again
