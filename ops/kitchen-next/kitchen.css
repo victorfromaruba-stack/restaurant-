@@ -190,7 +190,7 @@ h2 { font-size: 26px; line-height: 1.1; margin: 28px 0 10px; font-weight: 900; f
 .ph .ph-name { display: none; }
 .ph.noimg { background: var(--night-3); border-top: 8px solid var(--acc, #666); }
 .ph.noimg.tileph .ph-name { display: none; }
-.ph.noimg .ph-name { display: flex; position: absolute; inset: 0; align-items: center; justify-content: center; text-align: center; padding: 10px; font-weight: 900; font-size: 20px; line-height: 1.15; color: #fff; }
+.ph.noimg .ph-name { display: flex; position: absolute; inset: 0; align-items: center; justify-content: center; text-align: center; padding: 10px; font-weight: 900; font-size: 20px; line-height: 1.15; color: var(--cream); }
 
 /* ---------- the order ticket ---------- */
 .ohead { background: var(--paper); color: var(--ink); padding: 16px 18px 18px; border-bottom: 3px dashed #C9C2B2; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
@@ -261,7 +261,7 @@ mark.skip { background: var(--hot-deep); color: #fff; text-transform: uppercase;
 .check .t { font-size: 64px; font-weight: 900; font-family: var(--display); font-stretch: normal; line-height: 1; font-variant-numeric: tabular-nums; }
 .check .s { font-size: 26px; font-weight: 900; line-height: 1.15; }
 .check .n { grid-column: 1 / -1; font-size: 17px; font-weight: 700; margin-top: 6px; opacity: .95; }
-.heat { display: inline-flex; align-items: center; gap: 8px; border-left: 6px solid var(--orange); color: #fff; padding: 6px 14px; font-size: 22px; font-weight: 900; margin: 0 8px 8px 0; }
+.heat { display: inline-flex; align-items: center; gap: 8px; border-left: 6px solid var(--orange); color: var(--cream); padding: 6px 14px; font-size: 22px; font-weight: 900; margin: 0 8px 8px 0; }
 .tbtn {
   width: 100%; min-height: 80px; border-radius: 12px; border: 0; background: var(--sodium); color: var(--ink);
   font-size: 28px; font-weight: 900; font-family: var(--display); font-stretch: normal; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 12px; line-height: 1.05;

@@ -57,7 +57,7 @@ function showSignIn(note) {
   clear(dock);
   if (!cfg) main.appendChild(banner("Not connected yet. Add the anon key in config.js."));
   main.appendChild(el("h1", { text: "Sign in" }));
-  main.appendChild(el("p", { class: "quiet", text: "Driver sign in · tonight's runs come to this phone" }));
+  main.appendChild(el("p", { class: "quiet", text: "Your name and PIN. Tonight's runs then come to this phone." }));
   if (note) main.appendChild(el("p", { class: "err", role: "alert", text: note }));
   const code = el("input", { id: "code", autocomplete: "username", placeholder: "Your name" });
   const pin = el("input", { id: "pin", inputmode: "numeric", autocomplete: "current-password", placeholder: "PIN", type: "password" });

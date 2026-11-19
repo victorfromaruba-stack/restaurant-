@@ -105,3 +105,12 @@ The customer pages (home, five restaurant pages, checkout, order status, 404, of
 - `text-transform: uppercase` turns the florin sign into a capital F with hook that the font subset does not have: never uppercase a price (`.sum__total dd` sets `text-transform:none`).
 - The 404 page uses system type on purpose: it can sit at any depth and its security policy allows no inline fonts.
 - New phrases (Order now, the minimum line and bar, offline, Couldn't load the menu) are in nl/es/pap; the Papiamento is a draft for Victor.
+
+## Part 2 previews (19 Nov 2026)
+The kitchen and driver screens in the Night Slip look are previews until Victor's real test passes: `ops/kitchen-next/`
+(copy of ops/kitchen/ with a new kitchen.css and live.js) and `driver-next/` (copy of driver/v2/, its config.js only
+points at driver/v2/config.js). Each has its own service worker (scope its folder, caches `next-kitchen-` /
+`next-driver-`). Checks: `qa/check_part2.py`, plus `KITCHEN_DIR=ops/kitchen-next/ qa/check_kitchen.py` and
+`STAFF_KITCHEN=ops/kitchen-next/ STAFF_DRIVER=driver-next/ qa/check_staff.py`. Going live: `build/swap_part2.py`
+(REPORT-part2.md section 6). Until then a change to ops/kitchen/kitchen.js, menu-editor.js or books.js must also go
+into the preview copy, or the swap stops.

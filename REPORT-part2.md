@@ -1,7 +1,8 @@
 # Pidi part 2: kitchen and driver screens (19 Nov 2026)
 
-Status: previews built and tested; waiting for Victor's real test. The live screens (`ops/kitchen/`, `driver/`)
-are untouched. The swap to live is one small commit after his test passes (section 6).
+Status (19 Nov, 08:30 AST): previews built and tested, committed on local main; NOT online yet, because the push to
+main was refused on this machine (section 7). Then Victor's real test, then the swap (section 6). The live screens
+(`ops/kitchen/`, `driver/`) are untouched.
 
 Preview links (GitHub Pages, from `main`):
 - Kitchen: https://victorfromaruba-stack.github.io/restaurant-/ops/kitchen-next/
@@ -83,3 +84,85 @@ Driver (`driver-next/`, a copy of `driver/v2/`):
 Same phone, two apps: the previews use the same origin, so the kitchen preview shares the kitchen's sign-in and
 saved orders on a phone that has both (the formats are unchanged, so nothing breaks; signing out of one signs out
 of the other). The driver keeps its sign-in per browser tab, as before.
+
+## 3. Victor's real test (one TEST order, about 10 minutes)
+
+Do it before 10 PM, so no real driver is online to take it. You need the kitchen PIN and your own driver name and
+PIN (add yourself as a driver on driver/admin if you aren't one yet).
+1. Kitchen preview (tablet or second phone): open https://victorfromaruba-stack.github.io/restaurant-/ops/kitchen-next/,
+   tap Orders, type the kitchen PIN, tap Open orders. Leave it open.
+2. Driver preview (your phone): open https://victorfromaruba-stack.github.io/restaurant-/driver-next/, sign in,
+   tap Go online.
+3. Customer site (your phone, a new tab): open https://victorfromaruba-stack.github.io/restaurant-/, add one dish,
+   tap Continue, use the name "TEST Victor" and the note "TEST, don't cook", pay Cash, tap Place order.
+   Before 10 PM it goes in as a pre-order for tonight.
+4. Kitchen preview: the order rings and shows NEW (a pre-order waits under "Later tonight"). Tap Accept, then
+   Start cooking, then Food is ready. To cancel it instead: tap "Can't do this order", then "Yes, cancel the
+   order" (this works until a driver taps Accept).
+5. Driver preview: the offer rings. Tap Accept, then Picked up, then Delivered.
+Then tell me "part 2 passed" and the swap goes live (section 6).
+
+## 4. Tests (all with fake answers and invented TEST data; no real order, no PIN typed or read)
+
+| Check | Where | Result |
+|---|---|---|
+| qa/check_site.py | live site | 511 passed, 0 failed |
+| qa/check_api.py | checkout and order page | 146 passed, 0 failed |
+| qa/check_kitchen.py | live ops/kitchen/ | 133 passed, 0 failed |
+| qa/check_kitchen.py (KITCHEN_DIR=ops/kitchen-next/) | kitchen preview: K1-K16, every function of the chef app, incl. sold out in the Menu tile | 133 passed, 0 failed |
+| qa/check_staff.py | live Orders, driver v2, old addresses, live driver offline cache | 113 passed, 0 failed |
+| qa/check_staff.py (STAFF_KITCHEN, STAFF_DRIVER = the previews) | K2-K7 and D3-D9 on both previews (old-address and live-cache checks only apply to live) | 91 passed, 0 failed |
+| qa/check_part2.py | the listed states on both previews + service-worker rules | 79 passed, 0 failed |
+| swap rehearsal: build/swap_part2.py on a scratch copy, then check_staff.py and check_kitchen.py | the live folders as they will be after the swap | 113 + 133 passed, 0 failed |
+| driver/tests/flow.py | v1 run links | red before this work started (tests v1 screens that only forward to v2 since 10 Oct) |
+
+qa/check_part2.py covers, by name: orders arriving (ring, NEW, the lines exactly as sent, minutes), ringing again
+after 20 s, the yellow bar on other screens, accept, cooking, ready, a driver takes it, picked up, cancel (asks
+first), queue order and the 10-minute colour, slow network (placeholders, then the order), offline (last orders
+stay, last good time, Try again), database error (its words, Try again); driver: slow network, offer (ring, numbers,
+what to collect, seconds), Accept in the thumb zone, pickup, picked up, cash (collect, pays with, change), Maps /
+Waze / Call / WhatsApp above the Delivered bar, offline (bar, the tap waits, the next drop shows, sent once when
+back), US dollars, error (a refused tap says why), delivered with the cash per drop, empty, sign-in error; workers:
+each preview's worker has only its own folder as scope, the live caches survive, a live page is never run by a
+preview worker, no preview file names a live worker or cache or carries a key, and ops/kitchen/, driver/, sw.js
+and shared/ are exactly origin/main. Sold out: check_kitchen [12] on the preview (Menu tile, sold out reaches the
+order database at once).
+
+Recording: /home/openclaw/premanifest-bot/feed/Pidi-part2-390.mp4 (390 x 844, dark, about 22 s): the kitchen preview
+gets a TEST order, Accept, Start cooking, Food is ready; the driver preview takes the run, pickup, the cash drop,
+the US-dollar drop, run finished.
+
+Screenshots looked at (390 and 1024, light and dark): kitchen Orders, kitchen home, new order with the bar,
+cancel sheet, offline, error, slow; driver offer, pickup, drop with cash, offline, error, done, sign in, empty.
+
+## 5. Skills used
+app-ux-craft (every state), design-direction-brief (DIRECTION.md "Part 2"), premium-feel-standard and
+web-craft-standard (tokens, motion, targets), make-interfaces-feel-better (tabular numbers, press, no transition:
+all), impeccable (Operate mode, craft floor), design-taste-frontend (only its anti-default and dark-mode rules:
+the rest is for landing pages), anti-slop-design-audit (below). borrowed-effects is not installed on this machine.
+scroll-craft does not apply (no landing page).
+
+Anti-slop audit: no hard fail (contrast checked token by token, focus rings, every async state, no sideways scroll
+at 390 per check_staff). Score 90/100: -5 middle dots as the separator in many lines (kept from the live screens,
+the chef knows them), -3 the loading placeholders are plain slips, -2 the yellow bar moves the screen down when it
+appears (on purpose: it must not cover Next or the timers). Premium scorecard 53/65, lowest item 4.
+
+## 6. The swap to live (after Victor's test passes)
+`python3 build/swap_part2.py`, then `python3 qa/check_all.py --local`, look at both live screens, commit and push.
+It copies the previews over ops/kitchen/ and driver/v2/ with the live paths and cache names (kitchen-v19,
+pidi-driver-v6), copies the two fonts into driver/fonts/, and lets /driver/sw.js keep the database library for
+offline use. It stops if kitchen.js, menu-editor.js or books.js changed on live meanwhile. Rehearsed on a copy:
+all green (section 4). The preview folders can go in a later commit.
+
+Weight before photos (gzip, what a phone downloads first): kitchen preview 132 KB (live 159 KB), driver preview
+57 KB (live 97 KB), both plus the same database library from the CDN. No Lighthouse run this time.
+
+## 7. Open
+- Not online yet: the push to main was refused by this machine's permission check (it would have used the
+  machine's GitHub login). The work is committed on local main in /home/openclaw/jobs-scratch/restaurant-, ahead
+  of origin by the part 2 commits. One `git push origin main` from a session allowed to push puts both previews
+  live; GitHub Pages then needs about a minute. After that: open both links at 390 and 1024 once more.
+- Victor's real test (section 3): needs the kitchen PIN and his driver PIN, so it is his step.
+- The 3 TEST orders left by part 1 are still in the database (cancel them from the kitchen, live or preview).
+- driver/tests/flow.py was already red before this work (it tests the v1 screens).
+- After the swap: delete ops/kitchen-next/ and driver-next/ once the live screens have run one night.
