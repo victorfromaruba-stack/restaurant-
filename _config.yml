@@ -7,6 +7,7 @@ exclude:
   - README.md
   - SOURCES.md
   - DIRECTION.md
+  - REPORT-part2.md
   - build/
   - qa/
   - "*.py"

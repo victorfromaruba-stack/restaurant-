@@ -1,6 +1,8 @@
 """Staff screens check: the kitchen's Orders screen (ops/kitchen/, live.js) and the driver app (driver/v2/).
 
     python3 qa/check_staff.py                 (after any change in ops/kitchen/ or driver/)
+    STAFF_KITCHEN=ops/kitchen-next/ STAFF_DRIVER=driver-next/ python3 qa/check_staff.py   the part 2 previews
+        (the old-address and live offline-cache checks only apply to the live folders, so they are skipped there)
     STAFF_SHOTS=/some/folder python3 qa/check_staff.py   also saves phone screenshots there
 
 Fakes only. Every call to the order database is answered here with Playwright routes (service workers
@@ -20,6 +22,9 @@ sys.path.insert(0, os.path.join(ROOT, "qa"))
 from local_server import start, serve_stoppable
 BASE = start()
 SHOTS = os.environ.get("STAFF_SHOTS", "")
+KITCHEN = os.environ.get("STAFF_KITCHEN", "ops/kitchen/")
+DRIVER = os.environ.get("STAFF_DRIVER", "driver/v2/")
+PREVIEW = (KITCHEN, DRIVER) != ("ops/kitchen/", "driver/v2/")
 DB_HOST = "cdkopyphjvfxjqhasrae.supabase.co"
 fails = []
 def check(ok, msg):
@@ -180,7 +185,7 @@ async def kitchen(b, w, h, deep):
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     tag = f"[kitchen {w}x{h}]"
-    await pg.goto(BASE + "ops/kitchen/index.html#/live")
+    await pg.goto(BASE + KITCHEN + "index.html#/live")
     await pg.wait_for_selector(".lv-card .lv-price", timeout=15000)   # the menus are in and checked
     await pg.wait_for_timeout(300)
     nos = await text(pg, ".lv-no")
@@ -252,7 +257,7 @@ async def kitchen(b, w, h, deep):
         check(re.search(r"Deliver at 1:00\sAM", head) and re.search(r"booked for 1:00\sAM", reply) and "Paid by bank transfer" in head,
               f"{tag} the pre-order's cook screen says Deliver at 1:00 AM and Paid by bank transfer, the Confirm reply booked for 1:00 AM: {head[:120]!r} / {reply[:90]!r}")
         await shot(pg, f"kitchen-cook-preorder-{w}x{h}.png", full=False)
-        await pg.goto(BASE + "ops/kitchen/index.html#/live")
+        await pg.goto(BASE + KITCHEN + "index.html#/live")
         await pg.wait_for_selector(f".lv-card [data-live='cook'][data-id='{B}']")
         await pg.click(f".lv-card [data-live='cook'][data-id='{B}']")
         await pg.wait_for_selector(".order-wrap .ohead")
@@ -260,7 +265,7 @@ async def kitchen(b, w, h, deep):
         check("TEST order" in head and re.search(r"Pays in US dollars to the driver · ƒ43\.95 total", head) and "Pays cash" not in head,
               f"{tag} the TEST US-dollar order's cook screen says TEST and Pays in US dollars: {head[:140]!r}")
         await shot(pg, f"kitchen-cook-test-usd-{w}x{h}.png", full=False)
-        await pg.goto(BASE + "ops/kitchen/index.html#/live")
+        await pg.goto(BASE + KITCHEN + "index.html#/live")
         await pg.wait_for_selector(".lv-card .lv-price", timeout=15000)
         # a price changed in the Menu tile tonight: the lines that matched before stay clean, a new order is checked
         # against the new price
@@ -296,7 +301,7 @@ async def kitchen(b, w, h, deep):
         state["orders"] = []
         public_busy["v"] = 15
         pg2 = await ctx.new_page()
-        await pg2.goto(BASE + "ops/kitchen/index.html#/live")
+        await pg2.goto(BASE + KITCHEN + "index.html#/live")
         await pg2.wait_for_selector(".lv-empty")
         await pg2.wait_for_function("(document.querySelector('.lv-segb.on') || {}).textContent === '+15 min'", timeout=10000)
         check(True, f"{tag} with no orders open, Kitchen busy? reads +15 min from the public state")
@@ -316,7 +321,7 @@ async def kitchen(b, w, h, deep):
                 item("Taco of the day", 1, 500)]}])]
         pg3 = await ctx.new_page()
         await pg3.route("**/taco-brava/menu.json*", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(tb)))
-        await pg3.goto(BASE + "ops/kitchen/index.html#/live")
+        await pg3.goto(BASE + KITCHEN + "index.html#/live")
         await pg3.wait_for_selector(".lv-card .lv-price", timeout=15000)
         await pg3.wait_for_timeout(300)
         warn = await text(pg3, ".lv-items li")
@@ -357,7 +362,7 @@ async def kitchen_edges(b, w, h):
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     tag = f"[kitchen edges {w}x{h}]"
-    await pg.goto(BASE + "ops/kitchen/index.html#/live")
+    await pg.goto(BASE + KITCHEN + "index.html#/live")
     await pg.wait_for_selector(".lv-later .lv-card", timeout=15000)
     await pg.wait_for_timeout(600)
     fold = await pg.evaluate("""(() => { const c = document.querySelector('.lv-card'), r = s => c.querySelector(s).getBoundingClientRect().bottom;
@@ -401,7 +406,7 @@ async def driver(b, w, h, deep):
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     tag = f"[driver {w}x{h}]"
-    await pg.goto(BASE + "driver/v2/index.html")
+    await pg.goto(BASE + DRIVER + "index.html")
     await pg.wait_for_selector("#offers .stop", timeout=15000)
     stops = await text(pg, "#offers .stop")
     nos = await text(pg, "#offers .order-no")
@@ -413,14 +418,14 @@ async def driver(b, w, h, deep):
     seen = await pg.evaluate("(() => { const b = document.querySelector('#dock button'); const r = b && b.getBoundingClientRect(); return !!r && r.bottom <= innerHeight && r.top >= 0; })()")
     check(dock == ["Accept"] and seen, f"{tag} with one offer, Accept is the big button on the first screen: {dock}")
     # the offers don't carry transfer_status (the run does): an offer never says "Awaiting" for a transfer
-    lines = await pg.evaluate("""import('%sdriver/v2/js/client.js').then(m => [m.collectLine({ pay: 'transfer', total_cents: 3890 }),
-      m.collectLine({ pay: 'transfer', transfer_status: 'awaiting' }), m.collectLine({ pay: 'transfer', transfer_status: 'paid' })])""" % BASE)
+    lines = await pg.evaluate("""import('%s%sjs/client.js').then(m => [m.collectLine({ pay: 'transfer', total_cents: 3890 }),
+      m.collectLine({ pay: 'transfer', transfer_status: 'awaiting' }), m.collectLine({ pay: 'transfer', transfer_status: 'paid' })])""" % (BASE, DRIVER))
     check(lines == ["Bank transfer. Don't collect cash.", "Awaiting transfer. Don't collect cash.", "Paid by bank transfer. Don't collect cash."],
           f"{tag} a transfer on an offer says Bank transfer; the run says awaiting or paid: {lines}")
     await shot(pg, f"driver-offer-{w}x{h}.png", full=False)
     if deep:
         await pg.click("#dock button:has-text('Accept')")
-        await pg.wait_for_url("**/driver/v2/run.html")
+        await pg.wait_for_url("**/" + DRIVER + "run.html")
         await pg.wait_for_selector("h2.stop-no")
         pick = await text(pg, "h2.stop-no")
         check(pick == ["Order 12 · Ana", "Order 13 · Ben"], f"{tag} pickup lists the bags under each order number: {pick}")
@@ -524,9 +529,11 @@ async def main():
         await kitchen_edges(b, 360, 640)
         await driver(b, 390, 844, True)
         await driver(b, 360, 640, True)
-        await redirects(b)
+        if not PREVIEW:
+            await redirects(b)
         await b.close()
-        await offline(p)
+        if not PREVIEW:
+            await offline(p)
 
 asyncio.run(main())
 print(f"\n{len(fails)} problem(s) on the staff screens")

@@ -51,3 +51,70 @@ checkout errors in plain words, placing (button busy), order failed (WhatsApp fa
 ## Not doing
 Purple gradients, glass, three equal feature cards, emoji icons, a hero text strip, numbered section labels, a
 carousel hero, fake reviews, discount banners, countdowns, "trusted by" rows, new pictures of food.
+
+# Part 2: the kitchen and the driver (19 Nov 2026, redesign week 2)
+
+Scope: the chef app (preview `ops/kitchen-next/`) and the driver app (preview `driver-next/`). Same Night Slip world,
+carried behind the counter and onto the road. Every function and every word the screens had stays; only the look,
+the states and a few kitchen-floor habits change. The live `ops/kitchen/` and `driver/` are untouched until Victor's
+real test passes.
+
+## The two worlds
+- Kitchen: steam, the ticket rail, paper slips, the bell, a wet thumb, bright lights, the pass, timers, foil trays.
+  Read from 1-2 m on a tablet or phone. A new order must be heard and seen from across the room.
+- Driver: night streets, a scooter, one hand on the phone, glare, the bag, a door, cash and change. The address and
+  the money to collect come first, in tall numbers, and the app keeps working in a dead zone.
+
+## Conventions kept (opened 19 Nov; what is taken)
+- Toast KDS, https://support.toasttab.com/en/article/Basic-Kitchen-Configuration and
+  https://doc.toasttab.com/doc/platformguide/platformKDSOverview.html : a sound for every new ticket, ticket colour by
+  age, fulfilled tickets step back. Taken: the age colour and the sound. Not taken: per-station routing (one chef).
+- Square KDS, https://squareup.com/help/us/en/article/7944-get-started-with-square-kds-android : a yellow timer and
+  a red timer after set minutes, "play sound when new tickets arrive". Taken: yellow at 10 min, red at 20 min, counted
+  from when the order came in (a pre-order from when it has to start).
+- DoorDash Dasher, https://help.doordash.com/en-us/dashers/article/how-to-accept-an-order and
+  https://dasher.doordash.com/en-us/blog/how-to-use-dasher-app : an offer card with a countdown, Accept or decline,
+  then pickup and drop-off as separate steps. Taken: the seconds left on the slip, Accept in the thumb zone.
+- Uber driver app, https://www.uber.com/us/en/deliver/driver-app/ and
+  https://www.uber.com/us/en/blog/introducing-cash-payment-for-deliveries/ : Go online, Accept before time runs out,
+  three stages (to the pickup, "I have the order", drop-off), a Cash badge on the offer and the change shown at the
+  door. Taken: what to collect is on the offer before Accept, and the change to give is the loudest line at the door.
+
+## Tokens (added to part 1's)
+- Same ground, surfaces, text, paper, ink and sodium as the customer site (top of this file). Light is designed:
+  warm white ground, white slips, the main button black with yellow text, red text #B3261E.
+- Kitchen reds: #E5383B for big fills with large white text (the chef's red since October), #B42A26 under small
+  white text (6:1). Green #5FD38D for "ready" with ink text. Pay chips: cash green #17733E, transfer #5E5244,
+  US dollars ink with sodium.
+- Type: Big Shoulders Display 800-900 for order numbers (64-72 px), minutes, titles and the main buttons; Hanken
+  Grotesk for every line you read, digits tabular. Kitchen body 19-22 px, ticket lines 21-25 px; driver money 58-68 px.
+- Shape: 14 px on buttons, tiles and fields, 999 px on pills (busy switch, NEW, online); slips are square (4 px)
+  with the punched top edge from the customer's order slip.
+- Targets: kitchen main buttons 72-80 px high and full slip width; driver buttons 64 px in the bottom bar, 56 px
+  for Maps / Waze / Call / WhatsApp.
+- Motion: press .97 in 120-140 ms; a new slip's sodium frame breathes (1.4 s), the Orders tile and the yellow bar
+  ring; sheets rise 260 ms. Reduced motion: no movement, a thick static frame instead.
+
+## Screens
+- Kitchen Orders: a rail of paper slips. New orders first (NEW, a breathing frame, the bell every 20 s until
+  someone taps Accept), then what is cooking oldest first, then what waits for a driver. One column on a phone, two
+  on a 1024 tablet. Each slip: ORDER and the number big, the minutes big in the corner, pay chip, note, the lines
+  exactly as sent, one full-width button for the next step. On every other screen a yellow bar under the top bar
+  says "New order 14 · Open" (it pushes the screen down, it never covers Next or the timers).
+- Kitchen home: Orders is the sign (yellow when an order waits), Cook an order is a paper slip, the rest quiet tiles.
+- Driver: the PIDI sign, the driver's name, an Online pill. The offer is a slip with each drop, what to collect
+  and the seconds left; Accept in the bottom bar. Pickup: one slip per order with its bags. Drop: name, area, the
+  money slip (collect, pays with, the change on yellow; US dollars on a dark slip), then Maps, Waze, Call and
+  WhatsApp above the Delivered bar. Run finished: the cash from each drop.
+
+## States designed
+Kitchen: loading (slip-shaped placeholders after 300 ms), empty, nothing to cook now, new order (sound, buzz,
+frame, bar, tile), cooking, ready, a driver took it, the driver has it, cancel (asks first), couldn't check with
+the last good time and Try again (offline and database error worded apart), the busy switch saving, TEST orders,
+price warnings, pre-orders later tonight. Driver: not connected, sign-in error (the name stays), checking for runs,
+no offer, offline (a bar; taps saved and sent in order when the signal is back; the run stays on screen), a refused
+tap says why, sending (button busy), run finished.
+
+## Not doing
+New pictures of food, glass, gradients, emoji, a dashboard of numbers, a map inside the app (Maps and Waze do it),
+swipe-to-confirm (a tap is surer with a wet or gloved thumb), sound on the driver app beyond the existing ring.

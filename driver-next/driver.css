@@ -1,0 +1,144 @@
+/* Pidi driver, part 2 preview (driver-next/, 19 Nov 2026). The customer site's "Night Slip" look on the road:
+   a warm-black screen, the PIDI sign in sodium yellow, and the money you collect printed on a paper slip.
+   One hand, one thumb, outdoor glare: buttons of 56-64 px in the bottom bar, the amount in tall tabular digits.
+   Dark is designed for night driving, light for glare; the phone's setting picks. DIRECTION.md, "Part 2". */
+@font-face { font-family: "Big Shoulders Display"; src: url(../shared/fonts/bigshoulders.woff2) format("woff2"); font-weight: 700 900; font-display: swap; }
+@font-face { font-family: "Hanken Grotesk"; src: url(../shared/fonts/hanken.woff2) format("woff2"); font-weight: 400 800; font-display: swap; }
+:root {
+  color-scheme: dark;
+  --bg: #100E0C; --bg-2: #181512; --bg-3: #211D19; --bg-4: #2B2621; --line: #3A332C; --field: #8A7E70;
+  --text: #F5EDE0; --muted: #B8AC9C; --hl: #FFC93C;
+  --sodium: #FFC93C; --sodium-ink: #1A1204;
+  --cta: #FFC93C; --cta-ink: #1A1204;
+  --paper: #F2E9D8; --paper-ink: #1B1611; --paper-mute: #5E5244; --paper-line: #CBBFA8;
+  --sign-bg: transparent; --sign-ink: #FFC93C; --sign-glow: 0 0 14px rgba(255, 201, 60, .45);
+  --ok: #5FD38D; --bad: #FF8A7A; --bad-bg: #3A1714; --warn-bg: #2E2610; --warn-ink: #FFE3A0;
+  --shadow: 0 12px 30px rgba(0, 0, 0, .5);
+  --display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+  --font: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --dock-h: 92px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #FFFBF4; --bg-2: #F6F0E4; --bg-3: #FFFFFF; --bg-4: #EDE5D6; --line: #DCD0BC; --field: #8A7E70;
+    --text: #17120D; --muted: #5F5547; --hl: #8A5A00;
+    --cta: #17120D; --cta-ink: #FFC93C;
+    --paper: #FFFFFF; --paper-ink: #17120D; --paper-mute: #5F5547; --paper-line: #D9CEBB;
+    --sign-bg: #FFC93C; --sign-ink: #17120D; --sign-glow: none;
+    --ok: #12703F; --bad: #B3261E; --bad-bg: #FBE3E1; --warn-bg: #FFF0C2; --warn-ink: #4A3600;
+    --shadow: 0 12px 30px rgba(23, 18, 13, .16);
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; scroll-padding-bottom: calc(16px + var(--dock-h) + env(safe-area-inset-bottom)); }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 500 18px/1.4 var(--font); font-variant-numeric: tabular-nums; min-height: 100dvh; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+::selection { background: var(--sodium); color: var(--sodium-ink); }
+:focus-visible { outline: 3px solid var(--hl); outline-offset: 3px; }
+p { margin: 0 0 10px; }
+h1, h2 { font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: .01em; margin: 0 0 8px; text-wrap: balance; }
+h1 { font-size: 56px; line-height: .9; }
+h2 { font-size: 30px; line-height: 1; }
+
+/* no signal: one quiet bar, the screen under it keeps working */
+.signal { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; background: var(--warn-bg); color: var(--warn-ink); font-size: 16px; font-weight: 600; }
+.signal b { font-family: var(--display); font-size: 22px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+
+/* the PIDI sign */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 560px; margin: 0 auto; padding: calc(8px + env(safe-area-inset-top)) 16px 4px; }
+.is-offline .top { padding-top: 8px; }
+.sign { display: inline-flex; align-items: baseline; gap: 8px; min-height: 48px; padding: 6px 10px; margin-left: -10px; border-radius: 10px; text-decoration: none; color: var(--sign-ink); background: var(--sign-bg); }
+.sign span { font-family: var(--display); font-weight: 900; font-size: 34px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; text-shadow: var(--sign-glow); }
+.sign small { font-size: 13px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+@media (prefers-color-scheme: light) { .sign small { color: var(--sign-ink); } }
+.help-link { display: inline-flex; align-items: center; min-height: 48px; padding: 0 4px; color: var(--text); font-weight: 700; text-decoration: underline; text-underline-offset: .22em; text-decoration-thickness: 2px; }
+
+main { max-width: 560px; margin: 0 auto; padding: 12px 16px calc(28px + var(--dock-h) + env(safe-area-inset-bottom)); }
+.quiet { color: var(--muted); }
+.state { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--bg-4); color: var(--muted); font-weight: 700; }
+.state.is-on { background: transparent; box-shadow: inset 0 0 0 2px var(--ok); color: var(--ok); }
+.checking { color: var(--muted); font-weight: 600; }
+.empty { margin: 28px 0 16px; }
+.empty-t { font-family: var(--display); font-size: 40px; font-weight: 900; line-height: .95; text-transform: uppercase; margin: 0 0 6px; color: var(--hl); }
+.err { margin: 0 0 14px; padding: 12px 14px; border-radius: 14px; background: var(--bad-bg); color: var(--text); box-shadow: inset 0 0 0 2px var(--bad); font-weight: 700; }
+.err.soft, .test-flag { background: var(--warn-bg); color: var(--warn-ink); box-shadow: none; }
+.test-flag { margin: 0 0 14px; padding: 10px 14px; border-radius: 14px; font-weight: 700; }
+.pending { margin: 0 0 14px; padding: 10px 14px; border-radius: 14px; background: var(--bg-3); box-shadow: inset 0 0 0 2px var(--hl); font-weight: 700; }
+
+/* the bottom bar: the one button that moves the run on */
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--bg); box-shadow: 0 -1px 0 var(--line); }
+#dock { display: flex; flex-direction: column; gap: 8px; max-width: 560px; margin: 0 auto; }
+.dock:has(#dock:empty) { display: none; }
+.btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 64px; padding: 10px 16px; border: 0; border-radius: 14px;
+  background: var(--cta); color: var(--cta-ink); font-family: var(--display); font-size: 28px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase;
+  text-decoration: none; text-align: center; line-height: 1; cursor: pointer;
+  transition-property: transform, opacity, background-color; transition-duration: 120ms; transition-timing-function: var(--ease); }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.secondary { min-height: 56px; background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--field); font-family: var(--font); font-size: 18px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.btn.secondary:active { background: var(--bg-3); }
+@media (hover: hover) { .btn:hover:not(:disabled) { filter: brightness(1.06); } .btn.secondary:hover { background: var(--bg-3); } }
+.text-link { display: inline-flex; align-items: center; min-height: 48px; margin-top: 18px; padding: 0; border: 0; background: none; color: var(--muted); font-weight: 700; text-decoration: underline; text-underline-offset: .22em; cursor: pointer; }
+.row { display: flex; gap: 8px; margin: 8px 0; }
+.row .btn { flex: 1 1 0; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 14px; }
+
+/* sign in: labels above, big fields */
+.field { display: block; margin: 0 0 14px; }
+.field span { display: block; margin: 0 0 6px; font-weight: 700; }
+input { width: 100%; min-height: 60px; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--field); background: var(--bg-3); color: var(--text); font-size: 20px; }
+input:focus { outline: none; border-color: var(--hl); box-shadow: 0 0 0 3px rgba(255, 201, 60, .25); }
+::placeholder { color: var(--muted); opacity: 1; }
+
+/* paper slips: the offer, the bags, the money. Square, a punched top edge, ink on paper in both schemes */
+.money, .bagslip { position: relative; margin: 14px 0; padding: 14px 16px 16px; border-radius: 4px; background: var(--paper); color: var(--paper-ink); box-shadow: var(--shadow); }
+.money::before, .bagslip::before { content: ""; position: absolute; left: 0; right: 0; top: -7px; height: 8px; background: radial-gradient(circle at 8px 0, transparent 7px, var(--paper) 7.5px) repeat-x; background-size: 16px 8px; }
+.kicker { margin: 0; font-size: 14px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--paper-mute); }
+.money .figure { margin: 4px 0 0; font-family: var(--display); font-size: 68px; font-weight: 900; line-height: .9; letter-spacing: .01em; }
+.money .line { margin: 8px 0 0; font-size: 21px; font-weight: 700; }
+.money .change { display: inline-block; padding: 2px 10px; border-radius: 8px; background: var(--sodium); color: var(--sodium-ink); font-weight: 800; }
+.money .small, .bagslip .small { margin: 8px 0 0; font-size: 15px; color: var(--paper-mute); }
+.money.is-usd { background: var(--paper-ink); color: #F5EDE0; box-shadow: inset 0 0 0 2px rgba(255, 201, 60, .5), var(--shadow); }
+.money.is-usd::before { background: radial-gradient(circle at 8px 0, transparent 7px, var(--paper-ink) 7.5px) repeat-x; background-size: 16px 8px; }
+.money.is-usd .kicker, .money.is-usd .small { color: #CDBFAA; }
+.money.is-usd .figure { color: var(--sodium); }
+.money.is-transfer .figure { font-size: 44px; }
+.money.done .line { font-size: 19px; }
+/* the offer: each drop on the slip, the seconds to accept in the corner */
+.money.offer { padding-top: 16px; }
+.money.offer .stop + .stop { margin-top: 14px; padding-top: 14px; border-top: 2px dashed var(--paper-line); }
+.money.is-usd.offer .stop + .stop { border-top-color: #4A4037; }
+.money .order-no { margin: 0 0 2px; font-family: var(--display); font-size: 40px; font-weight: 900; line-height: .95; text-transform: uppercase; }
+.money .collect { margin: 8px 0 0; font-size: 22px; font-weight: 800; }
+.money .collect.usd { display: inline-block; padding: 4px 10px; border-radius: 8px; background: var(--paper-ink); color: var(--sodium); }
+.money .due, .due { display: inline-block; margin: 6px 0 0; padding: 4px 10px; border-radius: 8px; background: var(--sodium); color: var(--sodium-ink); font-weight: 800; font-size: 18px; }
+.money .clock { position: absolute; top: 14px; right: 16px; text-align: right; }
+.money .clock .figure { margin: 0; font-size: 48px; }
+.money .clock .small { margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.money.offer .stop:first-child { padding-right: 84px; }
+.stack { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; }
+
+/* pickup: one slip per order, the bags by restaurant */
+.bagslip .stop-no { margin: 0 0 6px; font-size: 34px; }
+.bagslip .kicker { margin-top: 10px; }
+.bagslip .item { margin: 4px 0 0; font-size: 20px; font-weight: 700; }
+.place { margin: 0 0 8px; font-size: 22px; font-weight: 700; }
+.addr { font-size: 20px; font-weight: 700; margin: 4px 0 6px; }
+.note { color: var(--muted); }
+main > .small { margin: 2px 0; color: var(--muted); }
+/* drop: name, area and money first; Maps, Waze, Call and WhatsApp above the Delivered bar on a 390 x 664 phone */
+main[data-step="drop"] .quiet { margin: 0 0 4px; font-weight: 700; }
+main[data-step="drop"] h1 { font-size: 48px; margin: 0; }
+main[data-step="drop"] .place { margin: 2px 0 6px; }
+main[data-step="drop"] .money { margin: 14px 0 12px; padding: 12px 14px 14px; }
+main[data-step="drop"] .money .figure { font-size: 58px; }
+main[data-step="drop"] .money .line { margin-top: 6px; font-size: 19px; }
+main[data-step="drop"] .money .small { margin-top: 6px; }
+@media (max-height: 700px) { main[data-step="drop"] h1 { font-size: 40px; } main[data-step="drop"] .money .figure { font-size: 50px; } }
+@media (min-width: 700px) { h1 { font-size: 64px; } main, .top, #dock { max-width: 640px; } }
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 1ms !important; animation-duration: 1ms !important; } }

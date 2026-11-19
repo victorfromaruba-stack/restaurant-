@@ -69,12 +69,14 @@ class Server(http.server.ThreadingHTTPServer):
 srv = Server(("127.0.0.1", int(os.environ.get("QA_PORT", "0"))), Handler)
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 BASE = f"http://127.0.0.1:{srv.server_address[1]}/"
-APP = BASE + "ops/kitchen/index.html"
+KDIR = os.environ.get("KITCHEN_DIR", "ops/kitchen/")   # KITCHEN_DIR=ops/kitchen-next/ checks the part 2 preview
+PREVIEW = KDIR != "ops/kitchen/"
+APP = BASE + KDIR + "index.html"
 
 site = json.load(open(os.path.join(ROOT, "shared/site.json"), encoding="utf-8"))
 brands = [b["id"] for b in site["brands"]]
 menus = {b: json.load(open(os.path.join(ROOT, b, "menu.json"), encoding="utf-8")) for b in brands}
-kdata = json.load(open(os.path.join(ROOT, "ops/kitchen/kitchen-data.json"), encoding="utf-8"))
+kdata = json.load(open(os.path.join(ROOT, KDIR + "kitchen-data.json"), encoding="utf-8"))
 samples = json.load(open(os.path.join(ROOT, "qa/wa-samples.json"), encoding="utf-8"))["samples"]
 names = {b: menus[b]["name"] for b in brands}
 LEAKS = ("one kitchen", "shared kitchen", "same kitchen", "from our kitchen", "our other restaurant", "sister restaurant", "all five", "kitchen order")
@@ -671,20 +673,24 @@ async def test_sw(browser):
     ctx, _ = await new_ctx(browser, sw="allow")
     pg = await new_page(ctx, errs)
     await pg.goto(BASE + "robots.txt")
-    await pg.evaluate("""Promise.all(['orderaruba-test', 'driver-test', 'kitchen-v1'].map(n => caches.open(n).then(c => c.put('/x-' + n, new Response('x')))))""")
+    await pg.evaluate("""Promise.all(['orderaruba-test', 'driver-test', 'kitchen-v1', 'next-kitchen-v0'].map(n => caches.open(n).then(c => c.put('/x-' + n, new Response('x')))))""")
     await pg.goto(APP)
     await pg.wait_for_function("navigator.serviceWorker && navigator.serviceWorker.controller", timeout=20000)
     await pg.wait_for_function("window.__kitchen && __kitchen.menus() !== null", timeout=20000)
     await pg.wait_for_timeout(800)
     keys = await pg.evaluate("caches.keys()")
-    sw_src = open(os.path.join(ROOT, "ops/kitchen/sw.js"), encoding="utf-8").read()
+    sw_src = open(os.path.join(ROOT, KDIR + "sw.js"), encoding="utf-8").read()
     current = re.search(r"var CACHE = '([^']+)'", sw_src).group(1)
-    check(current in keys and "kitchen-v1" not in keys and "orderaruba-test" in keys and "driver-test" in keys,
-          f"[8] only old kitchen- caches are deleted; the website's and the driver app's stay ({sorted(keys)})")
+    if PREVIEW:   # the preview may delete only its own old caches: the live kitchen's "kitchen-" ones stay
+        check(current in keys and "next-kitchen-v0" not in keys and "kitchen-v1" in keys and "orderaruba-test" in keys and "driver-test" in keys,
+              f"[8] the preview deletes only its own old next-kitchen- caches; the live kitchen's, the website's and the driver app's stay ({sorted(keys)})")
+    else:
+        check(current in keys and "kitchen-v1" not in keys and "orderaruba-test" in keys and "driver-test" in keys,
+              f"[8] only old kitchen- caches are deleted; the website's and the driver app's stay ({sorted(keys)})")
     has_site = await pg.evaluate(f"caches.open('{current}').then(c => c.match(new URL('../../shared/site.json', location.href).href)).then(r => !!r)")
     check(has_site, "[8] site.json is in the offline cache (for receipts)")
     # a weak signal: the server takes 10 s; the saved copy must answer after about 3 s
-    DELAY["ops/kitchen/kitchen-data.json"] = 10
+    DELAY[KDIR + "kitchen-data.json"] = 10
     dt, ok = await pg.evaluate("""async () => { const t = performance.now(); const r = await fetch('kitchen-data.json', {cache: 'no-cache'});
         const j = await r.json(); return [performance.now() - t, !!(j && j.dishes)]; }""")
     check(ok and 2500 <= dt <= 6000, f"[8] slow network: the saved copy answers after about 3 s ({dt / 1000:.1f} s), not after 10 s")
@@ -694,7 +700,7 @@ async def test_sw(browser):
     await pg.wait_for_selector(".home-grid", timeout=15000)
     took = time.time() - t0
     check(took < 8, f"[8] the app opens on a slow network ({took:.1f} s)")
-    check(HITS.get("ops/kitchen/kitchen-data.json", 0) >= 2, "[8] the network was still asked (the copy updates behind it)")
+    check(HITS.get(KDIR + "kitchen-data.json", 0) >= 2, "[8] the network was still asked (the copy updates behind it)")
     DELAY.clear()
     await ctx.set_offline(True)
     await pg.goto(APP)
